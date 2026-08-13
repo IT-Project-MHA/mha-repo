@@ -1,0 +1,8 @@
+{
+  "name": "mha-repo",
+  "private": true,
+  "workspaces": ["apps/*"],
+  "scripts": {
+    "mobile": "npm run start --workspace apps/mobile"
+  }
+}

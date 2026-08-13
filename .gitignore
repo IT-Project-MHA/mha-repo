@@ -1,0 +1,12 @@
+# Expo / Javascript
+node_modules/
+apps/mobile/.expo/
+
+# Django / Python
+.venv/
+__pycache__/
+*.pyc
+
+# Secrets and Environment Variables
+.env
+*.local
