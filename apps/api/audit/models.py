@@ -1,3 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
-# Create your models here.
+from mpowered_api.base_models import BaseModel
+
