@@ -1,4 +1,39 @@
-import { Image, Text, View } from "react-native";
+import { Button, Image, Text, View } from "react-native";
+
+abstract class AnswerField{
+  /*
+  Can be: (as in implementations)
+  - number entry
+  - multiple choice
+  - text entry
+  - multiselect
+  - slider
+  - emoticon
+
+  All AnswerFields have a view and some function to get data out
+  Also a boolean filled / not filled
+  And answer type
+  */
+  
+  private isFilled: boolean;
+  private data: any;
+  private answerView: View;
+  
+
+  constructor(filled: boolean, data: any){
+    this.isFilled = filled; //this is false most of the time, unless returning to the question after filling
+    this.answerView = this.makeIntoView();
+    this.data;              //incase we return to the question when it had been filled
+  }
+
+  abstract getData(): any;
+  abstract enterData(): void; //updates data and isFilled
+  abstract makeIntoView(): View;
+
+  setData(){}
+  setFilled(){}
+}
+
 
 abstract class Question{
   //refers to the boxed in section of a question.
@@ -13,12 +48,15 @@ abstract class Question{
   - Record button
   */
 
-  title: Text;
-  text: Text; //took the names from the design class diagram, think some are vague. Like what does text mean? Also different conception
-  instruction: Text;
-  subtitle: Text;
-  line: Image; //temporary types until I figure out what to put
-  box: Image;
+  private title: Text;
+  private text: Text; //took the names from the design class diagram, think some are vague. Like what does text mean? Also different conception
+  private instruction: Text;
+  private subtitle: Text;
+  private line: Image; //temporary types until I figure out what to put
+  private box: Image;
+  //record: Button;
+  //answerField: AnswerField;
+  private questionView: View
 
   constructor(ttl: Text, txt: Text, inst:Text, subttl:Text, ln:Image, bx:Image){
     this.title= ttl;
@@ -27,11 +65,12 @@ abstract class Question{
     this.subtitle= subttl;
     this.line= ln;
     this.box= bx;
+    this.questionView = this.makeIntoView();
+    //this.record = record in Amelia's custom button
+    //answerField = implementation of the abstract class
   }
 
 
-  
-  
   abstract makeIntoView(): View;
   abstract getWhatever(): string;
   
