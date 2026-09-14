@@ -12,7 +12,7 @@ class Appointment(BaseModel, SoftDeleteModel):
     scheduled_date = models.DateField()
     doctor = models.CharField(max_length = 100)
     status = models.CharField(choices = Status.choices, default = Status.PLANNED)
-    care_person = models.ForeignKey(CarePerson, on_delete = models.SET_NULL, null = True, blank = True, related_name = "appointments")
+    care_person = models.ForeignKey("appointment.CarePerson", on_delete = models.SET_NULL, null = True, blank = True, related_name = "appointments")
 
     class HealthService(models.TextChoices):
         GP = "General Practitioner", "General Practitioner"
@@ -110,7 +110,7 @@ class AppointmentAccess(BaseModel):
         indexes = [models.Index(fields = ["appointment"], name = "access_by_appointment_idx")]
 
 
-# download/access logs
+# Access logs
 
 class QuestionAccessLog(BaseModel):
     question = models.ForeignKey(AppointmentQuestion, on_delete = models.CASCADE, related_name = "question")
@@ -118,6 +118,7 @@ class QuestionAccessLog(BaseModel):
 
     class Meta:
         db_table = "question_access"
+        ordering = ["-created_at"]
 
 class AppointmentAccessLog(BaseModel):
     appointment = models.ForeignKey(Appointment, on_delete = models.CASCADE, related_name = "appointment")
@@ -125,3 +126,4 @@ class AppointmentAccessLog(BaseModel):
 
     class Meta:
         db_table = "appointment_access"
+        ordering = ["-created_at"]

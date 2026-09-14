@@ -11,9 +11,9 @@ class Prescription(BaseModel):
     dosage = models.PositiveSmallIntegerField()
 
     strength = models.PositiveIntegerField(default=0)
-    started_on = models.DateField(null = TRUE, blank = TRUE)
-    stopped_on = models.DateField(null = TRUE, blank = TRUE)
-    notes = models.TextField(blank = TRUE)
+    started_on = models.DateField(null = True, blank = True)
+    stopped_on = models.DateField(null = True, blank = True)
+    notes = models.TextField(blank = True)
     class StrengthUnit(models.TextChoices):
         MG = "mg", "mg"
         G = "g", "g"
@@ -43,8 +43,7 @@ class Prescription(BaseModel):
 
     class Meta:
         db_table = "prescription"
-        ordering = "name"
-        indexes = [ models.Index(fields = ["patient_profile", "is_perscirption"], name = "perscription_by_patient_idx")]
+        ordering = ["name"]
 
 
 class Assessment(BaseModel):
@@ -130,9 +129,9 @@ class MyManagement(BaseModel):
 
 class GeneratedDocument(BaseModel):
     class DocumentType(models.TextChoices):
-        PAIN_CHART = "pain_chart", "Pain chart"
-        PAIN_PROFILE = "pain_profile", "Pain profile"
-        APPOINTMENT = "appointment", "Appointment summary"
+        PAIN_CHART = "pain_chart", "Pain Chart"
+        PAIN_PROFILE = "pain_profile", "Pain Profile"
+        APPOINTMENT = "appointment", "Appointment Summary"
 
     patient_profile = models.ForeignKey("accounts.PatientProfile", on_delete = models.PROTECT, related_name = "documents")
     generated_by = models.ForeignKey("accounts.User", on_delete = models.PROTECT, related_name = "+")
