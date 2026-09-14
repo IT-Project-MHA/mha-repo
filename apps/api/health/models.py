@@ -11,15 +11,31 @@ class Prescription(BaseModel):
     dosage = models.PositiveSmallIntegerField()
 
     strength = models.PositiveIntegerField(default=0)
-    class StrengthUnit(models.TextChoices): MG = "mg", G = "g", PERCENT = "%", MICRO_G = "μg", IU = "iu"
+    class StrengthUnit(models.TextChoices):
+        MG = "mg", "mg"
+        G = "g", "g"
+        PERCENT = "%", "%"
+        MICRO_G = "μg", "μg"
+        IU = "iu", "IU"
     strength_unit = models.CharField(default = StrengthUnit.MG, max_length = 10, choices = StrengthUnit.choices)
 
-    class FormUnit(models.TextChoices): TAB = "tablets", CAP = "capsules", LIQ = "liquid", DROP = "drops", INJ = "injections",
-    SPR = "spray", ML = "mL", PAT = "patches"
+    class FormUnit(models.TextChoices):
+        TAB = "tablets", "Tablets"
+        CAP = "capsules", "Capsules"
+        LIQ = "liquid", "Liquid"
+        DROP = "drops", "Drops"
+        INJ = "injections", "Injections"
+        SPR = "spray", "Spray"
+        ML = "mL", "mL"
+        PAT = "patches", "Patches"
     form = models.CharField(default = FormUnit.TAB, max_length = 10, choices = FormUnit.choices)
 
     frequency = models.PositiveSmallIntegerField()
-    class FrequencyUnit(models.TextChoices): H = "hour(s)", D = "day(s)", W = "week(s)", M = "month(s)"
+    class FrequencyUnit(models.TextChoices):
+        H = "hour(s)", "Hour(s)"
+        D = "day(s)", "Day(s)"
+        W = "week(s)", "Week(s)"
+        M = "month(s)", "Month(s)"
     frequency_unit = models.CharField(default = FrequencyUnit.H, max_length = 10, choices = FrequencyUnit.choices)
 
     class Meta:
@@ -105,8 +121,15 @@ class Appointment(BaseModel):
     recording_consent = models.BooleanField(default = False)
     doctor_signature = models.URLField(null= True, blank = True)
 
-    class HealthService(models.TextChoices): GP = "General Practitioner", PHY = "Physiotherapist", RHE = "Rheumatologist", 
-    OST = "Osteopath", PMS = "Pain Medicine Specialist", OS = "Orthopaedy surgeon", OT = "Occupational Therapist", OTHER = "Other"
+    class HealthService(models.TextChoices):
+        GP = "General Practitioner", "General Practitioner"
+        PHY = "Physiotherapist", "Physiotherapist"
+        RHE = "Rheumatologist", "Rheumatologist"
+        OST = "Osteopath", "Osteopath"
+        PMS = "Pain Medicine Specialist", "Pain Medicine Specialist"
+        OS = "Orthopaedy Surgeon", "Orthopaedy Surgeon"
+        OT = "Occupational Therapist", "Occupational Therapist"
+        OTHER = "Other", "Other"
     health_service = models.CharField(default = HealthService.GP, max_length = 50, choices = HealthService.choices)
 
     class Meta:
@@ -153,7 +176,9 @@ class AppointmentAccess(BaseModel):
         db_table = "appointment_access"
 
 class Downloads(BaseModel):
-    class DocumentType(models.TextChoices): CHART = "Chart", PAIN_PROF = "Pain Profile"
+    class DocumentType(models.TextChoices):
+        CHART = "Chart", "Chart"
+        PAIN_PROF = "Pain Profile", "Pain Profile"
     type = models.CharField(default = DocumentType.CHART, max_length = 20, choices = DocumentType.choices)
 
     class Meta:
