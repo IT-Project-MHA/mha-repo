@@ -112,14 +112,14 @@ class AppointmentAccess(BaseModel):
 
 # download/access logs
 
-class QuestionAccess(BaseModel):
+class QuestionAccessLog(BaseModel):
     question = models.ForeignKey(AppointmentQuestion, on_delete = models.CASCADE, related_name = "question")
     support_person = models.ForeignKey("accounts.User", on_delete = models.CASCADE, related_name = "support person")
 
     class Meta:
         db_table = "question_access"
 
-class AppointmentAccess(BaseModel):
+class AppointmentAccessLog(BaseModel):
     appointment = models.ForeignKey(Appointment, on_delete = models.CASCADE, related_name = "appointment")
     support_person = models.ForeignKey("accounts.user", on_delete = models.CASCADE, related_name = "support person")
 
