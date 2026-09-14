@@ -1,4 +1,5 @@
-import { Button, Image, Text, View } from "react-native";
+import type { ReactElement } from "react";
+import { Image, Text } from "react-native";
 
 abstract class AnswerField{
   /*
@@ -17,7 +18,7 @@ abstract class AnswerField{
   
   private isFilled: boolean;
   private data: any;
-  private answerView: View;
+  private answerView:  ReactElement<any, any>;
   
 
   constructor(filled: boolean, data: any){
@@ -26,9 +27,16 @@ abstract class AnswerField{
     this.data;              //incase we return to the question when it had been filled
   }
 
-  abstract getData(): any;
   abstract enterData(): void; //updates data and isFilled
-  abstract makeIntoView(): View;
+  abstract makeIntoView():  ReactElement<any, any>;
+  
+  getData(): any{
+    //function returns the data parameter
+    if(this.isFilled)
+        return this.data;
+
+    return null;
+  }
 
   setData(){}
   setFilled(){}
@@ -56,7 +64,7 @@ abstract class Question{
   private box: Image;
   //record: Button;
   //answerField: AnswerField;
-  private questionView: View
+  private questionView:  ReactElement<any, any>
 
   constructor(ttl: Text, txt: Text, inst:Text, subttl:Text, ln:Image, bx:Image){
     this.title= ttl;
@@ -71,7 +79,10 @@ abstract class Question{
   }
 
 
-  abstract makeIntoView(): View;
+  abstract makeIntoView():  ReactElement<any, any>;
   abstract getWhatever(): string;
   
 }
+
+export { AnswerField, Question };
+
