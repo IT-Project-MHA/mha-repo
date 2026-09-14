@@ -1,4 +1,4 @@
-import { Text } from "react-native";
+import { Image, Text, View } from "react-native";
 
 abstract class Question{
   //refers to the boxed in section of a question.
@@ -13,24 +13,26 @@ abstract class Question{
   - Record button
   */
 
-  constructor(inf: number, str: Text){
-    this.title= str;
-    this.text= str;
-    this.instruction= str;
-    this.subtitle= str;
-    this.line= inf;
-    this.box= inf;
-  }
-
   title: Text;
   text: Text; //took the names from the design class diagram, think some are vague. Like what does text mean? Also different conception
   instruction: Text;
   subtitle: Text;
-  line: number; //temporary types until I figure out what to put
-  box: number;
+  line: Image; //temporary types until I figure out what to put
+  box: Image;
+
+  constructor(ttl: Text, txt: Text, inst:Text, subttl:Text, ln:Image, bx:Image){
+    this.title= ttl;
+    this.text= txt;
+    this.instruction= inst;
+    this.subtitle= subttl;
+    this.line= ln;
+    this.box= bx;
+  }
+
+
   
   
-  makeIntoView(){}
+  abstract makeIntoView(): View;
   abstract getWhatever(): string;
   
 }
