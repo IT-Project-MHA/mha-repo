@@ -14,16 +14,22 @@ class Prescription(BaseModel):
     class StrengthUnit(models.TextChoices): MG = "mg", G = "g", PERCENT = "%", MICRO_G = "μg", IU = "iu"
     strength_unit = models.CharField(default = StrengthUnit.MG, max_length = 10, choices = StrengthUnit.choices)
 
-    class FormUnit(models.TextChoices): TAB = "tablets", CAP = "capsules", LIQ = "liquid", DROP = "drops", INJ = "injections",
-    SPR = "spray", ML = "mL", PAT = "patches"
+    class FormUnit(models.TextChoices): 
+        TAB = "tablets", 
+        CAP = "capsules", 
+        LIQ = "liquid", 
+        DROP = "drops", 
+        INJ = "injections",
+        SPR = "spray", 
+        ML = "mL", 
+        PAT = "patches"
     form = models.CharField(default = FormUnit.TAB, max_length = 10, choices = FormUnit.choices)
 
     frequency = models.PositiveSmallIntegerField()
     class FrequencyUnit(models.TextChoices): H = "hour(s)", D = "day(s)", W = "week(s)", M = "month(s)"
     frequency_unit = models.CharField(default = FrequencyUnit.H, max_length = 10, choices = FrequencyUnit.choices)
 
-    class Meta:
-        db_table = "prescription"
+    class Meta: db_table = "prescription"
 
 class Assessment(BaseModel):
     patient_profile = models.ForeignKey(PatientProfile, on_delete = models.CASCADE, related_name = "patient")
@@ -45,8 +51,7 @@ class MyPain(BaseModel):
     mildest = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(10)])
     otherLocation = models.CharField(null = True, blank = True, max_length = 300)
 
-    class Meta:
-        db_table = "my_pain"
+    class Meta: db_table = "my_pain"
 
 class MySocialHealth(BaseModel):
     assessment_id = models.OneToOneField(Assessment, on_delete = models.CASCADE, related_name = "assessment")
@@ -59,8 +64,7 @@ class MySocialHealth(BaseModel):
     reflection = models.CharField(null = True, blank = True, max_length = 300)
     score = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(20)]) 
 
-    class Meta:
-        db_table = "my_social_health"
+    class Meta: db_table = "my_social_health"
 
 class MyMovement(BaseModel):
     assessment_id = models.OneToOneField(Assessment, on_delete = models.CASCADE, related_name = "assessment")
@@ -72,8 +76,7 @@ class MyMovement(BaseModel):
     reflection = models.CharField(null = True, blank = True, max_length = 300)
     score = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(20)])
 
-    class Meta:
-        db_table = "my_movement"
+    class Meta: db_table = "my_movement"
 
 class MyPersonalCare(BaseModel):
     assessment_id = models.OneToOneField(Assessment, on_delete = models.CASCADE, related_name = "assessment")
@@ -82,8 +85,7 @@ class MyPersonalCare(BaseModel):
     reflection = models.CharField(null = True, blank = True, max_length = 300)
     score = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(20)])
 
-    class Meta:
-        db_table = "my_personal_care"
+    class Meta: db_table = "my_personal_care"
 
 class MyManagement(BaseModel):
     assessment_id = models.OneToOneField(Assessment, on_delete = models.CASCADE, related_name = "assessment")
@@ -93,8 +95,7 @@ class MyManagement(BaseModel):
     emotion = models.CharField(null = True, blank = True, max_length = 300)
     score = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(20)])
 
-    class Meta:
-        db_table = "my_management"
+    class Meta: db_table = "my_management"
 
 # Appointments
 
@@ -105,8 +106,14 @@ class Appointment(BaseModel):
     recording_consent = models.BooleanField(default = False)
     doctor_signature = models.URLField(null= True, blank = True)
 
-    class HealthService(models.TextChoices): GP = "General Practitioner", PHY = "Physiotherapist", RHE = "Rheumatologist", 
-    OST = "Osteopath", PMS = "Pain Medicine Specialist", OS = "Orthopaedy surgeon", OT = "Occupational Therapist", OTHER = "Other"
+    class HealthService(models.TextChoices): 
+        GP = "General Practitioner", 
+        PHYSIO = "Rheumatologist", 
+        OSTEO = "Osteopath", 
+        PAIN_MED = "Pain Medicine Specialist", 
+        ORTHOPAEDY = "Orthopaedy surgeon", 
+        OT = "Occupational Therapist", 
+        OTHER = "Other"
     health_service = models.CharField(default = HealthService.GP, max_length = 50, choices = HealthService.choices)
 
     class Meta:
