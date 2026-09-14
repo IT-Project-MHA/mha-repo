@@ -95,8 +95,7 @@ class MySocialHealth(BaseModel):
     reflection = models.CharField(null = True, blank = True, max_length = 300)
     score = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(20)]) 
 
-    class Meta:
-        db_table = "my_social_health"
+    class Meta: db_table = "my_social_health"
 
 class MyMovement(BaseModel):
     assessment_id = models.OneToOneField(Assessment, on_delete = models.CASCADE, related_name = "assessment")
@@ -108,8 +107,7 @@ class MyMovement(BaseModel):
     reflection = models.CharField(null = True, blank = True, max_length = 300)
     score = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(20)])
 
-    class Meta:
-        db_table = "my_movement"
+    class Meta: db_table = "my_movement"
 
 class MyPersonalCare(BaseModel):
     assessment_id = models.OneToOneField(Assessment, on_delete = models.CASCADE, related_name = "assessment")
@@ -118,8 +116,7 @@ class MyPersonalCare(BaseModel):
     reflection = models.CharField(null = True, blank = True, max_length = 300)
     score = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(20)])
 
-    class Meta:
-        db_table = "my_personal_care"
+    class Meta: db_table = "my_personal_care"
 
 class MyManagement(BaseModel):
     assessment_id = models.OneToOneField(Assessment, on_delete = models.CASCADE, related_name = "assessment")
@@ -129,8 +126,7 @@ class MyManagement(BaseModel):
     emotion = models.CharField(null = True, blank = True, max_length = 300)
     score = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(20)])
 
-    class Meta:
-        db_table = "my_management"
+    class Meta: db_table = "my_management"
 
 class GeneratedDocument(BaseModel):
     class DocumentType(models.TextChoices):
