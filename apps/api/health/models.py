@@ -11,6 +11,9 @@ class Prescription(BaseModel):
     dosage = models.PositiveSmallIntegerField()
 
     strength = models.PositiveIntegerField(default=0)
+    started_on = models.DateField(null = TRUE, blank = TRUE)
+    stopped_on = models.DateField(null = TRUE, blank = TRUE)
+    notes = models.TextField(blank = TRUE)
     class StrengthUnit(models.TextChoices):
         MG = "mg", "mg"
         G = "g", "g"
@@ -40,18 +43,30 @@ class Prescription(BaseModel):
 
     class Meta:
         db_table = "prescription"
+        ordering = "name"
+        indexes = [ models.Index(fields = ["patient_profile", "is_perscirption"], name = "perscription_by_patient_idx")]
+
 
 class Assessment(BaseModel):
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        SUBMITTED = "submitted", "Submitted"
+        EXPIRED = "expired", "Expired"
+
     patient_profile = models.ForeignKey(PatientProfile, on_delete = models.CASCADE, related_name = "patient")
     date = models.DateField(auto_now_add = True)
     reflection = models.CharField(null = True, blank = True, max_length = 300)
+    week_starting = models.DateField()
+    status = models.CharField()
 
     class Meta:
         db_table = "assessment"
+        ordering = ["-week_starting"]
         indexes = [
             # Search by date
             models.Index(fields = ["date"], name = "assessment_by_date_idx"),
         ]
+
 
 class MyPain(BaseModel):
     assessment_id = models.OneToOneField(Assessment, on_delete = models.CASCADE, related_name = "assessment")
@@ -59,7 +74,12 @@ class MyPain(BaseModel):
     worst = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(10)])
     average = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(10)])
     mildest = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(10)])
-    otherLocation = models.CharField(null = True, blank = True, max_length = 300)
+
+    locations = models.ManyToManyField("reference.PainLocation", blank = True, related_name = "pain_entries")
+    characteristics = models.ManyToManyField("reference.PainCharacteristic", blank = True, related_name = "pain_entries")
+
+    other_location = models.CharField(null = True, blank = True, max_length = 300)
+    other_characteristic = models.CharField(null = True, blank = True)
 
     class Meta:
         db_table = "my_pain"
@@ -112,74 +132,21 @@ class MyManagement(BaseModel):
     class Meta:
         db_table = "my_management"
 
-# Appointments
-
-class Appointment(BaseModel):
-    patient_profile = models.ForeignKey(PatientProfile, on_delete = models.PROTECT, related_name = "patient")
-    date = models.DateField()
-    doctor = models.CharField(max_length = 100)
-    recording_consent = models.BooleanField(default = False)
-    doctor_signature = models.URLField(null= True, blank = True)
-
-    class HealthService(models.TextChoices):
-        GP = "General Practitioner", "General Practitioner"
-        PHY = "Physiotherapist", "Physiotherapist"
-        RHE = "Rheumatologist", "Rheumatologist"
-        OST = "Osteopath", "Osteopath"
-        PMS = "Pain Medicine Specialist", "Pain Medicine Specialist"
-        OS = "Orthopaedy Surgeon", "Orthopaedy Surgeon"
-        OT = "Occupational Therapist", "Occupational Therapist"
-        OTHER = "Other", "Other"
-    health_service = models.CharField(default = HealthService.GP, max_length = 50, choices = HealthService.choices)
-
-    class Meta:
-        db_table = "appointment"
-        indexes = [
-            # Search by date
-            models.Index(fields = ["date"], name = "appointment_by_date_idx"),
-            # Search by patient
-            models.Index(fields = ["patient_profile"], name = "appointment_by_patient_idx"),
-        ]
-    
-class Question(BaseModel):
-    appointment = models.ForeignKey(Appointment, on_delete = models.CASCADE, related_name = "appointment")
-    question = models.CharField(max_length = 200)
-    answer_text = models.CharField(null = True, blank = True, max_length = 300)
-    answer_recording = models.URLField(null= True, blank = True)
-
-    class Meta:
-        db_table = "question"
-
-class SupportPermission(BaseModel):
-    appointment = models.ForeignKey(Appointment, on_delete = models.CASCADE, related_name = "appointment")
-    support_person = models.ForeignKey(User, on_delete = models.CASCADE, related_name = "support person")
-    add_questions = models.BooleanField(default = False)
-    add_answers = models.BooleanField(default = False)
-
-    class Meta:
-        db_table = "support_permission"
-
-# download/access logs
-
-class QuestionAccess(BaseModel):
-    question = models.ForeignKey(Question, on_delete = models.CASCADE, related_name = "question")
-    support_person = models.ForeignKey(User, on_delete = models.CASCADE, related_name = "support person")
-
-    class Meta:
-        db_table = "question_access"
-
-class AppointmentAccess(BaseModel):
-    appointment = models.ForeignKey(Appointment, on_delete = models.CASCADE, related_name = "appointment")
-    support_person = models.ForeignKey(User, on_delete = models.CASCADE, related_name = "support person")
-
-    class Meta:
-        db_table = "appointment_access"
-
-class Downloads(BaseModel):
+class GeneratedDocument(BaseModel):
     class DocumentType(models.TextChoices):
-        CHART = "Chart", "Chart"
-        PAIN_PROF = "Pain Profile", "Pain Profile"
-    type = models.CharField(default = DocumentType.CHART, max_length = 20, choices = DocumentType.choices)
+        PAIN_CHART = "pain_chart", "Pain chart"
+        PAIN_PROFILE = "pain_profile", "Pain profile"
+        APPOINTMENT = "appointment", "Appointment summary"
+
+    patient_profile = models.ForeignKey("accounts.PatientProfile", on_delete = models.PROTECT, related_name = "documents")
+    generated_by = models.ForeignKey("accounts.User", on_delete = models.PROTECT, related_name = "+")
+    type = models.CharField(max_length = 20, choices = DocumentType.choices)
+    document_file = models.FileField(upload_to = "documents/%Y/%m/", null = True, blank = True)
+    date_from = models.DateField(null = True, blank = True)
+    date_until = models.DateField(null = True, blank = True)
+    generated_at = models.DateTimeField(auto_now_add = True)
 
     class Meta:
-        db_table = "downloads"
+        db_table = "generated_document"
+        ordering = ["-generated_at"]
+        indexes = [models.Index(fields = ["patient_profile", "-generated_at"], name = "document_by_patient_idx")]

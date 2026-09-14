@@ -1,3 +1,2 @@
 from django.db import models
-
-# Create your models here.
+from mpowered_api.base_models import BaseModel
