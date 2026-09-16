@@ -14,6 +14,9 @@ export type ColourSet = {
   onPrimary: string;
   onSecondary: string;
   onTertiary: string;
+  ex1: string;
+  ex2: string;
+  ex3: string;
 
 };
 
@@ -32,6 +35,10 @@ export const lightColours: ColourSet = {
   onPrimary: '#FFFFFF',
   onSecondary: '#6750A4',
   onTertiary: '#FEF7FF',
+  ex1: '#EADDFF',
+  ex2: '#D9D9D9',
+  ex3: '#CED0D4',
+  
 };
 
 /**
@@ -50,6 +57,9 @@ export const darkColours: ColourSet = {
   onPrimary: '#FFFFFF',
   onSecondary: '#6750A4',
   onTertiary: '#FEF7FF',
+  ex1: '#EADDFF',
+  ex2: '#D9D9D9',
+  ex3: '#CED0D4',
 };
 
 /**
@@ -58,14 +68,17 @@ export const darkColours: ColourSet = {
 export const lightHcColours: ColourSet = {
   background: '#FFFFFF',
   surface: '#F2F2F7',
-  primary: '#6750A4',
-  secondary: '#e8def8',
-  tertiary: '#4a4459',
+  primary: '#27174E',
+  secondary: '#FDF7FF',
+  tertiary: '#322F35',
   onBackground: '#000000',
   onSurface: '#1D1B20',
   onPrimary: '#FFFFFF',
-  onSecondary: '#6750A4',
-  onTertiary: '#FEF7FF'
+  onSecondary: '#7174E',
+  onTertiary: '#FEF7FF',
+  ex1: '#EADDFF',
+  ex2: '#440F0E',
+  ex3: '#6E2F2B',
 };
 
 /**
@@ -81,7 +94,10 @@ export const darkHcColours: ColourSet = {
   onSurface: '#1D1B20',
   onPrimary: '#FFFFFF',
   onSecondary: '#6750A4',
-  onTertiary: '#FEF7FF'
+  onTertiary: '#FEF7FF',
+  ex1: '#EADDFF',
+  ex2: '#440F0E',
+  ex3: '#21222D',
 };
 
 /**
