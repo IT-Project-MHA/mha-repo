@@ -5,7 +5,7 @@ from mpowered_api.base_models import BaseModel
 
 # Prescriptions and Weekly Assessments
 
-class Prescription(BaseModel):
+class Prescription(BaseModel): 
     patient_profile = models.ForeignKey(PatientProfile, on_delete = models.CASCADE, related_name = "patient")
     name = models.CharField(max_length = 50)
     dosage = models.PositiveSmallIntegerField()

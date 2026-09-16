@@ -108,22 +108,3 @@ class AppointmentAccess(BaseModel):
     class Meta:
         db_table = "appointment_access"
         indexes = [models.Index(fields = ["appointment"], name = "access_by_appointment_idx")]
-
-
-# Access logs
-
-class QuestionAccessLog(BaseModel):
-    question = models.ForeignKey(AppointmentQuestion, on_delete = models.CASCADE, related_name = "question")
-    support_person = models.ForeignKey("accounts.User", on_delete = models.CASCADE, related_name = "support person")
-
-    class Meta:
-        db_table = "question_access"
-        ordering = ["-created_at"]
-
-class AppointmentAccessLog(BaseModel):
-    appointment = models.ForeignKey(Appointment, on_delete = models.CASCADE, related_name = "appointment")
-    support_person = models.ForeignKey("accounts.user", on_delete = models.CASCADE, related_name = "support person")
-
-    class Meta:
-        db_table = "appointment_access"
-        ordering = ["-created_at"]

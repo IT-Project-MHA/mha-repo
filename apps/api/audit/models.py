@@ -33,3 +33,21 @@ class AuditEntry(BaseModel):
             models.Index(fields = ["patient_profile", "-occurred_at"], name = "audit_by_patient_idx"),
             models.Index(fields = ["actor_user", "-occurred_at"], name = "audit_by_actor_idx"),
         ]
+
+# Access logs
+
+class QuestionAccessLog(BaseModel):
+    question = models.ForeignKey("appointment.AppointmentQuestion", on_delete = models.CASCADE, related_name = "question")
+    support_person = models.ForeignKey("accounts.User", on_delete = models.CASCADE, related_name = "support person")
+
+    class Meta:
+        db_table = "question_access"
+        ordering = ["-created_at"]
+
+class AppointmentAccessLog(BaseModel):
+    appointment = models.ForeignKey("appointment.Appointment", on_delete = models.CASCADE, related_name = "appointment")
+    support_person = models.ForeignKey("accounts.user", on_delete = models.CASCADE, related_name = "support person")
+
+    class Meta:
+        db_table = "appointment_access"
+        ordering = ["-created_at"]
