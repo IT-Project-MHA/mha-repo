@@ -3,9 +3,6 @@
  * Themes can easily be extended, either by matching the 
  * ColourSet type, or by adjusting it.
  */
-
-
-// standard theme layout
 export type ColourSet = {
   background: string;
   surface: string;
@@ -55,7 +52,9 @@ export const darkColours: ColourSet = {
   onTertiary: '#FEF7FF',
 };
 
-// M3 / sys / light / high contrast 
+/**
+ * M3 / sys / light / high contrast in figma
+ */
 export const lightHcColours: ColourSet = {
   background: '#FFFFFF',
   surface: '#F2F2F7',
@@ -69,7 +68,9 @@ export const lightHcColours: ColourSet = {
   onTertiary: '#FEF7FF'
 };
 
-// M3 / sys / dark / high contrast
+/**
+ * M3 / sys / dark / high contrast in figma
+ */
 export const darkHcColours: ColourSet = {
   background: '#FFFFFF',
   surface: '#F2F2F7',

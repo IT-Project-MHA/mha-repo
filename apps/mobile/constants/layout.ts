@@ -1,8 +1,15 @@
 /**
  * StyleSheet for components.
+ * 
+ * These are tentative at the moment- used for testing component functionality.
+ * 
+ * To be edited as new components are created, alongside theme.ts.
  */
 
-// basic button
+
+/**
+ * Basic button layout
+ */
 export const buttonLayout = {
   paddingVertical: 12, 
   paddingHorizontal: 55, 
@@ -10,13 +17,17 @@ export const buttonLayout = {
   alignItems: 'center' as const,
 };
 
-// text– type 1
+/**
+ * Basic text layout
+ */
 export const textLayout = {
   fontSize: 16,
   fontWeight: 'bold' as const,
 };
 
-// primary button
+/**
+ * Basic button layout
+ */
 export const primaryButtonLayout = {
   paddingVertical: 12, 
   paddingHorizontal: 80, 
