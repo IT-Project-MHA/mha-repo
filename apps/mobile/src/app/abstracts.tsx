@@ -87,6 +87,9 @@ abstract class Question{
 abstract class Assessment {
   //The section in which certain questions are grouped within
   /* Contains:
+  - A section title
+  - A last updated date
+  - A completion date
   - An array of Questions
   - A 'set question' function(?), setting question number and title
   - An add question function
@@ -94,26 +97,37 @@ abstract class Assessment {
   - Date completed
   - A StartQuestions function to begin the assessment.
   - A NextQuestion function to cycle to the next question.
+  - A ShowSummary function 
   */
+  private readonly PLACEHOLDER_DATE = new Date("December 31, 1999");
+
   private title: Text;
+  private lastUpdated: Date;
   private dateCompleted: Date;
 
   private questions: Question[];
 
 
   constructor(setTitle: Text);
-  constructor(setTitle: Text, setQuestions: Question[]) {
-    this.questions = setQuestions. ?? null;
+  constructor(setTitle: Text, setQuestions?: Question[]) {
     this.title = setTitle;
+    if (setQuestions) {
+      this.SetQuestions(setQuestions);
+    } else {
+      this.questions = [];
+    }
+    this.lastUpdated = this.PLACEHOLDER_DATE;
+    this.dateCompleted = this.PLACEHOLDER_DATE;  
   }
 
-  abstract SetQuestions(newQuestions: Question[]): void;
-  abstract AddQuestion(newQuestion: Question): void;
+  public SetQuestions(newQuestions: Question[]): void;
+  abstract AddQuestion(newQuestion: Question, questionIndex: bigint): void;
   
   abstract StartQuestions(): void;
   abstract NextQuestion(): void;
-  abstract CompleteAssessment(): void;
+  abstract CompleteAssessment(): void; //Set date in here
+  abstract ShowSummary(): void;
 }
 
-export { AnswerField, Question };
+export { AnswerField, Question, Assessment };
 
