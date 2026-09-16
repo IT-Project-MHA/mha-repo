@@ -112,7 +112,7 @@ abstract class Assessment {
   constructor(setTitle: Text, setQuestions?: Question[]) {
     this.title = setTitle;
     if (setQuestions) {
-      this.SetQuestions(setQuestions);
+      this.setQuestions(setQuestions);
     } else {
       this.questions = [];
     }
@@ -120,13 +120,14 @@ abstract class Assessment {
     this.dateCompleted = this.PLACEHOLDER_DATE;  
   }
 
-  public SetQuestions(newQuestions: Question[]): void;
-  abstract AddQuestion(newQuestion: Question, questionIndex: bigint): void;
+  abstract aetQuestions(newQuestions: Question[]): void;
+  abstract addQuestion(newQuestion: Question, questionIndex: bigint): void;
+  abstract addQuestions(newQuestions: Question[], startIndex: bigint): void;
   
-  abstract StartQuestions(): void;
-  abstract NextQuestion(): void;
-  abstract CompleteAssessment(): void; //Set date in here
-  abstract ShowSummary(): void;
+  abstract startQuestions(): void;
+  abstract nextQuestion(): void;
+  abstract completeAssessment(): void; //Set date in here
+  abstract showSummary(): void;
 }
 
 export { AnswerField, Question, Assessment };
