@@ -6,7 +6,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 # each line must have 2 tabs at the start, comma at the end, and be of the format:
 #       CONSTANT = "display text",
 # CONSTANT: must only contain all-caps letters and underscores.
-# display text: what is inside the gets displayed on the app.
+# display text: the text inside the quotation marks gets displayed on the app.
 
 class PainType(BaseModel):
     class type(models.TextChoices): 

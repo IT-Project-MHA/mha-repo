@@ -48,7 +48,7 @@ npm run mobile
 **Terminal 2 — backend:**
 ```bash
 cd apps/api
-source .venv/bin/activate     
+source .venv/bin/activate # Windows .venv\Scripts\activate
 ```
 
 SQLite

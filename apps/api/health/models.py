@@ -83,45 +83,47 @@ class MyPain(BaseModel):
     class Meta:
         db_table = "my_pain"
 
-class MySocialHealth(BaseModel):
-    assessment_id = models.OneToOneField(Assessment, on_delete = models.CASCADE, related_name = "assessment")
-    social_life = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(5)])    
-    travelling = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(5)]) 
-    mood = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(10)])    
-    relationships = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(10)])    
-    enjoyment_of_life = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(10)])    
-    overall_mood = models.PositiveSmallIntegerField(default=1, validators = [MinValueValidator(1), MaxValueValidator(5)])
-    reflection = models.CharField(null = True, blank = True, max_length = 300)
-    score = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(20)]) 
-
-    class Meta: db_table = "my_social_health"
-
 class MyMovement(BaseModel):
     assessment_id = models.OneToOneField(Assessment, on_delete = models.CASCADE, related_name = "assessment")
     activeHours = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(168)])
-    walking = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(5)])
-    sitting = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(5)])
-    lifting = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(5)])
-    standing = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(5)])
+    general_impacts = models.ManyToManyField("reference.AssessmentStatement", blank = False, related_name = "general_movement_impact")
+    walking = models.ForeignKey("reference.AssessmentStatement", on_delete = models.PROTECT, related_name = "movement_walking")
+    sitting = models.ForeignKey("reference.AssessmentStatement", on_delete = models.PROTECT, related_name = "movement_sitting")
+    lifting = models.ForeignKey("reference.AssessmentStatement", on_delete = models.PROTECT, related_name = "movement_lifting")
+    standing = models.ForeignKey("reference.AssessmentStatement", on_delete = models.PROTECT, related_name = "movement_standing")
     reflection = models.CharField(null = True, blank = True, max_length = 300)
-    score = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(20)])
+    score = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(26)])
 
     class Meta: db_table = "my_movement"
 
 class MyPersonalCare(BaseModel):
     assessment_id = models.OneToOneField(Assessment, on_delete = models.CASCADE, related_name = "assessment")
-    personal_care = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(5)])
-    sleeping = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(5)])
+    general_activities_impact = models.ManyToManyField("reference.AssessmentStatement", blank = False, related_name = "general_activities_impact")
+    personal_care = models.ForeignKey("reference.AssessmentStatement", on_delete = models.PROTECT, related_name = "personal_care")
+    sleeping = models.ForeignKey("reference.AssessmentStatement", on_delete = models.PROTECT, related_name = "sleeping")
     reflection = models.CharField(null = True, blank = True, max_length = 300)
-    score = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(20)])
+    score = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(15)])
 
     class Meta: db_table = "my_personal_care"
+
+class MySocialHealth(BaseModel):
+    assessment_id = models.OneToOneField(Assessment, on_delete = models.CASCADE, related_name = "assessment")
+    social_life = models.ForeignKey("reference.AssessmentStatement", on_delete = models.PROTECT, related_name = "social_life")
+    travelling = models.ForeignKey("reference.AssessmentStatement", on_delete = models.PROTECT, related_name = "travelling")
+    mood = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(10)])    
+    relationships = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(10)])    
+    enjoyment_of_life = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(10)])    
+    overall_mood = models.PositiveSmallIntegerField(default=1, validators = [MinValueValidator(1), MaxValueValidator(5)])
+    reflection = models.CharField(null = True, blank = True, max_length = 300)
+    score = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(40)]) 
+
+    class Meta: db_table = "my_social_health"
 
 class MyManagement(BaseModel):
     assessment_id = models.OneToOneField(Assessment, on_delete = models.CASCADE, related_name = "assessment")
     medication = models.ManyToManyField(Prescription, blank = True, null = True, related_name = "prescriptions")
     otc_medication = models.CharField(null = True, blank = True, max_length = 300)
-    exercise = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(5)])
+    exercise = models.ForeignKey("reference.AssessmentStatement", on_delete = models.PROTECT, related_name = "exercise")
     emotion = models.CharField(null = True, blank = True, max_length = 300)
     score = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(20)])
 
