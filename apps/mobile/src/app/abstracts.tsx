@@ -84,5 +84,28 @@ abstract class Question{
   
 }
 
+abstract class Assessment {
+  //The section in which certain questions are grouped within
+  /* Contains:
+  - An array of Questions
+  - A 'set question' function(?), setting question number and title
+  - An add question function
+  - Date completed
+  */
+  private title: Text;
+  private dateCompleted: Date;
+
+  private questions: Question[];
+
+
+  constructor();
+  constructor(question: Question) {
+    this.questions = null;
+  }
+
+  abstract SetQuestions(newQuestions: Question[]): void;
+  abstract AddQuestion(newQuestion: Question): void;
+}
+
 export { AnswerField, Question };
 
