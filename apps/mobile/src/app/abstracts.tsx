@@ -90,7 +90,10 @@ abstract class Assessment {
   - An array of Questions
   - A 'set question' function(?), setting question number and title
   - An add question function
+  - A complete function - sets the date and sends off question answers to database(?)
   - Date completed
+  - A StartQuestions function to begin the assessment.
+  - A NextQuestion function to cycle to the next question.
   */
   private title: Text;
   private dateCompleted: Date;
@@ -98,13 +101,18 @@ abstract class Assessment {
   private questions: Question[];
 
 
-  constructor();
-  constructor(question: Question) {
-    this.questions = null;
+  constructor(setTitle: Text);
+  constructor(setTitle: Text, setQuestions: Question[]) {
+    this.questions = setQuestions. ?? null;
+    this.title = setTitle;
   }
 
   abstract SetQuestions(newQuestions: Question[]): void;
   abstract AddQuestion(newQuestion: Question): void;
+  
+  abstract StartQuestions(): void;
+  abstract NextQuestion(): void;
+  abstract CompleteAssessment(): void;
 }
 
 export { AnswerField, Question };
