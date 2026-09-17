@@ -120,7 +120,7 @@ abstract class Assessment {
     this.dateCompleted = this.PLACEHOLDER_DATE;  
   }
 
-  abstract aetQuestions(newQuestions: Question[]): void;
+  abstract setQuestions(newQuestions: Question[]): void;
   abstract addQuestion(newQuestion: Question, questionIndex: bigint): void;
   abstract addQuestions(newQuestions: Question[], startIndex: bigint): void;
   
