@@ -8,11 +8,11 @@ class Appointment(BaseModel, SoftDeleteModel):
         COMPLETED = "completed", "Completed"
         CANCELLED = "cancelled", "Cancelled"
 
-    patient_profile = models.ForeignKey("accounts.PatientProfile", on_delete = models.PROTECT, related_name = "patient")
+    patient_profile = models.ForeignKey("accounts.PatientProfile", on_delete = models.PROTECT, related_name = "appointment_patient")
     scheduled_date = models.DateField()
     doctor = models.CharField(max_length = 100)
     status = models.CharField(choices = Status.choices, default = Status.PLANNED)
-    care_person = models.ForeignKey("appointment.CarePerson", on_delete = models.SET_NULL, null = True, blank = True, related_name = "appointments")
+    care_person = models.ForeignKey("appointment.CarePerson", on_delete = models.SET_NULL, null = True, blank = True, related_name = "appointment_appointments")
 
     class HealthService(models.TextChoices):
         GP = "General Practitioner", "General Practitioner"
@@ -30,10 +30,10 @@ class Appointment(BaseModel, SoftDeleteModel):
 
     class Meta:
         db_table = "appointment"
-        ordering = ["-scheduled_for"]
+        ordering = ["-scheduled_date"]
         indexes = [
             # Search by date
-            models.Index(fields = ["date"], name = "appointment_by_date_idx"),
+            models.Index(fields = ["scheduled_date"], name = "appointment_by_date_idx"),
             # Search by patient
             models.Index(fields = ["patient_profile"], name = "appointment_by_patient_idx"),
         ]
@@ -42,7 +42,6 @@ class Appointment(BaseModel, SoftDeleteModel):
 
 class CarePerson(BaseModel, SoftDeleteModel):
     patient_profile = models.ForeignKey("accounts.PatientProfile", on_delete = models.PROTECT, related_name = "care_people")
-    care_person_type = models.ForeignKey("reference.CarePersonType", on_delete = models.PROTECT,null = True, blank = True, related_name = "care_people",)
     name = models.CharField(max_length = 120)
     phone_number = models.CharField(max_length = 20, blank = True)
     email = models.EmailField(blank = True)
@@ -61,7 +60,7 @@ class AppointmentQuestion(BaseModel, SoftDeleteModel):
         PATIENT = "patient", "Written by patient"
         SUPPORT = "support", "Written by support person"
 
-    appointment = models.ForeignKey(Appointment, on_delete = models.PROTECT, related_name = "questions")
+    appointment = models.ForeignKey(Appointment, on_delete = models.PROTECT, related_name = "appointment_questions")
     text = models.TextField()
     source = models.CharField(max_length = 12, choices = Source.choices, default = Source.PATIENT)
     created_by = models.ForeignKey("accounts.User", on_delete = models.PROTECT, related_name = "+")
@@ -78,7 +77,7 @@ class AppointmentQuestion(BaseModel, SoftDeleteModel):
 
 class AppointmentAnswer(BaseModel, SoftDeleteModel):
 
-    question = models.OneToOneField(AppointmentQuestion, on_delete = models.PROTECT, related_name = "answer")
+    question = models.OneToOneField(AppointmentQuestion, on_delete = models.PROTECT, related_name = "question_answer")
     text = models.TextField(blank = True)
     recording_file = models.FileField(upload_to = "appointment-answers/%Y/%m/", null = True, blank = True)
     transcript = models.TextField(blank = True)

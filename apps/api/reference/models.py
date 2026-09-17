@@ -2,12 +2,6 @@ from django.db import models
 from mpowered_api.base_models import BaseModel
 from django.core.validators import MaxValueValidator, MinValueValidator
 
-# naming conventions for multiselect (for admin's reference):
-# each line must have 2 tabs at the start, comma at the end, and be of the format:
-#       CONSTANT = "display text",
-# CONSTANT: must only contain all-caps letters and underscores.
-# display text: the text inside the quotation marks gets displayed on the app.
-
 class PainType(BaseModel):
     class type(models.TextChoices): 
         ARTHRITIS = "Arthritis", 
@@ -58,7 +52,8 @@ class PainCharacteristic(BaseModel):
     characteristic = models.CharField(default = characteristic.ACHING, max_length = 50, choices = 
                                       characteristic.choices)
 
-    class Meta: db_table = "pain_characteristic"
+    class Meta: 
+        db_table = "pain_characteristic"
 
 class PainLocation(BaseModel):
     class location(models.TextChoices):
@@ -74,7 +69,8 @@ class PainLocation(BaseModel):
         OTHER = "Other",
     location = models.CharField(default = location.HEAD, max_length = 50, choices = location.choices)
 
-    class Meta: db_table = "pain_location"
+    class Meta: 
+        db_table = "pain_location"
 
 # class MultiSelect
 
@@ -92,4 +88,5 @@ class AssessmentStatement(BaseModel):
     statement_text = models.CharField(max_length = 100)
     score = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(5)]) 
 
-    class Meta: db_table = "assessment_statement"
+    class Meta: 
+        db_table = "assessment_statement"

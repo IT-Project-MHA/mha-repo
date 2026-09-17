@@ -32,7 +32,7 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin, BaseModel, SoftDeleteModel):
-    phone_number = models.CharField(max_length = 20)
+    phone_number = models.CharField(max_length = 20, unique = True)
     display_name = models.CharField(max_length = 120)
     email = models.EmailField(blank = True, null = True)
     is_active = models.BooleanField(default = True)
@@ -60,7 +60,7 @@ class PatientProfile(BaseModel, SoftDeleteModel):
     user = models.OneToOneField(User, on_delete = models.PROTECT, related_name = "patient_profile")
     has_diagnosis = models.BooleanField(default = False)
     other_conditions = models.TextField(blank = True)
-    pain_types = models.ManyToManyField("reference.PainType", blank = True, related_name = "patient_profiles")
+    pain_types = models.ManyToManyField("reference.PainType", blank = True, related_name = "pain_type_patient_profiles")
     assigned_gender_at_birth = models.CharField(max_length = 40, choices = AssignedGender.choices, blank = True)
     birth_year = models.SmallIntegerField(null = True, blank = True, validators = [MinValueValidator(1900), MaxValueValidator(2100)])
 
@@ -90,7 +90,7 @@ class SupportLink(BaseModel):
         REVOKED = "revoked"
 
     patient_profile = models.ForeignKey(PatientProfile, on_delete = models.PROTECT, related_name = "support_links")
-    patient_user = models.ForeignKey(User, on_delete = models.PROTECT, related_name = "+")
+    patient_user = models.ForeignKey(User, on_delete = models.PROTECT, related_name = "patient_user")
     supporter_user = models.ForeignKey(User, on_delete = models.PROTECT, related_name = "supporting")
     status = models.CharField(max_length = 10, choices = Status.choices, default = Status.INVITED)
     invited_at = models.DateTimeField(auto_now_add = True)
