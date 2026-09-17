@@ -5,7 +5,7 @@
   - text entry
   - multiselect
   - slider
-  - emoticon
+  - emoji
 
   All AnswerFields have a view and some function to get data out
   Also a boolean filled / not filled
@@ -34,5 +34,8 @@ class NumberEntry extends AnswerField{
   }
   
 }
+//Xavy will also do text entry, slider
 
-export { NumberEntry};
+//Josh TODO: multiple choice, multi-select, emoji
+
+export { NumberEntry}; //add the new classes here
