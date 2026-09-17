@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import *
+from .models import UserManager, User, PatientProfile, UserSettings, SupportLink, TermsAndPrivacy
 # Register your models here.
 
 admin.site.register(UserManager)
