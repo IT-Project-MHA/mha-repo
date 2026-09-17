@@ -15,8 +15,11 @@ import type { ReactElement } from "react";
 import { Text, View } from "react-native";
 import { AnswerField } from "./abstracts";
 
-class numberEntry extends AnswerField{
-
+class NumberEntry extends AnswerField{
+  constructor(filled: boolean, data: any){
+    super(filled, data);
+    this.setAnswerView(this.makeIntoView());
+  }
   enterData(){
     //function to enter data
   }
@@ -31,3 +34,5 @@ class numberEntry extends AnswerField{
   }
   
 }
+
+export { NumberEntry};

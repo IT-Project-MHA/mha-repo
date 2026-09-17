@@ -38,8 +38,11 @@ abstract class AnswerField{
     return null;
   }
 
-  setData(){}
-  setFilled(){}
+  setData(data: any){}
+  setIsFilled(filled: boolean){}
+  setAnswerView(view: ReactElement<any, any>){
+    this.answerView = view;
+  }
 }
 
 
@@ -111,11 +114,10 @@ abstract class Assessment {
   constructor(setTitle: Text);
   constructor(setTitle: Text, setQuestions?: Question[]) {
     this.title = setTitle;
+    this.questions = [];
     if (setQuestions) {
       this.setQuestions(setQuestions);
-    } else {
-      this.questions = [];
-    }
+    } 
     this.lastUpdated = this.PLACEHOLDER_DATE;
     this.dateCompleted = this.PLACEHOLDER_DATE;  
   }
