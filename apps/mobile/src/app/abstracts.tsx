@@ -46,7 +46,7 @@ abstract class AnswerField{
 }
 
 
-abstract class Question{
+class Question{
   //refers to the boxed in section of a question.
   /*has:
   - A title, as in the name of the assessment
