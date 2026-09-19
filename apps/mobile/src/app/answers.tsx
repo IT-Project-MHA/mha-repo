@@ -17,7 +17,7 @@ import {useState} from 'react';
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import type { ReactElement } from "react";
 import { Text, TextInput, View, StyleSheet } from "react-native";
-import { AnswerField } from "./abstracts";
+import { AnswerField } from "./baseComponents";
 //import { } from "";
 
 
@@ -38,7 +38,7 @@ class NumberEntry extends AnswerField{
           style={styles.input}
           onChangeText={this.enterData}
           placeholder="numberInput"
-          keyboardType="numeric"
+          keyboardType="numeric"  //does not prevent non-numeric input
         />
       </View>;
     return view;
@@ -74,7 +74,7 @@ class TextEntry extends AnswerField{
 
 export { NumberEntry, TextEntry }; //add the new classes here
 
-
+//this is temporary, it should be in the central theme we have.
 const styles = StyleSheet.create({
   input: {
     height: 40,

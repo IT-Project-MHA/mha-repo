@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View, Button } from "react-native";
 import { NumberEntry, TextEntry } from "./answers";
-import { AnswerField } from "./abstracts";
+import { AnswerField } from "./baseComponents";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 export default function Index() {

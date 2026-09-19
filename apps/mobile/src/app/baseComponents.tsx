@@ -1,48 +1,49 @@
-import type { ReactElement } from "react";
-import { Image, Text, View } from "react-native";
+import type React from "react";
+import { Image, Text, TextInput, View, StyleSheet, type TextInputProps, type KeyboardTypeOptions } from "react-native";
 
-abstract class AnswerField{
-  /*
-  Can be: (as in implementations)
-  - number entry
-  - multiple choice
-  - text entry
-  - multiselect
-  - slider
-  - emoticon
+//base components instead of abtracts
+interface AnswerFieldProps {
+  value?: string;
+  onChangeText?: (text: string) => void;
+  error?: string;
+  keyboardType?: KeyboardTypeOptions;
+  placeHolder?: string;
+  maxLength?: number;
+  autoCorrect?: boolean;
+  autoComplete?: TextInputProps['autoComplete'];
+  spellCheck?: boolean;
+}
+//  basically this means AnswerField is a React component now- a react function.
+//  you basically can't abstract in react. How we do it is define the shared component seperately and call it. The functions are allowed to float in space outside any classes.
+//  we basically shouldn't use classes
+export default function AnswerField({
+  value,
+  onChangeText,
+  error,  //so we can have feedback on incorrect entry
+  keyboardType = 'default',
+  placeHolder = '',
+  maxLength = 50,
+  //style,
+  autoCorrect=false,
+  autoComplete="off",
+  spellCheck=false,
+}: AnswerFieldProps) {
+  return (
+    <View>//can add style here
+      <TextInput
+        value = {value}
+        onChangeText={onChangeText}
+        keyboardType={keyboardType}
+        placeholder={placeHolder}
+        maxLength = {maxLength}
+        //style
+        autoCorrect={autoCorrect}
+        autoComplete={autoComplete}
+        spellCheck={spellCheck}
+      />
 
-  All AnswerFields have a view and some function to get data out
-  Also a boolean filled / not filled
-  And answer type
-  */
-  
-  private isFilled: boolean;
-  private data: any;
-  private answerView:  ReactElement<any, any>;
-  
-
-  constructor(filled: boolean, data: any){
-    this.isFilled = filled; //this is false most of the time, unless returning to the question after filling
-    this.answerView = this.makeIntoView();
-    this.data;              //incase we return to the question when it had been filled
-  }
-
-  abstract enterData(): void; //updates data and isFilled
-  abstract makeIntoView():  ReactElement<any, any>;
-  
-  getData(): any{
-    //function returns the data parameter
-    if(this.isFilled)
-        return this.data;
-
-    return null;
-  }
-
-  setData(data: any){}
-  setIsFilled(filled: boolean){}
-  setAnswerView(view: ReactElement<any, any>){
-    this.answerView = view;
-  }
+    </View>
+  );
 }
 
 
