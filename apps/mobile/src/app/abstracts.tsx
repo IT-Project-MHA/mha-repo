@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { Image, Text } from "react-native";
+import { Image, Text, View } from "react-native";
 
 abstract class AnswerField{
   /*
@@ -82,8 +82,12 @@ class Question{
   }
 
 
-  abstract makeIntoView():  ReactElement<any, any>;
-  abstract getWhatever(): string;
+  makeIntoView():  ReactElement<any, any>{
+    return (<View></View>);
+  }
+  getWhatever(): string{
+    return "";
+  }
   
 }
 
