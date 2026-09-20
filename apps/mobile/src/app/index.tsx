@@ -1,18 +1,16 @@
 import { StyleSheet, Text, View, Button } from "react-native";
-import { NumberEntry, TextEntry } from "./answers";
-import { AnswerField } from "./baseComponents";
+import { NumberEntry/*, TextEntry*/ } from "../../components/answers";
+import { AnswerField } from "../../components/baseComponents";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+//import {enterData} from ;
 
 export default function Index() {
   //testing AnserFields
-  const numEntry = new NumberEntry(false, -1);
-  const textEntry = new TextEntry(false, -1);
-  //(numEntry.makeIntoView(), textEntry.makeIntoView());
   return (
   <SafeAreaProvider>
+    <Text>test</Text>
     <SafeAreaView style={{flexDirection: 'row'}}>
-      {numEntry.makeIntoView()}
-      {textEntry.makeIntoView()}
+      <NumberEntry onSubmit={() => { /* enter data function */ }} />
     </SafeAreaView>
   </SafeAreaProvider>);
 
