@@ -1,4 +1,4 @@
-  /*
+/*
   Can be: (as in implementations)
   - number entry
   - multiple choice
@@ -12,47 +12,42 @@
   And answer type
   */
 
-
-import React, {useState} from 'react';
-import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
+import React, { useState } from "react";
+import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import type { ReactElement } from "react";
 import { Text, TextInput, View, StyleSheet, Button } from "react-native";
-import { AnswerField } from "../baseComponents/answerField";
+import { AnswerField } from "../baseComponents/AnswerField";
 //import { } from "";
 
 //numberInput variables
 const MAX_lENGTH_TEXT = 1000;
 
-
-function sanitizeTextInput(text: string){
+function sanitizeTextInput(text: string) {
   /*let t = text.replace(/[^0-9]/g, ''); //removes any non-number
   t = t.slice(0, MAX_lENGTH_NUM); //cuts down to our max length
   return t;*/
   return text;
 }
 
-function validateTextInput(text: string){
+function validateTextInput(text: string) {
   //checking if it's something we should accept, i.e. within range
-  if(text == '')
-    return 'enter text'; //what it prints if submitted
+  if (text == "") return "enter text"; //what it prints if submitted
 
   const length = Number(text);
-  if(length>MAX_lENGTH_TEXT){
-    return 'enter no more than 1000 characters';
+  if (length > MAX_lENGTH_TEXT) {
+    return "enter no more than 1000 characters";
   }
   return null;
 }
 
-
 function TextEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
-  const [value, setValue] = useState<string>('');
-  const [error, setError] = useState<string>('');
+  const [value, setValue] = useState<string>("");
+  const [error, setError] = useState<string>("");
 
   const handleChange = (text: string) => {
     setValue(sanitizeTextInput(text));
-    if (error)
-      setError('');
-  }
+    if (error) setError("");
+  };
 
   const handleSubmit = () => {
     const err = validateTextInput(value);
@@ -61,7 +56,7 @@ function TextEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
       return;
     }
     onSubmit(value);
-  }
+  };
 
   return (
     <SafeAreaView>
@@ -72,7 +67,7 @@ function TextEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
           value={value}
           placeholder="textInput"
           keyboardType="default"
-          maxLength = {MAX_lENGTH_TEXT}
+          maxLength={MAX_lENGTH_TEXT}
         />
         {!!error && <Text>{error}</Text>}
         <Button title="Submit" onPress={handleSubmit} />

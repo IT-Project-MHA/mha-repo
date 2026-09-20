@@ -1,4 +1,4 @@
-  /*
+/*
   Can be: (as in implementations)
   - number entry
   - multiple choice
@@ -12,12 +12,11 @@
   And answer type
   */
 
-
-import React, {useState} from 'react';
-import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
+import React, { useState } from "react";
+import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import type { ReactElement } from "react";
 import { Text, TextInput, View, StyleSheet, Button } from "react-native";
-import { AnswerField } from "../baseComponents/answerField";
+import { AnswerField } from "../baseComponents/AnswerField";
 //import { } from "";
 
 //numberInput variables
@@ -25,35 +24,32 @@ const MAX_lENGTH_NUM = 2;
 const LOWER_BOUND = 1;
 const UPPER_BOUND = 10;
 
-function sanitizeNumberInput(text: string){
-  let t = text.replace(/[^0-9]/g, ''); //removes any non-number
+function sanitizeNumberInput(text: string) {
+  let t = text.replace(/[^0-9]/g, ""); //removes any non-number
   t = t.slice(0, MAX_lENGTH_NUM); //cuts down to our max length
   return t;
 }
 
-function validateNumberInput(numText: string){
+function validateNumberInput(numText: string) {
   //checking if it's something we should accept, i.e. within range
-  if(numText == '')
-    return 'enter a number'; //what it prints if submitted
+  if (numText == "") return "enter a number"; //what it prints if submitted
 
   const num = Number(numText);
-  if(!Number.isInteger(num) || num<LOWER_BOUND || num> UPPER_BOUND){
-    return 'enter a number between 1 and 10';
+  if (!Number.isInteger(num) || num < LOWER_BOUND || num > UPPER_BOUND) {
+    return "enter a number between 1 and 10";
   }
   return null;
 }
 
-
 //NumberEntry
 function NumberEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
-  const [value, setValue] = useState<string>('');
-  const [error, setError] = useState<string>('');
+  const [value, setValue] = useState<string>("");
+  const [error, setError] = useState<string>("");
 
   const handleChange = (text: string) => {
     setValue(sanitizeNumberInput(text));
-    if (error)
-      setError('');
-  }
+    if (error) setError("");
+  };
 
   const handleSubmit = () => {
     const err = validateNumberInput(value);
@@ -62,7 +58,7 @@ function NumberEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
       return;
     }
     onSubmit(value);
-  }
+  };
 
   return (
     <SafeAreaView>
@@ -73,7 +69,7 @@ function NumberEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
           value={value}
           placeholder="numberInput"
           keyboardType="numeric"
-          maxLength = {MAX_lENGTH_NUM}
+          maxLength={MAX_lENGTH_NUM}
         />
         {!!error && <Text>{error}</Text>}
         <Button title="Submit" onPress={handleSubmit} />
