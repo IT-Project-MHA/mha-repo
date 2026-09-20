@@ -17,7 +17,7 @@ import React, {useState} from 'react';
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import type { ReactElement } from "react";
 import { Text, TextInput, View, StyleSheet, Button } from "react-native";
-import { AnswerField } from "./baseComponents";
+import { AnswerField } from "../baseComponents/answerField";
 //import { } from "";
 
 //numberInput variables

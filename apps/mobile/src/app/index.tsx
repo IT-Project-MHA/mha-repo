@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View, Button } from "react-native";
-import { NumberEntry/*, TextEntry*/ } from "../../components/answers";
-import { AnswerField } from "../../components/baseComponents";
+import { NumberEntry/*, TextEntry*/ } from "../../components/answerFields/numberEntrty";
+import { AnswerField } from "../../components/baseComponents/answerField";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 //import {enterData} from ;
 
