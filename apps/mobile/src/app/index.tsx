@@ -1,7 +1,8 @@
 import { StyleSheet, Text, View, Button } from "react-native";
-import { NumberEntry/*, TextEntry*/ } from "../../components/answerFields/numberEntrty";
-import { AnswerField } from "../../components/baseComponents/answerField";
+import { NumberEntry} from "../../components/answerFields/numberEntry";
+import { TextEntry} from "../../components/answerFields/textEntry";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+
 //import {enterData} from ;
 
 export default function Index() {
@@ -11,6 +12,9 @@ export default function Index() {
     <Text>test</Text>
     <SafeAreaView style={{flexDirection: 'row'}}>
       <NumberEntry onSubmit={() => { /* enter data function */ }} />
+    </SafeAreaView>
+    <SafeAreaView style={{flexDirection: 'row'}}>
+      <TextEntry onSubmit={() => { /* enter data function */ }} />
     </SafeAreaView>
   </SafeAreaProvider>);
 

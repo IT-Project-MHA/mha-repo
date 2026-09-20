@@ -106,31 +106,8 @@ class NumberEntry extends AnswerField{
     return view;
   }
 }
-class TextEntry extends AnswerField{
-  constructor(filled: boolean, data: any){
-    super(filled, data);
-    this.setAnswerView(this.makeIntoView());
-  }
-  enterData(){
-    //function to enter data
-  }
-  
-  makeIntoView(): ReactElement<any, any>{
-    //returns the view that gets displayed
-    
-    var view: ReactElement<any, any>;
-    view = <View>
-        <TextInput
-          style={styles.input}
-          onChangeText={this.enterData}
-          placeholder="textInput"
-          //value={}
-        />
-      </View>;
-    return view;
-  }
-}
-  */
+
+*/
 //Xavy will also do text entry, slider
 
 //Josh TODO: multiple choice, multi-select, emoji
