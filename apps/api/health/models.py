@@ -74,8 +74,8 @@ class MyPain(BaseModel):
     average = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(10)])
     mildest = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(10)])
 
-    locations = models.ManyToManyField("reference.PainLocation", blank = True, related_name = "locations")
-    characteristics = models.ManyToManyField("reference.PainCharacteristic", blank = True, related_name = "characteristics")
+    locations = models.ManyToManyField("reference.QuestionOption", blank = True, related_name = "locations")
+    characteristics = models.ManyToManyField("reference.QuestionOption", blank = True, related_name = "characteristics")
 
     other_location = models.CharField(null = True, blank = True, max_length = 100)
     other_characteristic = models.CharField(null = True, blank = True, max_length = 100)
@@ -86,11 +86,11 @@ class MyPain(BaseModel):
 class MyMovement(BaseModel):
     assessment_id = models.OneToOneField(Assessment, on_delete = models.CASCADE, related_name = "myu_movement_assessment")
     activeHours = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(168)])
-    general_impacts = models.ManyToManyField("reference.AssessmentStatement", blank = False, related_name = "general_movement_impact")
-    walking = models.ForeignKey("reference.AssessmentStatement", on_delete = models.PROTECT, related_name = "movement_walking")
-    sitting = models.ForeignKey("reference.AssessmentStatement", on_delete = models.PROTECT, related_name = "movement_sitting")
-    lifting = models.ForeignKey("reference.AssessmentStatement", on_delete = models.PROTECT, related_name = "movement_lifting")
-    standing = models.ForeignKey("reference.AssessmentStatement", on_delete = models.PROTECT, related_name = "movement_standing")
+    general_impacts = models.ManyToManyField("reference.QuestionOptionOrdered", blank = False, related_name = "general_movement_impact")
+    walking = models.ForeignKey("reference.QuestionOptionOrdered", on_delete = models.PROTECT, related_name = "movement_walking")
+    sitting = models.ForeignKey("reference.QuestionOptionOrdered", on_delete = models.PROTECT, related_name = "movement_sitting")
+    lifting = models.ForeignKey("reference.QuestionOptionOrdered", on_delete = models.PROTECT, related_name = "movement_lifting")
+    standing = models.ForeignKey("reference.QuestionOptionOrdered", on_delete = models.PROTECT, related_name = "movement_standing")
     reflection = models.CharField(null = True, blank = True, max_length = 300)
     score = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(26)])
 
@@ -98,9 +98,9 @@ class MyMovement(BaseModel):
 
 class MyPersonalCare(BaseModel):
     assessment_id = models.OneToOneField(Assessment, on_delete = models.CASCADE, related_name = "my_personal_care_assessment")
-    general_activities_impact = models.ManyToManyField("reference.AssessmentStatement", blank = False, related_name = "general_activities_impact")
-    personal_care = models.ForeignKey("reference.AssessmentStatement", on_delete = models.PROTECT, related_name = "personal_care")
-    sleeping = models.ForeignKey("reference.AssessmentStatement", on_delete = models.PROTECT, related_name = "sleeping")
+    general_activities_impact = models.ManyToManyField("reference.QuestionOptionOrdered", blank = False, related_name = "general_activities_impact")
+    personal_care = models.ForeignKey("reference.QuestionOptionOrdered", on_delete = models.PROTECT, related_name = "personal_care")
+    sleeping = models.ForeignKey("reference.QuestionOptionOrdered", on_delete = models.PROTECT, related_name = "sleeping")
     reflection = models.CharField(null = True, blank = True, max_length = 300)
     score = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(15)])
 
@@ -108,11 +108,11 @@ class MyPersonalCare(BaseModel):
 
 class MySocialHealth(BaseModel):
     assessment_id = models.OneToOneField(Assessment, on_delete = models.CASCADE, related_name = "my_social_health_assessment")
-    social_life = models.ForeignKey("reference.AssessmentStatement", on_delete = models.PROTECT, related_name = "social_life")
-    travelling = models.ForeignKey("reference.AssessmentStatement", on_delete = models.PROTECT, related_name = "travelling")
-    mood = models.ForeignKey("reference.AssessmentStatement", on_delete = models.PROTECT, related_name = "mood")
-    relationships = models.ForeignKey("reference.AssessmentStatement", on_delete = models.PROTECT, related_name = "relationships")  
-    enjoyment_of_life = models.ForeignKey("reference.AssessmentStatement", on_delete = models.PROTECT, related_name = "enjoyment_of_life")    
+    social_life = models.ForeignKey("reference.QuestionOptionOrdered", on_delete = models.PROTECT, related_name = "social_life")
+    travelling = models.ForeignKey("reference.QuestionOptionOrdered", on_delete = models.PROTECT, related_name = "travelling")
+    mood = models.ForeignKey("reference.QuestionOptionOrdered", on_delete = models.PROTECT, related_name = "mood")
+    relationships = models.ForeignKey("reference.QuestionOptionOrdered", on_delete = models.PROTECT, related_name = "relationships")  
+    enjoyment_of_life = models.ForeignKey("reference.QuestionOptionOrdered", on_delete = models.PROTECT, related_name = "enjoyment_of_life")    
     overall_mood = models.PositiveSmallIntegerField(default=1, validators = [MinValueValidator(1), MaxValueValidator(5)])
     reflection = models.CharField(null = True, blank = True, max_length = 300)
     score = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(40)]) 
@@ -123,7 +123,7 @@ class MyManagement(BaseModel):
     assessment_id = models.OneToOneField(Assessment, on_delete = models.CASCADE, related_name = "my_management_assessment")
     medication = models.ManyToManyField(Prescription, blank = True, null = True, related_name = "my_management_prescriptions")
     otc_medication = models.CharField(null = True, blank = True, max_length = 300)
-    exercise = models.ForeignKey("reference.AssessmentStatement", on_delete = models.PROTECT, related_name = "exercise")
+    exercise = models.ForeignKey("reference.QuestionOptionOrdered", on_delete = models.PROTECT, related_name = "exercise")
     emotion = models.CharField(null = True, blank = True, max_length = 300)
     score = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(20)])
 

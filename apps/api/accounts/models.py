@@ -60,7 +60,7 @@ class PatientProfile(BaseModel, SoftDeleteModel):
     user = models.OneToOneField(User, on_delete = models.PROTECT, related_name = "patient_profile")
     has_diagnosis = models.BooleanField(default = False)
     other_conditions = models.TextField(blank = True)
-    pain_types = models.ManyToManyField("reference.PainType", blank = True, related_name = "pain_type_patient_profiles")
+    pain_types = models.ManyToManyField("reference.QuestionOption", blank = True, related_name = "pain_type_patient_profiles")
     assigned_gender_at_birth = models.CharField(max_length = 40, choices = AssignedGender.choices, blank = True)
     birth_year = models.SmallIntegerField(null = True, blank = True, validators = [MinValueValidator(1900), MaxValueValidator(2100)])
 

@@ -2,37 +2,30 @@ from django.db import models
 from mpowered_api.base_models import BaseModel
 from django.core.validators import MaxValueValidator, MinValueValidator
 
-# specific question multiselect values
+class AppSection(models.TextChoices):
+    ONBOARDING = "onboarding",
+    MY_PAIN = "my_pain", 
+    MY_MOVE = "my_movement", 
+    MY_SOC_HEALTH = "my_social_health", 
+    MY_PERS_CARE = "my_personal_care", 
+    MY_MANAGE = "my_management"
 
-class PainType(BaseModel):
-    type = models.CharField(max_length = 50)
-    class Meta: db_table = "pain_type"
+# plain question option
 
-class PainCharacteristic(BaseModel):
-    type = models.CharField(max_length = 50)
-    class Meta: 
-        db_table = "pain_characteristic"
-
-class PainLocation(BaseModel):
-    type = models.CharField(max_length = 50)
-    class Meta: 
-        db_table = "pain_location"
-
-# question multiselect/multiple choice with text, order of appearance and score value
-
-class AssessmentStatement(BaseModel):
-    class AppSection(models.TextChoices):
-        MY_PAIN = "my_pain", 
-        MY_MOVE = "my_movement", 
-        MY_SOC_HEALTH = "my_social_health", 
-        MY_PERS_CARE = "my_personal_care", 
-        MY_MANAGE = "my_management"
+class QuestionOption(BaseModel):
     app_section = models.CharField(default = AppSection.MY_PAIN, max_length = 30, choices = AppSection.choices)
+    text = models.CharField(max_length = 50)
+    class Meta: db_table = "question_option"
 
+# multiselect/multiple choice question option with:
+#       - order of appearance
+#       - score value
+
+class QuestionOptionOrdered(BaseModel):
+    app_section = models.CharField(default = AppSection.MY_PAIN, max_length = 30, choices = AppSection.choices)
+    text = models.CharField(max_length = 100)
     question_number = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(20)]) 
-    statement_number = models.PositiveSmallIntegerField(default=0)
-    statement_text = models.CharField(max_length = 100)
+    option_number = models.PositiveSmallIntegerField(default=0)
     score = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(5)]) 
-
     class Meta: 
-        db_table = "assessment_statement"
+        db_table = "question_option_ordered"

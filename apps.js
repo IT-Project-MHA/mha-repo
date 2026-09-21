@@ -9,6 +9,22 @@ const db = await SQLite.openDatabase('mhaLocal.db');
 
 await db.execAsync(`
     PRAGMA journal_mode = WAL;
+
+    CREATE TABLE IF NOT EXISTS questionOption (
+        id INTEGER PRIMARY KEY NOT NULL,
+        app_section TEXT(30) NOT NULL,
+        text TEXT(50) NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS questionOptionOrdered (
+        id INTEGER PRIMARY KEY NOT NULL,
+        app_section TEXT(30) NOT NULL,
+        text TEXT(100) NOT NULL,
+        question_number INT NOT NULL,
+        option_number INT NOT NULL,
+        score INT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS assessment (
         id INTEGER PRIMARY KEY NOT NULL,
         date TEXT(10) NOT NULL,
@@ -42,78 +58,59 @@ await db.execAsync(`
         other_characteristic TEXT(100)
     );
 
-    CREATE TABLE IF NOT EXISTS painLocation (
-        id INTEGER PRIMARY KEY NOT NULL,
-        type TEXT(50) NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS painCharacteristic (
-        id INTEGER PRIMARY KEY NOT NULL,
-        type TEXT(50) NOT NULL
-    );
-
     CREATE TABLE IF NOT EXISTS myPain_painLocation (
         myPain_id INTEGER REFERENCES myPain(id),
-        painLocation_id INTEGER REFERENCES painLocation(id),
+        painLocation_id INTEGER REFERENCES questionOption(id),
         PRIMARY KEY (myPain_id, painLocation_id)
     );
 
     CREATE TABLE IF NOT EXISTS myPain_painCharacteristic (
         myPain_id INTEGER REFERENCES myPain(id),
-        painCharacteristic_id INTEGER REFERENCES painCharacteristic(id),
+        painCharacteristic_id INTEGER REFERENCES questionOption(id),
         PRIMARY KEY (myPain_id, painCharacteristic_id)
-    );
-
-    CREATE TABLE IF NOT EXISTS assessmentStatement (
-        id INTEGER PRIMARY KEY NOT NULL,
-        app_section TEXT(30) NOT NULL,
-        question_number INT NOT NULL,
-        statement_number INT NOT NULL,
-        statement_text TEXT NOT NULL,
-        score INT NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS myMovement (
         id INTEGER PRIMARY KEY NOT NULL,
         assessment_id INTEGER REFERENCES assessment(id),
         activeHours INTEGER NOT NULL,
-        walking_id INTEGER REFERENCES assessmentStatement(id),
-        sitting_id INTEGER REFERENCES assessmentStatement(id),
-        lifting_id INTEGER REFERENCES assessmentStatement(id),
-        standing_id INTEGER REFERENCES assessmentStatement(id),
+        walking_id INTEGER REFERENCES questionOptionOrdered(id),
+        sitting_id INTEGER REFERENCES questionOptionOrdered(id),
+        lifting_id INTEGER REFERENCES questionOptionOrdered(id),
+        standing_id INTEGER REFERENCES questionOptionOrdered(id),
         reflection TEXT(300),
         score INTEGER NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS myMovement_generalImpact (
         myMovement_id INTEGER REFERENCES myMovement(id),
-        generalImpact_id INTEGER REFERENCES assessmentStatement(id),
+        generalImpact_id INTEGER REFERENCES questionOptionOrdered(id),
         PRIMARY KEY (myMovement_id, generalImpact_id)
     );
 
     CREATE TABLE IF NOT EXISTS myPersonalCare (
         id INTEGER PRIMARY KEY NOT NULL,
         assessment_id INTEGER REFERENCES assessment(id),
-        personal_care_id INTEGER REFERENCES assessmentStatement(id),
-        sleeping_id INTEGER REFERENCES assessmentStatement(id),
+        personal_care_id INTEGER REFERENCES questionOptionOrdered(id),
+        sleeping_id INTEGER REFERENCES questionOptionOrdered(id),
         reflection TEXT(300),
         score INTEGER NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS myPersonalCare_generalActivitiesImpact (
         myPersonalCare_id INTEGER REFERENCES myPersonalCare(id),
-        generalActivitiesImpact_id INTEGER REFERENCES assessmentStatement(id),
+        generalActivitiesImpact_id INTEGER REFERENCES questionOptionOrdered(id),
         PRIMARY KEY (myPersonalCare_id, generalActivitiesImpact_id)
     );
 
     CREATE TABLE IF NOT EXISTS mySocialHealth (
         id INTEGER PRIMARY KEY NOT NULL,
         assessment_id INTEGER REFERENCES assessment(id),
-        social_life_id INTEGER REFERENCES assessmentStatement(id),
-        travelling_id INTEGER REFERENCES assessmentStatement(id),
-        mood_id INTEGER REFERENCES assessmentStatement(id),
-        relationships_id INTEGER REFERENCES assessmentStatement(id),
-        enjoyment_of_life_id INTEGER REFERENCES assessmentStatement(id),
+        social_life_id INTEGER REFERENCES questionOptionOrdered(id),
+        travelling_id INTEGER REFERENCES questionOptionOrdered(id),
+        mood_id INTEGER REFERENCES questionOptionOrdered(id),
+        relationships_id INTEGER REFERENCES questionOptionOrdered(id),
+        enjoyment_of_life_id INTEGER REFERENCES questionOptionOrdered(id),
         overall_mood INT NOT NULL,
         reflection TEXT(300),
         score INTEGER NOT NULL
@@ -123,7 +120,7 @@ await db.execAsync(`
         id INTEGER PRIMARY KEY NOT NULL,
         assessment_id INTEGER REFERENCES assessment(id),
         otc_medication TEXT(300),
-        exercise_id INTEGER REFERENCES assessmentStatement(id),
+        exercise_id INTEGER REFERENCES questionOptionOrdered(id),
         emotion TEXT(300),
         score INTEGER NOT NULL
     );
