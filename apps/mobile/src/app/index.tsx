@@ -2,6 +2,7 @@ import { StyleSheet, Text, View, Button } from "react-native";
 import { NumberEntry } from "../../components/answerFields/NumberEntry";
 import { TextEntry } from "../../components/answerFields/TextEntry";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+// @ts-ignore: module resolution issue in editor—runtime import works
 import { SliderEntry } from "../../components/answerFields/SliderEntry";
 import { MultipleChoice } from "../../components/answerFields/MultipleChoice";
 import { MultiSelect } from "../../components/answerFields/MultiSelect";

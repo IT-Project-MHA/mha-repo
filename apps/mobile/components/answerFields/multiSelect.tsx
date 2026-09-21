@@ -34,36 +34,32 @@ function MultiSelect({ onSubmit }: { onSubmit: (v: string) => void }) {
 
   const [currentQuestion, setCurrentQuestion] = useState(0); // Tracks the current question index
   const [score, setScore] = useState(0); // Tracks the user's score
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null); // Tracks the currently selected answer
-  const [userAnswers, setUserAnswers] = useState<
-    { question: string; correct: boolean }[]
-  >([]); // Stores user's answers and correctness
+  const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]); // Tracks the currently selected answers
+  const [userAnswers, setUserAnswers] = useState<{ question: string }[]>([]); // Stores user's answers and correctness
 
   const handleSelect = (answer: string) => {
-    // Called when a user selects an answer
-    setSelectedAnswer(answer);
+    // Toggle selection of an answer
+    setSelectedAnswers((prev) => {
+      if (prev.includes(answer)) return prev.filter((a) => a !== answer);
+      return [...prev, answer];
+    });
   };
 
   const handleSubmit = () => {
-    // Checks if the selected answer is correct
-    const isCorrect = selectedAnswer === options[currentQuestion];
+    // Checks if the selected answers is correct
+    //const isCorrect = selectedAnswer === options[currentQuestion];
 
     // Save the current answer result
     setUserAnswers([
       ...userAnswers,
       {
         question: options[currentQuestion],
-        correct: isCorrect,
+        //correct: isCorrect,
       },
     ]);
 
-    // Update score if answer is correct
-    if (isCorrect) {
-      setScore(score + 1);
-    }
-
     // Reset selected answer for the next question
-    setSelectedAnswer(null);
+    setSelectedAnswers(null);
 
     if (currentQuestion < options.length - 1) {
       // Move to the next question
@@ -73,20 +69,25 @@ function MultiSelect({ onSubmit }: { onSubmit: (v: string) => void }) {
   };
   return (
     <SafeAreaView style={styles.container}>
-      <Text>"Select the most relevant"</Text>
-      //render options as buttons
+      <Text>"Select the most relevant options, note the s"</Text>
+      {/* render options as buttons */}
       {options.map((option, index) => (
         <TouchableOpacity
           key={index}
           style={[
             styles.option,
-            selectedAnswer === option && styles.selectedOption, // Highlights selected option
+            selectedAnswers.includes(option) && styles.selectedOption, // Highlights selected options
           ]}
           onPress={() => handleSelect(option)}
         >
           <Text style={styles.optionText}>{option}</Text>
         </TouchableOpacity>
       ))}
+
+      {/* display current selections */}
+      <View style={{ marginTop: 10 }}>
+        <Text>Selected: {selectedAnswers.join(", ")}</Text>
+      </View>
     </SafeAreaView>
   );
 }
