@@ -2,77 +2,23 @@ from django.db import models
 from mpowered_api.base_models import BaseModel
 from django.core.validators import MaxValueValidator, MinValueValidator
 
-class PainType(BaseModel):
-    class type(models.TextChoices): 
-        ARTHRITIS = "Arthritis", 
-        ANKYLOSING_SPONDYLITIS = "Ankylosing spondylitis",
-        BACK_PAIN = "Back pain",
-        BAKERS_CYST = "Baker's cyst",
-        BURSITIS = "Bursitis",
-        FOOT_RELATED_CONDITIONS = "Foot related conditions",
-        FIBROMYALGIA = "Fibromyalgia",
-        GOUT = "Gout",
-        JUVENILE_IDIOPATHIC_ARTHRITIS = "Juvenile idiopathic arthritis",
-        HAND_CONDITIONS = "Hand conditions",
-        LUPUS = "Lupus",
-        NECK_PAIN = "Neck pain",
-        OSTEOARTHRITIS = "Osteoarthritis",
-        OSTEOPOROSIS = "Osteoporosis",
-        PAGETS_DISEASE = "Paget’s disease",
-        PERTHES_DISEASE= "Perthes’ disease",
-        POLYMYALGIA_RHEUMATICA = "Polymyalgia rheumatica",
-        PSORIATIC_ARTHRITIS = "Psoriatic arthritis",
-        RAYNAUDS_PHENOMENON = "Raynaud’s phenomenon",
-        REACTIVE_ARTHRITIS = "Reactive arthritis",
-        RHEUMATOID_ARTHRITIS = "Rheumatoid arthritis",
-        SCLERODERMA = "Scleroderma",
-        SHOULDER_PAIN = "Shoulder pain",
-        SJROGENS_DISEASE = "Sjogren’s disease",
-    type = models.CharField(default = type.ARTHRITIS, max_length = 50, choices = type.choices)
+# specific question multiselect values
 
+class PainType(BaseModel):
+    type = models.CharField(max_length = 50)
     class Meta: db_table = "pain_type"
 
 class PainCharacteristic(BaseModel):
-    class characteristic(models.TextChoices):
-        ACHING = "Aching",
-        THROBBING = "Throbbing",
-        SHOOTING = "Shooting",
-        STABBING = "Stabbing",
-        GNAWING = "Gnawing",
-        SHARP = "Sharp",
-        TENDER = "Tender", 
-        BURNING = "Burning",
-        EXHAUSTING = "Exhausting",
-        TIRING = "Tiring",
-        PENETRATING = "Penetrating",
-        NAGGING = "Nagging",
-        NUMB = "Numb",
-        MISERABLE = "Miserable",
-        UNBEARABLE = "Unbearable",
-    characteristic = models.CharField(default = characteristic.ACHING, max_length = 50, choices = 
-                                      characteristic.choices)
-
+    type = models.CharField(max_length = 50)
     class Meta: 
         db_table = "pain_characteristic"
 
 class PainLocation(BaseModel):
-    class location(models.TextChoices):
-        HEAD = "Head",
-        NECK = "Neck",
-        SHOULDER = "Shoulder",
-        UPPER_BACK = "Upper Back",
-        LOWER_BACK = "Lower Back",
-        LEG = "Leg",
-        HIP = "Hip",
-        BUTTOCK = "Buttock",
-        KNEE = "Knee",
-        OTHER = "Other",
-    location = models.CharField(default = location.HEAD, max_length = 50, choices = location.choices)
-
+    type = models.CharField(max_length = 50)
     class Meta: 
         db_table = "pain_location"
 
-# class MultiSelect
+# question multiselect/multiple choice with text, order of appearance and score value
 
 class AssessmentStatement(BaseModel):
     class AppSection(models.TextChoices):
