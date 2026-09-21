@@ -17,7 +17,7 @@ class PainType(BaseModel):
         LUPUS = "Lupus",
         NECK_PAIN = "Neck pain",
         OSTEOARTHRITIS = "Osteoarthritis",
-        Osteoporosis = "Osteoporosis",
+        OSTEOPOROSIS = "Osteoporosis",
         PAGETS_DISEASE = "Paget’s disease",
         PERTHES_DISEASE= "Perthes’ disease",
         POLYMYALGIA_RHEUMATICA = "Polymyalgia rheumatica",

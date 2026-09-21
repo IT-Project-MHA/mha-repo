@@ -31,7 +31,7 @@ class Prescription(BaseModel):
         SPR = "spray", "Spray"
         ML = "mL", "mL"
         PAT = "patches", "Patches"
-    form = models.CharField(default = FormUnit.TAB, max_length = 10, choices = FormUnit.choices)
+    form = models.CharField(default = FormUnit.TAB, max_length = 20, choices = FormUnit.choices)
 
     frequency = models.PositiveSmallIntegerField()
     class FrequencyUnit(models.TextChoices):
@@ -77,8 +77,8 @@ class MyPain(BaseModel):
     locations = models.ManyToManyField("reference.PainLocation", blank = True, related_name = "locations")
     characteristics = models.ManyToManyField("reference.PainCharacteristic", blank = True, related_name = "characteristics")
 
-    other_location = models.CharField(null = True, blank = True, max_length = 300)
-    other_characteristic = models.CharField(null = True, blank = True)
+    other_location = models.CharField(null = True, blank = True, max_length = 100)
+    other_characteristic = models.CharField(null = True, blank = True, max_length = 100)
 
     class Meta:
         db_table = "my_pain"
@@ -110,9 +110,9 @@ class MySocialHealth(BaseModel):
     assessment_id = models.OneToOneField(Assessment, on_delete = models.CASCADE, related_name = "my_social_health_assessment")
     social_life = models.ForeignKey("reference.AssessmentStatement", on_delete = models.PROTECT, related_name = "social_life")
     travelling = models.ForeignKey("reference.AssessmentStatement", on_delete = models.PROTECT, related_name = "travelling")
-    mood = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(10)])    
-    relationships = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(10)])    
-    enjoyment_of_life = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(10)])    
+    mood = models.ForeignKey("reference.AssessmentStatement", on_delete = models.PROTECT, related_name = "mood")
+    relationships = models.ForeignKey("reference.AssessmentStatement", on_delete = models.PROTECT, related_name = "relationships")  
+    enjoyment_of_life = models.ForeignKey("reference.AssessmentStatement", on_delete = models.PROTECT, related_name = "enjoyment_of_life")    
     overall_mood = models.PositiveSmallIntegerField(default=1, validators = [MinValueValidator(1), MaxValueValidator(5)])
     reflection = models.CharField(null = True, blank = True, max_length = 300)
     score = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(40)]) 
@@ -121,7 +121,7 @@ class MySocialHealth(BaseModel):
 
 class MyManagement(BaseModel):
     assessment_id = models.OneToOneField(Assessment, on_delete = models.CASCADE, related_name = "my_management_assessment")
-    medication = models.ManyToManyField(Prescription, blank = True, null = True, related_name = "my_mangagement_prescriptions")
+    medication = models.ManyToManyField(Prescription, blank = True, null = True, related_name = "my_management_prescriptions")
     otc_medication = models.CharField(null = True, blank = True, max_length = 300)
     exercise = models.ForeignKey("reference.AssessmentStatement", on_delete = models.PROTECT, related_name = "exercise")
     emotion = models.CharField(null = True, blank = True, max_length = 300)
