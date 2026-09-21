@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 import { useColorScheme } from 'react-native';
-import { themes, ThemeMode } from '../constants/theme';
+import { themes, ThemeMode, themeColours } from '../constants/theme';
 
 /**
  * createContext creates a native context object, so information, variables
@@ -11,6 +11,7 @@ import { themes, ThemeMode } from '../constants/theme';
  */
 const ThemeContext = createContext({
   theme: themes.light,
+  colours: themeColours.light,
   mode: 'light' as ThemeMode,
   setMode: (mode: ThemeMode) => {},
 });
@@ -31,7 +32,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     // <ThemeContext.Provider> provides values to anything nested inside
-    <ThemeContext.Provider value={{ theme: themes[mode], mode, setMode }}>
+    <ThemeContext.Provider value={{ theme: themes[mode], colours: themeColours[mode], mode, setMode }}>
       {children}
     </ThemeContext.Provider>
   );
