@@ -3,6 +3,8 @@ import { NumberEntry } from "../../components/answerFields/NumberEntry";
 import { TextEntry } from "../../components/answerFields/TextEntry";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { SliderEntry } from "../../components/answerFields/SliderEntry";
+import { MultipleChoice } from "../../components/answerFields/MultipleChoice";
+import { MultiSelect } from "../../components/answerFields/MultiSelect";
 
 //import {enterData} from ;
 
@@ -28,6 +30,20 @@ export default function Index() {
       </SafeAreaView>
       <SafeAreaView style={{ flexDirection: "row" }}>
         <SliderEntry
+          onSubmit={() => {
+            /* enter data function */
+          }}
+        />
+      </SafeAreaView>
+      <SafeAreaView style={{ flexDirection: "row" }}>
+        <MultipleChoice
+          onSubmit={() => {
+            /* enter data function */
+          }}
+        />
+      </SafeAreaView>
+      <SafeAreaView style={{ flexDirection: "row" }}>
+        <MultiSelect
           onSubmit={() => {
             /* enter data function */
           }}

@@ -67,7 +67,7 @@ function NumberEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
           style={styles.input}
           onChangeText={handleChange}
           value={value}
-          placeholder="numberInput"
+          placeholder="input number only"
           keyboardType="numeric"
           maxLength={MAX_lENGTH_NUM}
         />
