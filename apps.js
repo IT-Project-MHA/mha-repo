@@ -142,7 +142,7 @@ await db.execAsync(`
         scheduled_date TEXT(10) NOT NULL,
         doctor TEXT(100) NOT NULL,
         status TEXT(20) NOT NULL,
-        care_person INTEGER REFERENCES supportPerson(id),
+        created_by INTEGER REFERENCES user(id),
         health_service TEXT(50) NOT NULL,
         notes TEXT(100) 
     );
@@ -150,11 +150,11 @@ await db.execAsync(`
     CREATE TABLE IF NOT EXISTS appointmentQuestion (
         id INTEGER PRIMARY KEY NOT NULL,
         appointment_id REFERENCES appointment(id),
+        created_by INTEGER REFERENCES user(id),
         text TEXT(100) NOT NULL,
         source TEXT(20) NOT NULL,
         order_index INTEGER NOT NULL,
-        is_selected INTEGER NOT NULL,
-        answer_recording_url TEXT(200)
+        is_selected INTEGER NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS appointmentAnswer (
