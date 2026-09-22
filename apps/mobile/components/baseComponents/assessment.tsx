@@ -1,3 +1,21 @@
+import type React from "react";
+import { Text, View, StyleSheet, Button, } from "react-native";
+import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
+
+
+class AssessmentProps {
+
+}
+
+export default function Assessment() {
+  return (
+    <SafeAreaView>
+      <Button title="<- Back"></Button>
+    </SafeAreaView>
+  )
+}
+
+export { Assessment };
 /**
   abstract class Assessment {
   //The section in which certain questions are grouped within
