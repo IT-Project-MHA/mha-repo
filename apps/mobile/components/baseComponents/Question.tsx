@@ -2,15 +2,13 @@
 //heading
 // instruction text
 import type React from "react";
-import { Component, ReactElement, ReactNode } from "react";
-import { Text, View, StyleSheet } from "react-native";
-import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
-import ENTRY_COMPONENTS from "../answerFields/EntryRegistry";
-
+import { StyleSheet, Text } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import ENTRY_COMPONENTS, { ENTRY_TYPE } from "../answerFields/EntryRegistry";
 class QuestionProps {
   title?: String;
   detail?: String;
-  questionType?: String;
+  questionType?: ENTRY_TYPE;
 }
 
 export default function Question({
@@ -18,7 +16,7 @@ export default function Question({
   detail,
   questionType
 }: QuestionProps) {
-  const EntryComponent = ENTRY_COMPONENTS["EmojiSelect"];
+  const EntryComponent = ENTRY_COMPONENTS[questionType];
   return (
     <SafeAreaView>
       <Text style={Styles.title}>{title}</Text>

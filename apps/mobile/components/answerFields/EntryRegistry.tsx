@@ -14,4 +14,6 @@ const ENTRY_COMPONENTS = {
   TextEntry: TextEntry
 };
 
+
+export type ENTRY_TYPE = "EmojiSelect" | "MultipleChoiceltipleChoice" | "MultiSelect" | "NumberEntry" | "SliderEntry" | "TextEntry";
 export default ENTRY_COMPONENTS;
