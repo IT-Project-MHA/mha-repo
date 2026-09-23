@@ -31,7 +31,7 @@ export default function Question({
   );
 }
 
-export { Question };
+export { Question, QuestionProps};
 
 const Styles = StyleSheet.create({
   title: {

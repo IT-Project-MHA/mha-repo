@@ -1,16 +1,29 @@
 import type React from "react";
 import { Text, View, StyleSheet, Button, } from "react-native";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
+import { Question, QuestionProps } from "../../components/baseComponents/Question";
 
 
 class AssessmentProps {
-
+  title?: String;
+  questions!: QuestionProps[];
+  currIndex!: number
 }
 
-export default function Assessment() {
+export default function Assessment({title, questions, currIndex}: AssessmentProps) {
   return (
     <SafeAreaView>
       <Button title="<- Back"></Button>
+      <Question title={questions[currIndex].title} detail={questions[currIndex].detail} 
+      questionType={questions[currIndex].questionType} />
+      <Text>{currIndex+1}/{questions.length}</Text>
+      <Button  onPress={() => {
+        currIndex++;
+          if (currIndex >= questions.length) {
+            // do something
+          }}} 
+          title="Record">
+      </Button>
     </SafeAreaView>
   )
 }

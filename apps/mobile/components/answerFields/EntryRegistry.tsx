@@ -7,7 +7,7 @@ import { TextEntry } from "./TextEntry";
 
 const ENTRY_COMPONENTS = {
   EmojiSelect: EmojiSelect,
-  MultipleChoiceltipleChoice: MultipleChoice,
+  MultipleChoice: MultipleChoice,
   MultiSelect: MultiSelect,
   NumberEntry: NumberEntry,
   SliderEntry: SliderEntry,
@@ -15,5 +15,5 @@ const ENTRY_COMPONENTS = {
 };
 
 
-export type ENTRY_TYPE = "EmojiSelect" | "MultipleChoiceltipleChoice" | "MultiSelect" | "NumberEntry" | "SliderEntry" | "TextEntry";
+export type ENTRY_TYPE = "EmojiSelect" | "MultipleChoice" | "MultiSelect" | "NumberEntry" | "SliderEntry" | "TextEntry";
 export default ENTRY_COMPONENTS;
