@@ -8,19 +8,20 @@ export default function Tab() {
 
   return (
     <View style={styles.container}>
-      <Text>Tab [Home|Settings]</Text>
+        <Text>HOME</Text>
+        <Text> </Text>
+        <Text> </Text>
+      <Button
+	    label="light mode"
+	    onPress={() => setMode('light')}
+        buttonType="primaryButton"
+      />
       <Button
 	    label="dark mode"
 	    onPress={() => setMode('dark')}
-      buttonType="secondaryButton"
-      />
-      <Button
-	    label="light mode"
-	    onPress={() => setMode('lightHC')}
-      buttonType="primaryButton"
+        buttonType="secondaryButton"
       />
     </View>
-    
   );
 }
 

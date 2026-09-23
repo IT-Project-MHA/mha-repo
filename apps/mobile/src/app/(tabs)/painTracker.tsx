@@ -3,7 +3,8 @@ import { View, Text, StyleSheet } from 'react-native';
 export default function Tab() {
   return (
     <View style={styles.container}>
-      <Text>SETTINGS</Text>
+      <Text>PAIN TRACKER</Text>
+      <Text>This section is the homescreen for patients & users who are both patients and support persons</Text>
     </View>
   );
 }
