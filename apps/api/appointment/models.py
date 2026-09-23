@@ -10,9 +10,8 @@ class Appointment(BaseModel, SoftDeleteModel):
 
     patient_profile = models.ForeignKey("accounts.PatientProfile", on_delete = models.PROTECT, related_name = "appointment_patient")
     scheduled_date = models.DateField()
-    doctor = models.CharField(max_length = 100)
+    doctor = models.CharField(max_length = 100, blank = True)
     status = models.CharField(choices = Status.choices, default = Status.PLANNED)
-    care_person = models.ForeignKey("appointment.CarePerson", on_delete = models.SET_NULL, null = True, blank = True, related_name = "appointment_appointments")
 
     class HealthService(models.TextChoices):
         GP = "General Practitioner", "General Practitioner"
@@ -66,7 +65,6 @@ class AppointmentQuestion(BaseModel, SoftDeleteModel):
     created_by = models.ForeignKey("accounts.User", on_delete = models.PROTECT, related_name = "+")
     order_index = models.PositiveSmallIntegerField(default = 0)
     is_selected = models.BooleanField(default = True)
-    answer_recording = models.URLField(null= True, blank = True)
 
     class Meta:
         db_table = "appointment_question"
@@ -97,12 +95,6 @@ class AppointmentAccess(BaseModel):
     can_record_answers = models.BooleanField(default = False)
     granted_at = models.DateTimeField(auto_now_add = True)
     revoked_at = models.DateTimeField(null = True, blank = True)
-
-    last_accessed_at = models.DateTimeField(null=True, blank=True)
-    last_accessed_by = models.ForeignKey(
-        "accounts.User", on_delete=models.SET_NULL,
-        null=True, blank=True, related_name="+",
-    )
 
     class Meta:
         db_table = "appointment_access"

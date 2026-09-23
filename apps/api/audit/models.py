@@ -14,12 +14,23 @@ class AuditEntry(BaseModel):
         GRANT = "grant", "Access granted"
         REVOKE = "revoke", "Access revoked"
 
+    class Target(models.TextChoices):
+        ASSESSMENT = "assessment", "Assessment"
+        PRESCRIPTION = "prescription", "Prescription"
+        APPOINTMENT = "appointment", "Appointment"
+        APPOINTMENT_QUESTION = "appointment_question", "Appointment Question"
+        APPOINTMENT_ANSWER = "appointment_answer", "Appointment Answer"
+        APPOINTMENT_ACCESS = "appointment_access", "Appointment Access"
+        SUPPORT_LINK = "support_link", "Support Link"
+        GENERATED_DOCUMENT = "generated_document", "Generated Document"
+        PATIENT_PROFILE = "patient_profile", "Patient Profile"
+
     audit_user = models.ForeignKey("accounts.User", on_delete = models.SET_NULL, null = True, blank = True)
     audit_label = models.CharField(blank = True)
     patient_profile = models.ForeignKey("accounts.PatientProfile", on_delete = models.SET_NULL, null = True, blank = True)
 
     action = models.CharField(choices = Action.choices)
-    target_type = models.CharField(max_length = 60)
+    target_type = models.CharField(max_length = 40, choices = Target.choices)
     target_id = models.UUIDField(null = True, blank = True)
 
     occurred_at = models.DateTimeField(default = timezone.now, db_index = True)

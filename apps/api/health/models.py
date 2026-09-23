@@ -1,11 +1,11 @@
 from django.db import models
-from accounts.models import PatientProfile, User
+from accounts.models import PatientProfile
 from django.core.validators import MaxValueValidator, MinValueValidator
-from mpowered_api.base_models import BaseModel
+from mpowered_api.base_models import BaseModel, SoftDeleteModel
 
 # Prescriptions and Weekly Assessments
 
-class Prescription(BaseModel): 
+class Prescription(BaseModel, SoftDeleteModel): 
     patient_profile = models.ForeignKey(PatientProfile, on_delete = models.CASCADE, related_name = "perscriptions")
     name = models.CharField(max_length = 50)
     dosage = models.PositiveSmallIntegerField()
@@ -67,7 +67,7 @@ class Assessment(BaseModel):
         ]
         indexes = [
             # Search by week
-            models.Index(fields = ["week_starting"], name = "assessment_by_date_idx"),
+            models.Index(fields = ["patient_profile", "week_starting"], name = "assessment_by_date_idx"),
         ]
 
 
