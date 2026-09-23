@@ -8,7 +8,7 @@ import ENTRY_COMPONENTS, { ENTRY_TYPE } from "../answerFields/EntryRegistry";
 class QuestionProps {
   title?: String;
   detail?: String;
-  questionType?: ENTRY_TYPE;
+  questionType!: ENTRY_TYPE;
 }
 
 export default function Question({
