@@ -1,16 +1,7 @@
 import React, { useState } from "react";
-import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
-import type { ReactElement } from "react";
-import {
-  Text,
-  TextInput,
-  View,
-  StyleSheet,
-  Button,
-  TouchableOpacity,
-} from "react-native";
-import { AnswerField } from "../baseComponents/AnswerField";
-//import { } from "";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Text, View, StyleSheet, TouchableOpacity } from "react-native";
+import { themes } from "../../constants/theme";
 
 //MultipleChoice variables
 const NUM_CHOICES = 6;

@@ -1,19 +1,10 @@
 //built on NumberEntry and uses community slider
 
 import React, { useState } from "react";
-import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
-import type { ReactElement } from "react";
-import {
-  Text,
-  TextInput,
-  View,
-  StyleSheet,
-  Button,
-  useColorScheme,
-} from "react-native";
-import { AnswerField } from "../baseComponents/AnswerField";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Text, View } from "react-native";
 import Slider from "@react-native-community/slider";
-//import { } from "";
+import { themes } from "../../constants/theme";
 
 //numberInput variables
 const LOWER_BOUND = 0;
@@ -89,4 +80,3 @@ function SliderEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
 }
 
 export { SliderEntry }; //add the new component here
-// Note: TextInput removed from file-level scope; keep UI inside SliderEntry component.

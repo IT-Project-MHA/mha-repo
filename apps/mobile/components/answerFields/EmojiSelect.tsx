@@ -2,24 +2,13 @@
 //this is like multiple choice but aligned laterally
 
 import React, { useState } from "react";
-import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
-import type { ReactElement } from "react";
-import {
-  Text,
-  TextInput,
-  View,
-  StyleSheet,
-  Button,
-  TouchableOpacity,
-} from "react-native";
-import { AnswerField } from "../baseComponents/AnswerField";
-//import { } from "";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Text, View, StyleSheet, TouchableOpacity } from "react-native";
+import { themes } from "../../constants/theme";
 
 //MultipleChoice variables
-const NUM_CHOICES = 6;
+const NUM_CHOICES = 5;
 const MIN_SELECTIONS = 1;
-const MAX_SELECTIONS = 10;
-const MAX_LENGTH_NUM = String(MAX_SELECTIONS).length;
 
 function validateMultipleChoice(numText: string) {
   //checking if it's something we should accept, i.e. within range

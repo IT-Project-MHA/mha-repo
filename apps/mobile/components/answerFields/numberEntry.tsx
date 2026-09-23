@@ -13,10 +13,10 @@
   */
 
 import React, { useState } from "react";
-import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
-import type { ReactElement } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, TextInput, View, StyleSheet } from "react-native";
 import Button from "../atomicUI/Button";
+import { themes } from "../../constants/theme";
 //import { } from "";
 
 //numberInput variables
@@ -84,37 +84,7 @@ function NumberEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
   );
 }
 
-/*
-class NumberEntry extends AnswerField{
-  constructor(filled: boolean, data: any){
-    super(filled, data);
-    this.setAnswerView(this.makeIntoView());
-  }
-  enterData(){
-    //function to enter data
-  }
-
-  makeIntoView(): ReactElement<any, any>{
-    //returns the view that gets displayed
-    var view: ReactElement<any, any>;
-    view = <View>
-        <TextInput
-          style={styles.input}
-          onChangeText={this.enterData}
-          placeholder="numberInput"
-          keyboardType="numeric"  //does not prevent non-numeric input
-        />
-      </View>;
-    return view;
-  }
-}
-
-*/
-//Xavy will also do text entry, slider
-
-//Josh TODO: multiple choice, multi-select, emoji
-
-export { NumberEntry }; //add the new component here
+export { NumberEntry };
 
 //this is temporary, it should be in the central theme we have.
 const styles = StyleSheet.create({

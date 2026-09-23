@@ -13,11 +13,11 @@
   */
 
 import React, { useState } from "react";
-import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
-import type { ReactElement } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, TextInput, View, StyleSheet } from "react-native";
-import { AnswerField } from "../baseComponents/AnswerField";
 import Button from "../atomicUI/Button";
+import { themes } from "../../constants/theme";
+import { useTheme } from "../../context/ThemeContext";
 //import { } from "";
 
 //numberInput variables
@@ -44,6 +44,7 @@ function validateTextInput(text: string) {
 function TextEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
   const [value, setValue] = useState<string>("");
   const [error, setError] = useState<string>("");
+  const { theme } = useTheme();
 
   const handleChange = (text: string) => {
     setValue(sanitizeTextInput(text));
@@ -83,17 +84,7 @@ function TextEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
   );
 }
 
-/*
-        {Button({
-          label: "submit",
-          onPress: handleSubmit,
-          buttonType: themes.darkHC.primaryButton,
-        })}
-
-  */
-
 export { TextEntry }; //add the new component here
-
 //this is temporary, it should be in the central theme we have.
 const styles = StyleSheet.create({
   input: {

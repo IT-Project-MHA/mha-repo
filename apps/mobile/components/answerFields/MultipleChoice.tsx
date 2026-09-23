@@ -1,18 +1,9 @@
 //basically straight from here: https://dev.to/davelearns/building-a-basic-quiz-app-with-react-native-and-expo-go-a-complete-guide-11o
 
 import React, { useState } from "react";
-import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
-import type { ReactElement } from "react";
-import {
-  Text,
-  TextInput,
-  View,
-  StyleSheet,
-  Button,
-  TouchableOpacity,
-} from "react-native";
-import { AnswerField } from "../baseComponents/AnswerField";
-//import { } from "";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Text, StyleSheet, TouchableOpacity } from "react-native";
+import { themes } from "../../constants/theme";
 
 //MultipleChoice variables
 const NUM_CHOICES = 6;
