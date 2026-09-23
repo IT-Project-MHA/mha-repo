@@ -142,3 +142,26 @@ class TermsAndPrivacy(BaseModel):
                 name = "one_consent_per_document_version",
             )
         ]
+
+# OTP
+class PhoneVerification(BaseModel):
+    phone_number = models.CharField(max_length = 20, db_index = True)
+    code = models.CharField(max_length = 128)
+    # Lock after three attempts
+    attempts = models.PositiveSmallIntegerField(default = 0) 
+    used_at = models.DateTimeField(null = True, blank = True)
+    expires_at = models.DateTimeField()
+
+    class Meta:
+        db_table = "phone_verification"
+
+class TrustedDevice(BaseModel):
+    user = models.ForeignKey(User, on_delete = models.CASCADE, related_name = "trusted_devices")
+    device_id = models.CharField(max_length = 128)
+    label = models.CharField(max_length = 80, blank = True)
+    last_seen_at = models.DateTimeField(auto_now = True)
+    revoked_at = models.DateTimeField(null = True, blank = True)
+
+    class Meta:
+        db_table = "trusted_device"
+        constraints = [models.UniqueConstraint(fields = ["user", "device_id"], name = "one_row_per_device")]

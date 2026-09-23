@@ -66,8 +66,8 @@ class Assessment(BaseModel):
             models.UniqueConstraint(fields = ["patient_profile", "week_starting"], name = "one_assessment_per_week"),
         ]
         indexes = [
-            # Search by date
-            models.Index(fields = ["date"], name = "assessment_by_date_idx"),
+            # Search by week
+            models.Index(fields = ["week_starting"], name = "assessment_by_date_idx"),
         ]
 
 
