@@ -2,6 +2,7 @@
 //heading
 // instruction text
 import type React from "react";
+import { Component, ReactElement } from "react";
 import { Text, View, StyleSheet } from "react-native";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 
@@ -12,7 +13,7 @@ class QuestionProps {
 
 export default function Question ({
   title,
-  detail}: QuestionProps) {
+  detail}: QuestionProps,{ answerField }: { answerField: () => void }) {
 
   return (
     <SafeAreaView>
@@ -23,6 +24,7 @@ export default function Question ({
       <Text style={Styles.detail}>
         {detail}
       </Text>
+      answerField();
     </SafeAreaView>
   );
 }
