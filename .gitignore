@@ -10,3 +10,9 @@ __pycache__/
 # Secrets and Environment Variables
 .env
 *.local
+# SQL lite
+db.sqlite3
+*.sqlite3
+
+# Local device DB
+*.db
