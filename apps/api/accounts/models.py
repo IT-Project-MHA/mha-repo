@@ -32,7 +32,7 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin, BaseModel, SoftDeleteModel):
-    phone_number = models.CharField(max_length = 20, unique = True)
+    phone_number = models.CharField(max_length = 20)
     display_name = models.CharField(max_length = 120)
     email = models.EmailField(blank = True, null = True)
     is_active = models.BooleanField(default = True)
@@ -91,7 +91,8 @@ class SupportLink(BaseModel):
 
     patient_profile = models.ForeignKey(PatientProfile, on_delete = models.PROTECT, related_name = "support_links")
     patient_user = models.ForeignKey(User, on_delete = models.PROTECT, related_name = "patient_user")
-    supporter_user = models.ForeignKey(User, on_delete = models.PROTECT, related_name = "supporting")
+    supporter_user = models.ForeignKey(User, null = True, blank = True, on_delete = models.PROTECT, related_name = "supporting")
+    invited_phone_number = models.CharField(max_length = 20, blank = True) 
     status = models.CharField(max_length = 10, choices = Status.choices, default = Status.INVITED)
     invited_at = models.DateTimeField(auto_now_add = True)
     accepted_at = models.DateTimeField(null = True, blank = True)
@@ -104,7 +105,13 @@ class SupportLink(BaseModel):
             models.CheckConstraint(condition=~models.Q(patient_user = models.F("supporter_user")), name = "no_self_support"),
             # Stops the same person being added twice
             models.UniqueConstraint(fields = ["patient_profile", "supporter_user"], name = "one_link_per_pair"),
+            # Stops support row existing without saying who is suppported
+            models.CheckConstraint(
+                condition = models.Q(supporter_user__isnull = False) | ~models.Q(invited_phone_number = ""),
+                name = "supporter_or_phone_required",
+            ),
         ]
+        
         indexes = [
             # People I support
             models.Index(fields = ["supporter_user", "status"], name = "support_by_supporter_idx"),
