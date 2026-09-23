@@ -10,16 +10,15 @@ class AssessmentProps {
   currIndex!: number
 }
 
-export default function Assessment({title, questions, currIndex}: AssessmentProps) {
+export default function Assessment({ properties }: {properties: AssessmentProps}) {
   return (
     <SafeAreaView>
       <Button title="<- Back"></Button>
-      <Question title={questions[currIndex].title} detail={questions[currIndex].detail} 
-      questionType={questions[currIndex].questionType} />
-      <Text>{currIndex+1}/{questions.length}</Text>
+      <Question qProperties={properties.questions[properties.currIndex]} />
+      <Text>{properties.currIndex+1}/{properties.questions.length}</Text>
       <Button  onPress={() => {
-        currIndex++;
-          if (currIndex >= questions.length) {
+        properties.currIndex += 1;
+          if (properties.currIndex >= properties.questions.length) {
             // do something
           }}} 
           title="Record">
@@ -28,7 +27,7 @@ export default function Assessment({title, questions, currIndex}: AssessmentProp
   )
 }
 
-export { Assessment };
+export { Assessment, AssessmentProps };
 /**
   abstract class Assessment {
   //The section in which certain questions are grouped within

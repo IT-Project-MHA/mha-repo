@@ -6,7 +6,7 @@ import { MultiSelect } from "../../components/answerFields/MultiSelect";
 import { NumberEntry } from "../../components/answerFields/NumberEntry";
 import { SliderEntry } from "../../components/answerFields/SliderEntry";
 import { Question, QuestionProps } from "../../components/baseComponents/Question";
-import { Assessment } from "../../components/baseComponents/Assessment";
+import { Assessment, AssessmentProps } from "../../components/baseComponents/Assessment";
 //import {enterData} from ;
 
 export default function Index() {
@@ -26,6 +26,10 @@ export default function Index() {
   someProps.push(propsA);
   someProps.push(propsB);
   someProps.push(propsC);
+  let assessmentP: AssessmentProps = new AssessmentProps;
+  assessmentP.title="Testssessment";
+  assessmentP.questions = someProps;
+  assessmentP.currIndex = 0;
 
   //testing AnserFields
   return (
@@ -33,13 +37,12 @@ export default function Index() {
       <Text>test</Text>
 
       <SafeAreaView style={{ flexDirection: "row" }}>
-        <Assessment title="Testssessment" questions={someProps} currIndex={2}/>
+        <Assessment properties={assessmentP}/>
         <NumberEntry
           onSubmit={() => {
             /* enter data function */
           }}
         />
-        <Question title={"TEMP"} detail={"STRING"} questionType="TextEntry" />
         <SliderEntry
           onSubmit={() => {
             /* enter data function */
