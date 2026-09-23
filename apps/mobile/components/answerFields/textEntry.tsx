@@ -15,8 +15,9 @@
 import React, { useState } from "react";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import type { ReactElement } from "react";
-import { Text, TextInput, View, StyleSheet, Button } from "react-native";
+import { Text, TextInput, View, StyleSheet } from "react-native";
 import { AnswerField } from "../baseComponents/AnswerField";
+import Button from "../atomicUI/Button";
 //import { } from "";
 
 //numberInput variables
@@ -31,7 +32,7 @@ function sanitizeTextInput(text: string) {
 
 function validateTextInput(text: string) {
   //checking if it's something we should accept, i.e. within range
-  if (text == "") return "enter text"; //what it prints if submitted
+  //if (text == "") return "enter text"; //what it prints if submitted
 
   const length = Number(text);
   if (length > MAX_lENGTH_TEXT) {
@@ -70,41 +71,26 @@ function TextEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
           maxLength={MAX_lENGTH_TEXT}
         />
         {!!error && <Text>{error}</Text>}
-        <Button title="Submit" onPress={handleSubmit} />
+        <Button
+          label="submit"
+          onPress={() => {
+            onSubmit;
+          }}
+          buttonType="primaryButton"
+        />
       </View>
     </SafeAreaView>
   );
 }
 
 /*
-class TextEntry extends AnswerField{
-  constructor(filled: boolean, data: any){
-    super(filled, data);
-    this.setAnswerView(this.makeIntoView());
-  }
-  enterData(){
-    //function to enter data
-  }
-  
-  makeIntoView(): ReactElement<any, any>{
-    //returns the view that gets displayed
-    
-    var view: ReactElement<any, any>;
-    view = <View>
-        <TextInput
-          style={styles.input}
-          onChangeText={this.enterData}
-          placeholder="textInput"
-          //value={}
-        />
-      </View>;
-    return view;
-  }
-}
-  */
-//Xavy will also do text entry, slider
+        {Button({
+          label: "submit",
+          onPress: handleSubmit,
+          buttonType: themes.darkHC.primaryButton,
+        })}
 
-//Josh TODO: multiple choice, multi-select, emoji
+  */
 
 export { TextEntry }; //add the new component here
 

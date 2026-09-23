@@ -76,7 +76,7 @@ function MultipleChoice({ onSubmit }: { onSubmit: (v: string) => void }) {
   return (
     <SafeAreaView style={styles.container}>
       <Text>"Select the most relevant"</Text>
-      //render options as buttons
+      {/*render options as buttons*/}
       {options.map((option, index) => (
         <TouchableOpacity
           key={index}

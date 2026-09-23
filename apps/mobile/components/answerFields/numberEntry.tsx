@@ -15,8 +15,8 @@
 import React, { useState } from "react";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import type { ReactElement } from "react";
-import { Text, TextInput, View, StyleSheet, Button } from "react-native";
-import { AnswerField } from "../baseComponents/AnswerField";
+import { Text, TextInput, View, StyleSheet } from "react-native";
+import Button from "../atomicUI/Button";
 //import { } from "";
 
 //numberInput variables
@@ -72,7 +72,13 @@ function NumberEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
           maxLength={MAX_lENGTH_NUM}
         />
         {!!error && <Text>{error}</Text>}
-        <Button title="Submit" onPress={handleSubmit} />
+        <Button
+          label="submit"
+          onPress={() => {
+            onSubmit;
+          }}
+          buttonType="primaryButton"
+        />
       </View>
     </SafeAreaView>
   );
