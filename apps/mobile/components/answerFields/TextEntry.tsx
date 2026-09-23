@@ -23,13 +23,6 @@ import { useTheme } from "../../context/ThemeContext";
 //numberInput variables
 const MAX_lENGTH_TEXT = 1000;
 
-function sanitizeTextInput(text: string) {
-  /*let t = text.replace(/[^0-9]/g, ''); //removes any non-number
-  t = t.slice(0, MAX_lENGTH_NUM); //cuts down to our max length
-  return t;*/
-  return text;
-}
-
 function validateTextInput(text: string) {
   //checking if it's something we should accept, i.e. within range
   //if (text == "") return "enter text"; //what it prints if submitted
@@ -47,7 +40,7 @@ function TextEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
   const { theme } = useTheme();
 
   const handleChange = (text: string) => {
-    setValue(sanitizeTextInput(text));
+    setValue(text);
     if (error) setError("");
   };
 
@@ -91,6 +84,6 @@ const styles = StyleSheet.create({
     height: 40,
     margin: 12,
     borderWidth: 1,
-    padding: 10,
-  },
+    padding: 10
+  }
 });

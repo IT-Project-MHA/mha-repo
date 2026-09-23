@@ -6,7 +6,6 @@ import { SliderEntry } from "../../components/answerFields/SliderEntry";
 import { MultipleChoice } from "../../components/answerFields/MultipleChoice";
 import { MultiSelect } from "../../components/answerFields/MultiSelect";
 import { EmojiSelect } from "../../components/answerFields/EmojiSelect";
-import Question from "../../components/baseComponents/Question";
 //import {enterData} from ;
 
 export default function Index() {
@@ -21,7 +20,6 @@ export default function Index() {
             /* enter data function */
           }}
         />
-        <Question title={"TEMP"} detail={"STRING"} />
         <TextEntry
           onSubmit={() => {
             /* enter data function */
