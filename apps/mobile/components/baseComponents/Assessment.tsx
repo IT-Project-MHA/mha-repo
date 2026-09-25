@@ -1,5 +1,6 @@
 import type React from "react";
-import { Text, View, StyleSheet, Button, } from "react-native";
+import { useState } from "react";
+import { Text, View, StyleSheet, Button} from "react-native";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { Question, QuestionProps } from "../../components/baseComponents/Question";
 
@@ -7,22 +8,24 @@ import { Question, QuestionProps } from "../../components/baseComponents/Questio
 class AssessmentProps {
   title?: String;
   questions!: QuestionProps[];
-  currIndex!: number
+  firstIndex!: number
 }
 
 export default function Assessment({ properties }: {properties: AssessmentProps}) {
+  const [currIndex, setNumber] = useState(properties.firstIndex);
+  let currQuestion: QuestionProps = properties.questions[currIndex];
   return (
     <SafeAreaView>
       <Button title="<- Back"></Button>
-      <Question qProperties={properties.questions[properties.currIndex]} />
-      <Text>{properties.currIndex+1}/{properties.questions.length}</Text>
+      <Question qProperties={properties.questions[currIndex]} />
+      <Text>{currIndex+1}/{properties.questions.length}</Text>
       <Button  onPress={() => {
-        properties.currIndex += 1;
-          if (properties.currIndex >= properties.questions.length) {
-            // do something
+        if (currIndex >= properties.questions.length) {
+            // submit assessment
+          } else {
+            setNumber(currIndex + 1);
           }}} 
-          title="Record">
-      </Button>
+          title="Record"></Button>
     </SafeAreaView>
   )
 }

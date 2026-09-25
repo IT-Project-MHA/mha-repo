@@ -29,7 +29,7 @@ export default function Index() {
   let assessmentP: AssessmentProps = new AssessmentProps;
   assessmentP.title="Testssessment";
   assessmentP.questions = someProps;
-  assessmentP.currIndex = 0;
+  assessmentP.firstIndex = 0;
 
   //testing AnserFields
   return (
