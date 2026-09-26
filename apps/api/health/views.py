@@ -71,3 +71,87 @@ class AssessmentRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     queryset = Assessment.objects.all()
     serializer_class = AssessmentSerializer
     lookup_field = "pk"
+
+# Assessment task APIs (MyPain, MyMovement, MyPersonalCare, MySocialHealth, MyManagement):
+# - can only read records filtered by adding assessment id in the URL in the form:
+#   ?assessment=...
+
+class MyPainListCreate(generics.ListCreateAPIView):
+    queryset = MyPain.objects.all()
+    serializer_class = MyPainSerializer
+
+    def get_queryset(self):
+        assessment = self.request.query_params.get("assessment")
+        if assessment:
+            return MyPain.objects.filter(assessment=assessment)
+        else:
+            return MyPain.objects.none()
+
+class MyPainRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+    queryset = MyPain.objects.all()
+    serializer_class = MyPainSerializer
+    lookup_field = "pk"
+
+class MyMovementListCreate(generics.ListCreateAPIView):
+    queryset = MyMovement.objects.all()
+    serializer_class = MyMovementSerializer
+
+    def get_queryset(self):
+        assessment = self.request.query_params.get("assessment")
+        if assessment:
+            return MyMovement.objects.filter(assessment=assessment)
+        else:
+            return MyMovement.objects.none()
+
+class MyMovementRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+    queryset = MyMovement.objects.all()
+    serializer_class = MyMovementSerializer
+    lookup_field = "pk"
+
+class MyPersonalCareListCreate(generics.ListCreateAPIView):
+    queryset = MyMovement.objects.all()
+    serializer_class = MyMovementSerializer
+
+    def get_queryset(self):
+        assessment = self.request.query_params.get("assessment")
+        if assessment:
+            return MyMovement.objects.filter(assessment=assessment)
+        else:
+            return MyMovement.objects.none()
+
+class MyPersonalCareRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+    queryset = MyMovement.objects.all()
+    serializer_class = MyMovementSerializer
+    lookup_field = "pk"
+
+class MySocialHealthListCreate(generics.ListCreateAPIView):
+    queryset = MySocialHealth.objects.all()
+    serializer_class = MySocialHealthSerializer
+
+    def get_queryset(self):
+        assessment = self.request.query_params.get("assessment")
+        if assessment:
+            return MySocialHealth.objects.filter(assessment=assessment)
+        else:
+            return MySocialHealth.objects.none()
+
+class MySocialHealthRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+    queryset = MySocialHealth.objects.all()
+    serializer_class = MySocialHealthSerializer
+    lookup_field = "pk"
+
+class MyManagementListCreate(generics.ListCreateAPIView):
+    queryset = MySocialHealth.objects.all()
+    serializer_class = MySocialHealthSerializer
+
+    def get_queryset(self):
+        assessment = self.request.query_params.get("assessment")
+        if assessment:
+            return MySocialHealth.objects.filter(assessment=assessment)
+        else:
+            return MySocialHealth.objects.none()
+
+class MyManagementRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+    queryset = MySocialHealth.objects.all()
+    serializer_class = MySocialHealthSerializer
+    lookup_field = "pk"
