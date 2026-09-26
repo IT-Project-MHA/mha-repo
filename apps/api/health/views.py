@@ -7,7 +7,7 @@ from rest_framework import generics
 from rest_framework import status
 from rest_framework.views import APIView
 from .models import Prescription, Assessment, MyPain, MyMovement, MyPersonalCare, \
-   MySocialHealth, MyManagement, GeneratedDocument, TempPatientProfile
+   MySocialHealth, MyManagement, TempPatientProfile
 from .serializer import *
 from datetime import date
 

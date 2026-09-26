@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Prescription, Assessment, MyPain, MyMovement, MyPersonalCare, \
-   MySocialHealth, MyManagement, GeneratedDocument, TempPatientProfile
+   MySocialHealth, MyManagement, TempPatientProfile
 
 # TempPatientProfileSerializer is a serializer for a temporary class & 
 # must be removed once \accounts APIs are written.
@@ -38,9 +38,4 @@ class MySocialHealthSerializer(serializers.ModelSerializer):
 class MyManagementSerializer(serializers.ModelSerializer):
     class Meta:
         model = MyManagement
-        fields = '__all__'
-
-class GeneratedDocumentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = GeneratedDocument
         fields = '__all__'
