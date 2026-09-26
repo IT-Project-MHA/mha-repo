@@ -3,8 +3,8 @@ from accounts.models import PatientProfile
 from django.core.validators import MaxValueValidator, MinValueValidator
 from mpowered_api.base_models import BaseModel, SoftDeleteModel
 
-# Temporary class for API testing.
-# replace all instances of TempPatientProfile with PatientProfile & delete this
+# TempPatientProfile is a Temporary class for API testing.
+# Replace all instances of TempPatientProfile with PatientProfile & delete this
 # TempPatientProfile class after \accounts APIs have been written, then migrate
 # to apply changes
 
@@ -64,7 +64,7 @@ class Assessment(BaseModel):
     submitted_at = models.DateTimeField(null = True, blank = True)
     reflection = models.CharField(null = True, blank = True, max_length = 300)
     week_starting = models.DateField()
-    status = models.CharField()
+    status = models.CharField(default = Status.DRAFT, max_length = 10, choices = Status.choices)
 
     class Meta:
         db_table = "assessment"

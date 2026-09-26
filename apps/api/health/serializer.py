@@ -2,6 +2,9 @@ from rest_framework import serializers
 from .models import Prescription, Assessment, MyPain, MyMovement, MyPersonalCare, \
    MySocialHealth, MyManagement, GeneratedDocument, TempPatientProfile
 
+# TempPatientProfileSerializer is a serializer for a temporary class & 
+# must be removed once \accounts APIs are written.
+
 class TempPatientProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = TempPatientProfile
