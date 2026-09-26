@@ -1,11 +1,16 @@
 from rest_framework import serializers
 from .models import Prescription, Assessment, MyPain, MyMovement, MyPersonalCare, \
-   MySocialHealth, MyManagement, GeneratedDocument
+   MySocialHealth, MyManagement, GeneratedDocument, TempPatientProfile
+
+class TempPatientProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TempPatientProfile
+        fields = '__all__'
 
 class PrescriptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Prescription
-        fields = ['name','dosage','strength','started_on','stopped_on','notes','strength_unit','form','frequency','frequency_unit']
+        fields = '__all__'
 
 class AssessmentSerializer(serializers.ModelSerializer):
     class Meta:
