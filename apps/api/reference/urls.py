@@ -5,14 +5,14 @@ from .views import *
 urlpatterns = [
     path('questionOption/', 
          views.QuestionOptionListCreate.as_view(), 
-         name ='get_profiles'),
+         name ='read_create_question_option'),
     path('questionOption/<str:pk>', 
          views.QuestionOptionRetrieveUpdateDestroy.as_view(), 
-         name ='create_profile'),
+         name ='edit_question_option'),
     path('questionOptionOrdered/', 
          views.QuestionOptionOrderedListCreate.as_view(), 
-         name = 'read_create_prescriptions'),
+         name = 'read_create_question_option_ordered'),
     path('questionOptionOrdered/<str:pk>', 
          views.QuestionOptionOrderedRetrieveUpdateDestroy.as_view(), 
-         name ='update_prescription')
+         name ='update_question_option_ordered')
 ]
