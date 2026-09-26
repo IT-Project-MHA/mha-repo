@@ -1,6 +1,4 @@
 from django.shortcuts import render
-
-# Create your views here.
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import generics
@@ -24,7 +22,7 @@ class ProfileRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = "pk"
 
 # Prescription APIs:
-# - can only read records filtered by adding patient_profile id in the URL in the form:
+# - can only read records filtered by patient_profile id in the URL in the form:
 #   ?patient_profile=...
 
 class PrescriptionListCreate(generics.ListCreateAPIView):
@@ -44,7 +42,7 @@ class PrescriptionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = "pk"
 
 # Assessment APIs:
-# - can only read records filtered by adding patient_profile id in the URL in the form:
+# - can only read records filtered by patient_profile id in the URL in the form:
 #   ?patient_profile=...
 # - can read records filtered by a week_starting date in the URL in the form:
 #   ?week_starting=...
@@ -73,7 +71,7 @@ class AssessmentRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = "pk"
 
 # Assessment task APIs (MyPain, MyMovement, MyPersonalCare, MySocialHealth, MyManagement):
-# - can only read records filtered by adding assessment id in the URL in the form:
+# - can only read records filtered by assessment id in the URL in the form:
 #   ?assessment=...
 
 class MyPainListCreate(generics.ListCreateAPIView):
