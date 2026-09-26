@@ -3,10 +3,18 @@ from accounts.models import PatientProfile
 from django.core.validators import MaxValueValidator, MinValueValidator
 from mpowered_api.base_models import BaseModel, SoftDeleteModel
 
+# Temporary class for API testing.
+# replace all instances of TempPatientProfile with PatientProfile & delete this
+# TempPatientProfile class after \accounts APIs have been written, then migrate
+# to apply changes
+
+class TempPatientProfile(BaseModel):
+    name = models.CharField(max_length = 120)
+
 # Prescriptions and Weekly Assessments
 
 class Prescription(BaseModel, SoftDeleteModel): 
-    patient_profile = models.ForeignKey(PatientProfile, on_delete = models.CASCADE, related_name = "perscriptions")
+    patient_profile = models.ForeignKey(TempPatientProfile, on_delete = models.CASCADE, related_name = "perscriptions")
     name = models.CharField(max_length = 50)
     dosage = models.PositiveSmallIntegerField()
 
@@ -52,7 +60,7 @@ class Assessment(BaseModel):
         SUBMITTED = "submitted", "Submitted"
         EXPIRED = "expired", "Expired"
 
-    patient_profile = models.ForeignKey(PatientProfile, on_delete = models.CASCADE, related_name = "assessment_assessments")
+    patient_profile = models.ForeignKey(TempPatientProfile, on_delete = models.CASCADE, related_name = "assessment_assessments")
     submitted_at = models.DateTimeField(null = True, blank = True)
     reflection = models.CharField(null = True, blank = True, max_length = 300)
     week_starting = models.DateField()
@@ -159,7 +167,7 @@ class GeneratedDocument(BaseModel):
         PAIN_PROFILE = "pain_profile", "Pain Profile"
         APPOINTMENT = "appointment", "Appointment Summary"
 
-    patient_profile = models.ForeignKey("accounts.PatientProfile", on_delete = models.PROTECT, related_name = "documents")
+    patient_profile = models.ForeignKey(TempPatientProfile, on_delete = models.PROTECT, related_name = "documents")
     generated_by = models.ForeignKey("accounts.User", on_delete = models.PROTECT, related_name = "+")
     type = models.CharField(max_length = 20, choices = DocumentType.choices)
     document_file = models.FileField(upload_to = "documents/%Y/%m/", null = True, blank = True)
