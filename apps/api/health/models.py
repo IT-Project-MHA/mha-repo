@@ -160,22 +160,3 @@ class MyManagement(BaseModel):
     completed_at = models.DateTimeField(null = True, blank = True)
 
     class Meta: db_table = "my_management"
-
-class GeneratedDocument(BaseModel):
-    class DocumentType(models.TextChoices):
-        PAIN_CHART = "pain_chart", "Pain Chart"
-        PAIN_PROFILE = "pain_profile", "Pain Profile"
-        APPOINTMENT = "appointment", "Appointment Summary"
-
-    patient_profile = models.ForeignKey(TempPatientProfile, on_delete = models.PROTECT, related_name = "documents")
-    generated_by = models.ForeignKey("accounts.User", on_delete = models.PROTECT, related_name = "+")
-    type = models.CharField(max_length = 20, choices = DocumentType.choices)
-    document_file = models.FileField(upload_to = "documents/%Y/%m/", null = True, blank = True)
-    date_from = models.DateField(null = True, blank = True)
-    date_until = models.DateField(null = True, blank = True)
-    generated_at = models.DateTimeField(auto_now_add = True)
-
-    class Meta:
-        db_table = "generated_document"
-        ordering = ["-generated_at"]
-        indexes = [models.Index(fields = ["patient_profile", "-generated_at"], name = "document_by_patient_idx")]
