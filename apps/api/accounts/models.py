@@ -105,7 +105,7 @@ class SupportLink(BaseModel):
             models.CheckConstraint(condition=~models.Q(patient_user = models.F("supporter_user")), name = "no_self_support"),
             # Stops the same person being added twice
             models.UniqueConstraint(fields = ["patient_profile", "supporter_user"], name = "one_link_per_pair"),
-            # Stops support row existing without saying who is suppported
+            # Stops support row existing without saying who is supported
             models.CheckConstraint(
                 condition = models.Q(supporter_user__isnull = False) | ~models.Q(invited_phone_number = ""),
                 name = "supporter_or_phone_required",

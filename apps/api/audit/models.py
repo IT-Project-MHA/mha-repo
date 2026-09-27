@@ -43,21 +43,3 @@ class AuditEntry(BaseModel):
             # All audit logs for this person, sorted by newest first
             models.Index(fields = ["patient_profile", "-occurred_at"], name = "audit_by_patient_idx"),
         ]
-
-# Access logs
-
-class QuestionAccessLog(BaseModel):
-    question = models.ForeignKey("appointment.AppointmentQuestion", on_delete = models.CASCADE, related_name = "question")
-    support_person = models.ForeignKey("accounts.User", on_delete = models.CASCADE, related_name = "question_support_person")
-
-    class Meta:
-        db_table = "question_access"
-        ordering = ["-created_at"]
-
-class AppointmentAccessLog(BaseModel):
-    appointment = models.ForeignKey("appointment.Appointment", on_delete = models.CASCADE, related_name = "log_appointment")
-    support_person = models.ForeignKey("accounts.user", on_delete = models.CASCADE, related_name = "appointment_support_person")
-
-    class Meta:
-        db_table = "appointment_access_logs"
-        ordering = ["-created_at"]

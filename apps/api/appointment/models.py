@@ -10,8 +10,8 @@ class Appointment(BaseModel, SoftDeleteModel):
 
     patient_profile = models.ForeignKey("accounts.PatientProfile", on_delete = models.PROTECT, related_name = "appointment_patient")
     scheduled_date = models.DateField()
-    doctor = models.CharField(max_length = 100, blank = True)
-    status = models.CharField(choices = Status.choices, default = Status.PLANNED)
+    doctor = models.CharField(max_length = 100, blank = True, null = True)
+    status = models.CharField(max_length = 20, choices = Status.choices, default = Status.PLANNED)
 
     class HealthService(models.TextChoices):
         GP = "General Practitioner", "General Practitioner"
@@ -60,8 +60,8 @@ class AppointmentQuestion(BaseModel, SoftDeleteModel):
         SUPPORT = "support", "Written by support person"
 
     appointment = models.ForeignKey(Appointment, on_delete = models.PROTECT, related_name = "appointment_questions")
-    text = models.TextField()
-    source = models.CharField(max_length = 12, choices = Source.choices, default = Source.PATIENT)
+    text = models.TextField(max_length = 200)
+    source = models.CharField(max_length = 30, choices = Source.choices, default = Source.PATIENT)
     created_by = models.ForeignKey("accounts.User", on_delete = models.PROTECT, related_name = "+")
     order_index = models.PositiveSmallIntegerField(default = 0)
     is_selected = models.BooleanField(default = True)
