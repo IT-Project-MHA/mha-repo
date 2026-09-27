@@ -56,7 +56,10 @@ const SCHEMA = `
         deleted_at INTEGER,
         phone_number TEXT(20) NOT NULL,
         display_name TEXT(120) NOT NULL,
-        email TEXT(254)
+        email TEXT(254),        
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        is_synced INTEGER NOT NULL DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS UserSettings (
@@ -82,7 +85,8 @@ const SCHEMA = `
         assigned_gender_at_birth TEXT(40),
         birth_year INTEGER,
         created_at INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL
+        updated_at INTEGER NOT NULL,
+        is_synced INTEGER NOT NULL DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS PatientProfile_PainTypes (
@@ -103,7 +107,8 @@ const SCHEMA = `
         accepted_at INTEGER,
         revoked_at INTEGER,
         created_at INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL
+        updated_at INTEGER NOT NULL,
+        is_synced INTEGER NOT NULL DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS Assessment (
@@ -268,7 +273,7 @@ const SCHEMA = `
         server_id TEXT UNIQUE,
         deleted_at INTEGER,
         patient_profile TEXT NOT NULL REFERENCES PatientProfile(id),
-        scheduled_date INTEGER NOT NULL,
+        scheduled_date TEXT(10) NOT NULL,
         doctor TEXT(100),
         status TEXT(20) NOT NULL,
         created_by TEXT NOT NULL REFERENCES User(id),
@@ -325,7 +330,8 @@ const SCHEMA = `
         granted_at INTEGER NOT NULL,
         revoked_at INTEGER,
         created_at INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL
+        updated_at INTEGER NOT NULL,
+        is_synced INTEGER NOT NULL DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS AuditEntry (
@@ -338,7 +344,9 @@ const SCHEMA = `
         target_local_id TEXT,
         target_server_id TEXT,
         occurred_at INT NOT NULL,          
-        context TEXT,                     
+        context TEXT,            
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,         
         is_synced INTEGER NOT NULL DEFAULT 0
     );
 
