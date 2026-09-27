@@ -53,6 +53,7 @@ const SCHEMA = `
     CREATE TABLE IF NOT EXISTS User (
         id TEXT PRIMARY KEY NOT NULL,
         server_id TEXT UNIQUE NOT NULL,
+        deleted_at INTEGER,
         phone_number TEXT(20) NOT NULL,
         display_name TEXT(120) NOT NULL,
         email TEXT(254)
@@ -85,8 +86,8 @@ const SCHEMA = `
     );
 
     CREATE TABLE IF NOT EXISTS PatientProfile_PainTypes (
-        patient_profile_id TEXT NOT NULL REFERENCES PatientProfile(id),
-        pain_type_id TEXT NOT NULL REFERENCES QuestionOption(id),
+        patient_profile TEXT NOT NULL REFERENCES PatientProfile(id),
+        pain_type TEXT NOT NULL REFERENCES QuestionOption(id),
         PRIMARY KEY (patient_profile, pain_type)
     );
 
@@ -95,7 +96,7 @@ const SCHEMA = `
         server_id TEXT UNIQUE NOT NULL,
         patient_profile TEXT NOT NULL REFERENCES PatientProfile(id),
         patient_user TEXT NOT NULL REFERENCES User(id),
-        supporter_user TEXT NOT NULL REFERENCES User(id),
+        supporter_user TEXT REFERENCES User(id),
         invited_phone_number TEXT(20),
         status TEXT(10) NOT NULL,
         invited_at INTEGER NOT NULL,
@@ -111,7 +112,7 @@ const SCHEMA = `
         patient_profile TEXT NOT NULL REFERENCES PatientProfile(id),
         submitted_at INT,
         reflection TEXT(300),
-        week_starting INTEGER NOT NULL,
+        week_starting TEXT(10) NOT NULL,
         status TEXT(10) NOT NULL,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL,
@@ -128,8 +129,8 @@ const SCHEMA = `
         name TEXT(50) NOT NULL,
         dosage INTEGER NOT NULL,
         strength INTEGER NOT NULL,
-        started_on INTEGER,
-        stopped_on INTEGER,
+        started_on TEXT(10),
+        stopped_on TEXT(10),
         notes TEXT,
         strength_unit TEXT(10) NOT NULL,
         form TEXT(20) NOT NULL,
@@ -162,15 +163,15 @@ const SCHEMA = `
     CREATE INDEX IF NOT EXISTS my_pain_synced_idx ON MyPain(is_synced);
 
     CREATE TABLE IF NOT EXISTS MyPain_PainLocation (
-        my_pain_id TEXT NOT NULL REFERENCES MyPain(id),
-        pain_location_id TEXT NOT NULL REFERENCES QuestionOption(id),
-        PRIMARY KEY (my_pain_id, pain_location_id)
+        my_pain TEXT NOT NULL REFERENCES MyPain(id),
+        pain_location TEXT NOT NULL REFERENCES QuestionOption(id),
+        PRIMARY KEY (my_pain, pain_location)
     );
 
     CREATE TABLE IF NOT EXISTS MyPain_PainCharacteristic (
-        my_pain_id TEXT NOT NULL REFERENCES MyPain(id),
-        pain_characteristic_id TEXT NOT NULL REFERENCES QuestionOption(id),
-        PRIMARY KEY (my_pain_id, pain_characteristic_id)
+        my_pain TEXT NOT NULL REFERENCES MyPain(id),
+        pain_characteristic TEXT NOT NULL REFERENCES QuestionOption(id),
+        PRIMARY KEY (my_pain, pain_characteristic)
     );
 
     CREATE TABLE IF NOT EXISTS MyMovement (
@@ -193,9 +194,9 @@ const SCHEMA = `
     CREATE INDEX IF NOT EXISTS my_movement_synced_idx ON MyMovement(is_synced);
 
     CREATE TABLE IF NOT EXISTS MyMovement_GeneralImpact (
-        my_movement_id TEXT NOT NULL REFERENCES MyMovement(id),
-        general_impact_id TEXT NOT NULL REFERENCES QuestionOptionOrdered(id),
-        PRIMARY KEY (my_movement_id, general_impact_id)
+        my_movement TEXT NOT NULL REFERENCES MyMovement(id),
+        general_impact TEXT NOT NULL REFERENCES QuestionOptionOrdered(id),
+        PRIMARY KEY (my_movement, general_impact)
     );
 
     CREATE TABLE IF NOT EXISTS MyPersonalCare (
@@ -205,7 +206,7 @@ const SCHEMA = `
         personal_care TEXT NOT NULL REFERENCES QuestionOptionOrdered(id),
         sleeping TEXT NOT NULL REFERENCES QuestionOptionOrdered(id),
         reflection TEXT(300),
-        score INTEGER,
+        score INTEGER NOT NULL,
         completed_at INTEGER,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL,
@@ -215,9 +216,9 @@ const SCHEMA = `
     CREATE INDEX IF NOT EXISTS my_personal_care_synced_idx ON MyPersonalCare(is_synced);
 
     CREATE TABLE IF NOT EXISTS MyPersonalCare_GeneralActivitiesImpact (
-        my_personal_care_id TEXT NOT NULL REFERENCES MyPersonalCare(id),
-        general_activities_impact_id TEXT NOT NULL REFERENCES QuestionOptionOrdered(id),
-        PRIMARY KEY (my_personal_care_id, general_activities_impact_id)
+        my_personal_care TEXT NOT NULL REFERENCES MyPersonalCare(id),
+        general_activities_impact TEXT NOT NULL REFERENCES QuestionOptionOrdered(id),
+        PRIMARY KEY (my_personal_care, general_activities_impact)
     );
 
     CREATE TABLE IF NOT EXISTS MySocialHealth (
@@ -265,6 +266,7 @@ const SCHEMA = `
     CREATE TABLE IF NOT EXISTS Appointment (
         id TEXT PRIMARY KEY NOT NULL,
         server_id TEXT UNIQUE,
+        deleted_at INTEGER,
         patient_profile TEXT NOT NULL REFERENCES PatientProfile(id),
         scheduled_date INTEGER NOT NULL,
         doctor TEXT(100),
@@ -282,7 +284,8 @@ const SCHEMA = `
     CREATE TABLE IF NOT EXISTS AppointmentQuestion (
         id TEXT PRIMARY KEY NOT NULL,
         server_id TEXT UNIQUE,
-        appointment REFERENCES Appointment(id),
+        deleted_at INTEGER,
+        appointment TEXT NOT NULL REFERENCES Appointment(id),
         text TEXT(200) NOT NULL,
         source TEXT(30) NOT NULL,
         created_by TEXT NOT NULL REFERENCES User(id),
@@ -298,7 +301,8 @@ const SCHEMA = `
     CREATE TABLE IF NOT EXISTS AppointmentAnswer (
         id TEXT PRIMARY KEY NOT NULL,
         server_id TEXT UNIQUE,
-        question REFERENCES QppointmentQuestion(id),
+        deleted_at INTEGER,
+        question TEXT NOT NULL REFERENCES AppointmentQuestion(id),
         text TEXT,
         recording_file TEXT(200),
         transcript TEXT,
@@ -348,8 +352,8 @@ const SCHEMA = `
         operation TEXT NOT NULL,
         payload TEXT NOT NULL,
         status TEXT NOT NULL,
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
     );
 
     CREATE INDEX IF NOT EXISTS outbox_status_created_at_idx ON outbox(status, created_at);

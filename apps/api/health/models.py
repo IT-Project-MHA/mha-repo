@@ -143,7 +143,7 @@ class MyManagement(BaseModel):
     assessment = models.OneToOneField(Assessment, on_delete = models.CASCADE, related_name = "my_management")
     medication = models.ManyToManyField(Prescription, blank = True, related_name = "my_management_prescriptions")
     otc_medication = models.CharField(null = True, blank = True, max_length = 300)
-    exercise = models.ForeignKey("reference.QuestionOptionOrdered", null = True, blank = True, on_delete = models.PROTECT,
+    exercise = models.ForeignKey("reference.QuestionOptionOrdered", on_delete = models.PROTECT,
                                  related_name = "+", limit_choices_to = {"question_key": "management_exercise"})
     emotion = models.CharField(null = True, blank = True, max_length = 300)
     score = models.PositiveSmallIntegerField(validators = [MinValueValidator(0), MaxValueValidator(20)])
