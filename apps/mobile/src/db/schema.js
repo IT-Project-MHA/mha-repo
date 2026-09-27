@@ -325,4 +325,17 @@ const SCHEMA = `
 
     CREATE INDEX IF NOT EXISTS audit_synced_idx ON auditEntry(is_synced);
     CREATE INDEX IF NOT EXISTS audit_by_patient_idx ON auditEntry(patient_profile_id, occurred_at DESC);
+
+    CREATE TABLE IF NOT EXISTS outbox (
+        id TEXT PRIMARY KEY NOT NULL,
+        entity_type TEXT NOT NULL,
+        entity_id TEXT NOT NULL,
+        operation TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        status TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS outbox_status_created_at_idx ON outbox(status, created_at);
 `;
