@@ -26,7 +26,7 @@ const SCHEMA = `
 
     CREATE TABLE IF NOT EXISTS QuestionOption (
         id TEXT PRIMARY KEY NOT NULL,
-        server_id TEXT UNIQUE NOT NULL,
+        server_id TEXT UNIQUE,
         app_section TEXT(30) NOT NULL,
         question_key TEXT(40) NOT NULL,
         text TEXT(50) NOT NULL,
@@ -39,7 +39,7 @@ const SCHEMA = `
     CREATE TABLE IF NOT EXISTS QuestionOptionOrdered (
         id TEXT PRIMARY KEY NOT NULL,
         app_section TEXT(30) NOT NULL,
-        server_id TEXT UNIQUE NOT NULL,
+        server_id TEXT UNIQUE,
         text TEXT(100) NOT NULL,
         question_number INT NOT NULL,
         question_key TEXT(40) NOT NULL,
@@ -52,7 +52,7 @@ const SCHEMA = `
 
     CREATE TABLE IF NOT EXISTS User (
         id TEXT PRIMARY KEY NOT NULL,
-        server_id TEXT UNIQUE NOT NULL,
+        server_id TEXT UNIQUE,
         deleted_at INTEGER,
         phone_number TEXT(20) NOT NULL,
         display_name TEXT(120) NOT NULL,
@@ -78,7 +78,7 @@ const SCHEMA = `
 
     CREATE TABLE IF NOT EXISTS PatientProfile (
         id TEXT PRIMARY KEY NOT NULL,
-        server_id TEXT UNIQUE NOT NULL,
+        server_id TEXT UNIQUE,
         user TEXT NOT NULL REFERENCES User(id),
         has_diagnosis INTEGER NOT NULL,
         other_conditions TEXT,
@@ -97,7 +97,7 @@ const SCHEMA = `
 
     CREATE TABLE IF NOT EXISTS SupportLink (
         id TEXT PRIMARY KEY NOT NULL,
-        server_id TEXT UNIQUE NOT NULL,
+        server_id TEXT UNIQUE,
         patient_profile TEXT NOT NULL REFERENCES PatientProfile(id),
         patient_user TEXT NOT NULL REFERENCES User(id),
         supporter_user TEXT REFERENCES User(id),
@@ -263,9 +263,9 @@ const SCHEMA = `
     CREATE INDEX IF NOT EXISTS my_management_synced_idx ON MyManagement(is_synced);
 
     CREATE TABLE IF NOT EXISTS MyManagement_Medication (
-        my_management_id TEXT NOT NULL REFERENCES MyManagement(id),
-        medication_id TEXT NOT NULL REFERENCES Prescription(id),
-        PRIMARY KEY (my_management_id, medication_id)
+        my_management TEXT NOT NULL REFERENCES MyManagement(id),
+        medication TEXT NOT NULL REFERENCES Prescription(id),
+        PRIMARY KEY (my_management, medication)
     );
 
     CREATE TABLE IF NOT EXISTS Appointment (
