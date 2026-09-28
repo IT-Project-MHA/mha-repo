@@ -1,27 +1,12 @@
-/*
-  Can be: (as in implementations)
-  - number entry
-  - multiple choice
-  - text entry
-  - multiselect
-  - slider
-  - emoji
-
-  All AnswerFields have a view and some function to get data out
-  Also a boolean filled / not filled
-  And answer type
-  */
-
 import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, TextInput, View, StyleSheet } from "react-native";
 import Button from "../atomicUI/Button";
-import { themes } from "../../constants/theme";
 import { useTheme } from "../../context/ThemeContext";
-//import { } from "";
 
-//numberInput variables
-const MAX_lENGTH_TEXT = 1000;
+
+//Input variables
+const MAX_lENGTH_TEXT = 5;
 
 function validateTextInput(text: string) {
   //checking if it's something we should accept, i.e. within range
@@ -29,15 +14,17 @@ function validateTextInput(text: string) {
 
   const length = Number(text);
   if (length > MAX_lENGTH_TEXT) {
-    return "enter no more than 1000 characters";
+    return "enter no more than 5 characters";
   }
   return null;
 }
 
 function TextEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
+  const { theme } = useTheme();
+
   const [value, setValue] = useState<string>("");
   const [error, setError] = useState<string>("");
-  const { theme } = useTheme();
+
 
   const handleChange = (text: string) => {
     setValue(text);
@@ -57,7 +44,7 @@ function TextEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
     <SafeAreaView>
       <View>
         <TextInput
-          style={styles.input}
+          style={[theme.text, theme.option]}
           onChangeText={handleChange}
           value={value}
           placeholder="textInput"
@@ -78,12 +65,4 @@ function TextEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
 }
 
 export { TextEntry }; //add the new component here
-//this is temporary, it should be in the central theme we have.
-const styles = StyleSheet.create({
-  input: {
-    height: 40,
-    margin: 12,
-    borderWidth: 1,
-    padding: 10
-  }
-});
+

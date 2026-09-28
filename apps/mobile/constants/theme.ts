@@ -10,6 +10,14 @@ import { primaryButtonLayout, buttonLayout, textLayout } from "./layout";
  * @param colours colour scheme according to theme defined in colourScheme.ts
  * @returns a styleSheet containing styles for components, text and screen using the given palette.
  */
+
+/**
+ * Requests:
+ * questionOption for multiple choice question boxes
+ * input / entryBox for textbox theming - just use style={[theme.text, theme.option]}
+ * 
+ */
+
 const createTheme = (colours: ColourSet) =>
   StyleSheet.create({
     primaryButton: {
@@ -27,6 +35,28 @@ const createTheme = (colours: ColourSet) =>
     screen: {
       flex: 1,
       backgroundColor: colours.background,
+    },
+
+    //EmojiSelect
+    container: {
+      flex: 1,
+      padding: 20,
+      backgroundColor: colours.background,
+      alignItems: 'center' as const,
+    },
+    option: {
+      backgroundColor: colours.surface,
+      padding: 15,
+      borderRadius: 10,
+      marginBottom: 15,
+    },
+    selectedOption: {
+      backgroundColor: colours.secondary,
+      borderWidth: 1,
+      borderColor: colours.primary,
+    },
+    optionText: {
+      fontSize: 18,
     },
   });
 

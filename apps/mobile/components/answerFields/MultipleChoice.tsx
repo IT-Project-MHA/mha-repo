@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, StyleSheet, TouchableOpacity } from "react-native";
-import { themes } from "../../constants/theme";
+import { useTheme } from "../../context/ThemeContext";
 
 //MultipleChoice variables
 const NUM_CHOICES = 6;

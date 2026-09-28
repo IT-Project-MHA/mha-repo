@@ -5,11 +5,15 @@ import { MultipleChoice } from "../../components/answerFields/MultipleChoice";
 import { MultiSelect } from "../../components/answerFields/MultiSelect";
 import { NumberEntry } from "../../components/answerFields/NumberEntry";
 import { SliderEntry } from "../../components/answerFields/SliderEntry";
+import { TextEntry } from "../../components/answerFields/TextEntry";
 import { Question, QuestionProps } from "../../components/baseComponents/Question";
 import { Assessment, AssessmentProps } from "../../components/baseComponents/Assessment";
-//import {enterData} from ;
+
+import { useTheme } from "../../context/ThemeContext";
 
 export default function Index() {
+  const { theme } = useTheme();
+
   let propsA: QuestionProps = new QuestionProps;
   propsA.title="QuestionA title:)";
   propsA.detail="Select an answer...";
@@ -33,7 +37,7 @@ export default function Index() {
 
   //testing AnserFields
   return (
-    <SafeAreaProvider>
+    <SafeAreaProvider style={theme.screen}>
       <Text>test</Text>
 
       <SafeAreaView style={{ flexDirection: "row" }}>
@@ -58,7 +62,15 @@ export default function Index() {
             /* enter data function */
           }}
         />
+      </SafeAreaView>
+      <SafeAreaView style={{ flexDirection: "row" }}>
+
         <EmojiSelect
+          onSubmit={() => {
+            /* enter data function */
+          }}
+        />
+        <TextEntry
           onSubmit={() => {
             /* enter data function */
           }}

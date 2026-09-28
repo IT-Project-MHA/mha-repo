@@ -16,7 +16,7 @@ import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, TextInput, View, StyleSheet } from "react-native";
 import Button from "../atomicUI/Button";
-import { themes } from "../../constants/theme";
+import { useTheme } from "../../context/ThemeContext";
 //import { } from "";
 
 //numberInput variables

@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, View } from "react-native";
 import Slider from "@react-native-community/slider";
-import { themes } from "../../constants/theme";
+import { useTheme } from "../../context/ThemeContext";
 
 //numberInput variables
 const LOWER_BOUND = 0;
