@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState } from 'react';
 import { useColorScheme } from 'react-native';
 import { themes, ThemeMode, themeColours } from '../constants/theme';
+export { ColourSet } from '../constants/colourScheme';
 
 /**
  * createContext creates a native context object, so information, variables

@@ -42,6 +42,10 @@ export const themes = {
   darkHC: createTheme(darkHcColours),
 };
 
+/**
+ * Exports the theme colours outside of the context components, so that
+ * you can colour something to theme that's not a defined component.
+ */
 export const themeColours ={
   light : lightColours,
   dark: darkColours,
