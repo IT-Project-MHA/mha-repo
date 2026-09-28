@@ -1,3 +1,6 @@
+/**
+ * Home screen for 'Patients' and 'Both' users (exclusive support people do not have this screen)
+ */
 import { View, Text, StyleSheet } from 'react-native';
 
 export default function Tab() {

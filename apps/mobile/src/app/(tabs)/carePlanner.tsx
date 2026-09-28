@@ -1,3 +1,6 @@
+/**
+ * All user types have access to this screen
+ */
 import { View, Text, StyleSheet } from 'react-native';
 
 export default function Tab() {

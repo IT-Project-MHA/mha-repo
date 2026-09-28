@@ -1,3 +1,6 @@
+/**
+ * 'Patients' and 'Both' users can access this screen (exclusive support people can not)
+ */
 import { View, Text, StyleSheet } from 'react-native';
 
 export default function Tab() {
