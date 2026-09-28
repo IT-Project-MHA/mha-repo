@@ -20,7 +20,7 @@ export default function Assessment({ properties }: {properties: AssessmentProps}
       <Question qProperties={properties.questions[currIndex]} />
       <Text>{currIndex+1}/{properties.questions.length}</Text>
       <Button  onPress={() => {
-        if (currIndex >= properties.questions.length) {
+        if (currIndex >= properties.questions.length-1) {
             // submit assessment
           } else {
             setNumber(currIndex + 1);

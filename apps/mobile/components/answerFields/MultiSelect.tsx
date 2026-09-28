@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Text, View, StyleSheet, TouchableOpacity } from "react-native";
+import { Text, View, TouchableOpacity } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 
 //MultipleChoice variables
@@ -15,6 +15,7 @@ function validateMultipleChoice(numText: string) {
 }
 
 function MultiSelect({ onSubmit }: { onSubmit: (v: string) => void }) {
+  const { theme } = useTheme();
   const options = [
     //array of options
     "London",
@@ -37,41 +38,21 @@ function MultiSelect({ onSubmit }: { onSubmit: (v: string) => void }) {
   };
 
   const handleSubmit = () => {
-    // Checks if the selected answers is correct
-    //const isCorrect = selectedAnswer === options[currentQuestion];
-
-    // Save the current answer result
-    setUserAnswers([
-      ...userAnswers,
-      {
-        question: options[currentQuestion],
-        //correct: isCorrect,
-      },
-    ]);
-
-    // Reset selected answer for the next question
-    setSelectedAnswers(null);
-
-    if (currentQuestion < options.length - 1) {
-      // Move to the next question
-      setCurrentQuestion(currentQuestion + 1);
-    } else {
-    }
   };
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={theme.container}>
       <Text>"Select the most relevant options, note the s"</Text>
       {/* render options as buttons */}
       {options.map((option, index) => (
         <TouchableOpacity
           key={index}
           style={[
-            styles.option,
-            selectedAnswers.includes(option) && styles.selectedOption, // Highlights selected options
+            theme.option,
+            selectedAnswers.includes(option) && theme.selectedOption, // Highlights selected options
           ]}
           onPress={() => handleSelect(option)}
         >
-          <Text style={styles.optionText}>{option}</Text>
+          <Text style={theme.optionText}>{option}</Text>
         </TouchableOpacity>
       ))}
 
@@ -84,26 +65,3 @@ function MultiSelect({ onSubmit }: { onSubmit: (v: string) => void }) {
 }
 
 export { MultiSelect }; //add the new component here
-
-//this is temporary, it should be in the central theme we have.
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: "#fff",
-  },
-  option: {
-    backgroundColor: "#f0f0f0",
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
-  },
-  selectedOption: {
-    backgroundColor: "#d4e6ff",
-    borderWidth: 1,
-    borderColor: "#3498db",
-  },
-  optionText: {
-    fontSize: 18,
-  },
-});

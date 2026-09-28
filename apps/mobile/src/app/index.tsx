@@ -23,9 +23,9 @@ export default function Index() {
   propsB.detail="type an answer...";
   propsB.questionType="NumberEntry";
   let propsC: QuestionProps = new QuestionProps;
-  propsA.title="QuestionC title:)";
-  propsA.detail="Slide an answer...";
-  propsA.questionType="SliderEntry";
+  propsC.title="QuestionC title:)";
+  propsC.detail="Slide an answer...";
+  propsC.questionType="SliderEntry";
   let someProps: QuestionProps[] = new Array<QuestionProps>;
   someProps.push(propsA);
   someProps.push(propsB);
