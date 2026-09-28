@@ -54,23 +54,26 @@ function EmojiSelect({ onSubmit }: { onSubmit: (v: string) => void }) {
   };
 
   return (
-    <SafeAreaView style={theme.container}>
-      <Text style={theme.text}> "Select the most relevant"</Text>
-      {/*render options as buttons*/}
-      <View style={{ flexDirection: "row" }}>
-        {options.map((option, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[
-              theme.option,
-              selectedAnswer === option && theme.selectedOption,
-              {/* Highlights selected option*/},
-            ]}
-            onPress={() => handleSelect(option)}
-          >
-            <Text style={theme.optionText}>{option}</Text>
-          </TouchableOpacity>
-        ))}
+    <SafeAreaView>
+      <View style={theme.container}>
+        <Text style={[theme.text, {textAlign: 'center'}]}> "Select the most relevant"</Text>
+        
+        {/*render options as buttons*/}
+        <View style={{flexDirection: "row"}}>
+          {options.map((option, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[
+                theme.option,
+                selectedAnswer === option && theme.selectedOption,
+                {/* Highlights selected option*/},
+              ]}
+              onPress={() => handleSelect(option)}
+            >
+              <Text style={theme.optionText}>{option}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
     </SafeAreaView>
   );

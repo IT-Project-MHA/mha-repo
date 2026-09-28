@@ -43,6 +43,8 @@ function validateNumberInput(numText: string) {
 
 //NumberEntry
 function NumberEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
+  const { theme } = useTheme();
+
   const [value, setValue] = useState<string>("");
   const [error, setError] = useState<string>("");
 
@@ -64,7 +66,7 @@ function NumberEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
     <SafeAreaView>
       <View>
         <TextInput
-          style={styles.input}
+          style={[theme.text, theme.option]}
           onChangeText={handleChange}
           value={value}
           placeholder="input number only"
@@ -85,13 +87,3 @@ function NumberEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
 }
 
 export { NumberEntry };
-
-//this is temporary, it should be in the central theme we have.
-const styles = StyleSheet.create({
-  input: {
-    height: 40,
-    margin: 12,
-    borderWidth: 1,
-    padding: 10,
-  },
-});

@@ -5,6 +5,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, View } from "react-native";
 import Slider from "@react-native-community/slider";
 import { useTheme } from "../../context/ThemeContext";
+import { themes } from "../../constants/theme";
+import {sliderDarkTheme} from "../../constants/sliderPropTheme";
+
 
 //numberInput variables
 const LOWER_BOUND = 0;
@@ -40,6 +43,7 @@ const description = [
 ];
 
 function SliderEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
+  const { theme } = useTheme();
   const [value, setValue] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
 
@@ -61,19 +65,20 @@ function SliderEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
 
   return (
     <SafeAreaView>
-      <View>
-        <Text>My score is {value}</Text>
+      <View style={theme.option}>
+        <Text style={theme.text}>My score is {value}</Text>
         <Slider
-          style={{ width: 200, height: 40 }}
+          style={theme.slider}
           minimumValue={LOWER_BOUND}
           maximumValue={UPPER_BOUND}
           step={1}
           value={value === "" ? LOWER_BOUND : Number(value)}
           onValueChange={handleChange}
-          minimumTrackTintColor="#FFFFFF" //should be based on theme
-          maximumTrackTintColor="#000000" //ditto
+          minimumTrackTintColor={sliderDarkTheme.sliderMinTrack}//should be based on theme
+          maximumTrackTintColor={sliderDarkTheme.sliderMaxTrack}//ditto
+          thumbTintColor={sliderDarkTheme.sliderThumb}
         />
-        <Text>{description[Number(value)]}</Text>
+        <Text style={theme.text}>{description[Number(value)]}</Text>
       </View>
     </SafeAreaView>
   );

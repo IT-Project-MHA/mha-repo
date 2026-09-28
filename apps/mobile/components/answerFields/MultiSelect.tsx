@@ -41,7 +41,7 @@ function MultiSelect({ onSubmit }: { onSubmit: (v: string) => void }) {
   };
   return (
     <SafeAreaView style={theme.container}>
-      <Text>"Select the most relevant options, note the s"</Text>
+      <Text style={theme.text}>"Select the most relevant options, note the s"</Text>
       {/* render options as buttons */}
       {options.map((option, index) => (
         <TouchableOpacity
@@ -58,7 +58,7 @@ function MultiSelect({ onSubmit }: { onSubmit: (v: string) => void }) {
 
       {/* display current selections */}
       <View style={{ marginTop: 10 }}>
-        <Text>Selected: {selectedAnswers.join(", ")}</Text>
+        <Text style={theme.text}>Selected: {selectedAnswers.join(", ")}</Text>
       </View>
     </SafeAreaView>
   );

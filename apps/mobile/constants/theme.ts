@@ -40,14 +40,15 @@ const createTheme = (colours: ColourSet) =>
     //EmojiSelect
     container: {
       flex: 1,
-      padding: 20,
+      paddingVertical: 12, 
+      paddingHorizontal: 80, 
+      borderRadius: 8,
       backgroundColor: colours.background,
-      alignItems: 'center' as const,
     },
     option: {
       backgroundColor: colours.surface,
       padding: 15,
-      borderRadius: 10,
+      borderRadius: 8,
       marginBottom: 15,
     },
     selectedOption: {
@@ -56,8 +57,17 @@ const createTheme = (colours: ColourSet) =>
       borderColor: colours.primary,
     },
     optionText: {
-      fontSize: 18,
+      color: colours.onPrimary,
+      ...textLayout,
+      fontWeight: 'normal',
     },
+    //slider
+    //{ width: 200, height: 40 } originally
+    slider:{
+      maxWidth: 480,
+      paddingVertical: 12,
+      borderRadius: 8,
+    }
   });
 
 /**
@@ -81,3 +91,4 @@ export const themes = {
  * keyof extracts the key names defined in themes.
  */
 export type ThemeMode = keyof typeof themes;
+
