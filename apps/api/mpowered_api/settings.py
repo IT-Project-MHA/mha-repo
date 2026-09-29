@@ -55,7 +55,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'mpowered_api.urls'
+ROOT_URLCONF = 'mpowered_api.routes'
 
 TEMPLATES = [
     {
@@ -130,3 +130,14 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.User'
 
 SILENCED_SYSTEM_CHECKS = ["auth.E003"]
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.TokenAuthentication"],
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
+    "DEFAULT_THROTTLE_RATES": {
+        "otp_request": "10/hour",
+        "otp_verify": "20/hour",
+        "otp_phone_burst": "1/min",
+        "otp_phone_sustained": "5/hour",
+    },
+}

@@ -66,7 +66,7 @@ def usable(verification):
     return None
 
 
-def verify_code(phone_number, code):
+def verify_otp(phone_number, otp):
     
     # Check otp against newest issued for this phone
     # Requesting new code retires the old one.
@@ -83,7 +83,7 @@ def verify_code(phone_number, code):
 
         error = usable(verification)
 
-        if error is None and not check_password(code, verification.code):
+        if error is None and not check_password(otp, verification.code):
             verification.attempts = F("attempts") + 1
             verification.save(update_fields = ["attempts", "updated_at"])
             verification.refresh_from_db(fields = ["attempts"])

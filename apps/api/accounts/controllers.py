@@ -5,11 +5,11 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from accounts import otp
-from apps.api.accounts.schemas import RequestCodeSchema, VerifyCodeSchema
-from apps.api.accounts.rate_limits import PhoneBurstThrottle, PhoneSustainedThrottle
+from accounts.schemas import RequestCodeSchema, VerifyCodeSchema
+from accounts.rate_limits import PhoneBurstThrottle, PhoneSustainedThrottle
 
 
-class RequestCodeView(APIView):
+class RequestCodeController(APIView):
     # POST /auth/request-code - send otp to phone number
 
     permission_classes = [AllowAny]
@@ -20,13 +20,13 @@ class RequestCodeView(APIView):
     def post(self, request):
         serializer = RequestCodeSchema(data = request.data)
         serializer.is_valid(raise_exception = True)
-        otp.issue_code(serializer.validated_data["phone_number"])
+        otp.issue_otp(serializer.validated_data["phone_number"])
 
-        # Same reply for every number so this can't be used to probe who has an account
+        # Same reply for every number so it cannot be used to probe who has an account
         return Response({"detail": "Code sent."}, status = status.HTTP_202_ACCEPTED)
 
 
-class VerifyCodeView(APIView):
+class VerifyCodeController(APIView):
     # POST /auth/verify-code - exchange a correct code for a verification_id
 
     permission_classes = [AllowAny]
@@ -38,7 +38,7 @@ class VerifyCodeView(APIView):
         serializer = VerifyCodeSchema(data = request.data)
         serializer.is_valid(raise_exception = True)
         try:
-            verification = otp.verify_code(**serializer.validated_data)
+            verification = otp.verify_otp(**serializer.validated_data)
         except otp.VerificationError as error:
             body = {"detail": error.reason}
             if error.attempts_remaining is not None:
