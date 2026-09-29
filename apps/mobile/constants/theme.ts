@@ -10,6 +10,14 @@ import { primaryButtonLayout, buttonLayout, textLayout } from "./layout";
  * @param colours colour scheme according to theme defined in colourScheme.ts
  * @returns a styleSheet containing styles for components, text and screen using the given palette.
  */
+
+/**
+ * Requests:
+ * questionOption for multiple choice question boxes
+ * input / entryBox for textbox theming - just use style={[theme.text, theme.option]}
+ * 
+ */
+
 const createTheme = (colours: ColourSet) =>
   StyleSheet.create({
     primaryButton: {
@@ -28,6 +36,47 @@ const createTheme = (colours: ColourSet) =>
       flex: 1,
       backgroundColor: colours.background,
     },
+
+    //EmojiSelect
+    container: {
+      flex: 1,
+      paddingVertical: 12, 
+      paddingHorizontal: 80, 
+      borderRadius: 8,
+      backgroundColor: colours.background,
+    },
+    option: {
+      backgroundColor: colours.surface,
+      padding: 15,
+      borderRadius: 8,
+      marginBottom: 15,
+    },
+    selectedOption: {
+      backgroundColor: colours.secondary,
+      borderWidth: 1,
+      borderColor: colours.primary,
+    },
+    optionText: {
+      color: colours.onPrimary,
+      ...textLayout,
+    },
+    selectedOptionText: {
+      color: colours.onSecondary,
+      ...textLayout,
+    },
+    //emoji
+    emojiContainer: {
+      paddingVertical: 12, 
+      paddingHorizontal: 12, 
+      backgroundColor: colours.background,
+    },
+    //slider
+    //{ width: 200, height: 40 } originally
+    slider:{
+      maxWidth: 480,
+      paddingVertical: 12,
+      borderRadius: 8,
+    }
   });
 
 /**
@@ -62,3 +111,4 @@ export const themeColours ={
  * keyof extracts the key names defined in themes.
  */
 export type ThemeMode = keyof typeof themes;
+
