@@ -6,7 +6,6 @@ import { Text, View } from "react-native";
 import Slider from "@react-native-community/slider";
 import { useTheme } from "../../context/ThemeContext";
 import { themes } from "../../constants/theme";
-import {sliderTheme} from "../../constants/sliderPropTheme";
 
 
 //numberInput variables
