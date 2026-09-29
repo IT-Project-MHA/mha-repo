@@ -8,7 +8,7 @@ export default function Tab() {
 
   return (
     <View style={styles.container}>
-        <Text>HOME</Text>
+        <Text>INDEX- this screen has no functional purpose rn</Text>
         <Text> </Text>
         <Text> </Text>
       <Button
