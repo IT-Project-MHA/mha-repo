@@ -1,30 +1,49 @@
 import { Stack } from 'expo-router'
+import { useTheme, ColourSet } from '../../../../context/ThemeContext';
+import { StyleSheet } from 'react-native';
 
 /**
- * Defines the structure of the tabs within the settings page.
+ * Defines the structure of the screens within the settings page.
  * 
- * @returns tabs which correspond to different files as screens.
+ * @returns screens which correspond to different files as screens.
  */
-export default function TabLayout() {
+export default function ScreenLayout() {
+  const {colours} = useTheme();
+  const styles = createStyles(colours);
+
   return (
     <Stack 
       screenOptions={{
-        // prevent a second nav-bar from appearing
-     
+        title: 'My home',
+        headerStyle: styles.headerStyle,
       }}
     >
       <Stack.Screen 
       name="index"
         options={{
-          title: 'index',
+          title: 'Settings',
         }}
       />
       <Stack.Screen
         name="themePref"
         options={{
-          title: 'Themes',
+          title: 'Select theme',
         }}
       />
     </Stack>
   );
 }
+
+//** 
+// TO DO: ADD TO GLOBAL STYLE SHEET (header should be consistent through app)
+// */
+function createStyles(colours: ColourSet){
+    return StyleSheet.create({
+
+      headerStyle: {
+        backgroundColor: colours.primary,
+  },
+});
+ }
+
+

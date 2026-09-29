@@ -1,43 +1,30 @@
 /**
- * Every user can access this screen
+ * Every user can access this screen and uses it to navigate to other pages within settings.
+ * 
  */
 import { View, Text, StyleSheet } from 'react-native';
 import Button from '../../../../components/Button';
-import { useTheme } from '../../../../context/ThemeContext';
-import { useUser } from '../../../../context/AuthorisationContext';
-import { UserType } from '../../../../constants/userType';
 import { useRouter } from 'expo-router';
 
 
-export default function Tab() {
-  const {setUserType} = useUser();
+export default function Screen() {
   const router = useRouter();
 
   return (
     <View style={styles.container}>
-      <Text>SETTINGS</Text>
+      <Text> </Text>
 
-       <Button
-	    label="patient mode"
-	    onPress={() => setUserType(UserType.patient)}
-      buttonType="primaryButton"
-      />
-      <Text> </Text>
-       <Button
-	    label="support person mode"
-	    onPress={() => setUserType(UserType.supportPerson)}
-      buttonType="primaryButton"
-      />
-      <Text> </Text>
-      <Button
-	    label="both mode"
-	    onPress={() => setUserType(UserType.both)}
-      buttonType="primaryButton"
-      />
-      <Text> </Text>
       <Button
 	    label="Themes"
 	    onPress={() => router.navigate('/settings/themePref')}
+      buttonType="primaryButton"
+      />
+
+      <Text> </Text>
+
+      <Button
+	    label="Select user type (for testing)"
+	    onPress={() => router.navigate('/settings/userType')}
       buttonType="primaryButton"
       />
 
