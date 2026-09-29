@@ -22,54 +22,56 @@ export default function Screen() {
         <Button
 	        label="My Account"
 	        onPress={() => router.navigate('/settings/myAccount')}
-          buttonType="primaryButton"
+          buttonType="settingsButton"
         />
         <Text> </Text>
         <Button
 	        label="My Data"
 	        onPress={() => router.navigate('/settings/myData')}
-          buttonType="primaryButton"
+          buttonType="settingsButton"
         />
         <Text> </Text>
         <Button
 	        label="My Connections"
 	        onPress={() => router.navigate('/settings/myConnections')}
-          buttonType="primaryButton"
+          buttonType="settingsButton"
         />
         <Text> </Text>
         <Button
 	        label="Accesibility"
 	        onPress={() => router.navigate('/settings/accesibility')}
-          buttonType="primaryButton"
+          buttonType="settingsButton"
         />
         <Text> </Text>
         <Button
 	        label="Permissions"
 	        onPress={() => router.navigate('/settings/permissions')}
-          buttonType="primaryButton"
+          buttonType="settingsButton"
         />
       </View>
 
       <Text> </Text>
+      <Text> </Text>
 
       <View style={styles.container}>
-        <View style={styles.row}> 
           <Button
 	          label="Legal"
 	          onPress={() => router.navigate('/settings/legal')}
-            buttonType="primaryButton"
+            buttonType="settingsButton"
           />
-        </View>
         <Text> </Text>
-        <View style={styles.row}>
+        
           <Button
 	          label="Support"
 	          onPress={() => router.navigate('/settings/support')}
-            buttonType="primaryButton"
+            buttonType="settingsButton"
           />
-        </View>
+       
+    
       </View>
-    <Text> </Text>
+
+      <Text> </Text>
+
     </ScrollView>
     
   );
@@ -78,7 +80,6 @@ function createStyles(colours: ColourSet){
     return StyleSheet.create({
       
   container: {
-
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colours.surface,
@@ -105,6 +106,7 @@ function createStyles(colours: ColourSet){
     alignItems: 'center',
     gap: 12,
   },
+
   screen: {
     backgroundColor: colours.background,
   },
