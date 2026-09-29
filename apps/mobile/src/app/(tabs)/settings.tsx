@@ -2,7 +2,7 @@
  * Every user can access this screen
  */
 import { View, Text, StyleSheet } from 'react-native';
-import Button from '../../../components/Button';
+import Button from '../../../components/atomicUI/Button';
 import { useTheme } from '../../../context/ThemeContext';
 import { useUser } from '../../../context/AuthorisationContext';
 import { UserType } from '../../../constants/userType';

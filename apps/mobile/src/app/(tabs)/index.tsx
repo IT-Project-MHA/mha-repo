@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View} from "react-native";
-import Button from "../../../components/Button";
+import Button from "../../../components/atomicUI/Button";
 import { useTheme } from "../../../context/ThemeContext";
 
 
