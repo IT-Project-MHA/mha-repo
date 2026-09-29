@@ -92,6 +92,17 @@ export const themes = {
 };
 
 /**
+ * Exports the theme colours outside of the context components, so that
+ * you can colour something to theme that's not a defined component.
+ */
+export const themeColours ={
+  light : lightColours,
+  dark: darkColours,
+  lightHC: lightHcColours,
+  darkHC: darkHcColours,
+}
+
+/**
  * Exports themeMode as a set of valid theme names, so that setMode() and useState() can only 
  * be called on real, defined themes.
  * 
