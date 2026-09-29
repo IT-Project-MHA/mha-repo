@@ -1,8 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
-import { NumberEntry } from "../answerFields/NumberEntry";
-import { TextEntry } from "../answerFields/TextEntry";
 
 type ButtonType = "primaryButton" | "secondaryButton";
 
@@ -17,10 +15,6 @@ type ButtonType = "primaryButton" | "secondaryButton";
       buttonType="primaryButton"
     />
  */
-const ANSWER_COMPONENTS = {
-  number: NumberEntry,
-  text: TextEntry
-};
 
 type ButtonProps = {
   label: string;
