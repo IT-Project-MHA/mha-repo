@@ -68,7 +68,7 @@ function MultipleChoice({ onSubmit }: { onSubmit: (v: string) => void }) {
   };
   return (
     <SafeAreaView style={theme.container}>
-      <Text style={theme.text}>"Select the most relevant"</Text>
+      <Text style={[theme.text, {textAlign: 'center'}]}>"Select the most relevant"</Text>
       {/*render options as buttons*/}
       {options.map((option, index) => (
         <TouchableOpacity
@@ -79,7 +79,11 @@ function MultipleChoice({ onSubmit }: { onSubmit: (v: string) => void }) {
           ]}
           onPress={() => handleSelect(option)}
         >
-          <Text style={theme.optionText}>{option}</Text>
+          <Text style={[
+            theme.optionText,
+            selectedAnswer === option && theme.selectedOptionText, // Highlights selected option
+          ]}
+          >{option}</Text>
         </TouchableOpacity>
       ))}
     </SafeAreaView>

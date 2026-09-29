@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Text, View, TouchableOpacity } from "react-native";
+import { Text, View, TouchableOpacity, StyleSheet } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
-
+import { ColourSet } from "../../constants/colourScheme"
 /**
  * basically straight from here: https://dev.to/davelearns/building-a-basic-quiz-app-with-react-native-and-expo-go-a-complete-guide-11o
  * this is like multiple choice but aligned laterally
@@ -61,6 +61,7 @@ function EmojiSelect({ onSubmit }: { onSubmit: (v: string) => void }) {
         {/*render options as buttons*/}
         <View style={{flexDirection: "row"}}>
           {options.map((option, index) => (
+            <View style={theme.emojiContainer}>
             <TouchableOpacity
               key={index}
               style={[
@@ -72,6 +73,7 @@ function EmojiSelect({ onSubmit }: { onSubmit: (v: string) => void }) {
             >
               <Text style={theme.optionText}>{option}</Text>
             </TouchableOpacity>
+            </View>
           ))}
         </View>
       </View>

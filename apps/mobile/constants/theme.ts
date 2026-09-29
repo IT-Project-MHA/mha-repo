@@ -59,7 +59,16 @@ const createTheme = (colours: ColourSet) =>
     optionText: {
       color: colours.onPrimary,
       ...textLayout,
-      fontWeight: 'normal',
+    },
+    selectedOptionText: {
+      color: colours.onSecondary,
+      ...textLayout,
+    },
+    //emoji
+    emojiContainer: {
+      paddingVertical: 12, 
+      paddingHorizontal: 12, 
+      backgroundColor: colours.background,
     },
     //slider
     //{ width: 200, height: 40 } originally

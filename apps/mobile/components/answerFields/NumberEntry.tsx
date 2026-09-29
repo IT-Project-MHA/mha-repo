@@ -64,7 +64,7 @@ function NumberEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
 
   return (
     <SafeAreaView>
-      <View>
+      <View style={theme.container}>
         <TextInput
           style={[theme.text, theme.option]}
           onChangeText={handleChange}
