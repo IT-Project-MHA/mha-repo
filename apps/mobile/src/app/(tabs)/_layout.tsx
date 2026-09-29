@@ -34,7 +34,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Index Home',
-          href: null,
+          href: null, 
           tabBarIcon: ({ color }) => (
             <Ionicons name ="home-outline" size={24} color={color} />
           ),
@@ -80,7 +80,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="settings"
+        name="/settings/index"
         options={{
           title: 'Settings',
           tabBarIcon: ({ color }) => (
