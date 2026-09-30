@@ -16,7 +16,7 @@ function validateMultipleChoice(numText: string) {
 
 function MultiSelect({ onSubmit }: { onSubmit: (v: string) => void }) {
   const { theme } = useTheme();
-  const options = [
+  const questionOptions = [
     //array of options
     "London",
     "Berlin",
@@ -43,7 +43,7 @@ function MultiSelect({ onSubmit }: { onSubmit: (v: string) => void }) {
     <SafeAreaView style={theme.container}>
       <Text style={[theme.text, {textAlign: 'center'}]}>"Select the most relevant options, note the s"</Text>
       {/* render options as buttons */}
-      {options.map((option, index) => (
+      {questionOptions.map((option, index) => (
         <TouchableOpacity
           key={index}
           style={[

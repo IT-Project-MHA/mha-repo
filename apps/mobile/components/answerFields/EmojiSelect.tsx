@@ -31,7 +31,7 @@ const MIN_SELECTIONS = 1;
 function EmojiSelect({ onSubmit }: { onSubmit: (v: string) => void }) {
   const { theme } = useTheme();
 
-  const options = [
+  const questionOptions = [
     //array of options to be replaced with images later
     "terrible",
     "bad",
@@ -60,7 +60,7 @@ function EmojiSelect({ onSubmit }: { onSubmit: (v: string) => void }) {
         
         {/*render options as buttons*/}
         <View style={{flexDirection: "row"}}>
-          {options.map((option, index) => (
+          {questionOptions.map((option, index) => (
             <View style={theme.emojiContainer}>
             <TouchableOpacity
               key={index}

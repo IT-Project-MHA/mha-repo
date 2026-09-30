@@ -19,7 +19,7 @@ function validateMultipleChoice(numText: string) {
 function MultipleChoice({ onSubmit }: { onSubmit: (v: string) => void }) {
   const { theme } = useTheme();
 
-  const options = [
+  const questionOptions = [
     //array of options
     "London",
     "Berlin",
@@ -41,13 +41,13 @@ function MultipleChoice({ onSubmit }: { onSubmit: (v: string) => void }) {
 
   const handleSubmit = () => {
     // Checks if the selected answer is correct
-    const isCorrect = selectedAnswer === options[currentQuestion];
+    const isCorrect = selectedAnswer === questionOptions[currentQuestion];
 
     // Save the current answer result
     setUserAnswers([
       ...userAnswers,
       {
-        question: options[currentQuestion],
+        question: questionOptions[currentQuestion],
         correct: isCorrect,
       },
     ]);
@@ -60,7 +60,7 @@ function MultipleChoice({ onSubmit }: { onSubmit: (v: string) => void }) {
     // Reset selected answer for the next question
     setSelectedAnswer(null);
 
-    if (currentQuestion < options.length - 1) {
+    if (currentQuestion < questionOptions.length - 1) {
       // Move to the next question
       setCurrentQuestion(currentQuestion + 1);
     } else {
@@ -70,7 +70,7 @@ function MultipleChoice({ onSubmit }: { onSubmit: (v: string) => void }) {
     <SafeAreaView style={theme.container}>
       <Text style={[theme.text, {textAlign: 'center'}]}>"Select the most relevant"</Text>
       {/*render options as buttons*/}
-      {options.map((option, index) => (
+      {questionOptions.map((option, index) => (
         <TouchableOpacity
           key={index}
           style={[
