@@ -6,6 +6,7 @@ from django.utils import timezone
 from rest_framework.authtoken.models import Token
 
 from accounts.models import PatientProfile, PhoneVerification, TermsAndPrivacy, User, UserSettings
+from accounts import devices
 
 VERIFICATION_WINDOW = timedelta(minutes = 10)
 
@@ -38,7 +39,7 @@ def create_patient_profile(user, health):
     return profile
 
 
-def register_user(verification_id, phone_number, display_name, pin, track_health, health = None):
+def register_user(verification_id, device_id, phone_number, display_name, pin, track_health, health = None):
 
     # Create the account and return user and token
     # All saved in one transaction so nothing is left half made if a step fails
@@ -69,6 +70,8 @@ def register_user(verification_id, phone_number, display_name, pin, track_health
 
             if track_health:
                 create_patient_profile(user, health or {})
+
+            devices.trust_device(user, device_id)
 
             token = Token.objects.create(user = user)
 
