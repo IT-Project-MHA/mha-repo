@@ -14,7 +14,7 @@ class TempPatientProfile(BaseModel):
 # Prescriptions and Weekly Assessments
 
 class Prescription(BaseModel, SoftDeleteModel): 
-    patient_profile = models.ForeignKey(TempPatientProfile, on_delete = models.CASCADE, related_name = "perscriptions")
+    patient_profile = models.ForeignKey(TempPatientProfile, on_delete = models.CASCADE, related_name = "prescriptions")
     name = models.CharField(max_length = 50)
     dosage = models.PositiveSmallIntegerField()
 
@@ -80,7 +80,7 @@ class Assessment(BaseModel):
 
 
 class MyPain(BaseModel):
-    assessment_id = models.OneToOneField(Assessment, on_delete = models.CASCADE, related_name = "my_pain")
+    assessment = models.OneToOneField(Assessment, on_delete = models.CASCADE, related_name = "my_pain")
     current = models.PositiveSmallIntegerField(null = True, blank = True, validators = [MinValueValidator(0), MaxValueValidator(10)])
     worst = models.PositiveSmallIntegerField(null = True, blank = True, validators = [MinValueValidator(0), MaxValueValidator(10)])
     average = models.PositiveSmallIntegerField(null = True, blank = True, validators = [MinValueValidator(0), MaxValueValidator(10)])
@@ -99,7 +99,7 @@ class MyPain(BaseModel):
 
 
 class MyMovement(BaseModel):
-    assessment_id = models.OneToOneField(Assessment, on_delete = models.CASCADE, related_name = "my_movement")
+    assessment = models.OneToOneField(Assessment, on_delete = models.CASCADE, related_name = "my_movement")
     active_hours = models.PositiveSmallIntegerField(null = True, blank = True, validators = [MinValueValidator(0), MaxValueValidator(168)])
     general_impacts = models.ManyToManyField("reference.QuestionOptionOrdered", blank = True, related_name = "+",
                                              limit_choices_to = {"question_key": "movement_general_impacts"})

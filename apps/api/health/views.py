@@ -4,152 +4,353 @@ from rest_framework.response import Response
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from django.db.models import Q
+from rest_framework import serializers
 from .models import Prescription, Assessment, MyPain, MyMovement, MyPersonalCare, \
    MySocialHealth, MyManagement, TempPatientProfile
+from accounts.models import SupportLink
 from .serializer import *
 from datetime import date
+
+# instructions:
+# All views are protected by authenticated user id (can only see records where patient_profile
+# is user's own, or who user supports).
+
+# Attributes that can be filtered are specified in the comments. To filter by attribute, put 
+# in the URL ?attribute_name=value. For multiple attributes: 
+# ?attribute_name1=value&?attribute_name2=value...
 
 # "Profile..." are temporary view classes.
 # They must be removed once \accounts APIs are written.
 
 class ProfileListCreate(generics.ListCreateAPIView):
-    queryset = TempPatientProfile.objects.all()
+    permission_classes = [IsAuthenticated]
     serializer_class = TempPatientProfileSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        return TempPatientProfile.objects.filter(user = user)
+    
+    def perform_create(self, serializer):
+        user = self.request.user
+        serializer.save(user = user)
 
 class ProfileRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
-    queryset = TempPatientProfile.objects.all()
+    permission_classes = [IsAuthenticated]
     serializer_class = TempPatientProfileSerializer
-    lookup_field = "pk"
 
-# Prescription APIs:
-# - can only read records filtered by patient_profile id in the URL in the form:
-#   ?patient_profile=...
+    def get_queryset(self):
+        user = self.request.user
+        return TempPatientProfile.objects.filter(user = user)
+
+
+# Prescription APIs: can filter by patient_profile
 
 class PrescriptionListCreate(generics.ListCreateAPIView):
-    queryset = Prescription.objects.all()
+    permission_classes = [IsAuthenticated]
     serializer_class = PrescriptionSerializer
 
     def get_queryset(self):
-        patient_profile = self.request.query_params.get("patient_profile")
-        if patient_profile:
-            return Prescription.objects.filter(patient_profile=patient_profile)
-        else:
-            return Prescription.objects.none()
+        user = self.request.user
+        user_patient_profile = self.request.user.patient_profile
+        query_patient_profile = self.request.query_params.get("patient_profile")
+        query_set =  Prescription.objects.filter(
+            Q(patient_profile = user_patient_profile) | 
+            Q(patient_profile__support_links__supporter_user = user,
+              patient_profile__support_links__status = SupportLink.Status.ACTIVE))
+        if query_patient_profile:
+            query_set = query_set.filter(patient_profile = query_patient_profile)
+        return query_set.distinct()
+    
+    def perform_create(self, serializer):
+        user_patient_profile = self.request.user.patient_profile
+        serializer.save(patient_profile = user_patient_profile)
 
 class PrescriptionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Prescription.objects.all()
+    permission_classes = [IsAuthenticated]
     serializer_class = PrescriptionSerializer
-    lookup_field = "pk"
 
-# Assessment APIs:
-# - can only read records filtered by patient_profile id in the URL in the form:
-#   ?patient_profile=...
-# - can read records filtered by a week_starting date in the URL in the form:
-#   ?week_starting=...
+    def get_queryset(self):
+        user = self.request.user
+        user_patient_profile = self.request.user.patient_profile
+        query_patient_profile = self.request.query_params.get("patient_profile")
+        query_set =  Prescription.objects.filter(
+            Q(patient_profile = user_patient_profile) | 
+            Q(patient_profile__support_links__supporter_user = user,
+              patient_profile__support_links__status = SupportLink.Status.ACTIVE))
+        if query_patient_profile:
+            query_set = query_set.filter(patient_profile = query_patient_profile)
+        return query_set.distinct()
+
+
+# Assessment APIs: can filter by patient_profile, week_starting
+
+# helper function: returns set of assessments that user can access
+def visible_assessments(user):
+    user_patient_profile = user.patient_profile
+    return Assessment.objects.filter(
+            Q(patient_profile=user_patient_profile) | 
+            Q(patient_profile__support_links__supporter_user = user,
+              patient_profile__support_links__status = SupportLink.Status.ACTIVE)
+        )
+
 
 class AssessmentListCreate(generics.ListCreateAPIView):
-    queryset = Assessment.objects.all()
+    permission_classes = [IsAuthenticated]
     serializer_class = AssessmentSerializer
 
     def get_queryset(self):
-        patient_profile = self.request.query_params.get("patient_profile")
+        user = self.request.user
         week_starting = self.request.query_params.get("week_starting")
-        if patient_profile:
-            if week_starting:
-                return Assessment.objects.filter(
-                    week_starting=week_starting,
-                    patient_profile=patient_profile
-                )
-            else:
-                return Assessment.objects.filter(patient_profile=patient_profile)
-        else:
-            return Assessment.objects.none()
+        query_patient_profile = self.request.query_params.get("patient_profile")
+        query_set = visible_assessments(user)
+        if week_starting:
+            query_set = query_set.filter(week_starting = week_starting)
+        if query_patient_profile:
+            query_set = query_set.filter(patient_profile = query_patient_profile)
+        return query_set.distinct()
+
+    def perform_create(self, serializer):
+        user_patient_profile = self.request.user.patient_profile
+        serializer.save(patient_profile=user_patient_profile)
 
 class AssessmentRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Assessment.objects.all()
+    permission_classes = [IsAuthenticated]
     serializer_class = AssessmentSerializer
-    lookup_field = "pk"
+
+    def get_queryset(self):
+        user = self.request.user
+        week_starting = self.request.query_params.get("week_starting")
+        query_patient_profile = self.request.query_params.get("patient_profile")
+        query_set = visible_assessments(user)
+        if week_starting:
+            query_set = query_set.filter(week_starting = week_starting)
+        if query_patient_profile:
+            query_set = query_set.filter(patient_profile = query_patient_profile)
+        return query_set.distinct()
+    
 
 # Assessment task APIs (MyPain, MyMovement, MyPersonalCare, MySocialHealth, MyManagement):
-# - can only read records filtered by assessment id in the URL in the form:
-#   ?assessment=...
+# can filter by assessment
+# create: must specify assessment id
 
 class MyPainListCreate(generics.ListCreateAPIView):
-    queryset = MyPain.objects.all()
+    permission_classes = [IsAuthenticated]
     serializer_class = MyPainSerializer
 
     def get_queryset(self):
+        user = self.request.user
         assessment = self.request.query_params.get("assessment")
+        query_patient_profile = self.request.query_params.get("patient_profile")
+        query_set = MyPain.objects.filter(assessment__in = visible_assessments(user))
         if assessment:
-            return MyPain.objects.filter(assessment=assessment)
-        else:
-            return MyPain.objects.none()
+            query_set = query_set.filter(assessment = assessment)
+        if query_patient_profile:
+            query_set = query_set.filter(
+                assessment__patient_profile = query_patient_profile)
+        return query_set.distinct()
+
+    def perform_create(self, serializer):
+        assessment = self.request.data.get("assessment")
+        if not assessment:
+            raise serializers.ValidationError({'assessment':'This field is required.'})
+        
+        query_set = visible_assessments(self.request.user)
+        query_set = query_set.filter(assessment = assessment)
+        if not query_set.exists():
+            raise serializers.ValidationError({'assessment':'You do not have access.'})
+        
+        serializer.save(assessment = assessment)
 
 class MyPainRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
-    queryset = MyPain.objects.all()
+    permission_classes = [IsAuthenticated]
     serializer_class = MyPainSerializer
-    lookup_field = "pk"
+
+    def get_queryset(self):
+        user = self.request.user
+        assessment = self.request.query_params.get("assessment")
+        query_patient_profile = self.request.query_params.get("patient_profile")
+        query_set = MyPain.objects.filter(assessment__in = visible_assessments(user))
+        if assessment:
+            query_set = query_set.filter(assessment = assessment)
+        if query_patient_profile:
+            query_set = query_set.filter(
+                assessment__patient_profile = query_patient_profile)
+        return query_set.distinct()
 
 class MyMovementListCreate(generics.ListCreateAPIView):
-    queryset = MyMovement.objects.all()
+    permission_classes = [IsAuthenticated]
     serializer_class = MyMovementSerializer
 
     def get_queryset(self):
+        user = self.request.user
         assessment = self.request.query_params.get("assessment")
+        query_patient_profile = self.request.query_params.get("patient_profile")
+        query_set = MyMovement.objects.filter(assessment__in = visible_assessments(user))
         if assessment:
-            return MyMovement.objects.filter(assessment=assessment)
-        else:
-            return MyMovement.objects.none()
+            query_set = query_set.filter(assessment = assessment)
+        if query_patient_profile:
+            query_set = query_set.filter(
+                assessment__patient_profile = query_patient_profile)
+        return query_set.distinct()
+
+    def perform_create(self, serializer):
+        assessment = self.request.data.get("assessment")
+        if not assessment:
+            raise serializers.ValidationError({'assessment':'This field is required.'})
+        
+        query_set = visible_assessments(self.request.user)
+        query_set = query_set.filter(assessment = assessment)
+        if not query_set.exists():
+            raise serializers.ValidationError({'assessment':'You do not have access.'})
+        
+        serializer.save(assessment = assessment)
 
 class MyMovementRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
-    queryset = MyMovement.objects.all()
+    permission_classes = [IsAuthenticated]
     serializer_class = MyMovementSerializer
-    lookup_field = "pk"
+
+    def get_queryset(self):
+        user = self.request.user
+        assessment = self.request.query_params.get("assessment")
+        query_patient_profile = self.request.query_params.get("patient_profile")
+        query_set = MyMovement.objects.filter(assessment__in = visible_assessments(user))
+        if assessment:
+            query_set = query_set.filter(assessment = assessment)
+        if query_patient_profile:
+            query_set = query_set.filter(
+                assessment__patient_profile = query_patient_profile)
+        return query_set.distinct()
 
 class MyPersonalCareListCreate(generics.ListCreateAPIView):
-    queryset = MyMovement.objects.all()
-    serializer_class = MyMovementSerializer
+    permission_classes = [IsAuthenticated]
+    serializer_class = MyPersonalCareSerializer
 
     def get_queryset(self):
+        user = self.request.user
         assessment = self.request.query_params.get("assessment")
+        query_patient_profile = self.request.query_params.get("patient_profile")
+        query_set = MyPersonalCare.objects.filter(assessment__in = visible_assessments(user))
         if assessment:
-            return MyMovement.objects.filter(assessment=assessment)
-        else:
-            return MyMovement.objects.none()
+            query_set = query_set.filter(assessment = assessment)
+        if query_patient_profile:
+            query_set = query_set.filter(
+                assessment__patient_profile = query_patient_profile)
+        return query_set.distinct()
+
+    def perform_create(self, serializer):
+        assessment = self.request.data.get("assessment")
+        if not assessment:
+            raise serializers.ValidationError({'assessment':'This field is required.'})
+        
+        query_set = visible_assessments(self.request.user)
+        query_set = query_set.filter(assessment = assessment)
+        if not query_set.exists():
+            raise serializers.ValidationError({'assessment':'You do not have access.'})
+        
+        serializer.save(assessment = assessment)
 
 class MyPersonalCareRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
-    queryset = MyMovement.objects.all()
-    serializer_class = MyMovementSerializer
-    lookup_field = "pk"
+    permission_classes = [IsAuthenticated]
+    serializer_class = MyPersonalCareSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        assessment = self.request.query_params.get("assessment")
+        query_patient_profile = self.request.query_params.get("patient_profile")
+        query_set = MyPersonalCare.objects.filter(assessment__in = visible_assessments(user))
+        if assessment:
+            query_set = query_set.filter(assessment = assessment)
+        if query_patient_profile:
+            query_set = query_set.filter(
+                assessment__patient_profile = query_patient_profile)
+        return query_set.distinct()
 
 class MySocialHealthListCreate(generics.ListCreateAPIView):
-    queryset = MySocialHealth.objects.all()
+    permission_classes = [IsAuthenticated]
     serializer_class = MySocialHealthSerializer
 
     def get_queryset(self):
+        user = self.request.user
         assessment = self.request.query_params.get("assessment")
+        query_patient_profile = self.request.query_params.get("patient_profile")
+        query_set = MySocialHealth.objects.filter(assessment__in = visible_assessments(user))
         if assessment:
-            return MySocialHealth.objects.filter(assessment=assessment)
-        else:
-            return MySocialHealth.objects.none()
+            query_set = query_set.filter(assessment = assessment)
+        if query_patient_profile:
+            query_set = query_set.filter(
+                assessment__patient_profile = query_patient_profile)
+        return query_set.distinct()
+
+    def perform_create(self, serializer):
+        assessment = self.request.data.get("assessment")
+        if not assessment:
+            raise serializers.ValidationError({'assessment':'This field is required.'})
+        
+        query_set = visible_assessments(self.request.user)
+        query_set = query_set.filter(assessment = assessment)
+        if not query_set.exists():
+            raise serializers.ValidationError({'assessment':'You do not have access.'})
+        
+        serializer.save(assessment = assessment)
 
 class MySocialHealthRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
-    queryset = MySocialHealth.objects.all()
-    serializer_class = MySocialHealthSerializer
-    lookup_field = "pk"
-
-class MyManagementListCreate(generics.ListCreateAPIView):
-    queryset = MySocialHealth.objects.all()
+    permission_classes = [IsAuthenticated]
     serializer_class = MySocialHealthSerializer
 
     def get_queryset(self):
+        user = self.request.user
         assessment = self.request.query_params.get("assessment")
+        query_patient_profile = self.request.query_params.get("patient_profile")
+        query_set = MySocialHealth.objects.filter(assessment__in = visible_assessments(user))
         if assessment:
-            return MySocialHealth.objects.filter(assessment=assessment)
-        else:
-            return MySocialHealth.objects.none()
+            query_set = query_set.filter(assessment = assessment)
+        if query_patient_profile:
+            query_set = query_set.filter(
+                assessment__patient_profile = query_patient_profile)
+        return query_set.distinct()
+
+class MyManagementListCreate(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = MyManagementSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        assessment = self.request.query_params.get("assessment")
+        query_patient_profile = self.request.query_params.get("patient_profile")
+        query_set = MyManagement.objects.filter(assessment__in = visible_assessments(user))
+        if assessment:
+            query_set = query_set.filter(assessment = assessment)
+        if query_patient_profile:
+            query_set = query_set.filter(
+                assessment__patient_profile = query_patient_profile)
+        return query_set.distinct()
+
+    def perform_create(self, serializer):
+        assessment = self.request.data.get("assessment")
+        if not assessment:
+            raise serializers.ValidationError({'assessment':'This field is required.'})
+        
+        query_set = visible_assessments(self.request.user)
+        query_set = query_set.filter(assessment = assessment)
+        if not query_set.exists():
+            raise serializers.ValidationError({'assessment':'You do not have access.'})
+        
+        serializer.save(assessment = assessment)
 
 class MyManagementRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
-    queryset = MySocialHealth.objects.all()
-    serializer_class = MySocialHealthSerializer
-    lookup_field = "pk"
+    permission_classes = [IsAuthenticated]
+    serializer_class = MyManagementSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        assessment = self.request.query_params.get("assessment")
+        query_patient_profile = self.request.query_params.get("patient_profile")
+        query_set = MyManagement.objects.filter(assessment__in = visible_assessments(user))
+        if assessment:
+            query_set = query_set.filter(assessment = assessment)
+        if query_patient_profile:
+            query_set = query_set.filter(
+                assessment__patient_profile = query_patient_profile)
+        return query_set.distinct()

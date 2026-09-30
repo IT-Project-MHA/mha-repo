@@ -30,6 +30,11 @@ class MyMovementSerializer(serializers.ModelSerializer):
         model = MyMovement
         fields = '__all__'
 
+class MyPersonalCareSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MyPersonalCare
+        fields = '__all__'
+
 class MySocialHealthSerializer(serializers.ModelSerializer):
     class Meta:
         model = MySocialHealth
