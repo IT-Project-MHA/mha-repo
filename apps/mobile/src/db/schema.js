@@ -79,6 +79,7 @@ const SCHEMA = `
     CREATE TABLE IF NOT EXISTS PatientProfile (
         id TEXT PRIMARY KEY NOT NULL,
         server_id TEXT UNIQUE,
+        deleted_at INTEGER,
         user TEXT NOT NULL REFERENCES User(id),
         has_diagnosis INTEGER NOT NULL,
         other_conditions TEXT,
@@ -89,7 +90,7 @@ const SCHEMA = `
         is_synced INTEGER NOT NULL DEFAULT 0
     );
 
-    CREATE TABLE IF NOT EXISTS PatientProfile_PainTypes (
+    CREATE TABLE IF NOT EXISTS PatientProfile_PainType (
         patient_profile TEXT NOT NULL REFERENCES PatientProfile(id),
         pain_type TEXT NOT NULL REFERENCES QuestionOption(id),
         PRIMARY KEY (patient_profile, pain_type)
@@ -167,16 +168,16 @@ const SCHEMA = `
 
     CREATE INDEX IF NOT EXISTS my_pain_synced_idx ON MyPain(is_synced);
 
-    CREATE TABLE IF NOT EXISTS MyPain_PainLocation (
+    CREATE TABLE IF NOT EXISTS MyPain_Location (
         my_pain TEXT NOT NULL REFERENCES MyPain(id),
-        pain_location TEXT NOT NULL REFERENCES QuestionOption(id),
-        PRIMARY KEY (my_pain, pain_location)
+        location TEXT NOT NULL REFERENCES QuestionOption(id),
+        PRIMARY KEY (my_pain, location)
     );
 
-    CREATE TABLE IF NOT EXISTS MyPain_PainCharacteristic (
+    CREATE TABLE IF NOT EXISTS MyPain_Characteristic (
         my_pain TEXT NOT NULL REFERENCES MyPain(id),
-        pain_characteristic TEXT NOT NULL REFERENCES QuestionOption(id),
-        PRIMARY KEY (my_pain, pain_characteristic)
+        characteristic TEXT NOT NULL REFERENCES QuestionOption(id),
+        PRIMARY KEY (my_pain, characteristic)
     );
 
     CREATE TABLE IF NOT EXISTS MyMovement (

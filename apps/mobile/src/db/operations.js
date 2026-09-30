@@ -2,9 +2,15 @@ import { getDb } from './schema';
 import { randomUUID } from 'expo-crypto';
 
 /* Instructions:
-Call the function for the relevant table in the format operateSyncTableName with operation
-values from {'create', 'update', 'delete'}, followed by an object of attribute values. For 'create'
-operations, do not add a value for id attribute, as it will be automatically generated.
+Call the function for the relevant table in the format operateSync`TableName`(2) with operation
+values from {'create', 'update', 'delete'}, followed by an object of attribute values. The 
+exception is AuditEntry table which cannot have records edited or deleted, so it's function is
+insertSyncAuditEntry(1). For 'create' operations, do not add a value for id attribute, as it 
+will be automatically generated. 
+
+For tables that have a many-to-many relationship, their attribute value must be entered as an array
+of integer ids, and the attribute in the description will be followed by a [], e.g. pain_types[] 
+NN in operateSyncPainType(2).
 
 Use the functions inside a try {...} catch (error) {...} to reapply operation if it failed.
 
@@ -72,7 +78,7 @@ export async function operateSyncUserSettings(operation, values) {
                 offline_backup = ?, microphone_access = ?, notifications_enabled = ?, 
                 text_size_percent = ?, updated_at = ?, is_synced = 0 WHERE id = ?`,
                 [values.server_id ?? null, values.high_contrast, values.offline_backup,
-                    values.microphone_access, values.notification_enabled, 
+                    values.microphone_access, values.notifications_enabled, 
                     values.text_size_percent, now, values.id]
             );
         } else if (operation == 'delete') { 
@@ -86,9 +92,9 @@ export async function operateSyncUserSettings(operation, values) {
 
 /* Patient Profile (soft delete):
 - create: user NN, has_diagnosis NN, other_conditions, assigned_gender_at_birth NN,
-          birth_year NN
+          birth_year NN, pain_types[] NN
 - update: id NN, server_id, has_diagnosis NN, other_conditions, assigned_gender_at_birth NN,
-          birth_year NN
+          birth_year NN, pain_types[] NN
 - delete: id NN */
 export async function operateSyncPatientProfile(operation, values) {
     const db = getDb();
@@ -106,6 +112,12 @@ export async function operateSyncPatientProfile(operation, values) {
                 [values.id, values.user, values.has_diagnosis, values.other_conditions ?? null, 
                     values.assigned_gender_at_birth, values.birth_year, now, now]
             );
+            for (const pain_type of values.pain_types) {
+                await db.runAsync(`INSERT OR IGNORE INTO PatientProfile_PainType (
+                    patient_profile, pain_type) VALUES (?, ?)`, 
+                    [values.id, pain_type]);
+            }
+
         } else if (operation == 'update') {
             await db.runAsync(`UPDATE PatientProfile SET server_id = ?, has_diagnosis = ?, 
                 other_conditions = ?, assigned_gender_at_birth = ?, birth_year = ?, updated_at = ?,
@@ -113,7 +125,17 @@ export async function operateSyncPatientProfile(operation, values) {
                 [values.server_id ?? null, values.has_diagnosis, values.other_conditions ?? null, 
                     values.assigned_gender_at_birth, values.birth_year, now, values.id]
             );
+                for (const pain_type of values.pain_types) {
+                await db.runAsync(`DELETE FROM PatientProfile_PainType WHERE patient_profile = ?`, 
+                    [values.id]);
+                await db.runAsync(`INSERT OR IGNORE INTO PatientProfile_PainType (
+                    patient_profile, pain_type) VALUES (?, ?)`, 
+                    [values.id, pain_type]);
+            }
+
         } else if (operation == 'delete') { // soft delete
+            await db.runAsync(`DELETE FROM PatientProfile_PainType WHERE patient_profile = ?`, 
+                [values.id]);
             await db.runAsync(`UPDATE PatientProfile SET deleted_at = ?, updated_at = ?, is_synced = 0
                 WHERE id = ?`, [now, now, values.id]
             );
@@ -216,7 +238,7 @@ export async function operateSyncPrescription(operation, values) {
             await db.runAsync(`INSERT INTO Prescription (id, patient_profile, name, dosage, 
                 strength, started_on, stopped_on, notes, strength_unit, form, frequency,
                 frequency_unit, created_at, updated_at, is_synced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 
-                ?, ?, ?, ?, 0)`, 
+                ?, ?, ?, ?, ?, 0)`, 
                 [values.id, values.patient_profile, values.name, values.dosage, values.strength,
                     values.started_on ?? null, values.stopped_on ?? null, values.notes ?? null,  
                     values.strength_unit, values.form, values.frequency, values.frequency_unit,
@@ -245,9 +267,9 @@ export async function operateSyncPrescription(operation, values) {
 
 /* MyPain:
 - create: assessment NN, current NN, worst NN, average NN, mildest NN, other_location, 
-          other_characteristic, completed_at
+          other_characteristic, completed_at, locations[] NN, characteristics[] NN
 - update: id NN, server_id, current NN, worst NN, average NN, mildest NN, other_location, 
-          other_characteristic, completed_at
+          other_characteristic, completed_at, locations[] NN, characteristics[] NN
     - assessment cannot be changed
 - delete: id NN */
 export async function operateSyncMyPain(operation, values) {
@@ -267,6 +289,15 @@ export async function operateSyncMyPain(operation, values) {
                     values.mildest, values.other_location ?? null, values.other_characteristic
                     ?? null, values.completed_at ?? null, now, now]
             );
+            for (const location of values.locations) {
+                await db.runAsync(`INSERT OR IGNORE INTO MyPain_Location (my_pain, location) VALUES
+                     (?, ?)`, [values.id, location]);
+            }
+            for (const characteristic of values.characteristics) {
+                await db.runAsync(`INSERT OR IGNORE INTO MyPain_Characteristic (my_pain, 
+                    characteristic) VALUES (?, ?)`, [values.id, characteristic]);
+            }
+
         } else if (operation == 'update') {
             await db.runAsync(`UPDATE MyPain SET server_id = ?, current = ?, worst = ?, 
                 average = ?, mildest = ?, other_location = ?, other_characteristic = ?, 
@@ -275,7 +306,21 @@ export async function operateSyncMyPain(operation, values) {
                     values.mildest, values.other_location ?? null, values.other_characteristic
                     ?? null, values.completed_at ?? null, now, values.id]
             );
+            for (const location of values.locations) {
+                await db.runAsync(`DELETE FROM MyPain_Location WHERE my_pain = ?`, [values.id]);
+                await db.runAsync(`INSERT OR IGNORE INTO MyPain_Location (my_pain, location) VALUES
+                     (?, ?)`, [values.id, location]);
+            }
+            for (const characteristic of values.characteristics) {
+                await db.runAsync(`DELETE FROM MyPain_Characteristic WHERE my_pain = ?`, 
+                    [values.id]);
+                await db.runAsync(`INSERT OR IGNORE INTO MyPain_Characteristic (my_pain, 
+                    characteristic) VALUES (?, ?)`, [values.id, characteristic]);
+            }
+
         } else if (operation == 'delete') { 
+            await db.runAsync(`DELETE FROM MyPain_Location WHERE my_pain = ?`, [values.id]);
+            await db.runAsync(`DELETE FROM MyPain_Characteristic WHERE my_pain = ?`, [values.id]);
             await db.runAsync(`DELETE FROM MyPain WHERE id = ?`, [values.id]);
         }
 
@@ -286,9 +331,9 @@ export async function operateSyncMyPain(operation, values) {
 
 /* MyMovement:
 - create: assessment NN, active_hours NN, walking NN, sitting NN, lifting NN, standing NN,
-          reflection, score NN, completed_at
+          reflection, score NN, completed_at, general_impacts[] NN
 - update: id NN, server_id, active_hours NN, walking NN, sitting NN, lifting NN, standing NN,
-          reflection, score NN, completed_at
+          reflection, score NN, completed_at, general_impacts[] NN
     - assessment cannot be changed
 - delete: id NN */
 export async function operateSyncMyMovement(operation, values) {
@@ -308,6 +353,11 @@ export async function operateSyncMyMovement(operation, values) {
                     values.lifting, values.standing, values.reflection ?? null, values.score,
                     values.completed_at ?? null, now, now]
             );
+            for (const general_impact of values.general_impacts) {
+                await db.runAsync(`INSERT OR IGNORE INTO MyMovement_GeneralImpact (my_movement,
+                    general_impact) VALUES (?, ?)`, [values.id, general_impact]);
+            }
+
         } else if (operation == 'update') {
             await db.runAsync(`UPDATE MyMovement SET server_id = ?, active_hours = ?, walking = ?, 
                 sitting = ?, lifting = ?, standing = ?, reflection = ?, score = ?, 
@@ -316,7 +366,16 @@ export async function operateSyncMyMovement(operation, values) {
                     values.lifting, values.standing, values.reflection ?? null, values.score,
                     values.completed_at ?? null, now, values.id]
             );
+            for (const general_impact of values.general_impacts) {
+                await db.runAsync(`DELETE FROM MyMovement_GeneralImpact WHERE my_movement = ?`,
+                    [values.id]);
+                await db.runAsync(`INSERT OR IGNORE INTO MyMovement_GeneralImpact (my_movement,
+                    general_impact) VALUES (?, ?)`, [values.id, general_impact]);
+            }
+
         } else if (operation == 'delete') { 
+            await db.runAsync(`DELETE FROM MyMovement_GeneralImpact WHERE my_movement = ?`,
+                [values.id]);
             await db.runAsync(`DELETE FROM MyMovement WHERE id = ?`, [values.id]);
         }
 
@@ -326,8 +385,10 @@ export async function operateSyncMyMovement(operation, values) {
 }
 
 /* MyPersonalCare:
-- create: assessment NN, personal_care NN, sleeping NN, reflection, score NN, completed_at
-- update: id NN, server_id, personal_care NN, sleeping NN, reflection, score NN, completed_at
+- create: assessment NN, personal_care NN, sleeping NN, reflection, score NN, completed_at, 
+          general_activities_impact[] NN
+- update: id NN, server_id, personal_care NN, sleeping NN, reflection, score NN, completed_at,
+          general_activities_impact[] NN
     - assessment cannot be changed
 - delete: id NN */
 export async function operateSyncMyPersonalCare(operation, values) {
@@ -346,6 +407,12 @@ export async function operateSyncMyPersonalCare(operation, values) {
                 [values.id, values.assessment, values.personal_care, values.sleeping, 
                     values.reflection ?? null, values.score, values.completed_at ?? null, now, now]
             );
+            for (const general_activities_impact of values.general_activities_impact) {
+                await db.runAsync(`INSERT OR IGNORE INTO MyPersonalCare_GeneralActivitiesImpacts (
+                    my_personal_care, general_activities_impact) VALUES (?, ?)`, 
+                    [values.id, general_activities_impact]);
+            }
+
         } else if (operation == 'update') {
             await db.runAsync(`UPDATE MyPersonalCare SET server_id = ?, personal_care = ?, 
                 sleeping = ?, reflection = ?, score = ?, completed_at = ?, updated_at = ?, 
@@ -353,7 +420,17 @@ export async function operateSyncMyPersonalCare(operation, values) {
                 [values.server_id ?? null, values.personal_care, values.sleeping, values.reflection
                     ?? null, values.score, values.completed_at ?? null, now, values.id]
             );
+            for (const general_activities_impact of values.general_activities_impact) {
+                await db.runAsync(`DELETE FROM MyPersonalCare_GeneralActivitiesImpact WHERE
+                    my_personal_care = ?`, [values.id]);
+                await db.runAsync(`INSERT OR IGNORE INTO MyPersonalCare_GeneralActivitiesImpact (
+                    my_personal_care, general_activities_impact) VALUES (?, ?)`, 
+                    [values.id, general_activities_impact]);
+            }
+
         } else if (operation == 'delete') { 
+            await db.runAsync(`DELETE FROM MyPersonalCare_GeneralActivitiesImpact WHERE 
+                my_personal_care = ?`, [values.id]);
             await db.runAsync(`DELETE FROM MyPersonalCare WHERE id = ?`, [values.id]);
         }
 
@@ -408,8 +485,10 @@ export async function operateSyncMySocialHealth(operation, values) {
 }
 
 /* MyManagement:
-- create: assessment NN, otc_medication, exercise NN, emotion, score NN, completed_at
-- update: id NN, server_id, otc_medication, exercise NN, emotion, score NN, completed_at
+- create: assessment NN, otc_medication, exercise NN, emotion, score NN, completed_at, 
+          medication[] NN
+- update: id NN, server_id, otc_medication, exercise NN, emotion, score NN, completed_at,
+          medication[] NN
     - assessment cannot be changed
 - delete: id NN */
 export async function operateSyncMyManagement(operation, values) {
@@ -428,6 +507,11 @@ export async function operateSyncMyManagement(operation, values) {
                 [values.id, values.assessment, values.otc_medication ?? null, values.exercise, 
                     values.emotion ?? null, values.score, values.completed_at ?? null, now, now]
             );
+            for (const medication of values.medication){
+                await db.runAsync(`INSERT OR IGNORE INTO MyManagement_Medication (my_management,
+                    medication) VALUES (?,?)`, [values.id, medication]);
+            }
+
         } else if (operation == 'update') {
             await db.runAsync(`UPDATE MyManagement SET server_id = ?, otc_medication = ?, 
                 exercise = ?, emotion = ?, score = ?, completed_at = ?, updated_at = ?, 
@@ -436,7 +520,16 @@ export async function operateSyncMyManagement(operation, values) {
                     values.emotion ?? null, values.score, values.completed_at ?? null, now, 
                     values.id]
             );
+            for (const medication of values.medication){
+                await db.runAsync(`DELETE FROM MyManagement_Medication WHERE my_management = ?`,
+                    [values.id]);
+                await db.runAsync(`INSERT OR IGNORE INTO MyManagement_Medication (my_management,
+                    medication) VALUES (?,?)`, [values.id, medication]);
+            }
+
         } else if (operation == 'delete') { 
+            await db.runAsync(`DELETE FROM MyManagement_Medication WHERE my_management = ?`,
+                [values.id]);
             await db.runAsync(`DELETE FROM MyManagement WHERE id = ?`, [values.id]);
         }
 
@@ -470,11 +563,10 @@ export async function operateSyncAppointment(operation, values) {
             );
         } else if (operation == 'update') {
             await db.runAsync(`UPDATE Appointment SET server_id = ?, scheduled_date = ?,
-                doctor = ?, status = ?, created_by = ?, health_service = ?, notes = ?, 
+                doctor = ?, status = ?, health_service = ?, notes = ?, 
                 updated_at = ?, is_synced = 0 WHERE id = ?`,
                 [values.server_id ?? null, values.scheduled_date, values.doctor ?? null, 
-                    values.status, values.created_by, values.health_service, values.notes ??
-                    null, now, values.id]
+                    values.status, values.health_service, values.notes ?? null, now, values.id]
             );
         } else if (operation == 'delete') { // soft delete
             await db.runAsync(`UPDATE Appointment SET deleted_at = ?, updated_at = ?, is_synced = 0
@@ -543,8 +635,8 @@ export async function operateSyncAppointmentAnswer(operation, values) {
             await db.runAsync(`INSERT INTO AppointmentAnswer (id, question, text, 
                 recording_file, transcript, recorded_by, recorded_at, created_at, updated_at,
                 is_synced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`, 
-                [values.id, values.question, values.text, values.recording_file, values.transcript,
-                    values.recorded_by, values.recorded_at, now, now]
+                [values.id, values.question, values.text, values.recording_file ?? null, 
+                    values.transcript ?? null, values.recorded_by, values.recorded_at, now, now]
             );
         } else if (operation == 'update') {
             await db.runAsync(`UPDATE AppointmentAnswer SET server_id = ?, text = ?, 
@@ -565,11 +657,11 @@ export async function operateSyncAppointmentAnswer(operation, values) {
 }
 
 /* AppointmentAccess:
-- create: assessment NN, support_link NN, can_add_questions NN, can_record_answers NN, granted_at 
+- create: appointment NN, support_link NN, can_add_questions NN, can_record_answers NN, granted_at 
           NN
 - update: id NN, server_id, can_add_questions NN, can_record_answers NN, 
           revoked_at
-    - assessment, support_link, granted_at cannot be changed
+    - appointment, support_link, granted_at cannot be changed
 - delete: id NN */
 export async function operateSyncAppointmentAccess(operation, values) {
     const db = getDb();
@@ -581,10 +673,10 @@ export async function operateSyncAppointmentAccess(operation, values) {
         // apply operation to local
         if (operation == 'create') {
             values.id = randomUUID();
-            await db.runAsync(`INSERT INTO AppointmentAccess (id, assessment, support_link,
+            await db.runAsync(`INSERT INTO AppointmentAccess (id, appointment, support_link,
                 can_add_questions, can_record_answers, granted_at, created_at, updated_at, 
                 is_synced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`, 
-                [values.id, values.assessment, values.support_link, values.can_add_questions, 
+                [values.id, values.appointment, values.support_link, values.can_add_questions, 
                     values.can_record_answers, values.granted_at, now, now]
             );
         } else if (operation == 'update') {
@@ -592,7 +684,7 @@ export async function operateSyncAppointmentAccess(operation, values) {
                 can_record_answers = ?, revoked_at = ?, updated_at = ?, is_synced = 0 
                 WHERE id = ?`,
                 [values.server_id ?? null, values.can_add_questions, values.can_record_answers, 
-                    values.revoked_at, now, values.id]
+                    values.revoked_at ?? null, now, values.id]
             );
         } else if (operation == 'delete') { 
             await db.runAsync(`DELETE FROM AppointmentAccess WHERE id = ?`, [values.id]);
@@ -606,28 +698,26 @@ export async function operateSyncAppointmentAccess(operation, values) {
 /* AuditEntry:
 - create: audit_user NN, patient_profile NN, action NN, target_type NN, target_local_id, 
           target_server_id, occurred_at NN, context
-- create: N/A
+- update: N/A
 - delete: N/A
 */
-export async function operateSyncAuditEntry(operation, values) {
+export async function insertSyncAuditEntry(operation, values) {
     const db = getDb();
     const now = Date.now();
 
     // roll back operation if it hasn't been applied locally and added to sync queue
     await db.withTransactionAsync(async () => {    
 
-        // apply operation to local
-        if (operation == 'create') {
-            values.id = randomUUID();
-            await db.runAsync(`INSERT INTO AuditEntry (id, audit_user, patient_profile, action,
-                target_type, target_local_id, target_server_id, occurred_at, context, 
-                created_at, updated_at, is_synced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`, 
-                [values.id, values.audit_user, values.patient_profile, values.action, 
-                    values.target_type, values.target_local_id ?? null, 
-                    values.target_server_id ?? null, values.occurred_at, values.context ?? null,
-                    now, now]
-            );
-        } 
+    // apply operation to local
+        values.id = randomUUID();
+        await db.runAsync(`INSERT INTO AuditEntry (id, audit_user, patient_profile, action,
+            target_type, target_local_id, target_server_id, occurred_at, context, 
+            created_at, updated_at, is_synced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`, 
+            [values.id, values.audit_user, values.patient_profile, values.action, 
+                values.target_type, values.target_local_id ?? null, 
+                values.target_server_id ?? null, values.occurred_at, values.context ?? null,
+                now, now]
+        );
 
         // queue operation to remote
         await enqueueOutbox(db, 'AuditEntry', values.id, operation, values, now);
