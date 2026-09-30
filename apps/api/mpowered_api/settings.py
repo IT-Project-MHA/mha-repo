@@ -136,13 +136,17 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.TokenAuthentication"],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     "DEFAULT_THROTTLE_RATES": {
+        
         "otp_request": "10/hour",
         "otp_verify": "20/hour",
         "otp_phone_burst": "1/min",
         "otp_phone_sustained": "5/hour",
+
         "register": "10/hour",
         "login": "20/hour",
         "login_phone": "10/hour",
+
+        "reset_pin": "10/hour"
     },
 }
 

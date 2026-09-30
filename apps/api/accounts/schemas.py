@@ -72,3 +72,9 @@ class TrustedDeviceSchema(serializers.ModelSerializer):
     class Meta:
         model = TrustedDevice
         fields = ["id", "device_id", "label", "last_seen_at", "created_at"]
+
+class ResetPinSchema(serializers.Serializer):
+    phone_number = serializers.CharField(max_length = 20)
+    verification_id = serializers.UUIDField()
+    pin = serializers.RegexField(rf"^\d{{{PIN_LENGTH}}}$", write_only = True)
+    device_id = serializers.CharField(max_length = 128)

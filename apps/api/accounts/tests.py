@@ -14,6 +14,7 @@ PHONE = "+61400000000"
 CODE = "123456"
 WRONG_CODE = "000000"
 PIN = "196712"
+NEW_PIN = "918273"
 DEVICE = "josh-phone"
 
 # OTP Tests
@@ -364,3 +365,82 @@ class DeviceTests(APITestCase):
         self.client.credentials()
         self.assertEqual(self.client.get("/auth/devices").status_code, 401)
         self.assertEqual(self.revoke(self.phone).status_code, 401)
+
+
+
+# Reset Pin Tests
+class ResetPinTests(APITestCase):
+    # POST /auth/reset-pin
+
+    def setUp(self):
+        cache.clear()
+
+        # Account signed in on a phone and an ipad
+        self.user = User.objects.create_user(PHONE, "Josh", PIN)
+        self.phone = TrustedDevice.objects.create(user = self.user, device_id = DEVICE)
+        self.ipad = TrustedDevice.objects.create(user = self.user, device_id = "josh-ipad")
+        self.old_token = Token.objects.create(user = self.user)
+
+        # Phone that just passed verify-code
+        self.verification = PhoneVerification.objects.create(
+            phone_number = PHONE, code = "hash", expires_at = timezone.now(), used_at = timezone.now(),
+        )
+
+    def reset(self, **changes):
+        # Send a valid reset and swap in fields
+        body = {
+            "phone_number": PHONE,
+            "verification_id": str(self.verification.id),
+            "pin": NEW_PIN,
+            "device_id": DEVICE,
+        }
+        body.update(changes)
+
+        return self.client.post("/auth/reset-pin", body, format = "json")
+
+    def login(self, pin, device_id):
+        return self.client.post(
+            "/auth/login", {"phone_number": PHONE, "pin": pin, "device_id": device_id}, format = "json"
+        )
+
+    def test_reset_pin(self):
+        response = self.reset()
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password(NEW_PIN))
+        self.assertFalse(self.user.check_password(PIN))
+
+    def test_old_pin_stops(self):
+        self.reset()
+        self.assertEqual(self.login(PIN, DEVICE).status_code, 401)
+
+    def test_old_token_deleted(self):
+        response = self.reset()
+        self.assertFalse(Token.objects.filter(key = self.old_token.key).exists())
+        self.assertNotEqual(response.data["token"], self.old_token.key)
+
+    def test_other_devices_signed_out(self):
+        self.reset()
+        self.ipad.refresh_from_db()
+        self.assertIsNotNone(self.ipad.revoked_at)
+        self.assertEqual(self.login(NEW_PIN, "josh-ipad").data["detail"], "verification_required")
+
+    def test_device_stays_trusted(self):
+        self.reset()
+        self.assertEqual(self.login(NEW_PIN, DEVICE).status_code, 200)
+
+    def test_needs_verified_phone(self):
+        PhoneVerification.objects.update(used_at = None)
+        response = self.reset()
+        self.assertEqual(response.data["detail"], "verification_invalid")
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password(PIN))
+
+    def test_no_account_for_phone(self):
+        PhoneVerification.objects.update(phone_number = "+61499999999")
+        response = self.reset(phone_number = "+61499999999")
+        self.assertEqual(response.data["detail"], "no_account")
+
+    def test_pin_must_be_six_digits(self):
+        response = self.reset(pin = "1234")
+        self.assertEqual(response.status_code, 400)

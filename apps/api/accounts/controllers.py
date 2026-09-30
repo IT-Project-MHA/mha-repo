@@ -4,10 +4,16 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from accounts import otp, registration, login, devices
-from accounts.schemas import RequestCodeSchema, VerifyCodeSchema, RegisterSchema, LoginSchema, TrustedDeviceSchema
+from accounts import otp, registration, login, devices, reset_pin
+from accounts.schemas import RequestCodeSchema, VerifyCodeSchema, RegisterSchema, LoginSchema, TrustedDeviceSchema, ResetPinSchema
 from accounts.rate_limits import PhoneBurstThrottle, PhoneSustainedThrottle, PhoneLoginThrottle, PhoneRateThrottle
 from accounts.models import PatientProfile
+
+LOGIN_ERROR_STATUS = {
+    "invalid_credentials": status.HTTP_401_UNAUTHORIZED,
+    "verification_required": status.HTTP_403_FORBIDDEN,
+    "verification_invalid": status.HTTP_400_BAD_REQUEST,
+}
 
 class RequestCodeController(APIView):
     # POST /auth/request-code - send otp to phone number
@@ -72,7 +78,7 @@ class RegisterController(APIView):
                 pin = data["pin"],
                 track_health = data["track_health"],
                 health = data.get("health"),
-                device_id = data["device_id"],
+                device_id = data["device_id"]
             )
         except registration.RegistrationError as error:
             # Phone already has an account so 409
@@ -88,13 +94,6 @@ class RegisterController(APIView):
             {"token": token.key, "user_id": user.id, "has_patient_profile": data["track_health"]},
             status = status.HTTP_201_CREATED,
         )
-
-LOGIN_ERROR_STATUS = {
-    "invalid_credentials": status.HTTP_401_UNAUTHORIZED,
-    "verification_required": status.HTTP_403_FORBIDDEN,
-    "verification_invalid": status.HTTP_400_BAD_REQUEST,
-}
-
 
 class LoginController(APIView):
     # POST /auth/login
@@ -115,7 +114,7 @@ class LoginController(APIView):
                 phone_number = data["phone_number"],
                 pin = data["pin"],
                 device_id = data["device_id"],
-                verification_id = data.get("verification_id"),
+                verification_id = data.get("verification_id")
             )
         except login.LoginError as error:
             return Response({"detail": error.reason}, status = LOGIN_ERROR_STATUS[error.reason])
@@ -160,3 +159,29 @@ class RevokeDeviceController(APIView):
             return Response({"detail": "not_found"}, status = status.HTTP_404_NOT_FOUND)
 
         return Response(status = status.HTTP_204_NO_CONTENT)
+
+class ResetPinController(APIView):
+    # POST /auth/reset-pin
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "reset_pin"
+
+    def post(self, request):
+        serializer = ResetPinSchema(data = request.data)
+        serializer.is_valid(raise_exception = True)
+
+        data = serializer.validated_data
+
+        try:
+            user, token = reset_pin.reset_pin(
+                phone_number = data["phone_number"],
+                verification_id = data["verification_id"],
+                pin = data["pin"],
+                device_id = data["device_id"]
+            )
+        except reset_pin.PinResetError as error:
+            return Response({"detail": error.reason}, status = status.HTTP_400_BAD_REQUEST)
+
+        return Response({"token": token.key, "user_id": user.id}, status = status.HTTP_200_OK)
