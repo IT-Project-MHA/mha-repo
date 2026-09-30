@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     "appointment",
     "audit",
     "health",
-    "reference"
+    "reference",
+    "rest_framework.authtoken"
 ]
 
 MIDDLEWARE = [
@@ -139,5 +140,9 @@ REST_FRAMEWORK = {
         "otp_verify": "20/hour",
         "otp_phone_burst": "1/min",
         "otp_phone_sustained": "5/hour",
+        "register": "10/hour",
     },
 }
+
+TERMS_VERSION = "1.0"
+PRIVACY_VERSION = "1.0"

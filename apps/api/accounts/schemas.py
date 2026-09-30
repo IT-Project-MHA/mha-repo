@@ -13,8 +13,6 @@ class RequestCodeSchema(serializers.Serializer):
 class VerifyCodeSchema(RequestCodeSchema):
     otp = serializers.RegexField(rf"^\d{{{OTP_LENGTH}}}$")
 
-PIN_LENGTH = 6
-
 class HealthDetailsSchema(serializers.ModelSerializer):
     # Optional health details, only sent if track my health is ticked
 
@@ -29,7 +27,6 @@ class HealthDetailsSchema(serializers.ModelSerializer):
         model = PatientProfile
         fields = ["has_diagnosis", "other_conditions", "assigned_gender_at_birth", "birth_year", "pain_types"]
 
-
 class RegisterSchema(serializers.Serializer):
     verification_id = serializers.UUIDField()
     phone_number = serializers.CharField(max_length = 20)
@@ -40,24 +37,23 @@ class RegisterSchema(serializers.Serializer):
     track_health = serializers.BooleanField(default = False)
     health = HealthDetailsSchema(required = False)
 
-    def validate_terms_and_conditions(self, value):
+    def validate_accepted_terms(self, value):
         # Terms and Conditions must be accepted
         if not value:
-            raise serializers.ValidationError("The Terms of Service must be accepted.")
+            raise serializers.ValidationError("Terms of Service must be accepted.")
 
         return value
 
-    def validate_privacy_policy(self, value):
+    def validate_accepted_privacy(self, value):
         # Privacy policy must be accepted
         if not value:
-            raise serializers.ValidationError("The Privacy Policy must be accepted.")
+            raise serializers.ValidationError("Privacy Policy must be accepted.")
 
         return value
 
     def validate(self, data):
         # Health details only allowed if they're tracking their health
-        
         if "health" in data and not data["track_health"]:
-            raise serializers.ValidationError({"health": "Only send end health details when track_health is true."})
+            raise serializers.ValidationError({"health": "Only send health details when track_health is true."})
 
         return data
