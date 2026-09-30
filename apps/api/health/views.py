@@ -11,6 +11,7 @@ from .models import Prescription, Assessment, MyPain, MyMovement, MyPersonalCare
    MySocialHealth, MyManagement
 from accounts.models import SupportLink
 from .serializer import *
+from mpowered_api.immutable import save_without_immutable_changes
 from datetime import date
 
 # instructions:
@@ -23,18 +24,6 @@ from datetime import date
 
 # Attributes that cannot be updated are specified in the comments. Sending a different value for
 # them in an update request returns a 400 error.
-
-# helper function: rejects update if any immutable field's value is changed, otherwise saves
-def save_without_immutable_changes(serializer, immutable_fields):
-    instance = serializer.instance
-    errors = {}
-    for field in immutable_fields:
-        if field in serializer.validated_data and \
-           serializer.validated_data[field] != getattr(instance, field):
-            errors[field] = 'This field cannot be changed.'
-    if errors:
-        raise serializers.ValidationError(errors)
-    serializer.save()
 
 
 # Prescription APIs: 

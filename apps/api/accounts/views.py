@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
 from .models import User, PatientProfile, UserSettings, SupportLink, TermsAndPrivacy
 from .serializer import *
+from mpowered_api.immutable import save_without_immutable_changes
 
 # instructions:
 # All views are protected by authenticated user id (can only see records where patient_profile
@@ -12,6 +13,9 @@ from .serializer import *
 # Attributes that can be filtered are specified in the comments. To filter by attribute, put
 # in the URL ?attribute_name=value. For multiple attributes:
 # ?attribute_name1=value&?attribute_name2=value...
+
+# Attributes that cannot be updated are specified in the comments. Sending a different value for
+# them in an update request returns a 400 error.
 
 
 # User APIs:
@@ -36,6 +40,7 @@ class UserRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
 # PatientProfile APIs:
 # - select: can filter by user
+# - update: user cannot be changed
 
 # helper function: returns set of patient profiles that user can access
 def visible_patient_profiles(user):
@@ -73,9 +78,13 @@ class PatientProfileRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView)
             query_set = query_set.filter(user = query_user)
         return query_set.distinct()
 
+    def perform_update(self, serializer):
+        save_without_immutable_changes(serializer, ['user'])
+
 
 # UserSettings APIs:
 # - select: can only see own settings
+# - update: user cannot be changed
 
 class UserSettingsListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
@@ -97,11 +106,16 @@ class UserSettingsRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         user = self.request.user
         return UserSettings.objects.filter(user = user)
 
+    def perform_update(self, serializer):
+        save_without_immutable_changes(serializer, ['user'])
+
 
 # SupportLink APIs:
 # - select: can only see links where user is the patient or supporter, can filter by
 #   patient_profile, status
 # - insert: patient_profile & patient_user are set to the user's own
+# - update: patient_profile, patient_user, supporter_user, invited_phone_number, invited_at 
+#   cannot be changed
 
 # helper function: returns set of support links that user can access
 def visible_support_links(user):
@@ -141,9 +155,14 @@ class SupportLinkRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
             query_set = query_set.filter(status = query_status)
         return query_set.distinct()
 
+    def perform_update(self, serializer):
+        save_without_immutable_changes(serializer, ['patient_profile', 'patient_user',
+            'supporter_user', 'invited_phone_number', 'invited_at'])
+
 
 # TermsAndPrivacy APIs:
 # - select: can only see own records, can filter by document_type
+# - update: user, document_type, document_version, accepted_at cannot be changed
 
 class TermsAndPrivacyListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
@@ -172,3 +191,7 @@ class TermsAndPrivacyRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView
         if document_type:
             query_set = query_set.filter(document_type = document_type)
         return query_set
+
+    def perform_update(self, serializer):
+        save_without_immutable_changes(serializer, ['user', 'document_type',
+            'document_version', 'accepted_at'])

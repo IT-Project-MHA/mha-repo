@@ -21,6 +21,9 @@ from datetime import date
 
 
 # AuditEntry APIs:
+# - select: can only see own audit entries
+# - update: N/A, audit entries cannot be updated
+# - delete: N/A, audit entries cannot be deleted
 
 class AuditEntryListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
@@ -28,8 +31,12 @@ class AuditEntryListCreate(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        return AuditEntry.objects.filter(user = user)
+        return AuditEntry.objects.filter(audit_user = user)
 
-class AuditEntryRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
-    queryset = AuditEntry.objects.all()
+class AuditEntryRetrieve(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     serializer_class = AuditEntrySerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        return AuditEntry.objects.filter(audit_user = user)

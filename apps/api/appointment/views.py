@@ -7,6 +7,7 @@ from .models import Appointment, CarePerson, AppointmentQuestion, AppointmentAns
    AppointmentAccess
 from accounts.models import SupportLink
 from .serializer import *
+from mpowered_api.immutable import save_without_immutable_changes
 
 # instructions:
 # All views are protected by authenticated user id (can only see records where patient_profile
@@ -16,10 +17,14 @@ from .serializer import *
 # in the URL ?attribute_name=value. For multiple attributes:
 # ?attribute_name1=value&?attribute_name2=value...
 
+# Attributes that cannot be updated are specified in the comments. Sending a different value for
+# them in an update request returns a 400 error.
+
 
 # Appointment APIs:
 # - select: can filter by patient_profile, status, scheduled_date
 # - insert: patient_profile & created_by are set to the user's own
+# - update: patient_profile, created_by cannot be changed
 
 # helper function: returns set of appointments that user can access (own, or granted access
 # through an active support link that hasn't been revoked)
@@ -71,6 +76,9 @@ class AppointmentRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
             query_set = query_set.filter(scheduled_date = scheduled_date)
         return query_set.distinct()
 
+    def perform_update(self, serializer):
+        save_without_immutable_changes(serializer, ['patient_profile', 'created_by'])
+
 
 # CarePerson APIs:
 # - select: can filter by patient_profile
@@ -115,6 +123,7 @@ class CarePersonRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 # - select: must filter by appointment
 # - insert: must specify appointment id that the user has permission to access, created_by is
 #   set to the user
+# - update: appointment, source, created_by cannot be changed
 
 class AppointmentQuestionListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
@@ -152,11 +161,15 @@ class AppointmentQuestionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPI
             query_set = query_set.filter(appointment = appointment)
         return query_set.distinct()
 
+    def perform_update(self, serializer):
+        save_without_immutable_changes(serializer, ['appointment', 'source', 'created_by'])
+
 
 # AppointmentAnswer APIs:
 # - select: must filter by question
 # - insert: must specify question id that the user has permission to access, recorded_by is
 #   set to the user
+# - update: question cannot be changed
 
 class AppointmentAnswerListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
@@ -194,11 +207,15 @@ class AppointmentAnswerRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIVi
             query_set = query_set.filter(question = question)
         return query_set.distinct()
 
+    def perform_update(self, serializer):
+        save_without_immutable_changes(serializer, ['question'])
+
 
 # AppointmentAccess APIs:
 # - select: can only see access for own appointments or given to user, can filter by
 #   appointment, support_link
 # - insert: must specify appointment id of the user's own appointment
+# - update: appointment, support_link, granted_at cannot be changed
 
 # helper function: returns set of appointment access records that user can access
 def visible_appointment_access(user):
@@ -244,3 +261,6 @@ class AppointmentAccessRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIVi
         if support_link:
             query_set = query_set.filter(support_link = support_link)
         return query_set.distinct()
+
+    def perform_update(self, serializer):
+        save_without_immutable_changes(serializer, ['appointment', 'support_link', 'granted_at'])

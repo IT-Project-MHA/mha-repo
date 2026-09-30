@@ -7,6 +7,6 @@ urlpatterns = [
          views.AuditEntryListCreate.as_view(), 
          name ='read_create_audit_entry'),
     path('auditEntry/<str:pk>', 
-         views.AuditEntryRetrieveUpdateDestroy.as_view(), 
-         name ='update_audit_entry')
+         views.AuditEntryRetrieve.as_view(), 
+         name ='read_audit_entry')
 ]
