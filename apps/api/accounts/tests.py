@@ -204,3 +204,93 @@ class RegisterTests(APITestCase):
     def test_register_trusts_device(self):
         self.register()
         self.assertTrue(TrustedDevice.objects.filter(user = User.objects.get(), device_id = DEVICE).exists())
+
+
+
+# Login and Logout Tests
+class LoginTests(APITestCase):
+    # POST /auth/login
+    # POST /auth/logout
+
+    def setUp(self):
+        cache.clear()
+        # Existing account that has signed in on DEVICE before
+        self.user = User.objects.create_user(PHONE, "Josh", PIN)
+        TrustedDevice.objects.create(user = self.user, device_id = DEVICE)
+
+    def login(self, **changes):
+        body = {"phone_number": PHONE, "pin": PIN, "device_id": DEVICE}
+        body.update(changes)
+        return self.client.post("/auth/login", body, format = "json")
+
+    def verified_phone(self):
+        return PhoneVerification.objects.create(
+            phone_number = PHONE, code = "hash", expires_at = timezone.now(), used_at = timezone.now(),
+        )
+
+    def test_trusted_device_logs_in(self):
+        response = self.login()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["token"], Token.objects.get(user = self.user).key)
+
+    def test_wrong_pin(self):
+        response = self.login(pin = "000000")
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data["detail"], "invalid_credentials")
+
+    def test_unknown_phone_number(self):
+        response = self.login(phone_number = "+61499999999")
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data["detail"], "invalid_credentials")
+
+    def test_deleted_account(self):
+        User.objects.update(deleted_at = timezone.now())
+        response = self.login()
+        self.assertEqual(response.data["detail"], "invalid_credentials")
+
+    def test_new_device_needs_otp(self):
+        response = self.login(device_id = "new-tablet")
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data["detail"], "verification_required")
+
+    def test_new_device_with_otp(self):
+        verification = self.verified_phone()
+        response = self.login(device_id = "new-tablet", verification_id = str(verification.id))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(TrustedDevice.objects.filter(user = self.user, device_id = "new-tablet").exists())
+
+    def test_new_device_with_unverified_otp(self):
+        verification = self.verified_phone()
+        PhoneVerification.objects.update(used_at = None)
+        response = self.login(device_id = "new-tablet", verification_id = str(verification.id))
+        self.assertEqual(response.data["detail"], "verification_invalid")
+        self.assertFalse(TrustedDevice.objects.filter(device_id = "new-tablet").exists())
+
+    def test_revoked_device_needs_otp(self):
+        TrustedDevice.objects.update(revoked_at = timezone.now())
+        response = self.login()
+        self.assertEqual(response.data["detail"], "verification_required")
+
+    def test_same_token_on_every_device(self):
+        first = self.login()
+        TrustedDevice.objects.create(user = self.user, device_id = "new-tablet")
+        second = self.login(device_id = "new-tablet")
+        self.assertEqual(first.data["token"], second.data["token"])
+
+    def test_logout_deletes_token(self):
+        token = self.login().data["token"]
+        self.client.credentials(HTTP_AUTHORIZATION = f"Token {token}")
+        response = self.client.post("/auth/logout")
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(Token.objects.filter(user = self.user).exists())
+
+    def test_old_token_rejected(self):
+        token = self.login().data["token"]
+        self.client.credentials(HTTP_AUTHORIZATION = f"Token {token}")
+        self.client.post("/auth/logout")
+        response = self.client.post("/auth/logout")
+        self.assertEqual(response.status_code, 401)
+
+    def test_logout_needs_token(self):
+        response = self.client.post("/auth/logout")
+        self.assertEqual(response.status_code, 401)
