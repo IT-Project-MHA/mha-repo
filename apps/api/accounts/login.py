@@ -38,7 +38,8 @@ def login_user(phone_number, pin, device_id, verification_id = None):
         if not check_verification(verification_id, phone_number):
             raise LoginError("verification_invalid")
 
-        devices.trust_device(user, device_id)
+
+    devices.trust_device(user, device_id)
 
     # One token per user
     token, _ = Token.objects.get_or_create(user = user)

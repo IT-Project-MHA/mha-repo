@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from accounts.otp import OTP_LENGTH
-from accounts.models import PatientProfile
+from accounts.models import PatientProfile, TrustedDevice
 from reference.models import QuestionOption
 
 PIN_LENGTH = 6
@@ -67,3 +67,8 @@ class LoginSchema(serializers.Serializer):
 
     # Only needed when signing in on a new device
     verification_id = serializers.UUIDField(required = False)
+
+class TrustedDeviceSchema(serializers.ModelSerializer):
+    class Meta:
+        model = TrustedDevice
+        fields = ["id", "device_id", "label", "last_seen_at", "created_at"]

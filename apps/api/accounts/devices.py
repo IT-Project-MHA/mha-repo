@@ -1,3 +1,5 @@
+from django.utils import timezone
+from rest_framework.authtoken.models import Token
 from accounts.models import TrustedDevice
 
 
@@ -16,3 +18,27 @@ def trust_device(user, device_id):
     )
 
     return device
+
+def list_devices(user):
+    # All unrevoked devices logged in with most recent first
+    return TrustedDevice.objects.filter(user = user, revoked_at__isnull = True).order_by("-last_seen_at")
+
+
+def revoke_device(user, device_pk):
+
+    # Revoke one of this user's devices so it needs an otp to sign in again
+    # Also deletes the token, as all devices share one it's the only way to sign the revoked one out
+    # Returns False if the device isn't theirs
+
+    device = TrustedDevice.objects.filter(user = user, pk = device_pk).first()
+
+    if device is None:
+        return False
+
+    if device.revoked_at is None:
+        device.revoked_at = timezone.now()
+        device.save(update_fields = ["revoked_at"])
+
+    Token.objects.filter(user = user).delete()
+
+    return True

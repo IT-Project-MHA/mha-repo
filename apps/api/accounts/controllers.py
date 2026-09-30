@@ -4,8 +4,8 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from accounts import otp, registration, login
-from accounts.schemas import RequestCodeSchema, VerifyCodeSchema, RegisterSchema, LoginSchema
+from accounts import otp, registration, login, devices
+from accounts.schemas import RequestCodeSchema, VerifyCodeSchema, RegisterSchema, LoginSchema, TrustedDeviceSchema
 from accounts.rate_limits import PhoneBurstThrottle, PhoneSustainedThrottle, PhoneLoginThrottle, PhoneRateThrottle
 from accounts.models import PatientProfile
 
@@ -136,5 +136,27 @@ class LogoutController(APIView):
 
     def post(self, request):
         login.logout_user(request.user)
+
+        return Response(status = status.HTTP_204_NO_CONTENT)
+
+class DeviceListController(APIView):
+    # GET /auth/devices
+    # Devices user is signed in on
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = TrustedDeviceSchema(devices.list_devices(request.user), many = True)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+
+
+class RevokeDeviceController(APIView):
+    # POST /auth/devices/{id}/revoke
+    # Revoke a device so it needs an otp again, also signs out everywhere
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, device_pk):
+        # 404 for someone else's device so ids can't be probed
+        if not devices.revoke_device(request.user, device_pk):
+            return Response({"detail": "not_found"}, status = status.HTTP_404_NOT_FOUND)
 
         return Response(status = status.HTTP_204_NO_CONTENT)

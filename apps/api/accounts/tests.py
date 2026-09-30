@@ -14,7 +14,7 @@ PHONE = "+61400000000"
 CODE = "123456"
 WRONG_CODE = "000000"
 PIN = "196712"
-DEVICE = "joshs-phone"
+DEVICE = "josh-phone"
 
 # OTP Tests
 class OtpTests(APITestCase):
@@ -105,7 +105,7 @@ class RegisterTests(APITestCase):
         body = {
             "verification_id": str(self.verification.id),
             "phone_number": PHONE,
-            "display_name": "Josh",
+            "display_name": "josh",
             "pin": PIN,
             "accepted_terms": True,
             "accepted_privacy": True,
@@ -119,7 +119,7 @@ class RegisterTests(APITestCase):
         response = self.register()
         self.assertEqual(response.status_code, 201)
         user = User.objects.get()
-        self.assertEqual(user.display_name, "Josh")
+        self.assertEqual(user.display_name, "josh")
         self.assertEqual(user.phone_number, PHONE)
         self.assertTrue(UserSettings.objects.filter(user = user).exists())
         self.assertFalse(PatientProfile.objects.exists())
@@ -215,7 +215,7 @@ class LoginTests(APITestCase):
     def setUp(self):
         cache.clear()
         # Existing account that has signed in on DEVICE before
-        self.user = User.objects.create_user(PHONE, "Josh", PIN)
+        self.user = User.objects.create_user(PHONE, "josh", PIN)
         TrustedDevice.objects.create(user = self.user, device_id = DEVICE)
 
     def login(self, **changes):
@@ -249,22 +249,22 @@ class LoginTests(APITestCase):
         self.assertEqual(response.data["detail"], "invalid_credentials")
 
     def test_new_device_needs_otp(self):
-        response = self.login(device_id = "new-tablet")
+        response = self.login(device_id = "new-phone")
         self.assertEqual(response.status_code, 403)
         self.assertEqual(response.data["detail"], "verification_required")
 
     def test_new_device_with_otp(self):
         verification = self.verified_phone()
-        response = self.login(device_id = "new-tablet", verification_id = str(verification.id))
+        response = self.login(device_id = "new-phone", verification_id = str(verification.id))
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(TrustedDevice.objects.filter(user = self.user, device_id = "new-tablet").exists())
+        self.assertTrue(TrustedDevice.objects.filter(user = self.user, device_id = "new-phone").exists())
 
     def test_new_device_with_unverified_otp(self):
         verification = self.verified_phone()
         PhoneVerification.objects.update(used_at = None)
-        response = self.login(device_id = "new-tablet", verification_id = str(verification.id))
+        response = self.login(device_id = "new-phone", verification_id = str(verification.id))
         self.assertEqual(response.data["detail"], "verification_invalid")
-        self.assertFalse(TrustedDevice.objects.filter(device_id = "new-tablet").exists())
+        self.assertFalse(TrustedDevice.objects.filter(device_id = "new-phone").exists())
 
     def test_revoked_device_needs_otp(self):
         TrustedDevice.objects.update(revoked_at = timezone.now())
@@ -273,8 +273,8 @@ class LoginTests(APITestCase):
 
     def test_same_token_on_every_device(self):
         first = self.login()
-        TrustedDevice.objects.create(user = self.user, device_id = "new-tablet")
-        second = self.login(device_id = "new-tablet")
+        TrustedDevice.objects.create(user = self.user, device_id = "new-phone")
+        second = self.login(device_id = "new-phone")
         self.assertEqual(first.data["token"], second.data["token"])
 
     def test_logout_deletes_token(self):
@@ -294,3 +294,73 @@ class LoginTests(APITestCase):
     def test_logout_needs_token(self):
         response = self.client.post("/auth/logout")
         self.assertEqual(response.status_code, 401)
+
+    def test_login_updates_last_seen(self):
+        old = timezone.now() - timedelta(days = 3)
+        TrustedDevice.objects.update(last_seen_at = old)
+        self.login()
+        self.assertGreater(TrustedDevice.objects.get().last_seen_at, old)
+
+class DeviceTests(APITestCase):
+    # GET /auth/devices
+    # POST /auth/devices/{id}/revoke
+
+    def setUp(self):
+        cache.clear()
+
+        # Signed in user with two phone
+        self.user = User.objects.create_user(PHONE, "josh", PIN)
+        self.phone = TrustedDevice.objects.create(user = self.user, device_id = DEVICE)
+        self.phone = TrustedDevice.objects.create(user = self.user, device_id = "joshs-ipad")
+
+        # Someone else's device that should never show up
+        other_user = User.objects.create_user("+61499999999", "Other", PIN)
+        self.other_device = TrustedDevice.objects.create(user = other_user, device_id = "other-phone")
+
+        self.token = Token.objects.create(user = self.user)
+        self.client.credentials(HTTP_AUTHORIZATION = f"Token {self.token.key}")
+
+    def revoke(self, device):
+        return self.client.post(f"/auth/devices/{device.id}/revoke")
+
+    def test_list_my_devices(self):
+        response = self.client.get("/auth/devices")
+        self.assertEqual(response.status_code, 200)
+        device_ids = {device["device_id"] for device in response.data}
+        self.assertEqual(device_ids, {DEVICE, "joshs-ipad"})
+
+    def test_revoked_devices_not_listed(self):
+        TrustedDevice.objects.filter(pk = self.phone.pk).update(revoked_at = timezone.now())
+        response = self.client.get("/auth/devices")
+        self.assertEqual([device["device_id"] for device in response.data], [DEVICE])
+
+    def test_revoke_device(self):
+        response = self.revoke(self.phone)
+        self.assertEqual(response.status_code, 204)
+        self.phone.refresh_from_db()
+        self.assertIsNotNone(self.phone.revoked_at)
+
+    def test_revoke_also_signs_out(self):
+        self.revoke(self.phone)
+        self.assertFalse(Token.objects.filter(user = self.user).exists())
+        response = self.client.get("/auth/devices")
+        self.assertEqual(response.status_code, 401)
+
+    def test_revoked_device_needs_otp(self):
+        self.revoke(self.phone)
+        self.client.credentials()
+        response = self.client.post(
+            "/auth/login", {"phone_number": PHONE, "pin": PIN, "device_id": "josh-ipad"}, format = "json"
+        )
+        self.assertEqual(response.data["detail"], "verification_required")
+
+    def test_revoke_someone_elses_device(self):
+        response = self.revoke(self.other_device)
+        self.assertEqual(response.status_code, 404)
+        self.other_device.refresh_from_db()
+        self.assertIsNone(self.other_device.revoked_at)
+
+    def test_needs_login(self):
+        self.client.credentials()
+        self.assertEqual(self.client.get("/auth/devices").status_code, 401)
+        self.assertEqual(self.revoke(self.phone).status_code, 401)
