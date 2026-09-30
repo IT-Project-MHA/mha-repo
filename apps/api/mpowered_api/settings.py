@@ -141,6 +141,8 @@ REST_FRAMEWORK = {
         "otp_phone_burst": "1/min",
         "otp_phone_sustained": "5/hour",
         "register": "10/hour",
+        "login": "20/hour",
+        "login_phone": "10/hour",
     },
 }
 

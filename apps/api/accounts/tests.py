@@ -7,13 +7,14 @@ from django.utils import timezone
 from rest_framework.test import APITestCase
 from rest_framework.authtoken.models import Token
 
-from accounts.models import PhoneVerification, PatientProfile, TermsAndPrivacy, User, UserSettings
+from accounts.models import PhoneVerification, PatientProfile, TermsAndPrivacy, User, UserSettings, TrustedDevice
 from reference.models import QuestionOption
 
 PHONE = "+61400000000"
 CODE = "123456"
 WRONG_CODE = "000000"
 PIN = "196712"
+DEVICE = "joshs-phone"
 
 # OTP Tests
 class OtpTests(APITestCase):
@@ -108,6 +109,7 @@ class RegisterTests(APITestCase):
             "pin": PIN,
             "accepted_terms": True,
             "accepted_privacy": True,
+            "device_id": DEVICE,
         }
         body.update(changes)
 
@@ -198,3 +200,7 @@ class RegisterTests(APITestCase):
 
         self.assertFalse(User.objects.exists())
         self.assertFalse(TermsAndPrivacy.objects.exists())
+
+    def test_register_trusts_device(self):
+        self.register()
+        self.assertTrue(TrustedDevice.objects.filter(user = User.objects.get(), device_id = DEVICE).exists())

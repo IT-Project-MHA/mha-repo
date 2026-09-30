@@ -1,13 +1,13 @@
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from accounts import otp, registration
-from accounts.schemas import RequestCodeSchema, VerifyCodeSchema, RegisterSchema
-from accounts.rate_limits import PhoneBurstThrottle, PhoneSustainedThrottle
-
+from accounts import otp, registration, login
+from accounts.schemas import RequestCodeSchema, VerifyCodeSchema, RegisterSchema, LoginSchema
+from accounts.rate_limits import PhoneBurstThrottle, PhoneSustainedThrottle, PhoneLoginThrottle, PhoneRateThrottle
+from accounts.models import PatientProfile
 
 class RequestCodeController(APIView):
     # POST /auth/request-code - send otp to phone number
@@ -72,6 +72,7 @@ class RegisterController(APIView):
                 pin = data["pin"],
                 track_health = data["track_health"],
                 health = data.get("health"),
+                device_id = data["device_id"],
             )
         except registration.RegistrationError as error:
             # Phone already has an account so 409
@@ -87,3 +88,53 @@ class RegisterController(APIView):
             {"token": token.key, "user_id": user.id, "has_patient_profile": data["track_health"]},
             status = status.HTTP_201_CREATED,
         )
+
+LOGIN_ERROR_STATUS = {
+    "invalid_credentials": status.HTTP_401_UNAUTHORIZED,
+    "verification_required": status.HTTP_403_FORBIDDEN,
+    "verification_invalid": status.HTTP_400_BAD_REQUEST,
+}
+
+
+class LoginController(APIView):
+    # POST /auth/login
+    # Phone number, pin and verification_id if it's a new device
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    throttle_classes = [ScopedRateThrottle, PhoneLoginThrottle]
+    throttle_scope = "login"
+
+    def post(self, request):
+        serializer = LoginSchema(data = request.data)
+        serializer.is_valid(raise_exception = True)
+        data = serializer.validated_data
+
+        try:
+            user, token = login.login_user(
+                phone_number = data["phone_number"],
+                pin = data["pin"],
+                device_id = data["device_id"],
+                verification_id = data.get("verification_id"),
+            )
+        except login.LoginError as error:
+            return Response({"detail": error.reason}, status = LOGIN_ERROR_STATUS[error.reason])
+
+        has_patient_profile = PatientProfile.objects.filter(user = user, deleted_at__isnull = True).exists()
+
+        return Response(
+            {"token": token.key, "user_id": user.id, "has_patient_profile": has_patient_profile},
+            status = status.HTTP_200_OK,
+        )
+
+
+class LogoutController(APIView):
+    # POST /auth/logout
+    # Deletes token so all devices signed out
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        login.logout_user(request.user)
+
+        return Response(status = status.HTTP_204_NO_CONTENT)

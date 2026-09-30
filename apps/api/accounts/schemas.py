@@ -37,6 +37,8 @@ class RegisterSchema(serializers.Serializer):
     track_health = serializers.BooleanField(default = False)
     health = HealthDetailsSchema(required = False)
 
+    device_id = serializers.CharField(max_length = 128)
+
     def validate_accepted_terms(self, value):
         # Terms and Conditions must be accepted
         if not value:
@@ -57,3 +59,11 @@ class RegisterSchema(serializers.Serializer):
             raise serializers.ValidationError({"health": "Only send health details when track_health is true."})
 
         return data
+
+class LoginSchema(serializers.Serializer):
+    phone_number = serializers.CharField(max_length = 20)
+    pin = serializers.RegexField(rf"^\d{{{PIN_LENGTH}}}$", write_only = True)
+    device_id = serializers.CharField(max_length = 128)
+
+    # Only needed when signing in on a new device
+    verification_id = serializers.UUIDField(required = False)

@@ -20,3 +20,6 @@ class PhoneBurstThrottle(PhoneRateThrottle):
 
 class PhoneSustainedThrottle(PhoneRateThrottle):
     scope = "otp_phone_sustained"
+
+class PhoneLoginThrottle(PhoneRateThrottle):
+    scope = "login_phone"
