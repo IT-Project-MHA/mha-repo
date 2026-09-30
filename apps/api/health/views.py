@@ -21,6 +21,21 @@ from datetime import date
 # in the URL ?attribute_name=value. For multiple attributes: 
 # ?attribute_name1=value&?attribute_name2=value...
 
+# Attributes that cannot be updated are specified in the comments. Sending a different value for
+# them in an update request returns a 400 error.
+
+# helper function: rejects update if any immutable field's value is changed, otherwise saves
+def save_without_immutable_changes(serializer, immutable_fields):
+    instance = serializer.instance
+    errors = {}
+    for field in immutable_fields:
+        if field in serializer.validated_data and \
+           serializer.validated_data[field] != getattr(instance, field):
+            errors[field] = 'This field cannot be changed.'
+    if errors:
+        raise serializers.ValidationError(errors)
+    serializer.save()
+
 
 # "Profile..." are temporary view classes.
 # They must be removed once \accounts APIs are written.
@@ -47,7 +62,8 @@ class ProfileRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
 
 # Prescription APIs: 
-# select: can filter by patient_profile
+# - select: can filter by patient_profile
+# - update: patient_profile cannot be changed
 
 class PrescriptionListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
@@ -85,9 +101,13 @@ class PrescriptionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
             query_set = query_set.filter(patient_profile = query_patient_profile)
         return query_set.distinct()
 
+    def perform_update(self, serializer):
+        save_without_immutable_changes(serializer, ['patient_profile'])
+
 
 # Assessment APIs: 
-# select: can filter by patient_profile, week_starting
+# - select: can filter by patient_profile, week_starting
+# - update: patient_profile, week_starting cannot be changed
 
 # helper function: returns set of assessments that user can access
 def visible_assessments(user):
@@ -132,11 +152,15 @@ class AssessmentRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         if query_patient_profile:
             query_set = query_set.filter(patient_profile = query_patient_profile)
         return query_set.distinct()
+
+    def perform_update(self, serializer):
+        save_without_immutable_changes(serializer, ['patient_profile', 'week_starting'])
     
 
 # Assessment task APIs (MyPain, MyMovement, MyPersonalCare, MySocialHealth, MyManagement):
 # - select: must filter by assessment
 # - insert: must specify assessment id that the user has permission to access
+# - update: assessment cannot be changed
 
 class MyPainListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
@@ -185,6 +209,9 @@ class MyPainRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
                 assessment__patient_profile = query_patient_profile)
         return query_set.distinct()
 
+    def perform_update(self, serializer):
+        save_without_immutable_changes(serializer, ['assessment'])
+
 class MyMovementListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = MyMovementSerializer
@@ -231,6 +258,9 @@ class MyMovementRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
             query_set = query_set.filter(
                 assessment__patient_profile = query_patient_profile)
         return query_set.distinct()
+
+    def perform_update(self, serializer):
+        save_without_immutable_changes(serializer, ['assessment'])
 
 class MyPersonalCareListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
@@ -279,6 +309,9 @@ class MyPersonalCareRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView)
                 assessment__patient_profile = query_patient_profile)
         return query_set.distinct()
 
+    def perform_update(self, serializer):
+        save_without_immutable_changes(serializer, ['assessment'])
+
 class MySocialHealthListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = MySocialHealthSerializer
@@ -326,6 +359,9 @@ class MySocialHealthRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView)
                 assessment__patient_profile = query_patient_profile)
         return query_set.distinct()
 
+    def perform_update(self, serializer):
+        save_without_immutable_changes(serializer, ['assessment'])
+
 class MyManagementListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = MyManagementSerializer
@@ -372,3 +408,6 @@ class MyManagementRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
             query_set = query_set.filter(
                 assessment__patient_profile = query_patient_profile)
         return query_set.distinct()
+
+    def perform_update(self, serializer):
+        save_without_immutable_changes(serializer, ['assessment'])
