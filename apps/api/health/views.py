@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 from django.db.models import Q
 from rest_framework import serializers
 from .models import Prescription, Assessment, MyPain, MyMovement, MyPersonalCare, \
@@ -26,9 +26,13 @@ from datetime import date
 # Attributes that cannot be updated are specified in the comments. Sending a different value for
 # them in an update request returns a 400 error.
 
+# Supporters have read-only access: insert/update/delete is only allowed on the user's own
+# records. Update/delete requests on a supported patient's records return a 404 error.
+
 
 # Prescription APIs: 
 # - select: can filter by patient_profile
+# - insert/update/delete: only the patient (supporters have read-only access)
 # - update: patient_profile cannot be changed
 
 class PrescriptionListCreate(generics.ListCreateAPIView):
@@ -63,6 +67,8 @@ class PrescriptionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
               patient_profile__support_links__status = SupportLink.Status.ACTIVE))
         if query_patient_profile:
             query_set = query_set.filter(patient_profile = query_patient_profile)
+        if self.request.method not in SAFE_METHODS:
+            query_set = query_set.filter(patient_profile__user = user)
         return query_set.distinct()
 
     def perform_update(self, serializer):
@@ -71,6 +77,7 @@ class PrescriptionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
 # Assessment APIs: 
 # - select: can filter by patient_profile, week_starting
+# - insert/update/delete: only the patient (supporters have read-only access)
 # - update: patient_profile, week_starting cannot be changed
 
 # helper function: returns set of assessments that user can access
@@ -80,6 +87,10 @@ def visible_assessments(user):
             Q(patient_profile__support_links__supporter_user = user,
               patient_profile__support_links__status = SupportLink.Status.ACTIVE)
         )
+
+# helper function: returns set of assessments that belong to the user's own patient profile
+def own_assessments(user):
+    return Assessment.objects.filter(patient_profile__user = user)
 
 
 class AssessmentListCreate(generics.ListCreateAPIView):
@@ -119,6 +130,8 @@ class AssessmentRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
             query_set = query_set.filter(week_starting = week_starting)
         if query_patient_profile:
             query_set = query_set.filter(patient_profile = query_patient_profile)
+        if self.request.method not in SAFE_METHODS:
+            query_set = query_set.filter(patient_profile__user = user)
         return query_set.distinct()
 
     def perform_update(self, serializer):
@@ -127,7 +140,8 @@ class AssessmentRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
 # Assessment task APIs (MyPain, MyMovement, MyPersonalCare, MySocialHealth, MyManagement):
 # - select: must filter by assessment
-# - insert: must specify assessment id that the user has permission to access
+# - insert: must specify assessment id of the user's own assessment
+# - insert/update/delete: only the patient (supporters have read-only access)
 # - update: assessment cannot be changed
 
 class MyPainListCreate(generics.ListCreateAPIView):
@@ -152,7 +166,7 @@ class MyPainListCreate(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         user = self.request.user
         assessment = serializer.validated_data["assessment"]
-        if not visible_assessments(user).filter(id = assessment.id).exists():
+        if not own_assessments(user).filter(id = assessment.id).exists():
             raise serializers.ValidationError({'assessment':'You do not have access.'})
 
         serializer.save()
@@ -171,6 +185,8 @@ class MyPainRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         if query_patient_profile:
             query_set = query_set.filter(
                 assessment__patient_profile = query_patient_profile)
+        if self.request.method not in SAFE_METHODS:
+            query_set = query_set.filter(assessment__patient_profile__user = user)
         return query_set.distinct()
 
     def perform_update(self, serializer):
@@ -198,7 +214,7 @@ class MyMovementListCreate(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         user = self.request.user
         assessment = serializer.validated_data["assessment"]
-        if not visible_assessments(user).filter(id = assessment.id).exists():
+        if not own_assessments(user).filter(id = assessment.id).exists():
             raise serializers.ValidationError({'assessment':'You do not have access.'})
 
         serializer.save()
@@ -217,6 +233,8 @@ class MyMovementRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         if query_patient_profile:
             query_set = query_set.filter(
                 assessment__patient_profile = query_patient_profile)
+        if self.request.method not in SAFE_METHODS:
+            query_set = query_set.filter(assessment__patient_profile__user = user)
         return query_set.distinct()
 
     def perform_update(self, serializer):
@@ -244,7 +262,7 @@ class MyPersonalCareListCreate(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         user = self.request.user
         assessment = serializer.validated_data["assessment"]
-        if not visible_assessments(user).filter(id = assessment.id).exists():
+        if not own_assessments(user).filter(id = assessment.id).exists():
             raise serializers.ValidationError({'assessment':'You do not have access.'})
 
         serializer.save()
@@ -263,6 +281,8 @@ class MyPersonalCareRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView)
         if query_patient_profile:
             query_set = query_set.filter(
                 assessment__patient_profile = query_patient_profile)
+        if self.request.method not in SAFE_METHODS:
+            query_set = query_set.filter(assessment__patient_profile__user = user)
         return query_set.distinct()
 
     def perform_update(self, serializer):
@@ -290,7 +310,7 @@ class MySocialHealthListCreate(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         user = self.request.user
         assessment = serializer.validated_data["assessment"]
-        if not visible_assessments(user).filter(id = assessment.id).exists():
+        if not own_assessments(user).filter(id = assessment.id).exists():
             raise serializers.ValidationError({'assessment':'You do not have access.'})
 
         serializer.save()
@@ -309,6 +329,8 @@ class MySocialHealthRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView)
         if query_patient_profile:
             query_set = query_set.filter(
                 assessment__patient_profile = query_patient_profile)
+        if self.request.method not in SAFE_METHODS:
+            query_set = query_set.filter(assessment__patient_profile__user = user)
         return query_set.distinct()
 
     def perform_update(self, serializer):
@@ -336,7 +358,7 @@ class MyManagementListCreate(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         user = self.request.user
         assessment = serializer.validated_data["assessment"]
-        if not visible_assessments(user).filter(id = assessment.id).exists():
+        if not own_assessments(user).filter(id = assessment.id).exists():
             raise serializers.ValidationError({'assessment':'You do not have access.'})
 
         serializer.save()
@@ -355,6 +377,8 @@ class MyManagementRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         if query_patient_profile:
             query_set = query_set.filter(
                 assessment__patient_profile = query_patient_profile)
+        if self.request.method not in SAFE_METHODS:
+            query_set = query_set.filter(assessment__patient_profile__user = user)
         return query_set.distinct()
 
     def perform_update(self, serializer):

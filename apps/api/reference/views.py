@@ -9,7 +9,6 @@ from django.db.models import Q
 from rest_framework import serializers
 from .models import QuestionOption, QuestionOptionOrdered
 from .serializer import *
-from mpowered_api.protected import destroy_or_reject_protected
 from datetime import date
 
 # instructions:
@@ -23,8 +22,10 @@ from datetime import date
 
 # QuestionOption APIs:
 # - select: must filter by app_section, question_key
+# - insert/update/delete: N/A, edit reference data through Django admin at /admin/
 
-class QuestionOptionListCreate(generics.ListCreateAPIView):
+class QuestionOptionList(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     serializer_class = QuestionOptionSerializer
 
     def get_queryset(self):
@@ -38,14 +39,17 @@ class QuestionOptionListCreate(generics.ListCreateAPIView):
                                              question_key=question_key)
 
 
-class QuestionOptionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+class QuestionOptionRetrieve(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = QuestionOption.objects.all()
     serializer_class = QuestionOptionSerializer
 
 # QuestionOptionOrdered APIs:
 # - select: must filter by app_section, question_key
+# - insert/update/delete: N/A, edit reference data through Django admin at /admin/
 
-class QuestionOptionOrderedListCreate(generics.ListCreateAPIView):
+class QuestionOptionOrderedList(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     serializer_class = QuestionOptionOrderedSerializer
 
     def get_queryset(self):
@@ -58,9 +62,7 @@ class QuestionOptionOrderedListCreate(generics.ListCreateAPIView):
         return QuestionOptionOrdered.objects.filter(app_section=app_section, 
                                              question_key=question_key)
 
-class QuestionOptionOrderedRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+class QuestionOptionOrderedRetrieve(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = QuestionOptionOrdered.objects.all()
     serializer_class = QuestionOptionOrderedSerializer
-
-    def perform_destroy(self, instance):
-        destroy_or_reject_protected(instance)

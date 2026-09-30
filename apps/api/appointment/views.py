@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 from django.db.models import Q
 from rest_framework import serializers
 from .models import Appointment, CarePerson, AppointmentQuestion, AppointmentAnswer, \
@@ -24,10 +24,29 @@ from mpowered_api.protected import destroy_or_reject_protected
 
 # Records that other records depend on cannot be deleted; deleting them returns a 409 error.
 
+# Who can insert/update/delete is specified in the comments. Records the user can see but is not
+# allowed to update/delete return a 404 error for those requests.
+
+# helper function: checks if user has valid (not revoked, active support link) access to
+# appointment with the given permission flag, e.g. 'can_add_questions', 'can_record_answers'
+def has_appointment_access(user, appointment, flag):
+    return AppointmentAccess.objects.filter(
+            appointment = appointment,
+            support_link__supporter_user = user,
+            support_link__status = SupportLink.Status.ACTIVE,
+            revoked_at__isnull = True,
+            **{flag: True}
+        ).exists()
+
+# helper function: checks if user is the patient of the appointment
+def is_appointment_patient(user, appointment):
+    return appointment.patient_profile.user_id == user.id
+
 
 # Appointment APIs:
 # - select: can filter by patient_profile, status, scheduled_date
 # - insert: patient_profile & created_by are set to the user's own
+# - update/delete: patient only (supporters are read-only)
 # - update: patient_profile, created_by cannot be changed
 
 # helper function: returns set of appointments that user can access (own, or granted access
@@ -72,6 +91,8 @@ class AppointmentRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         query_status = self.request.query_params.get("status")
         scheduled_date = self.request.query_params.get("scheduled_date")
         query_set = visible_appointments(user)
+        if self.request.method not in SAFE_METHODS:
+            query_set = query_set.filter(patient_profile__user = user)
         if query_patient_profile:
             query_set = query_set.filter(patient_profile = query_patient_profile)
         if query_status:
@@ -90,6 +111,7 @@ class AppointmentRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 # CarePerson APIs:
 # - select: can filter by patient_profile
 # - insert: patient_profile is set to the user's own
+# - update/delete: patient only (supporters are read-only)
 
 class CarePersonListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
@@ -121,6 +143,8 @@ class CarePersonRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
             Q(patient_profile__user = user) |
             Q(patient_profile__support_links__supporter_user = user,
               patient_profile__support_links__status = SupportLink.Status.ACTIVE))
+        if self.request.method not in SAFE_METHODS:
+            query_set = query_set.filter(patient_profile__user = user)
         if query_patient_profile:
             query_set = query_set.filter(patient_profile = query_patient_profile)
         return query_set.distinct()
@@ -128,8 +152,11 @@ class CarePersonRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
 # AppointmentQuestion APIs:
 # - select: must filter by appointment
-# - insert: must specify appointment id that the user has permission to access, created_by is
-#   set to the user
+# - insert: patient of the appointment (source can be patient or suggested, default patient), or
+#   supporter with can_add_questions access (source is set to support). created_by is set to
+#   the user
+# - update/delete: patient, or supporter who created the question while they still have
+#   can_add_questions access
 # - update: appointment, source, created_by cannot be changed
 
 class AppointmentQuestionListCreate(generics.ListCreateAPIView):
@@ -150,10 +177,16 @@ class AppointmentQuestionListCreate(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         user = self.request.user
         appointment = serializer.validated_data["appointment"]
-        if not visible_appointments(user).filter(id = appointment.id).exists():
+        if is_appointment_patient(user, appointment):
+            source = serializer.validated_data.get("source", AppointmentQuestion.Source.PATIENT)
+            if source == AppointmentQuestion.Source.SUPPORT:
+                raise serializers.ValidationError(
+                    {'source':'Patients cannot create support questions.'})
+            serializer.save(created_by = user, source = source)
+        elif has_appointment_access(user, appointment, 'can_add_questions'):
+            serializer.save(created_by = user, source = AppointmentQuestion.Source.SUPPORT)
+        else:
             raise serializers.ValidationError({'appointment':'You do not have access.'})
-
-        serializer.save(created_by = user)
 
 class AppointmentQuestionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
@@ -164,6 +197,14 @@ class AppointmentQuestionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPI
         appointment = self.request.query_params.get("appointment")
         query_set = AppointmentQuestion.objects.filter(
             appointment__in = visible_appointments(user))
+        if self.request.method not in SAFE_METHODS:
+            query_set = query_set.filter(
+                Q(appointment__patient_profile__user = user) |
+                Q(created_by = user,
+                  appointment__access_grants__support_link__supporter_user = user,
+                  appointment__access_grants__support_link__status = SupportLink.Status.ACTIVE,
+                  appointment__access_grants__revoked_at__isnull = True,
+                  appointment__access_grants__can_add_questions = True))
         if appointment:
             query_set = query_set.filter(appointment = appointment)
         return query_set.distinct()
@@ -177,9 +218,11 @@ class AppointmentQuestionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPI
 
 # AppointmentAnswer APIs:
 # - select: must filter by question
-# - insert: must specify question id that the user has permission to access, recorded_by is
-#   set to the user
+# - insert: patient of the appointment, or supporter with can_record_answers access.
+#   recorded_by is set to the user
+# - update: patient, or supporter with can_record_answers access
 # - update: question cannot be changed
+# - delete: patient only
 
 class AppointmentAnswerListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
@@ -199,7 +242,9 @@ class AppointmentAnswerListCreate(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         user = self.request.user
         question = serializer.validated_data["question"]
-        if not visible_appointments(user).filter(id = question.appointment_id).exists():
+        appointment = question.appointment
+        if not (is_appointment_patient(user, appointment) or
+                has_appointment_access(user, appointment, 'can_record_answers')):
             raise serializers.ValidationError({'question':'You do not have access.'})
 
         serializer.save(recorded_by = user)
@@ -213,6 +258,16 @@ class AppointmentAnswerRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIVi
         question = self.request.query_params.get("question")
         query_set = AppointmentAnswer.objects.filter(
             question__appointment__in = visible_appointments(user))
+        if self.request.method == 'DELETE':
+            query_set = query_set.filter(question__appointment__patient_profile__user = user)
+        elif self.request.method not in SAFE_METHODS:
+            query_set = query_set.filter(
+                Q(question__appointment__patient_profile__user = user) |
+                Q(question__appointment__access_grants__support_link__supporter_user = user,
+                  question__appointment__access_grants__support_link__status =
+                      SupportLink.Status.ACTIVE,
+                  question__appointment__access_grants__revoked_at__isnull = True,
+                  question__appointment__access_grants__can_record_answers = True))
         if question:
             query_set = query_set.filter(question = question)
         return query_set.distinct()
@@ -224,7 +279,9 @@ class AppointmentAnswerRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIVi
 # AppointmentAccess APIs:
 # - select: can only see access for own appointments or given to user, can filter by
 #   appointment, support_link
-# - insert: must specify appointment id of the user's own appointment
+# - insert: must specify appointment id of the user's own appointment, and an active
+#   support_link of the same patient
+# - update/delete: patient only (supporters are read-only)
 # - update: appointment, support_link, granted_at cannot be changed
 
 # helper function: returns set of appointment access records that user can access
@@ -252,8 +309,15 @@ class AppointmentAccessListCreate(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         user = self.request.user
         appointment = serializer.validated_data["appointment"]
-        if appointment.patient_profile.user_id != user.id:
+        if not is_appointment_patient(user, appointment):
             raise serializers.ValidationError({'appointment':'You do not have access.'})
+
+        support_link = serializer.validated_data["support_link"]
+        if support_link.patient_profile_id != appointment.patient_profile_id or \
+           support_link.status != SupportLink.Status.ACTIVE:
+            raise serializers.ValidationError(
+                {'support_link':'Support link must be an active link of the appointment\'s '
+                 'patient.'})
 
         serializer.save()
 
@@ -266,6 +330,8 @@ class AppointmentAccessRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIVi
         appointment = self.request.query_params.get("appointment")
         support_link = self.request.query_params.get("support_link")
         query_set = visible_appointment_access(user)
+        if self.request.method not in SAFE_METHODS:
+            query_set = query_set.filter(appointment__patient_profile__user = user)
         if appointment:
             query_set = query_set.filter(appointment = appointment)
         if support_link:

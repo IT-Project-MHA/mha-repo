@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 from django.db.models import Q
 from rest_framework import serializers
 from .models import User, PatientProfile, UserSettings, SupportLink, TermsAndPrivacy
@@ -20,6 +20,9 @@ from mpowered_api.protected import destroy_or_reject_protected
 # them in an update request returns a 400 error.
 
 # Records that other records depend on cannot be deleted; deleting them returns a 409 error.
+
+# Who can insert/update/delete is specified in the comments. Records the user can see but is not
+# allowed to update/delete return a 404 error for those requests.
 
 # helper function: returns user's own patient profile, or raises 400 error if user doesn't have one
 def own_patient_profile(user):
@@ -54,7 +57,9 @@ class UserRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
 
 # PatientProfile APIs:
-# - select: can filter by user
+# - select: can see own profile & profiles of patients user supports, can filter by user
+# - insert: user is set to the user's own
+# - update/delete: own profile only (supporters are read-only)
 # - update: user cannot be changed
 
 # helper function: returns set of patient profiles that user can access
@@ -92,6 +97,8 @@ class PatientProfileRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView)
         user = self.request.user
         query_user = self.request.query_params.get("user")
         query_set = visible_patient_profiles(user)
+        if self.request.method not in SAFE_METHODS:
+            query_set = query_set.filter(user = user)
         if query_user:
             query_set = query_set.filter(user = query_user)
         return query_set.distinct()
@@ -138,8 +145,10 @@ class UserSettingsRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 # - select: can only see links where user is the patient or supporter, can filter by
 #   patient_profile, status
 # - insert: patient_profile & patient_user are set to the user's own
-# - update: patient_profile, patient_user, supporter_user, invited_phone_number, invited_at 
+# - update: patient can update; supporter can only update status (to active or revoked)
+# - update: patient_profile, patient_user, supporter_user, invited_phone_number, invited_at
 #   cannot be changed
+# - delete: patient only
 
 # helper function: returns set of support links that user can access
 def visible_support_links(user):
@@ -173,6 +182,8 @@ class SupportLinkRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         query_patient_profile = self.request.query_params.get("patient_profile")
         query_status = self.request.query_params.get("status")
         query_set = visible_support_links(user)
+        if self.request.method == 'DELETE':
+            query_set = query_set.filter(patient_user = user)
         if query_patient_profile:
             query_set = query_set.filter(patient_profile = query_patient_profile)
         if query_status:
@@ -180,6 +191,20 @@ class SupportLinkRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         return query_set.distinct()
 
     def perform_update(self, serializer):
+        user = self.request.user
+        instance = serializer.instance
+        # supporter can only change status, to active (accept) or revoked
+        if instance.patient_user_id != user.id:
+            errors = {}
+            for field, value in serializer.validated_data.items():
+                if field != 'status' and value != getattr(instance, field):
+                    errors[field] = 'Supporters can only change status.'
+            new_status = serializer.validated_data.get('status', instance.status)
+            if new_status != instance.status and new_status not in [SupportLink.Status.ACTIVE,
+                                                             SupportLink.Status.REVOKED]:
+                errors['status'] = 'Supporters can only change status to active or revoked.'
+            if errors:
+                raise serializers.ValidationError(errors)
         save_without_immutable_changes(serializer, ['patient_profile', 'patient_user',
             'supporter_user', 'invited_phone_number', 'invited_at'])
 

@@ -38,3 +38,13 @@ class MyManagementSerializer(serializers.ModelSerializer):
     class Meta:
         model = MyManagement
         fields = '__all__'
+
+    # medication must only contain prescriptions of the assessment's patient
+    def validate(self, data):
+        assessment = data.get('assessment') or getattr(self.instance, 'assessment', None)
+        medication = data.get('medication', [])
+        if assessment and any(prescription.patient_profile_id != assessment.patient_profile_id
+                              for prescription in medication):
+            raise serializers.ValidationError(
+                {'medication':'Prescriptions must belong to the assessment\'s patient.'})
+        return data
