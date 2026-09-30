@@ -3,7 +3,7 @@ import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import {Ionicons, IoniconsIconName} from '@react-native-vector-icons/ionicons'
 
-type ButtonType = "primaryButton" | "secondaryButton" | "settingsButton" | "squareButtonWithLine";
+type ButtonType = "primaryButton" | "secondaryButton" | "settingsButton" | "squareButtonWithLine" | "transparentButton";
 
 /**
  * defines the required input on button creation
@@ -70,12 +70,12 @@ const styles = StyleSheet.create({
    row: {
     flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'space-between',
         alignSelf: 'stretch',
     },
     // pins the icon to the right
     icon: {
         position: 'absolute', // absolute detaches it from the text
-        right: 30,
+        right: 0,
     },
 });

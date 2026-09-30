@@ -1,6 +1,6 @@
 import { StyleSheet } from "react-native";
 import { lightColours, darkColours, lightHcColours, darkHcColours, ColourSet } from "./colourScheme";
-import { primaryButtonLayout, buttonLayout, textLayout, settingsButtonLayout } from "./layout";
+import { primaryButtonLayout, buttonLayout, textLayout, settingsButtonLayout, squareButtonWithLineLayout, transparentButtonLayout } from "./layout";
 
 
 /**
@@ -28,6 +28,10 @@ const createTheme = (colours: ColourSet) =>
       color: colours.onPrimary,
       ...textLayout,
     },
+    textOnBackground: {
+      color: colours.onBackground,
+      ...textLayout,
+    },
     screen: {
       flex: 1,
       backgroundColor: colours.background,
@@ -37,6 +41,15 @@ const createTheme = (colours: ColourSet) =>
       borderColor: colours.ex1,
       ...settingsButtonLayout,
     },
+    squareButtonWithLine:{
+      backgroundColor: colours.secondary,
+      borderColor: colours.primary,
+      ...squareButtonWithLineLayout,
+    },
+    transparentButton:{
+      backgroundColor: 'transparent',
+      ...transparentButtonLayout,
+    }
   });
 
 /**

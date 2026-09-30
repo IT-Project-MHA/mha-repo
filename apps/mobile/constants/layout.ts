@@ -38,11 +38,6 @@ export const primaryButtonLayout = {
  * created for settings, to match the nav bar
  */
 export const settingsButtonLayout = {
-  //paddingVertical: '50%, 
-  //paddingHorizontal: 80, 
-  
-
-  //flexDirection: 'middle',
   alignItems: 'center' as const,
   justifyContent: 'center' as const,
 
@@ -59,3 +54,27 @@ export const settingsButtonLayout = {
   shadowRadius: 16,
   elevation: 4,
 };
+
+export const squareButtonWithLineLayout = {
+  alignItems: 'center' as const,
+  justifyContent: 'center' as const,
+
+  // shape
+  width: '90%' as const,
+  height: 64,
+
+  borderRadius: 20,
+  borderTopWidth: 0,     
+  borderBottomWidth: 4, 
+  borderWidth: 1,
+  elevation: 4,
+}
+
+export const transparentButtonLayout = {
+  alignItems: 'center' as const,
+  justifyContent: 'center' as const,
+
+  // shape
+  width: '85%' as const,
+  height: 64,
+}
