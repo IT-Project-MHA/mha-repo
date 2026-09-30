@@ -15,11 +15,12 @@ from datetime import date
 
 # instructions:
 # All views are protected by authenticated user id (can only see records where patient_profile
-# is user's own, or who user supports).
+# is user's own, or who user supports), for relevant tables.
 
 # Attributes that can be filtered are specified in the comments. To filter by attribute, put 
 # in the URL ?attribute_name=value. For multiple attributes: 
 # ?attribute_name1=value&?attribute_name2=value...
+
 
 # "Profile..." are temporary view classes.
 # They must be removed once \accounts APIs are written.
@@ -45,7 +46,8 @@ class ProfileRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         return TempPatientProfile.objects.filter(user = user)
 
 
-# Prescription APIs: can filter by patient_profile
+# Prescription APIs: 
+# select: can filter by patient_profile
 
 class PrescriptionListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
@@ -84,7 +86,8 @@ class PrescriptionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         return query_set.distinct()
 
 
-# Assessment APIs: can filter by patient_profile, week_starting
+# Assessment APIs: 
+# select: can filter by patient_profile, week_starting
 
 # helper function: returns set of assessments that user can access
 def visible_assessments(user):
@@ -132,8 +135,8 @@ class AssessmentRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     
 
 # Assessment task APIs (MyPain, MyMovement, MyPersonalCare, MySocialHealth, MyManagement):
-# can filter by assessment
-# create: must specify assessment id
+# - select: must filter by assessment
+# - insert: must specify assessment id that the user has permission to access
 
 class MyPainListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
@@ -144,8 +147,11 @@ class MyPainListCreate(generics.ListCreateAPIView):
         assessment = self.request.query_params.get("assessment")
         query_patient_profile = self.request.query_params.get("patient_profile")
         query_set = MyPain.objects.filter(assessment__in = visible_assessments(user))
-        if assessment:
-            query_set = query_set.filter(assessment = assessment)
+
+        if not assessment:
+            raise serializers.ValidationError({'assessment':'This field is required.'})
+        query_set = query_set.filter(assessment = assessment)
+
         if query_patient_profile:
             query_set = query_set.filter(
                 assessment__patient_profile = query_patient_profile)
@@ -188,8 +194,11 @@ class MyMovementListCreate(generics.ListCreateAPIView):
         assessment = self.request.query_params.get("assessment")
         query_patient_profile = self.request.query_params.get("patient_profile")
         query_set = MyMovement.objects.filter(assessment__in = visible_assessments(user))
-        if assessment:
-            query_set = query_set.filter(assessment = assessment)
+
+        if not assessment:
+            raise serializers.ValidationError({'assessment':'This field is required.'})
+        query_set = query_set.filter(assessment = assessment)
+
         if query_patient_profile:
             query_set = query_set.filter(
                 assessment__patient_profile = query_patient_profile)
@@ -232,8 +241,11 @@ class MyPersonalCareListCreate(generics.ListCreateAPIView):
         assessment = self.request.query_params.get("assessment")
         query_patient_profile = self.request.query_params.get("patient_profile")
         query_set = MyPersonalCare.objects.filter(assessment__in = visible_assessments(user))
-        if assessment:
-            query_set = query_set.filter(assessment = assessment)
+
+        if not assessment:
+            raise serializers.ValidationError({'assessment':'This field is required.'})
+        query_set = query_set.filter(assessment = assessment)
+
         if query_patient_profile:
             query_set = query_set.filter(
                 assessment__patient_profile = query_patient_profile)
@@ -276,8 +288,11 @@ class MySocialHealthListCreate(generics.ListCreateAPIView):
         assessment = self.request.query_params.get("assessment")
         query_patient_profile = self.request.query_params.get("patient_profile")
         query_set = MySocialHealth.objects.filter(assessment__in = visible_assessments(user))
-        if assessment:
-            query_set = query_set.filter(assessment = assessment)
+
+        if not assessment:
+            raise serializers.ValidationError({'assessment':'This field is required.'})
+        query_set = query_set.filter(assessment = assessment)
+
         if query_patient_profile:
             query_set = query_set.filter(
                 assessment__patient_profile = query_patient_profile)
@@ -320,8 +335,11 @@ class MyManagementListCreate(generics.ListCreateAPIView):
         assessment = self.request.query_params.get("assessment")
         query_patient_profile = self.request.query_params.get("patient_profile")
         query_set = MyManagement.objects.filter(assessment__in = visible_assessments(user))
-        if assessment:
-            query_set = query_set.filter(assessment = assessment)
+
+        if not assessment:
+            raise serializers.ValidationError({'assessment':'This field is required.'})
+        query_set = query_set.filter(assessment = assessment)
+
         if query_patient_profile:
             query_set = query_set.filter(
                 assessment__patient_profile = query_patient_profile)
