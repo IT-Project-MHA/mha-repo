@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
 from rest_framework import serializers
 from .models import Prescription, Assessment, MyPain, MyMovement, MyPersonalCare, \
-   MySocialHealth, MyManagement, TempPatientProfile
+   MySocialHealth, MyManagement
 from accounts.models import SupportLink
 from .serializer import *
 from datetime import date
@@ -35,30 +35,6 @@ def save_without_immutable_changes(serializer, immutable_fields):
     if errors:
         raise serializers.ValidationError(errors)
     serializer.save()
-
-
-# "Profile..." are temporary view classes.
-# They must be removed once \accounts APIs are written.
-
-class ProfileListCreate(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated]
-    serializer_class = TempPatientProfileSerializer
-
-    def get_queryset(self):
-        user = self.request.user
-        return TempPatientProfile.objects.filter(user = user)
-    
-    def perform_create(self, serializer):
-        user = self.request.user
-        serializer.save(user = user)
-
-class ProfileRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated]
-    serializer_class = TempPatientProfileSerializer
-
-    def get_queryset(self):
-        user = self.request.user
-        return TempPatientProfile.objects.filter(user = user)
 
 
 # Prescription APIs: 

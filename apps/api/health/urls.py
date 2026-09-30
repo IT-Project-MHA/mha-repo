@@ -2,16 +2,7 @@ from django.urls import path
 from . import views
 from .views import *
 
-# "tempPatientProfile..." are temporary view classes.
-# They must be removed once \accounts APIs are written.
-
 urlpatterns = [
-    path('tempPatientProfile/', 
-         views.ProfileListCreate.as_view(), 
-         name ='read_create_profile'),
-    path('tempPatientProfile/<str:pk>', 
-         views.ProfileRetrieveUpdateDestroy.as_view(), 
-         name ='update_profile'),
     path('prescription/', 
          views.PrescriptionListCreate.as_view(), 
          name = 'read_create_prescription'),

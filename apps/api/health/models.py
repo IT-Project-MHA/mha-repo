@@ -3,18 +3,10 @@ from accounts.models import PatientProfile
 from django.core.validators import MaxValueValidator, MinValueValidator
 from mpowered_api.base_models import BaseModel, SoftDeleteModel
 
-# TempPatientProfile is a Temporary class for API testing.
-# Replace all instances of TempPatientProfile with PatientProfile & delete this
-# TempPatientProfile class after \accounts APIs have been written, then migrate
-# to apply changes
-
-class TempPatientProfile(BaseModel):
-    name = models.CharField(max_length = 120)
-
 # Prescriptions and Weekly Assessments
 
 class Prescription(BaseModel, SoftDeleteModel): 
-    patient_profile = models.ForeignKey(TempPatientProfile, on_delete = models.CASCADE, related_name = "prescriptions")
+    patient_profile = models.ForeignKey(PatientProfile, on_delete = models.CASCADE, related_name = "prescriptions")
     name = models.CharField(max_length = 50)
     dosage = models.PositiveSmallIntegerField()
 
@@ -60,7 +52,7 @@ class Assessment(BaseModel):
         SUBMITTED = "submitted", "Submitted"
         EXPIRED = "expired", "Expired"
 
-    patient_profile = models.ForeignKey(TempPatientProfile, on_delete = models.CASCADE, related_name = "assessment_assessments")
+    patient_profile = models.ForeignKey(PatientProfile, on_delete = models.CASCADE, related_name = "assessment_assessments")
     submitted_at = models.DateTimeField(null = True, blank = True)
     reflection = models.CharField(null = True, blank = True, max_length = 300)
     week_starting = models.DateField()
