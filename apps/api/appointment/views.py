@@ -6,8 +6,10 @@ from rest_framework import serializers
 from .models import Appointment, CarePerson, AppointmentQuestion, AppointmentAnswer, \
    AppointmentAccess
 from accounts.models import SupportLink
+from accounts.views import own_patient_profile
 from .serializer import *
 from mpowered_api.immutable import save_without_immutable_changes
+from mpowered_api.protected import destroy_or_reject_protected
 
 # instructions:
 # All views are protected by authenticated user id (can only see records where patient_profile
@@ -19,6 +21,8 @@ from mpowered_api.immutable import save_without_immutable_changes
 
 # Attributes that cannot be updated are specified in the comments. Sending a different value for
 # them in an update request returns a 400 error.
+
+# Records that other records depend on cannot be deleted; deleting them returns a 409 error.
 
 
 # Appointment APIs:
@@ -56,7 +60,7 @@ class AppointmentListCreate(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         user = self.request.user
-        serializer.save(patient_profile = user.patient_profile, created_by = user)
+        serializer.save(patient_profile = own_patient_profile(user), created_by = user)
 
 class AppointmentRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
@@ -79,6 +83,9 @@ class AppointmentRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     def perform_update(self, serializer):
         save_without_immutable_changes(serializer, ['patient_profile', 'created_by'])
 
+    def perform_destroy(self, instance):
+        destroy_or_reject_protected(instance)
+
 
 # CarePerson APIs:
 # - select: can filter by patient_profile
@@ -100,7 +107,7 @@ class CarePersonListCreate(generics.ListCreateAPIView):
         return query_set.distinct()
 
     def perform_create(self, serializer):
-        user_patient_profile = self.request.user.patient_profile
+        user_patient_profile = own_patient_profile(self.request.user)
         serializer.save(patient_profile = user_patient_profile)
 
 class CarePersonRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
@@ -163,6 +170,9 @@ class AppointmentQuestionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPI
 
     def perform_update(self, serializer):
         save_without_immutable_changes(serializer, ['appointment', 'source', 'created_by'])
+
+    def perform_destroy(self, instance):
+        destroy_or_reject_protected(instance)
 
 
 # AppointmentAnswer APIs:

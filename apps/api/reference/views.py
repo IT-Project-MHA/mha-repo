@@ -9,6 +9,7 @@ from django.db.models import Q
 from rest_framework import serializers
 from .models import QuestionOption, QuestionOptionOrdered
 from .serializer import *
+from mpowered_api.protected import destroy_or_reject_protected
 from datetime import date
 
 # instructions:
@@ -45,7 +46,7 @@ class QuestionOptionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView)
 # - select: must filter by app_section, question_key
 
 class QuestionOptionOrderedListCreate(generics.ListCreateAPIView):
-    serializer_class = QuestionOptionSerializer
+    serializer_class = QuestionOptionOrderedSerializer
 
     def get_queryset(self):
         app_section = self.request.query_params.get("app_section")
@@ -60,3 +61,6 @@ class QuestionOptionOrderedListCreate(generics.ListCreateAPIView):
 class QuestionOptionOrderedRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     queryset = QuestionOptionOrdered.objects.all()
     serializer_class = QuestionOptionOrderedSerializer
+
+    def perform_destroy(self, instance):
+        destroy_or_reject_protected(instance)

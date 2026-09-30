@@ -6,11 +6,13 @@ class PrescriptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Prescription
         fields = '__all__'
+        read_only_fields = ['patient_profile']
 
 class AssessmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Assessment
         fields = '__all__'
+        read_only_fields = ['patient_profile']
 
 class MyPainSerializer(serializers.ModelSerializer):
     class Meta:
