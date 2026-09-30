@@ -113,8 +113,9 @@ function createStyles(colours: ColourSet){
   // the nav bar
   floatingTabBar: {
     bottom: 28,
-    alignSelf: 'center',
-    width: '85%',
+    position: 'absolute',
+    left: '7.4%',
+    right: '7.4%',
 
     flexDirection: 'row',
     alignItems: 'center',

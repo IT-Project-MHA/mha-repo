@@ -16,6 +16,7 @@ export default function ScreenLayout() {
       screenOptions={{
         title: 'My home',
         headerStyle: styles.headerStyle,
+        contentStyle: { backgroundColor: colours.background},
       }}
     >
       <Stack.Screen 
@@ -42,7 +43,8 @@ function createStyles(colours: ColourSet){
 
       headerStyle: {
         backgroundColor: colours.primary,
-  },
+    },
+      
 });
  }
 
