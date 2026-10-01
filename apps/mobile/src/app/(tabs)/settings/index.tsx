@@ -3,11 +3,9 @@
  * 
  */
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import Button from '../../../../components/Button';
+import ButtonWithIcon from '../../../../components/ButtonWithIcon';
 import { useRouter } from 'expo-router';
-import ToggleButton from '../../../../components/ToggleButton'
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
-
 
 export default function Screen() {
   const router = useRouter();
@@ -15,70 +13,126 @@ export default function Screen() {
   const styles = createStyles(colours);
 
   return (
-    <ScrollView style={styles.screen}>
+    <ScrollView>
       <Text> </Text>
-
       <View style={styles.container}>
-        <Button
+        <ButtonWithIcon
 	        label="My Account"
 	        onPress={() => router.navigate('/settings/myAccount')}
-          buttonType="settingsButton"
+          buttonType="transparentButton"
+          textType="textOnBackground"
+          name="chevron-forward-outline"
+          colour={colours.onBackground}
         />
-        <Text> </Text>
-        <Button
+
+        <View style={styles.line}
+        />
+      
+        <ButtonWithIcon
 	        label="My Data"
 	        onPress={() => router.navigate('/settings/myData')}
-          buttonType="settingsButton"
+          buttonType="transparentButton"
+          textType="textOnBackground"
+          name="chevron-forward-outline"
+          colour={colours.onBackground}
         />
-        <Text> </Text>
-        <Button
+
+        <View style={styles.line}
+        />
+     
+        <ButtonWithIcon
 	        label="My Connections"
 	        onPress={() => router.navigate('/settings/myConnections')}
-          buttonType="settingsButton"
+          buttonType="transparentButton"
+          textType="textOnBackground"
+          name="chevron-forward-outline"
+          colour={colours.onBackground}
         />
-        <Text> </Text>
-        <Button
+
+        <View style={styles.line}
+        />
+   
+        <ButtonWithIcon
 	        label="Accesibility"
 	        onPress={() => router.navigate('/settings/accesibility')}
-          buttonType="settingsButton"
+          buttonType="transparentButton"
+          textType="textOnBackground"
+          name="chevron-forward-outline"
+          colour={colours.onBackground}
         />
-        <Text> </Text>
-        <Button
+
+        <View style={styles.line}
+        />
+       
+        <ButtonWithIcon
 	        label="Permissions"
 	        onPress={() => router.navigate('/settings/permissions')}
-          buttonType="settingsButton"
+          buttonType="transparentButton"
+          textType="textOnBackground"
+          name="chevron-forward-outline"
+          colour={colours.onBackground}
         />
+
+        <View style={styles.line}
+        />
+
       </View>
 
       <Text> </Text>
       <Text> </Text>
 
       <View style={styles.container}>
-          <Button
+          <ButtonWithIcon
 	          label="Legal"
 	          onPress={() => router.navigate('/settings/legal')}
-            buttonType="settingsButton"
+            buttonType="transparentButton"
+            textType="textOnBackground"
+            name="chevron-forward-outline"
+            colour={colours.onBackground}
           />
-        <Text> </Text>
+
+          <View style={styles.line}
+          />
         
-          <Button
+          <ButtonWithIcon
 	          label="Support"
 	          onPress={() => router.navigate('/settings/support')}
-            buttonType="settingsButton"
+            buttonType="transparentButton"
+            textType="textOnBackground"
+            name="chevron-forward-outline"
+            colour={colours.onBackground}
           />
-       
-    
+
+          <View style={styles.line}
+        />
+      
       </View>
 
-      <Text> </Text>
+      <Text> 
 
+      </Text>
+      <Text> </Text>
+      <Text> </Text>
+      <Text> </Text>
+      <Text> </Text>
+      <Text> </Text>
+      <Text> </Text>
+      <Text> </Text>
+      <Text> </Text>
+      <Text> </Text>
+      <Text> </Text>
+      <Text> </Text>
+      <Text> </Text>
+      <Text> </Text>
+      <Text> </Text>
+      <Text> </Text>
+      <Text> </Text>
     </ScrollView>
-    
   );
 }
 function createStyles(colours: ColourSet){
     return StyleSheet.create({
-      
+        
   container: {
     justifyContent: 'center',
     alignItems: 'center',
@@ -93,24 +147,20 @@ function createStyles(colours: ColourSet){
  
     overflow: 'hidden',
 
-    shadowColor: '#2a2727',
+    shadowColor: colours.tertiary,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.15,
     shadowRadius: 16,
     elevation: 4,
-    
   },
 
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-
-  screen: {
-    backgroundColor: colours.background,
-  },
-
+  line: {
+    height: 3,
+    backgroundColor: colours.onBackground,
+    width: '89%',
+    borderRadius: 300,
+    //marginHorizontal: 20,
+  }
 })
 };
 

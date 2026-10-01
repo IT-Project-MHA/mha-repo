@@ -1,9 +1,10 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { Text, TouchableOpacity } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
 
 type ButtonType = "primaryButton" | "secondaryButton" | "settingsButton";
+type TextType = "textOnPrimary" | "textOnBackground";
 
 /**
  * defines the required input on button creation
@@ -20,6 +21,7 @@ type ButtonProps = {
   label: string;
   onPress: () => void;
   buttonType: ButtonType;
+  textType: TextType;
 };
 
 /**
@@ -29,9 +31,10 @@ type ButtonProps = {
  * @param label string that says what the button should say
  * @param onPress prescribes an action to the button when pressed
  * @param buttonType string that maps to a button type, defined in theme.ts
+ * @param textType string that maps to a text type, defined in theme.ts
  * @returns a styled button component, which performs some funtion when pressed
  */
-const Button = ({label, onPress, buttonType}: ButtonProps) => {
+const Button = ({label, onPress, buttonType, textType}: ButtonProps) => {
   const { theme } = useTheme();
 
   return (
@@ -40,7 +43,8 @@ const Button = ({label, onPress, buttonType}: ButtonProps) => {
       style={theme[buttonType]}
       onPress={onPress}
     >
-    <Text style={theme.text}>{label}</Text>
+    <Text style={theme[textType]}>{label}</Text>
+    
     </TouchableOpacity>
   );
 };

@@ -24,7 +24,7 @@ const createTheme = (colours: ColourSet) =>
       backgroundColor: colours.secondary,
       ...buttonLayout,
     },
-    text: {
+    textOnPrimary: {
       color: colours.onPrimary,
       ...textLayout,
     },
