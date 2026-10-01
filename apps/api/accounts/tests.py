@@ -1,5 +1,6 @@
-from datetime import timedelta
+from datetime import timedelta, date
 from unittest import mock
+from types import SimpleNamespace
 
 from django.contrib.auth.hashers import check_password
 from django.core.cache import cache
@@ -7,8 +8,10 @@ from django.utils import timezone
 from rest_framework.test import APITestCase
 from rest_framework.authtoken.models import Token
 
-from accounts.models import PhoneVerification, PatientProfile, TermsAndPrivacy, User, UserSettings, TrustedDevice
+from accounts.models import PhoneVerification, PatientProfile, TermsAndPrivacy, User, UserSettings, TrustedDevice, SupportLink
 from reference.models import QuestionOption
+from accounts import permissions
+from appointment.models import AppointmentAccess, Appointment
 
 PHONE = "+61400000000"
 CODE = "123456"
@@ -17,13 +20,14 @@ PIN = "196712"
 NEW_PIN = "918273"
 DEVICE = "josh-phone"
 
+
 # OTP Tests
 class OtpTests(APITestCase):
     # - POST /auth/request-code 
     # - POST /auth/verify-code
 
     def setUp(self):
-        # Reset rate-limit counters before every test
+        # Reset rate limit counters before every test
         cache.clear()
 
     def request_code(self, code = CODE):
@@ -444,3 +448,120 @@ class ResetPinTests(APITestCase):
     def test_pin_must_be_six_digits(self):
         response = self.reset(pin = "1234")
         self.assertEqual(response.status_code, 400)
+
+
+# Permissions and Access
+class PermissionTests(APITestCase):
+
+    def setUp(self):
+        # Patient with two appointments
+        self.patient = User.objects.create_user(PHONE, "Josh", PIN)
+        self.profile = PatientProfile.objects.create(user = self.patient)
+        self.appointment = Appointment.objects.create(
+            patient_profile = self.profile, scheduled_date = date.today(), created_by = self.patient,
+        )
+        self.other_appointment = Appointment.objects.create(
+            patient_profile = self.profile, scheduled_date = date.today(), created_by = self.patient,
+        )
+
+        # Supporter with an active link but switches off
+        self.supporter = User.objects.create_user("+61411111111", "Mum", PIN)
+        self.link = SupportLink.objects.create(
+            patient_profile = self.profile,
+            patient_user = self.patient,
+            supporter_user = self.supporter,
+            status = SupportLink.Status.ACTIVE,
+        )
+
+        # Someone with no link
+        self.stranger = User.objects.create_user("+61422222222", "Stranger", PIN)
+
+    def turn_on_switches(self, **switches):
+        # Patient turns on switches for the supporter
+        SupportLink.objects.filter(pk = self.link.pk).update(**switches)
+
+    def grant(self, appointment, **flags):
+        # Patient invites the supporter to one appointment
+        return AppointmentAccess.objects.create(appointment = appointment, support_link = self.link, **flags)
+
+    def test_patient_has_all_permissions(self):
+        self.assertTrue(permissions.can_view_assessments(self.patient, self.profile))
+        self.assertTrue(permissions.can_view_prescriptions(self.patient, self.profile))
+        self.assertTrue(permissions.can_view_appointment(self.patient, self.appointment))
+        self.assertTrue(permissions.can_add_question(self.patient, self.appointment))
+        self.assertTrue(permissions.can_record_answer(self.patient, self.appointment))
+        self.assertTrue(permissions.can_edit_patient_data(self.patient, self.profile))
+
+    def test_stranger_has_no_permissions(self):
+        self.assertFalse(permissions.can_view_assessments(self.stranger, self.profile))
+        self.assertFalse(permissions.can_view_appointment(self.stranger, self.appointment))
+        self.assertFalse(permissions.can_edit_patient_data(self.stranger, self.profile))
+
+    def test_supporter_sees_nothing_until_switched_on(self):
+        self.assertFalse(permissions.can_view_assessments(self.supporter, self.profile))
+        self.assertFalse(permissions.can_view_prescriptions(self.supporter, self.profile))
+        self.assertFalse(permissions.can_view_appointment(self.supporter, self.appointment))
+
+    def test_switch_only_opens_own_area(self):
+        self.turn_on_switches(can_view_assessments = True)
+        self.assertTrue(permissions.can_view_assessments(self.supporter, self.profile))
+        self.assertFalse(permissions.can_view_prescriptions(self.supporter, self.profile))
+
+    def test_appointments_switch_shows_all_appointments(self):
+        self.turn_on_switches(can_view_appointments = True)
+        self.assertTrue(permissions.can_view_appointment(self.supporter, self.appointment))
+        self.assertTrue(permissions.can_view_appointment(self.supporter, self.other_appointment))
+
+    def test_invited_link_gives_no_access(self):
+        self.turn_on_switches(status = SupportLink.Status.INVITED, can_view_assessments = True)
+        self.assertFalse(permissions.can_view_assessments(self.supporter, self.profile))
+
+    def test_revoked_link_gives_no_access(self):
+        self.turn_on_switches(status = SupportLink.Status.REVOKED, can_view_assessments = True)
+        self.assertFalse(permissions.can_view_assessments(self.supporter, self.profile))
+
+    def test_supporter_can_never_edit(self):
+        self.turn_on_switches(can_view_assessments = True, can_view_prescriptions = True, can_view_appointments = True)
+        self.assertFalse(permissions.can_edit_patient_data(self.supporter, self.profile))
+
+    def test_grant_shows_only_that_appointment(self):
+        self.grant(self.appointment)
+        self.assertTrue(permissions.can_view_appointment(self.supporter, self.appointment))
+        self.assertFalse(permissions.can_view_appointment(self.supporter, self.other_appointment))
+
+    def test_grant_flags(self):
+        self.grant(self.appointment, can_add_questions = True)
+        self.assertTrue(permissions.can_add_question(self.supporter, self.appointment))
+        self.assertFalse(permissions.can_record_answer(self.supporter, self.appointment))
+
+    def test_revoked_grant(self):
+        self.grant(self.appointment, can_add_questions = True, revoked_at = timezone.now())
+        self.assertFalse(permissions.can_view_appointment(self.supporter, self.appointment))
+        self.assertFalse(permissions.can_add_question(self.supporter, self.appointment))
+
+    def test_grant_needs_active_link(self):
+        self.grant(self.appointment, can_add_questions = True)
+        self.turn_on_switches(status = SupportLink.Status.REVOKED)
+        self.assertFalse(permissions.can_add_question(self.supporter, self.appointment))
+
+    def test_view_permission_reads_and_writes(self):
+        # Supporter can read with the switch on but only the patient can write
+        self.turn_on_switches(can_view_assessments = True)
+        record = SimpleNamespace(patient_profile = self.profile)
+        check = permissions.AssessmentPermission()
+
+        supporter_get = SimpleNamespace(method = "GET", user = self.supporter)
+        supporter_patch = SimpleNamespace(method = "PATCH", user = self.supporter)
+        patient_patch = SimpleNamespace(method = "PATCH", user = self.patient)
+
+        self.assertTrue(check.has_object_permission(supporter_get, None, record))
+        self.assertFalse(check.has_object_permission(supporter_patch, None, record))
+        self.assertTrue(check.has_object_permission(patient_patch, None, record))
+
+    def test_appointment_permission_uses_grant(self):
+        self.grant(self.appointment)
+        check = permissions.AppointmentPermission()
+        supporter_get = SimpleNamespace(method = "GET", user = self.supporter)
+
+        self.assertTrue(check.has_object_permission(supporter_get, None, self.appointment))
+        self.assertFalse(check.has_object_permission(supporter_get, None, self.other_appointment))

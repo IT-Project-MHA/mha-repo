@@ -5,7 +5,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from accounts import otp, registration, login, devices, reset_pin
-from accounts.schemas import RequestCodeSchema, VerifyCodeSchema, RegisterSchema, LoginSchema, TrustedDeviceSchema, ResetPinSchema
+from accounts.serializers import RequestCodeSerializer, VerifyCodeSerializer, RegisterSerializer, LoginSerializer, TrustedDeviceSerializer, ResetPinSerializer
 from accounts.rate_limits import PhoneBurstThrottle, PhoneSustainedThrottle, PhoneLoginThrottle, PhoneRateThrottle
 from accounts.models import PatientProfile
 
@@ -15,7 +15,8 @@ LOGIN_ERROR_STATUS = {
     "verification_invalid": status.HTTP_400_BAD_REQUEST,
 }
 
-class RequestCodeController(APIView):
+
+class RequestCodeView(APIView):
     # POST /auth/request-code - send otp to phone number
 
     permission_classes = [AllowAny]
@@ -24,7 +25,7 @@ class RequestCodeController(APIView):
     throttle_scope = "otp_request"
 
     def post(self, request):
-        serializer = RequestCodeSchema(data = request.data)
+        serializer = RequestCodeSerializer(data = request.data)
         serializer.is_valid(raise_exception = True)
         otp.issue_otp(serializer.validated_data["phone_number"])
 
@@ -32,7 +33,7 @@ class RequestCodeController(APIView):
         return Response({"detail": "Code sent."}, status = status.HTTP_202_ACCEPTED)
 
 
-class VerifyCodeController(APIView):
+class VerifyCodeView(APIView):
     # POST /auth/verify-code
     # Exchange a correct code for a verification_id
 
@@ -42,7 +43,7 @@ class VerifyCodeController(APIView):
     throttle_scope = "otp_verify"
 
     def post(self, request):
-        serializer = VerifyCodeSchema(data = request.data)
+        serializer = VerifyCodeSerializer(data = request.data)
         serializer.is_valid(raise_exception = True)
         try:
             verification = otp.verify_otp(**serializer.validated_data)
@@ -56,7 +57,8 @@ class VerifyCodeController(APIView):
         # register / login / reset-pin (B4, B5, B8) take this id as proof the phone was verified
         return Response({"verification_id": verification.id}, status = status.HTTP_200_OK)
 
-class RegisterController(APIView):
+
+class RegisterView(APIView):
     # POST /auth/register
     # Create an account once the phone is verified
 
@@ -66,7 +68,7 @@ class RegisterController(APIView):
     throttle_scope = "register"
 
     def post(self, request):
-        serializer = RegisterSchema(data = request.data)
+        serializer = RegisterSerializer(data = request.data)
         serializer.is_valid(raise_exception = True)
         data = serializer.validated_data
 
@@ -95,7 +97,8 @@ class RegisterController(APIView):
             status = status.HTTP_201_CREATED,
         )
 
-class LoginController(APIView):
+
+class LoginView(APIView):
     # POST /auth/login
     # Phone number, pin and verification_id if it's a new device
 
@@ -105,7 +108,7 @@ class LoginController(APIView):
     throttle_scope = "login"
 
     def post(self, request):
-        serializer = LoginSchema(data = request.data)
+        serializer = LoginSerializer(data = request.data)
         serializer.is_valid(raise_exception = True)
         data = serializer.validated_data
 
@@ -126,8 +129,7 @@ class LoginController(APIView):
             status = status.HTTP_200_OK,
         )
 
-
-class LogoutController(APIView):
+class LogoutView(APIView):
     # POST /auth/logout
     # Deletes token so all devices signed out
 
@@ -138,17 +140,17 @@ class LogoutController(APIView):
 
         return Response(status = status.HTTP_204_NO_CONTENT)
 
-class DeviceListController(APIView):
+class DeviceListView(APIView):
     # GET /auth/devices
     # Devices user is signed in on
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        serializer = TrustedDeviceSchema(devices.list_devices(request.user), many = True)
+        serializer = TrustedDeviceSerializer(devices.list_devices(request.user), many = True)
         return Response(serializer.data, status = status.HTTP_200_OK)
 
 
-class RevokeDeviceController(APIView):
+class RevokeDeviceView(APIView):
     # POST /auth/devices/{id}/revoke
     # Revoke a device so it needs an otp again, also signs out everywhere
     permission_classes = [IsAuthenticated]
@@ -160,7 +162,7 @@ class RevokeDeviceController(APIView):
 
         return Response(status = status.HTTP_204_NO_CONTENT)
 
-class ResetPinController(APIView):
+class ResetPinView(APIView):
     # POST /auth/reset-pin
 
     permission_classes = [AllowAny]
@@ -169,7 +171,7 @@ class ResetPinController(APIView):
     throttle_scope = "reset_pin"
 
     def post(self, request):
-        serializer = ResetPinSchema(data = request.data)
+        serializer = ResetPinSerializer(data = request.data)
         serializer.is_valid(raise_exception = True)
 
         data = serializer.validated_data

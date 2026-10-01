@@ -6,14 +6,15 @@ from reference.models import QuestionOption
 
 PIN_LENGTH = 6
 
-class RequestCodeSchema(serializers.Serializer):
+class RequestCodeSerializer(serializers.Serializer):
     phone_number = serializers.CharField(max_length = 20)
 
 
-class VerifyCodeSchema(RequestCodeSchema):
+class VerifyCodeSerializer(RequestCodeSerializer):
     otp = serializers.RegexField(rf"^\d{{{OTP_LENGTH}}}$")
 
-class HealthDetailsSchema(serializers.ModelSerializer):
+
+class HealthDetailsSerializer(serializers.ModelSerializer):
     # Optional health details, only sent if track my health is ticked
 
     # Only allow options from the pain type question
@@ -27,7 +28,8 @@ class HealthDetailsSchema(serializers.ModelSerializer):
         model = PatientProfile
         fields = ["has_diagnosis", "other_conditions", "assigned_gender_at_birth", "birth_year", "pain_types"]
 
-class RegisterSchema(serializers.Serializer):
+
+class RegisterSerializer(serializers.Serializer):
     verification_id = serializers.UUIDField()
     phone_number = serializers.CharField(max_length = 20)
     display_name = serializers.CharField(max_length = 120)
@@ -35,7 +37,7 @@ class RegisterSchema(serializers.Serializer):
     accepted_terms = serializers.BooleanField()
     accepted_privacy = serializers.BooleanField()
     track_health = serializers.BooleanField(default = False)
-    health = HealthDetailsSchema(required = False)
+    health = HealthDetailsSerializer(required = False)
 
     device_id = serializers.CharField(max_length = 128)
 
@@ -60,7 +62,8 @@ class RegisterSchema(serializers.Serializer):
 
         return data
 
-class LoginSchema(serializers.Serializer):
+
+class LoginSerializer(serializers.Serializer):
     phone_number = serializers.CharField(max_length = 20)
     pin = serializers.RegexField(rf"^\d{{{PIN_LENGTH}}}$", write_only = True)
     device_id = serializers.CharField(max_length = 128)
@@ -68,12 +71,14 @@ class LoginSchema(serializers.Serializer):
     # Only needed when signing in on a new device
     verification_id = serializers.UUIDField(required = False)
 
-class TrustedDeviceSchema(serializers.ModelSerializer):
+
+class TrustedDeviceSerializer(serializers.ModelSerializer):
     class Meta:
         model = TrustedDevice
         fields = ["id", "device_id", "label", "last_seen_at", "created_at"]
 
-class ResetPinSchema(serializers.Serializer):
+
+class ResetPinSerializer(serializers.Serializer):
     phone_number = serializers.CharField(max_length = 20)
     verification_id = serializers.UUIDField()
     pin = serializers.RegexField(rf"^\d{{{PIN_LENGTH}}}$", write_only = True)

@@ -25,10 +25,7 @@ def list_devices(user):
 
 
 def revoke_device(user, device_pk):
-
-    # Revoke one of this user's devices so it needs an otp to sign in again
-    # Also deletes the token, as all devices share one it's the only way to sign the revoked one out
-    # Returns False if the device isn't theirs
+    # Revoke device and returns false if device not theirs
 
     device = TrustedDevice.objects.filter(user = user, pk = device_pk).first()
 

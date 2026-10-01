@@ -23,3 +23,4 @@ class PhoneSustainedThrottle(PhoneRateThrottle):
 
 class PhoneLoginThrottle(PhoneRateThrottle):
     scope = "login_phone"
+
