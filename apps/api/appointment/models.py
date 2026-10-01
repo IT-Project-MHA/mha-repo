@@ -39,19 +39,6 @@ class Appointment(BaseModel, SoftDeleteModel):
 
 
 
-class CarePerson(BaseModel, SoftDeleteModel):
-    patient_profile = models.ForeignKey("accounts.PatientProfile", on_delete = models.PROTECT, related_name = "care_people")
-    name = models.CharField(max_length = 120)
-    phone_number = models.CharField(max_length = 20, blank = True)
-    email = models.EmailField(blank = True)
-
-    class Meta:
-        db_table = "care_person"
-        ordering = ["name"]
-        indexes = [models.Index(fields = ["patient_profile"], name = "care_person_by_patient_idx")]
-
-
-
 class AppointmentQuestion(BaseModel, SoftDeleteModel):
 
     class Source(models.TextChoices):

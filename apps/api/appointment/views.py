@@ -3,7 +3,7 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 from django.db.models import Q
 from rest_framework import serializers
-from .models import Appointment, CarePerson, AppointmentQuestion, AppointmentAnswer, \
+from .models import Appointment, AppointmentQuestion, AppointmentAnswer, \
    AppointmentAccess
 from accounts.models import SupportLink
 from accounts.views import own_patient_profile
@@ -106,48 +106,6 @@ class AppointmentRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_destroy(self, instance):
         destroy_or_reject_protected(instance)
-
-
-# CarePerson APIs:
-# - select: can filter by patient_profile
-# - insert: patient_profile is set to the user's own
-# - update/delete: patient only (supporters are read-only)
-
-class CarePersonListCreate(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated]
-    serializer_class = CarePersonSerializer
-
-    def get_queryset(self):
-        user = self.request.user
-        query_patient_profile = self.request.query_params.get("patient_profile")
-        query_set = CarePerson.objects.filter(
-            Q(patient_profile__user = user) |
-            Q(patient_profile__support_links__supporter_user = user,
-              patient_profile__support_links__status = SupportLink.Status.ACTIVE))
-        if query_patient_profile:
-            query_set = query_set.filter(patient_profile = query_patient_profile)
-        return query_set.distinct()
-
-    def perform_create(self, serializer):
-        user_patient_profile = own_patient_profile(self.request.user)
-        serializer.save(patient_profile = user_patient_profile)
-
-class CarePersonRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated]
-    serializer_class = CarePersonSerializer
-
-    def get_queryset(self):
-        user = self.request.user
-        query_patient_profile = self.request.query_params.get("patient_profile")
-        query_set = CarePerson.objects.filter(
-            Q(patient_profile__user = user) |
-            Q(patient_profile__support_links__supporter_user = user,
-              patient_profile__support_links__status = SupportLink.Status.ACTIVE))
-        if self.request.method not in SAFE_METHODS:
-            query_set = query_set.filter(patient_profile__user = user)
-        if query_patient_profile:
-            query_set = query_set.filter(patient_profile = query_patient_profile)
-        return query_set.distinct()
 
 
 # AppointmentQuestion APIs:

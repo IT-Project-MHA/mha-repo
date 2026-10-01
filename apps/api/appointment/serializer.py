@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Appointment, CarePerson, AppointmentQuestion, AppointmentAnswer, \
+from .models import Appointment, AppointmentQuestion, AppointmentAnswer, \
    AppointmentAccess
 
 class AppointmentSerializer(serializers.ModelSerializer):
@@ -7,12 +7,6 @@ class AppointmentSerializer(serializers.ModelSerializer):
         model = Appointment
         fields = '__all__'
         read_only_fields = ['patient_profile', 'created_by']
-
-class CarePersonSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CarePerson
-        fields = '__all__'
-        read_only_fields = ['patient_profile']
 
 class AppointmentQuestionSerializer(serializers.ModelSerializer):
     class Meta:
