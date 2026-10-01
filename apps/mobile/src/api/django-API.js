@@ -38,13 +38,15 @@ export class ApiError extends Error {
 }
 
 async function request(method, path, body) {
+    // FormData bodies (file uploads) set their own multipart Content-Type
+    const isFormData = body instanceof FormData;
     const response = await fetch(`${BASE_URL}/${path}`, {
         method: method,
         headers: {
-            'Content-Type': 'application/json',
+            ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
             Accept: 'application/json',
         },
-        body: body === undefined ? undefined : JSON.stringify(body),
+        body: body === undefined || isFormData ? body : JSON.stringify(body),
     });
 
     const text = await response.text();
@@ -55,7 +57,24 @@ async function request(method, path, body) {
     return data;
 }
 
-const ALL_OPERATIONS = ['select', 'create', 'update', 'delete'];
+// a file attribute is an object of the device file, e.g. { uri, name, type }
+function isFile(value) {
+    return value != null && typeof value === 'object' && 'uri' in value;
+}
+
+// returns attributes as FormData if any attribute is a file (multipart upload), otherwise as is
+function toRequestBody(attributes) {
+    if (!Object.values(attributes).some(isFile)) {
+        return attributes;
+    }
+    const formData = new FormData();
+    Object.entries(attributes)
+        .filter(([, value]) => value != null)
+        .forEach(([key, value]) => formData.append(key, value));
+    return formData;
+}
+
+const ALL_OPERATIONS =['select', 'create', 'update', 'delete'];
 
 /* General function for processing Django APIs, if the table allows the operation*/
 async function operate(endpoint, operation, values = {}, allowed = ALL_OPERATIONS) {
@@ -76,10 +95,10 @@ async function operate(endpoint, operation, values = {}, allowed = ALL_OPERATION
         return request('GET', `${endpoint}/${queryString ? `?${queryString}` : ''}`);
 
     } else if (operation == 'create') {
-        return request('POST', `${endpoint}/`, attributes);
+        return request('POST', `${endpoint}/`, toRequestBody(attributes));
 
     } else if (operation == 'update') {
-        return request('PATCH', `${endpoint}/${id}`, attributes);
+        return request('PATCH', `${endpoint}/${id}`, toRequestBody(attributes));
 
     } else if (operation == 'delete') {
         return request('DELETE', `${endpoint}/${id}`);
@@ -270,12 +289,16 @@ export async function apiAppointmentQuestion(operation, values) {
 
 /* AppointmentAnswer:
 - select: id, or filter by question NN
-- create: question NN, text, transcript
+- create: question NN, text, recording_file, transcript
     - patient, or supporter with can_record_answers access
     - recorded_by is set to the user
-    - recording_file needs a multipart upload, which these functions don't support yet
-- update: id NN, text, transcript
+    - recording_file is the device audio file as { uri, name, type }, e.g.
+      { uri: 'file:///.../answer.m4a', name: 'answer.m4a', type: 'audio/m4a' }
+      (audio only, max 20 MB). It is returned as a download URL that needs the user to have
+      access to the answer.
+- update: id NN, text, recording_file, transcript
     - question cannot be changed
+    - recording_file: null removes the recording
     - patient, or supporter with can_record_answers access
 - delete: id NN
     - patient only */

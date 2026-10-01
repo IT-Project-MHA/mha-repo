@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.http import FileResponse, Http404
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 from django.db.models import Q
@@ -181,6 +182,8 @@ class AppointmentQuestionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPI
 # - update: patient, or supporter with can_record_answers access
 # - update: question cannot be changed
 # - delete: patient only
+# - recording_file: uploaded as multipart audio file (max 20 MB), returned as the URL of the
+#   recording download API. Replaced or deleted recordings are removed from storage.
 
 class AppointmentAnswerListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
@@ -231,7 +234,33 @@ class AppointmentAnswerRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIVi
         return query_set.distinct()
 
     def perform_update(self, serializer):
+        old_recording = serializer.instance.recording_file.name
         save_without_immutable_changes(serializer, ['question'])
+        if old_recording and old_recording != serializer.instance.recording_file.name:
+            serializer.instance.recording_file.storage.delete(old_recording)
+
+    def perform_destroy(self, instance):
+        recording = instance.recording_file
+        instance.delete()
+        if recording:
+            recording.storage.delete(recording.name)
+
+# AppointmentAnswer recording download API:
+# - select: returns the answer's audio file, for users who can see the answer
+
+class AppointmentAnswerRecording(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        return AppointmentAnswer.objects.filter(
+            question__appointment__in = visible_appointments(user)).distinct()
+
+    def retrieve(self, request, *args, **kwargs):
+        answer = self.get_object()
+        if not answer.recording_file:
+            raise Http404('This answer has no recording.')
+        return FileResponse(answer.recording_file.open('rb'))
 
 
 # AppointmentAccess APIs:
