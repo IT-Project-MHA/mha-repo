@@ -16,10 +16,10 @@ export default function ScreenLayout() {
 
   return (
     // TO DO: fill this out properly
-    
+
     <Stack 
       screenOptions={{
-        title: 'My home',
+        title: 'Back',
         headerStyle: styles.headerStyle,
         contentStyle: { backgroundColor: colours.background},
       }}
@@ -31,12 +31,49 @@ export default function ScreenLayout() {
         }}
       />
       <Stack.Screen 
-        name="themePref"
+        name="myAccount"
         options={{
-          title: 'Select theme',
+          title: 'My Account',
+        }}
+      />
+      <Stack.Screen 
+        name="accesibility"
+        options={{
+          title: 'Accesibility',
+        }}
+      />
+      <Stack.Screen 
+        name="legal"
+        options={{
+          title: 'Legal',
+        }}
+      />
+      <Stack.Screen 
+        name="myConnections"
+        options={{
+          title: 'My Connections',
+        }}
+      />
+      <Stack.Screen 
+        name="myData"
+        options={{
+          title: 'My Data',
+        }}
+      />
+      <Stack.Screen 
+        name="permissions"
+        options={{
+          title: 'Permissions',
+        }}
+      />
+      <Stack.Screen 
+        name="support"
+        options={{
+          title: 'Support',
         }}
       />
     </Stack>
+    
   );
 }
 
