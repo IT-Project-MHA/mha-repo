@@ -137,10 +137,10 @@ function createStyles(colours: ColourSet){
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colours.surface,
-    paddingBlock: 30, //lit
+    paddingBlock: 30, //lit!
     alignSelf: 'center',
     width: '85%', // of page
-
+    
     borderRadius: 28,
     borderTopWidth: 0,     
     borderBottomWidth: 0, 
@@ -148,19 +148,18 @@ function createStyles(colours: ColourSet){
     overflow: 'hidden',
 
     shadowColor: colours.tertiary,
-    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.15,
     shadowRadius: 16,
     elevation: 4,
   },
 
   line: {
-    height: 3,
+    height: 2,
     backgroundColor: colours.onBackground,
     width: '89%',
     borderRadius: 300,
-    //marginHorizontal: 20,
   }
+  
 })
 };
 

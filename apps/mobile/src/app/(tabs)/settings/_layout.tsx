@@ -1,9 +1,12 @@
 import { Stack } from 'expo-router'
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { StyleSheet } from 'react-native';
+import BlurView from 'expo-blur';
 
 /**
  * Defines the structure of the screens within the settings page.
+ * 
+ * backgorund page colours being white should happen here :(
  * 
  * @returns screens which correspond to different files as screens.
  */
@@ -12,6 +15,8 @@ export default function ScreenLayout() {
   const styles = createStyles(colours);
 
   return (
+    // TO DO: fill this out properly
+    
     <Stack 
       screenOptions={{
         title: 'My home',
@@ -25,7 +30,7 @@ export default function ScreenLayout() {
           title: 'Settings',
         }}
       />
-      <Stack.Screen
+      <Stack.Screen 
         name="themePref"
         options={{
           title: 'Select theme',
@@ -42,9 +47,11 @@ function createStyles(colours: ColourSet){
     return StyleSheet.create({
 
       headerStyle: {
-        backgroundColor: colours.primary,
+        // make header less ugly
+        // blur???? (semi transparent)
+        backgroundColor: colours.background,
+        borderBottomWidth: 0, 
     },
-      
 });
  }
 
