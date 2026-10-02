@@ -1,6 +1,8 @@
 from rest_framework import serializers
 
 # helper function: saves serializer, but raises 400 if any of the given fields were changed.
+# This is used when a field is not read_only, otherwise it would be listed as such in the 
+# serializer.
 def save_without_immutable_changes(serializer, immutable_fields):
     instance = serializer.instance
     errors = {}

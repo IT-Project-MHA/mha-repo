@@ -71,8 +71,6 @@ class PrescriptionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
             query_set = query_set.filter(patient_profile__user = user)
         return query_set.distinct()
 
-    def perform_update(self, serializer):
-        save_without_immutable_changes(serializer, ['patient_profile'])
 
 
 # Assessment APIs: 
@@ -134,9 +132,6 @@ class AssessmentRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
             query_set = query_set.filter(patient_profile__user = user)
         return query_set.distinct()
 
-    def perform_update(self, serializer):
-        save_without_immutable_changes(serializer, ['patient_profile', 'week_starting'])
-    
 
 # Assessment task APIs (MyPain, MyMovement, MyPersonalCare, MySocialHealth, MyManagement):
 # - select: must filter by assessment

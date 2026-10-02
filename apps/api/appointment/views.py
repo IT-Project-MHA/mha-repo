@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import FileResponse, Http404
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
-from django.db.models import Q
+from django.db.models import Q, Max
 from rest_framework import serializers
 from .models import Appointment, AppointmentQuestion, AppointmentAnswer, \
    AppointmentAccess
@@ -16,17 +16,19 @@ from mpowered_api.protected import destroy_or_reject_protected
 # All views are protected by authenticated user id (can only see records where patient_profile
 # is user's own, or who user supports), for relevant tables.
 
-# Attributes that can be filtered are specified in the comments. To filter by attribute, put
+# To filter by attribute, put
 # in the URL ?attribute_name=value. For multiple attributes:
 # ?attribute_name1=value&?attribute_name2=value...
 
-# Attributes that cannot be updated are specified in the comments. Sending a different value for
+# Attributes that are read only are specified in it's serializer. Sending a different value for
 # them in an update request returns a 400 error.
 
 # Records that other records depend on cannot be deleted; deleting them returns a 409 error.
 
 # Who can insert/update/delete is specified in the comments. Records the user can see but is not
 # allowed to update/delete return a 404 error for those requests.
+
+
 
 # helper function: checks if user has valid (not revoked, active support link) access to
 # appointment with the given permission flag, e.g. 'can_add_questions', 'can_record_answers'
@@ -45,10 +47,6 @@ def is_appointment_patient(user, appointment):
 
 
 # Appointment APIs:
-# - select: can filter by patient_profile, status, scheduled_date
-# - insert: patient_profile & created_by are set to the user's own
-# - update/delete: patient only (supporters are read-only)
-# - update: patient_profile, created_by cannot be changed
 
 # helper function: returns set of appointments that user can access (own, or granted access
 # through an active support link that hasn't been revoked)
@@ -92,6 +90,8 @@ class AppointmentRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         query_status = self.request.query_params.get("status")
         scheduled_date = self.request.query_params.get("scheduled_date")
         query_set = visible_appointments(user)
+
+        # user can only update their own appointments where they are a patient
         if self.request.method not in SAFE_METHODS:
             query_set = query_set.filter(patient_profile__user = user)
         if query_patient_profile:
@@ -102,22 +102,12 @@ class AppointmentRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
             query_set = query_set.filter(scheduled_date = scheduled_date)
         return query_set.distinct()
 
-    def perform_update(self, serializer):
-        save_without_immutable_changes(serializer, ['patient_profile', 'created_by'])
-
     def perform_destroy(self, instance):
         destroy_or_reject_protected(instance)
 
 
-# AppointmentQuestion APIs:
-# - select: must filter by appointment
-# - insert: patient of the appointment (source can be patient or suggested, default patient), or
-#   supporter with can_add_questions access (source is set to support). created_by is set to
-#   the user
-# - update/delete: patient, or supporter who created the question while they still have
-#   can_add_questions access
-# - update: appointment, source, created_by cannot be changed
 
+# AppointmentQuestion APIs:
 class AppointmentQuestionListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = AppointmentQuestionSerializer
@@ -136,14 +126,22 @@ class AppointmentQuestionListCreate(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         user = self.request.user
         appointment = serializer.validated_data["appointment"]
+        last_index = AppointmentQuestion.objects.filter(
+            appointment = appointment).aggregate(Max('order_index'))['order_index__max']
+        order_index = (last_index + 1) if last_index is not None else 0
+
         if is_appointment_patient(user, appointment):
             source = serializer.validated_data.get("source", AppointmentQuestion.Source.PATIENT)
             if source == AppointmentQuestion.Source.SUPPORT:
                 raise serializers.ValidationError(
                     {'source':'Patients cannot create support questions.'})
-            serializer.save(created_by = user, source = source)
+            serializer.save(created_by = user, source = source, order_index = order_index)
         elif has_appointment_access(user, appointment, 'can_add_questions'):
-            serializer.save(created_by = user, source = AppointmentQuestion.Source.SUPPORT)
+            source = serializer.validated_data.get("source", AppointmentQuestion.Source.SUPPORT)
+            if source == AppointmentQuestion.Source.PATIENT:
+                raise serializers.ValidationError(
+                    {'source':'Supporters cannot create patient questions.'})
+            serializer.save(created_by = user, source = source, order_index = order_index)
         else:
             raise serializers.ValidationError({'appointment':'You do not have access.'})
 
@@ -169,22 +167,14 @@ class AppointmentQuestionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPI
         return query_set.distinct()
 
     def perform_update(self, serializer):
-        save_without_immutable_changes(serializer, ['appointment', 'source', 'created_by'])
+        save_without_immutable_changes(serializer, ['source'])
 
     def perform_destroy(self, instance):
         destroy_or_reject_protected(instance)
 
 
-# AppointmentAnswer APIs:
-# - select: must filter by question
-# - insert: patient of the appointment, or supporter with can_record_answers access.
-#   recorded_by is set to the user
-# - update: patient, or supporter with can_record_answers access
-# - update: question cannot be changed
-# - delete: patient only
-# - recording_file: uploaded as multipart audio file (max 20 MB), returned as the URL of the
-#   recording download API. Replaced or deleted recordings are removed from storage.
 
+# AppointmentAnswer APIs:
 class AppointmentAnswerListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = AppointmentAnswerSerializer
@@ -233,9 +223,10 @@ class AppointmentAnswerRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIVi
             query_set = query_set.filter(question = question)
         return query_set.distinct()
 
+    # file needs to be manually deleted from storage
     def perform_update(self, serializer):
         old_recording = serializer.instance.recording_file.name
-        save_without_immutable_changes(serializer, ['question'])
+        serializer.save()
         if old_recording and old_recording != serializer.instance.recording_file.name:
             serializer.instance.recording_file.storage.delete(old_recording)
 
@@ -247,7 +238,6 @@ class AppointmentAnswerRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIVi
 
 # AppointmentAnswer recording download API:
 # - select: returns the answer's audio file, for users who can see the answer
-
 class AppointmentAnswerRecording(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -264,12 +254,6 @@ class AppointmentAnswerRecording(generics.RetrieveAPIView):
 
 
 # AppointmentAccess APIs:
-# - select: can only see access for own appointments or given to user, can filter by
-#   appointment, support_link
-# - insert: must specify appointment id of the user's own appointment, and an active
-#   support_link of the same patient
-# - update/delete: patient only (supporters are read-only)
-# - update: appointment, support_link, granted_at cannot be changed
 
 # helper function: returns set of appointment access records that user can access
 def visible_appointment_access(user):
@@ -325,5 +309,3 @@ class AppointmentAccessRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIVi
             query_set = query_set.filter(support_link = support_link)
         return query_set.distinct()
 
-    def perform_update(self, serializer):
-        save_without_immutable_changes(serializer, ['appointment', 'support_link', 'granted_at'])

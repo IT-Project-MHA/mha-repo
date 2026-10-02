@@ -33,7 +33,7 @@ class AssessmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Assessment
         fields = '__all__'
-        read_only_fields = ['patient_profile']
+        read_only_fields = ['patient_profile', 'week_starting']
 
     # week_starting must be a Monday, & no later than the current week
     def validate_week_starting(self, week_starting):

@@ -196,8 +196,8 @@ class SupportLinkRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
                 errors['status'] = 'Supporters can only change status to active or revoked.'
         if errors:
             raise serializers.ValidationError(errors)
-        save_without_immutable_changes(serializer, ['patient_profile', 'patient_user',
-            'supporter_user', 'invited_phone_number', 'invited_at'])
+        save_without_immutable_changes(serializer, ['supporter_user', 'invited_phone_number',
+            'invited_at'])
 
     def perform_destroy(self, instance):
         destroy_or_reject_protected(instance)
@@ -261,4 +261,4 @@ class TrustedDeviceRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         return TrustedDevice.objects.filter(user = self.request.user)
 
     def perform_update(self, serializer):
-        save_without_immutable_changes(serializer, ['user', 'device_id'])
+        save_without_immutable_changes(serializer, ['device_id'])

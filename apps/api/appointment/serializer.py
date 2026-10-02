@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.urls import reverse
-from mpowered_api.validators import validate_not_future
+from mpowered_api.validators import validate_not_future, validate_not_past
 from .models import Appointment, AppointmentQuestion, AppointmentAnswer, \
    AppointmentAccess
 
@@ -12,17 +12,20 @@ class AppointmentSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ['patient_profile', 'created_by']
 
+    def validate_scheduled_date(self, scheduled_date):
+        return validate_not_past(scheduled_date)
+
 class AppointmentQuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = AppointmentQuestion
         fields = '__all__'
-        read_only_fields = ['created_by']
+        read_only_fields = ['appointment', 'created_by']
 
 class AppointmentAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = AppointmentAnswer
         fields = '__all__'
-        read_only_fields = ['recorded_by']
+        read_only_fields = ['question', 'recorded_by']
 
     def validate_recording_file(self, recording_file):
         if recording_file is None:
@@ -47,6 +50,7 @@ class AppointmentAccessSerializer(serializers.ModelSerializer):
     class Meta:
         model = AppointmentAccess
         fields = '__all__'
+        read_only_fields = ['appointment', 'support_link', 'granted_at']
 
     def validate_revoked_at(self, revoked_at):
         return validate_not_future(revoked_at)

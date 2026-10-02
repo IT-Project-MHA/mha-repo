@@ -310,6 +310,7 @@ export async function apiMyManagement(operation, values) {
     - user must have a patient_profile
 - update: id NN, scheduled_date, doctor, status, health_service, notes
     - patient_profile & created_by cannot be changed
+    - user can only update their own appointments where they are a patient
 - delete: id NN */
 export async function apiAppointment(operation, values) {
     return operate('appointment', operation, values);
@@ -320,7 +321,7 @@ export async function apiAppointment(operation, values) {
     - can only see one's own appointment questions or patient's appointment questions
 - create: appointment NN, text NN, source, is_selected
     - created_by is set to the user, order_index is auto generated
-    - patient, or supporter with can_ask_question=true in AppointmentAccess can create
+    - patient, or supporter with can_add_questions=true in AppointmentAccess can create
     - if user is patient: source can be PATIENT (default) or SUGGESTED
     - if user is supporter: source can be SUPPORT (default) or SUGGESTED
 - update: id NN, text, order_index, is_selected

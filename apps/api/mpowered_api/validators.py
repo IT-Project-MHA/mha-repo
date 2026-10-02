@@ -29,6 +29,12 @@ def validate_not_future(value):
         raise serializers.ValidationError('Cannot be in the future.')
     return value
 
+# date cannot be in the past
+def validate_not_past(value):
+    if value is not None and value < current_date():
+        raise serializers.ValidationError('Cannot be in the past.')
+    return value
+
 # phone number must be Australian, without spaces or dashes. is converted to international format
 def validate_phone_number(value):
     if not value:
