@@ -293,8 +293,8 @@ export async function apiMySocialHealth(operation, values) {
 - create: assessment NN, otc_medication, exercise, emotion, completed_at, medication[]
     - medication must be prescriptions of the assessment's patient, score is 
       auto generated
-- update: id NN, otc_medication, exercise, emotion, score, completed_at, medication[]
-    - assessment cannot be changed, medication must be prescriptions of the 
+- update: id NN, otc_medication, exercise, emotion, completed_at, medication[]
+    - assessment cannot be changed, medication must be prescriptions of the
       assessment's patient, score is auto generated
 - delete: id NN */
 export async function apiMyManagement(operation, values) {

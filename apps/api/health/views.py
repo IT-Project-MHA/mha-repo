@@ -12,29 +12,25 @@ from .models import Prescription, Assessment, MyPain, MyMovement, MyPersonalCare
 from accounts.models import SupportLink
 from accounts.views import own_patient_profile
 from .serializer import *
-from mpowered_api.immutable import save_without_immutable_changes
 from datetime import date
 
 # instructions:
 # All views are protected by authenticated user id (can only see records where patient_profile
 # is user's own, or who user supports), for relevant tables.
 
-# Attributes that can be filtered are specified in the comments. To filter by attribute, put 
-# in the URL ?attribute_name=value. For multiple attributes: 
+# To filter by attribute, put in the URL ?attribute_name=value. For multiple attributes:
 # ?attribute_name1=value&?attribute_name2=value...
 
-# Attributes that cannot be updated are specified in the comments. Sending a different value for
+# Attributes that are read only are specified in it's serializer. Sending a different value for
 # them in an update request returns a 400 error.
 
-# Supporters have read-only access: insert/update/delete is only allowed on the user's own
-# records. Update/delete requests on a supported patient's records return a 404 error.
+# Records that other records depend on cannot be deleted; deleting them returns a 409 error.
+
+# Who can insert/update/delete is specified in the comments. Records the user can see but is not
+# allowed to update/delete return a 404 error for those requests.
 
 
 # Prescription APIs: 
-# - select: can filter by patient_profile
-# - insert/update/delete: only the patient (supporters have read-only access)
-# - update: patient_profile cannot be changed
-
 class PrescriptionListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = PrescriptionSerializer
@@ -74,9 +70,6 @@ class PrescriptionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
 
 # Assessment APIs: 
-# - select: can filter by patient_profile, week_starting
-# - insert/update/delete: only the patient (supporters have read-only access)
-# - update: patient_profile, week_starting cannot be changed
 
 # helper function: returns set of assessments that user can access
 def visible_assessments(user):
@@ -134,11 +127,6 @@ class AssessmentRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
 
 # Assessment task APIs (MyPain, MyMovement, MyPersonalCare, MySocialHealth, MyManagement):
-# - select: must filter by assessment
-# - insert: must specify assessment id of the user's own assessment
-# - insert/update/delete: only the patient (supporters have read-only access)
-# - update: assessment cannot be changed
-
 class MyPainListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = MyPainSerializer
@@ -160,11 +148,16 @@ class MyPainListCreate(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         user = self.request.user
-        assessment = serializer.validated_data["assessment"]
-        if not own_assessments(user).filter(id = assessment.id).exists():
-            raise serializers.ValidationError({'assessment':'You do not have access.'})
-
-        serializer.save()
+        assessment_id = self.request.data.get("assessment")
+        if not assessment_id:
+            raise serializers.ValidationError({'assessment': 'This field is required.'})
+        try:
+            assessment = Assessment.objects.get(id=assessment_id)
+        except Assessment.DoesNotExist:
+            raise serializers.ValidationError({'assessment': 'Invalid assessment.'})
+        if not own_assessments(user).filter(id=assessment.id).exists():
+            raise serializers.ValidationError({'assessment': 'You do not have access.'})
+        serializer.save(assessment=assessment)
 
 class MyPainRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
@@ -183,9 +176,6 @@ class MyPainRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         if self.request.method not in SAFE_METHODS:
             query_set = query_set.filter(assessment__patient_profile__user = user)
         return query_set.distinct()
-
-    def perform_update(self, serializer):
-        save_without_immutable_changes(serializer, ['assessment'])
 
 class MyMovementListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
@@ -208,11 +198,16 @@ class MyMovementListCreate(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         user = self.request.user
-        assessment = serializer.validated_data["assessment"]
-        if not own_assessments(user).filter(id = assessment.id).exists():
-            raise serializers.ValidationError({'assessment':'You do not have access.'})
-
-        serializer.save()
+        assessment_id = self.request.data.get("assessment")
+        if not assessment_id:
+            raise serializers.ValidationError({'assessment': 'This field is required.'})
+        try:
+            assessment = Assessment.objects.get(id=assessment_id)
+        except Assessment.DoesNotExist:
+            raise serializers.ValidationError({'assessment': 'Invalid assessment.'})
+        if not own_assessments(user).filter(id=assessment.id).exists():
+            raise serializers.ValidationError({'assessment': 'You do not have access.'})
+        serializer.save(assessment=assessment)
 
 class MyMovementRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
@@ -231,9 +226,6 @@ class MyMovementRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         if self.request.method not in SAFE_METHODS:
             query_set = query_set.filter(assessment__patient_profile__user = user)
         return query_set.distinct()
-
-    def perform_update(self, serializer):
-        save_without_immutable_changes(serializer, ['assessment'])
 
 class MyPersonalCareListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
@@ -256,11 +248,16 @@ class MyPersonalCareListCreate(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         user = self.request.user
-        assessment = serializer.validated_data["assessment"]
-        if not own_assessments(user).filter(id = assessment.id).exists():
-            raise serializers.ValidationError({'assessment':'You do not have access.'})
-
-        serializer.save()
+        assessment_id = self.request.data.get("assessment")
+        if not assessment_id:
+            raise serializers.ValidationError({'assessment': 'This field is required.'})
+        try:
+            assessment = Assessment.objects.get(id=assessment_id)
+        except Assessment.DoesNotExist:
+            raise serializers.ValidationError({'assessment': 'Invalid assessment.'})
+        if not own_assessments(user).filter(id=assessment.id).exists():
+            raise serializers.ValidationError({'assessment': 'You do not have access.'})
+        serializer.save(assessment=assessment)
 
 class MyPersonalCareRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
@@ -279,9 +276,6 @@ class MyPersonalCareRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView)
         if self.request.method not in SAFE_METHODS:
             query_set = query_set.filter(assessment__patient_profile__user = user)
         return query_set.distinct()
-
-    def perform_update(self, serializer):
-        save_without_immutable_changes(serializer, ['assessment'])
 
 class MySocialHealthListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
@@ -304,11 +298,16 @@ class MySocialHealthListCreate(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         user = self.request.user
-        assessment = serializer.validated_data["assessment"]
-        if not own_assessments(user).filter(id = assessment.id).exists():
-            raise serializers.ValidationError({'assessment':'You do not have access.'})
-
-        serializer.save()
+        assessment_id = self.request.data.get("assessment")
+        if not assessment_id:
+            raise serializers.ValidationError({'assessment': 'This field is required.'})
+        try:
+            assessment = Assessment.objects.get(id=assessment_id)
+        except Assessment.DoesNotExist:
+            raise serializers.ValidationError({'assessment': 'Invalid assessment.'})
+        if not own_assessments(user).filter(id=assessment.id).exists():
+            raise serializers.ValidationError({'assessment': 'You do not have access.'})
+        serializer.save(assessment=assessment)
 
 class MySocialHealthRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
@@ -327,9 +326,6 @@ class MySocialHealthRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView)
         if self.request.method not in SAFE_METHODS:
             query_set = query_set.filter(assessment__patient_profile__user = user)
         return query_set.distinct()
-
-    def perform_update(self, serializer):
-        save_without_immutable_changes(serializer, ['assessment'])
 
 class MyManagementListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
@@ -352,11 +348,22 @@ class MyManagementListCreate(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         user = self.request.user
-        assessment = serializer.validated_data["assessment"]
-        if not own_assessments(user).filter(id = assessment.id).exists():
-            raise serializers.ValidationError({'assessment':'You do not have access.'})
-
-        serializer.save()
+        assessment_id = self.request.data.get("assessment")
+        if not assessment_id:
+            raise serializers.ValidationError({'assessment': 'This field is required.'})
+        try:
+            assessment = Assessment.objects.get(id=assessment_id)
+        except Assessment.DoesNotExist:
+            raise serializers.ValidationError({'assessment': 'Invalid assessment.'})
+        if not own_assessments(user).filter(id=assessment.id).exists():
+            raise serializers.ValidationError({'assessment': 'You do not have access.'})
+        if MyManagement.objects.filter(assessment=assessment).exists():
+            raise serializers.ValidationError({'assessment': 'A MyManagement record already exists for this assessment.'})
+        medication = serializer.validated_data.get('medication', [])
+        if any(p.patient_profile_id != assessment.patient_profile_id for p in medication):
+            raise serializers.ValidationError(
+                {'medication': 'Prescriptions must belong to the assessment\'s patient.'})
+        serializer.save(assessment=assessment)
 
 class MyManagementRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
@@ -375,6 +382,3 @@ class MyManagementRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         if self.request.method not in SAFE_METHODS:
             query_set = query_set.filter(assessment__patient_profile__user = user)
         return query_set.distinct()
-
-    def perform_update(self, serializer):
-        save_without_immutable_changes(serializer, ['assessment'])

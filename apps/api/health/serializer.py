@@ -47,14 +47,35 @@ class AssessmentSerializer(serializers.ModelSerializer):
         return validate_not_future(submitted_at)
 
 # assessment task serializers: completed_at cannot be in the future
+# score is computed from QuestionOptionOrdered fields after save
 class AssessmentTaskSerializer(serializers.ModelSerializer):
     def validate_completed_at(self, completed_at):
         return validate_not_future(completed_at)
+
+    def calculate_score(self, instance):
+        return None
+
+    def create(self, validated_data):
+        instance = super().create(validated_data)
+        score = self.calculate_score(instance)
+        if score is not None:
+            instance.score = score
+            instance.save(update_fields=['score'])
+        return instance
+
+    def update(self, instance, validated_data):
+        instance = super().update(instance, validated_data)
+        score = self.calculate_score(instance)
+        if score is not None:
+            instance.score = score
+            instance.save(update_fields=['score'])
+        return instance
 
 class MyPainSerializer(AssessmentTaskSerializer):
     class Meta:
         model = MyPain
         fields = '__all__'
+        read_only_fields = ['assessment']
 
     # pain scores must be consistent: mildest <= average <= worst, mildest <= current <= worst
     def validate(self, data):
@@ -83,21 +104,53 @@ class MyMovementSerializer(AssessmentTaskSerializer):
     class Meta:
         model = MyMovement
         fields = '__all__'
+        read_only_fields = ['assessment', 'score']
+
+    def calculate_score(self, instance):
+        score = sum(
+            getattr(instance, f).score
+            for f in ['walking', 'sitting', 'lifting', 'standing']
+            if getattr(instance, f)
+        )
+        score += sum(item.score for item in instance.general_impacts.all())
+        return score
 
 class MyPersonalCareSerializer(AssessmentTaskSerializer):
     class Meta:
         model = MyPersonalCare
         fields = '__all__'
+        read_only_fields = ['assessment', 'score']
+
+    def calculate_score(self, instance):
+        score = sum(
+            getattr(instance, f).score
+            for f in ['personal_care', 'sleeping']
+            if getattr(instance, f)
+        )
+        score += sum(item.score for item in instance.general_activities_impact.all())
+        return score
 
 class MySocialHealthSerializer(AssessmentTaskSerializer):
     class Meta:
         model = MySocialHealth
         fields = '__all__'
+        read_only_fields = ['assessment', 'score']
+
+    def calculate_score(self, instance):
+        return sum(
+            getattr(instance, f).score
+            for f in ['social_life', 'travelling', 'overall_mood']
+            if getattr(instance, f)
+        )
 
 class MyManagementSerializer(AssessmentTaskSerializer):
     class Meta:
         model = MyManagement
         fields = '__all__'
+        read_only_fields = ['assessment', 'score']
+
+    def calculate_score(self, instance):
+        return instance.exercise.score if instance.exercise else 0
 
     # medication must only contain prescriptions of the assessment's patient
     def validate(self, data):
