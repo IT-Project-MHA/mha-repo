@@ -31,6 +31,6 @@ urlpatterns = [
          views.TermsAndPrivacyListCreate.as_view(),
          name ='read_create_terms_and_privacy'),
     path('termsAndPrivacy/<str:pk>',
-         views.TermsAndPrivacyRetrieveUpdateDestroy.as_view(),
-         name ='update_terms_and_privacy')
+         views.TermsAndPrivacyRetrieve.as_view(),
+         name ='retrieve_terms_and_privacy')
 ]

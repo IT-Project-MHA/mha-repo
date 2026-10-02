@@ -1,7 +1,10 @@
 from rest_framework import serializers
 from django.urls import reverse
+from mpowered_api.validators import validate_not_future
 from .models import Appointment, AppointmentQuestion, AppointmentAnswer, \
    AppointmentAccess
+
+MAX_RECORDING_SIZE = 20 * 1024 * 1024 # 20 MB
 
 class AppointmentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -14,8 +17,6 @@ class AppointmentQuestionSerializer(serializers.ModelSerializer):
         model = AppointmentQuestion
         fields = '__all__'
         read_only_fields = ['created_by']
-
-MAX_RECORDING_SIZE = 20 * 1024 * 1024 # 20 MB
 
 class AppointmentAnswerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -46,3 +47,6 @@ class AppointmentAccessSerializer(serializers.ModelSerializer):
     class Meta:
         model = AppointmentAccess
         fields = '__all__'
+
+    def validate_revoked_at(self, revoked_at):
+        return validate_not_future(revoked_at)

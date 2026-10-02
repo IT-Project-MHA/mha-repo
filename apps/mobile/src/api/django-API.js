@@ -15,10 +15,25 @@ which can only be selected, and AuditEntry which can only be selected & created.
 - update: only the attributes given are changed (partial update). Attributes that cannot be
           changed are listed, sending a different value for them returns an error.
 
+example call: 
+const myMovement = await apiMyMovement('create', {
+    'assessment': assessment_uuid,
+    'active_hours': 12,
+    'walking': walking_uuid, // QuestionOptionOrdered id
+    'sitting': sitting_uuid, // QuestionOptionOrdered id
+    'lifting': lifting_uuid, // QuestionOptionOrdered id
+    'standing': standing_uuid, // QuestionOptionOrdered id
+    'general_impacts': ['general_impact_1_uuid', // QuestionOptionOrdered ids
+                        'general_impact_2_uuid], 
+    'reflection': 'Walking was easier this week.',
+    'score': 9,
+    'completed_at': new Date().toISOString(),
+})
+        
 For tables that have a many-to-many relationship, their attribute value must be entered as an
 array of ids, and the attribute in the description will be followed by a [], e.g. locations[].
 
-Use the functions inside a try {...} catch (error) {...}. A failed request throws an ApiError
+Use the functions inside a try/catch block. A failed request throws an ApiError
 with the HTTP status (error.status) and the server's error messages (error.data), e.g.
 {week_starting: ['An assessment already exists for this week.']}. Deleting a record that other
 records depend on returns 409.
@@ -46,9 +61,11 @@ async function request(method, path, body) {
             ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
             Accept: 'application/json',
         },
+        // undefined if the operation is delete
         body: body === undefined || isFormData ? body : JSON.stringify(body),
     });
 
+    // parse response
     const text = await response.text();
     const data = text ? JSON.parse(text) : null;
     if (!response.ok) {
@@ -74,24 +91,31 @@ function toRequestBody(attributes) {
     return formData;
 }
 
-const ALL_OPERATIONS =['select', 'create', 'update', 'delete'];
-
-/* General function for processing Django APIs, if the table allows the operation*/
-async function operate(endpoint, operation, values = {}, allowed = ALL_OPERATIONS) {
-    if (!allowed.includes(operation)) {
+// helper function for processing Django APIs, if the table allows the operation
+async function operate(endpoint, operation, values = {}) {
+    if (!['select', 'create', 'update', 'delete'].includes(operation)) {
         throw new Error(`Operation '${operation}' is not allowed for ${endpoint}`);
     }
+
+    // split id from body attributes
     const { id, ...attributes } = values;
 
     if (operation == 'select') {
+
+        // if id is given, return specific selection
         if (id) {
             return request('GET', `${endpoint}/${id}`);
         }
+
+        // if no id given, search by given filter parameters
         const query = new URLSearchParams();
+        // convert list of attributes into an array of key value pairs
         Object.entries(attributes)
             .filter(([, value]) => value != null)
             .forEach(([key, value]) => query.append(key, value));
+        // queryString is a string of key=value pairs separated by "&"
         const queryString = query.toString();
+        // if there are search parameters, add "?"
         return request('GET', `${endpoint}/${queryString ? `?${queryString}` : ''}`);
 
     } else if (operation == 'create') {
@@ -107,13 +131,12 @@ async function operate(endpoint, operation, values = {}, allowed = ALL_OPERATION
     throw new Error(`Unknown operation: ${operation}`);
 }
 
-
-/* ---------- \accounts ---------- */
-
 /* User:
 - select: id, or no filters (only returns own user)
 - create: phone_number NN, display_name NN, email
+    - phone_number must be local Australian number with no spaces
 - update: id NN, phone_number, display_name, email
+    - phone_number must be local Australian number with no spaces
 - delete: id NN */
 export async function apiUser(operation, values) {
     return operate('user', operation, values);
@@ -125,7 +148,7 @@ export async function apiUser(operation, values) {
     - user is set to the user's own, only one profile per user
 - update: id NN, has_diagnosis, other_conditions, assigned_gender_at_birth, birth_year,
           pain_types[]
-    - user cannot be changed
+    - id cannot be changed
 - delete: id NN */
 export async function apiPatientProfile(operation, values) {
     return operate('patientProfile', operation, values);
@@ -147,15 +170,14 @@ export async function apiUserSettings(operation, values) {
 /* SupportLink:
 - select: id, or filter by patient_profile, status (returns links where user is the patient or
           supporter)
-- create: supporter_user, invited_phone_number, status
-    - one of supporter_user or invited_phone_number is required
-    - patient_profile & patient_user are set to the user's own
+- create: supporter_user, invited_phone_number
+    - one of supporter_user or invited_phone_number is required, patient_profile 
+      & patient_user are set to the user's own, status is set to INVITED
 - update: id NN, status, accepted_at, revoked_at
-    - patient_profile, patient_user, supporter_user, invited_phone_number, invited_at cannot be
-      changed
-    - supporter can only update status (to 'active' or 'revoked')
+    - patient_profile, patient_user, supporter_user, invited_phone_number, invited_at
+      cannot be changed, supporter can only update status (to 'active' or 'revoked')
 - delete: id NN
-    - patient only */
+    - only patient can delete */
 export async function apiSupportLink(operation, values) {
     return operate('supportLink', operation, values);
 }
@@ -164,15 +186,11 @@ export async function apiSupportLink(operation, values) {
 - select: id, or filter by document_type (only returns own records)
 - create: document_type NN, document_version NN
     - user is set to the user's own
-- update: id NN
-    - user, document_type, document_version, accepted_at cannot be changed
-- delete: id NN */
+- update: N/A
+- delete: N/A NN */
 export async function apiTermsAndPrivacy(operation, values) {
-    return operate('termsAndPrivacy', operation, values);
+    return operate('termsAndPrivacy', operation, values,  ['select', 'create']);
 }
-
-
-/* ---------- \health ---------- */
 
 /* Prescription:
 - select: id, or filter by patient_profile
@@ -190,7 +208,8 @@ export async function apiPrescription(operation, values) {
 /* Assessment:
 - select: id, or filter by patient_profile, week_starting
 - create: week_starting NN, submitted_at, reflection, status
-    - patient_profile is set to the user's own, only one assessment per week_starting
+    - patient_profile is set to the user's own, one assessment per week_starting,
+      week_starting must be on a Monday
 - update: id NN, submitted_at, reflection, status
     - patient_profile & week_starting cannot be changed
 - delete: id NN */
@@ -212,11 +231,12 @@ export async function apiMyPain(operation, values) {
 
 /* MyMovement:
 - select: id, or filter by assessment NN, patient_profile
-- create: assessment NN, active_hours, walking, sitting, lifting, standing, reflection, score,
+- create: assessment NN, active_hours, walking, sitting, lifting, standing, reflection,
           completed_at, general_impacts[]
-- update: id NN, active_hours, walking, sitting, lifting, standing, reflection, score,
+    - score is auto generated
+- update: id NN, active_hours, walking, sitting, lifting, standing, reflection,
           completed_at, general_impacts[]
-    - assessment cannot be changed
+    - assessment cannot be changed, score is auto generated
 - delete: id NN */
 export async function apiMyMovement(operation, values) {
     return operate('myMovement', operation, values);
@@ -224,11 +244,12 @@ export async function apiMyMovement(operation, values) {
 
 /* MyPersonalCare:
 - select: id, or filter by assessment NN, patient_profile
-- create: assessment NN, personal_care, sleeping, reflection, score, completed_at,
+- create: assessment NN, personal_care, sleeping, reflection, completed_at,
           general_activities_impact[]
-- update: id NN, personal_care, sleeping, reflection, score, completed_at,
+    - score is auto generated
+- update: id NN, personal_care, sleeping, reflection, completed_at,
           general_activities_impact[]
-    - assessment cannot be changed
+    - assessment cannot be changed, , score is auto generated
 - delete: id NN */
 export async function apiMyPersonalCare(operation, values) {
     return operate('myPersonalCare', operation, values);
@@ -237,10 +258,11 @@ export async function apiMyPersonalCare(operation, values) {
 /* MySocialHealth:
 - select: id, or filter by assessment NN, patient_profile
 - create: assessment NN, social_life, travelling, mood, relationships, enjoyment_of_life,
-          overall_mood, reflection, score, completed_at
+          overall_mood, reflection, completed_at
+    - score is auto generated
 - update: id NN, social_life, travelling, mood, relationships, enjoyment_of_life,
-          overall_mood, reflection, score, completed_at
-    - assessment cannot be changed
+          overall_mood, reflection, completed_at
+    - assessment cannot be changed, score is auto generated
 - delete: id NN */
 export async function apiMySocialHealth(operation, values) {
     return operate('mySocialHealth', operation, values);
@@ -248,23 +270,24 @@ export async function apiMySocialHealth(operation, values) {
 
 /* MyManagement:
 - select: id, or filter by assessment NN, patient_profile
-- create: assessment NN, otc_medication, exercise, emotion, score, completed_at, medication[]
-    - medication must be prescriptions of the assessment's patient
+- create: assessment NN, otc_medication, exercise, emotion, completed_at, medication[]
+    - medication must be prescriptions of the assessment's patient, score is 
+      auto generated
 - update: id NN, otc_medication, exercise, emotion, score, completed_at, medication[]
-    - assessment cannot be changed
+    - assessment cannot be changed, medication must be prescriptions of the 
+      assessment's patient, score is auto generated
 - delete: id NN */
 export async function apiMyManagement(operation, values) {
     return operate('myManagement', operation, values);
 }
 
-
-/* ---------- \appointment ---------- */
-
 /* Appointment:
 - select: id, or filter by patient_profile, status, scheduled_date (returns own appointments &
           appointments user has been given access to)
 - create: scheduled_date NN, doctor, status, health_service, notes
-    - patient_profile & created_by are set to the user's own
+    - patient_profile is set to user's own or their patients, created_by is set to 
+      the user's own, scheduled_date must be in the present or future
+    - user must have a patient_profile
 - update: id NN, scheduled_date, doctor, status, health_service, notes
     - patient_profile & created_by cannot be changed
 - delete: id NN */
@@ -274,13 +297,16 @@ export async function apiAppointment(operation, values) {
 
 /* AppointmentQuestion:
 - select: id, or filter by appointment NN
-- create: appointment NN, text NN, source, order_index, is_selected
-    - patient: source can be 'patient' or 'suggested' (default 'patient')
-    - supporter: needs can_add_questions access, source is set to 'support'
-    - created_by is set to the user
+    - can only see one's own appointment questions or patient's appointment questions
+- create: appointment NN, text NN, source, is_selected
+    - created_by is set to the user, order_index is auto generated
+    - patient, or supporter with can_ask_question=true in AppointmentAccess can create
+    - if user is patient: source can be PATIENT (default) or SUGGESTED
+    - if user is supporter: source can be SUPPORT (default) or SUGGESTED
 - update: id NN, text, order_index, is_selected
-    - appointment, source & created_by cannot be changed
-    - patient, or supporter who created the question while they have can_add_questions access
+    - appointment, source, created_by cannot be changed
+    - if user is supporter: source can be SUPPORT (default) or SUGGESTED, can only create if 
+      can_add_questions=True in AppointmentAccess
 - delete: id NN
     - same as update */
 export async function apiAppointmentQuestion(operation, values) {
@@ -288,9 +314,10 @@ export async function apiAppointmentQuestion(operation, values) {
 }
 
 /* AppointmentAnswer:
-- select: id, or filter by question NN
+- select: id, or filter by question NN 
+    - can only see one's own appointment's answers or patient's appointment's answers
 - create: question NN, text, recording_file, transcript
-    - patient, or supporter with can_record_answers access
+    - patient, or supporter with can_record_answers=true in AppointmentAccess can create
     - recorded_by is set to the user
     - recording_file is the device audio file as { uri, name, type }, e.g.
       { uri: 'file:///.../answer.m4a', name: 'answer.m4a', type: 'audio/m4a' }
@@ -298,8 +325,8 @@ export async function apiAppointmentQuestion(operation, values) {
       access to the answer.
 - update: id NN, text, recording_file, transcript
     - question cannot be changed
-    - recording_file: null removes the recording
-    - patient, or supporter with can_record_answers access
+    - recording_file: null removes the recording    
+    - patient, or supporter with can_record_answers=true in AppointmentAccess can create
 - delete: id NN
     - patient only */
 export async function apiAppointmentAnswer(operation, values) {
@@ -309,17 +336,15 @@ export async function apiAppointmentAnswer(operation, values) {
 /* AppointmentAccess:
 - select: id, or filter by appointment, support_link (returns access for own appointments &
           access given to user)
-- create: appointment NN, support_link NN, can_add_questions, can_record_answers
+- create: appointment NN, support_link NN, can_add_questions NN, can_record_answers NN
     - appointment must be the user's own, support_link must be an active link of the same patient
+    - granted_at is auto generated
 - update: id NN, can_add_questions, can_record_answers, revoked_at
     - appointment, support_link & granted_at cannot be changed
 - delete: id NN */
 export async function apiAppointmentAccess(operation, values) {
     return operate('appointmentAccess', operation, values);
 }
-
-
-/* ---------- \reference ---------- */
 
 /* QuestionOption:
 - select: id, or filter by app_section NN, question_key NN
@@ -335,16 +360,13 @@ export async function apiQuestionOptionOrdered(operation, values) {
     return operate('questionOptionOrdered', operation, values, ['select']);
 }
 
-
-/* ---------- \audit ---------- */
-
 /* AuditEntry:
 - select: id, or no filters (only returns own audit entries)
 - create: action NN, target_type NN, target_id, patient_profile, audit_label, occurred_at,
           context
     - audit_user is set to the user
     - patient_profile must be the user's own or one the user actively supports
-- update/delete: N/A, audit entries cannot be changed */
+- update/delete: N/A */
 export async function apiAuditEntry(operation, values) {
     return operate('auditEntry', operation, values, ['select', 'create']);
 }

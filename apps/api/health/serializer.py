@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from .models import Prescription, Assessment, MyPain, MyMovement, MyPersonalCare, \
    MySocialHealth, MyManagement
+from mpowered_api.validators import validate_not_future, current_week_starting, \
+   current_value
 
 class PrescriptionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -8,33 +10,91 @@ class PrescriptionSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ['patient_profile']
 
+    def validate_dosage(self, dosage):
+        if dosage < 1:
+            raise serializers.ValidationError('Dosage must be at least 1.')
+        return dosage
+
+    def validate_frequency(self, frequency):
+        if frequency < 1:
+            raise serializers.ValidationError('Frequency must be at least 1.')
+        return frequency
+
+    # stopped_on cannot be before started_on
+    def validate(self, data):
+        started_on = current_value(self, data, 'started_on')
+        stopped_on = current_value(self, data, 'stopped_on')
+        if started_on and stopped_on and stopped_on < started_on:
+            raise serializers.ValidationError(
+                {'stopped_on':'Stop date cannot be before start date.'})
+        return data
+
 class AssessmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Assessment
         fields = '__all__'
         read_only_fields = ['patient_profile']
 
-class MyPainSerializer(serializers.ModelSerializer):
+    # week_starting must be a Monday, & no later than the current week
+    def validate_week_starting(self, week_starting):
+        if week_starting.weekday() != 0:
+            raise serializers.ValidationError('Week must start on a Monday.')
+        if week_starting > current_week_starting():
+            raise serializers.ValidationError('Week cannot be after the current week.')
+        return week_starting
+
+    def validate_submitted_at(self, submitted_at):
+        return validate_not_future(submitted_at)
+
+# assessment task serializers: completed_at cannot be in the future
+class AssessmentTaskSerializer(serializers.ModelSerializer):
+    def validate_completed_at(self, completed_at):
+        return validate_not_future(completed_at)
+
+class MyPainSerializer(AssessmentTaskSerializer):
     class Meta:
         model = MyPain
         fields = '__all__'
 
-class MyMovementSerializer(serializers.ModelSerializer):
+    # pain scores must be consistent: mildest <= average <= worst, mildest <= current <= worst
+    def validate(self, data):
+        current = current_value(self, data, 'current')
+        worst = current_value(self, data, 'worst')
+        average = current_value(self, data, 'average')
+        mildest = current_value(self, data, 'mildest')
+        errors = {}
+        if worst is not None and mildest is not None and mildest > worst:
+            errors['mildest'] = 'Mildest pain cannot be higher than worst pain.'
+        if average is not None:
+            if worst is not None and average > worst:
+                errors['average'] = 'Average pain cannot be higher than worst pain.'
+            elif mildest is not None and average < mildest:
+                errors['average'] = 'Average pain cannot be lower than mildest pain.'
+        if current is not None:
+            if worst is not None and current > worst:
+                errors['current'] = 'Current pain cannot be higher than worst pain.'
+            elif mildest is not None and current < mildest:
+                errors['current'] = 'Current pain cannot be lower than mildest pain.'
+        if errors:
+            raise serializers.ValidationError(errors)
+        return data
+
+class MyMovementSerializer(AssessmentTaskSerializer):
     class Meta:
         model = MyMovement
         fields = '__all__'
 
-class MyPersonalCareSerializer(serializers.ModelSerializer):
+class MyPersonalCareSerializer(AssessmentTaskSerializer):
     class Meta:
         model = MyPersonalCare
         fields = '__all__'
 
-class MySocialHealthSerializer(serializers.ModelSerializer):
+class MySocialHealthSerializer(AssessmentTaskSerializer):
     class Meta:
         model = MySocialHealth
         fields = '__all__'
 
-class MyManagementSerializer(serializers.ModelSerializer):
+class MyManagementSerializer(AssessmentTaskSerializer):
     class Meta:
         model = MyManagement
         fields = '__all__'
