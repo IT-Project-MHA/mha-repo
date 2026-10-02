@@ -1,9 +1,10 @@
 from django.shortcuts import render
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
+from rest_framework.permissions import IsAuthenticated, AllowAny, SAFE_METHODS
 from django.db.models import Q
 from rest_framework import serializers
-from .models import User, PatientProfile, UserSettings, SupportLink, TermsAndPrivacy
+from .models import User, PatientProfile, UserSettings, SupportLink, TermsAndPrivacy, \
+    PhoneVerification, TrustedDevice
 from .serializer import *
 from mpowered_api.immutable import save_without_immutable_changes
 from mpowered_api.protected import destroy_or_reject_protected
@@ -231,3 +232,33 @@ class TermsAndPrivacyRetrieve(generics.RetrieveAPIView):
         if document_type:
             query_set = query_set.filter(document_type = document_type)
         return query_set
+
+
+
+# PhoneVerification APIs:
+class PhoneVerificationCreate(generics.CreateAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = PhoneVerificationSerializer
+
+
+
+# TrustedDevice APIs:
+class TrustedDeviceListCreate(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = TrustedDeviceSerializer
+
+    def get_queryset(self):
+        return TrustedDevice.objects.filter(user = self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user = self.request.user)
+
+class TrustedDeviceRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = TrustedDeviceSerializer
+
+    def get_queryset(self):
+        return TrustedDevice.objects.filter(user = self.request.user)
+
+    def perform_update(self, serializer):
+        save_without_immutable_changes(serializer, ['user', 'device_id'])

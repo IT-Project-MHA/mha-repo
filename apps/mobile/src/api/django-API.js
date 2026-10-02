@@ -174,8 +174,8 @@ export async function apiUserSettings(operation, values) {
     - one of supporter_user or invited_phone_number is required, patient_profile 
       & patient_user are set to the user's own, status is set to INVITED
 - update: id NN, status, accepted_at, revoked_at
-    - patient_profile, patient_user, supporter_user, invited_phone_number, invited_at
-      cannot be changed, supporter can only update status (to 'active' or 'revoked')
+    - patient user cannot update their own SupportLinks
+    - supporter user can only update status (to 'active' or 'revoked')
 - delete: id NN
     - only patient can delete */
 export async function apiSupportLink(operation, values) {
@@ -190,6 +190,26 @@ export async function apiSupportLink(operation, values) {
 - delete: N/A NN */
 export async function apiTermsAndPrivacy(operation, values) {
     return operate('termsAndPrivacy', operation, values,  ['select', 'create']);
+}
+
+/* PhoneVerification:
+- create: phone_number NN
+    - phone_number must be local Australian number with no spaces
+    - code, attempts, used_at, expires_at are auto generated
+- select/update/delete: N/A */
+export async function apiPhoneVerification(operation, values) {
+    return operate('phoneVerification', operation, values, ['create']);
+}
+
+/* TrustedDevice:
+- select: id, or no filters (only returns own devices)
+- create: device_id NN, label
+    - user is set to the user's own, last_seen_at is auto updated
+- update: id NN, label, revoked_at
+    - user & device_id cannot be changed
+- delete: id NN */
+export async function apiTrustedDevice(operation, values) {
+    return operate('trustedDevice', operation, values);
 }
 
 /* Prescription:

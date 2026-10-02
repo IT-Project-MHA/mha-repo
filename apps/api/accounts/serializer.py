@@ -1,7 +1,7 @@
 from rest_framework import serializers
-from .models import User, PatientProfile, UserSettings, SupportLink, TermsAndPrivacy
-from mpowered_api.validators import validate_not_future, validate_phone_number, \
-   current_date
+from .models import User, PatientProfile, UserSettings, SupportLink, TermsAndPrivacy, \
+    PhoneVerification, TrustedDevice
+from mpowered_api.validators import validate_phone_number, current_date
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -49,3 +49,18 @@ class TermsAndPrivacySerializer(serializers.ModelSerializer):
         model = TermsAndPrivacy
         fields = '__all__'
         read_only_fields = ['user']
+
+class PhoneVerificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PhoneVerification
+        fields = '__all__'
+        read_only_fields = ['code', 'attempts', 'used_at', 'expires_at']
+
+    def validate_phone_number(self, phone_number):
+        return validate_phone_number(phone_number)
+
+class TrustedDeviceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TrustedDevice
+        fields = '__all__'
+        read_only_fields = ['user', 'last_seen_at']

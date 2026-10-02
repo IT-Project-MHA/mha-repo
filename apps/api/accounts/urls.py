@@ -32,5 +32,14 @@ urlpatterns = [
          name ='read_create_terms_and_privacy'),
     path('termsAndPrivacy/<str:pk>',
          views.TermsAndPrivacyRetrieve.as_view(),
-         name ='retrieve_terms_and_privacy')
+         name ='retrieve_terms_and_privacy'),
+    path('phoneVerification/',
+         views.PhoneVerificationCreate.as_view(),
+         name ='create_phone_verification'),
+    path('trustedDevice/',
+         views.TrustedDeviceListCreate.as_view(),
+         name ='read_create_trusted_device'),
+    path('trustedDevice/<str:pk>',
+         views.TrustedDeviceRetrieveUpdateDestroy.as_view(),
+         name ='update_trusted_device'),
 ]
