@@ -1,43 +1,46 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
-import { Router, useRouter } from 'expo-router';
-import ButtonWithIcon from '../../../../components/ButtonWithIcon';
-import { Stack } from 'expo-router';
-import Button from '../../../../components/Button';
-import ToggleButton from '../../../../components/ToggleButton'
 import ThemeToggle from '../../../../components/ThemeToggle'
-import { lightColours } from '../../../../constants/colourScheme';
-
-
+import TextDropdown from '../../../../components/TextDropdown'
+import ButtonWithIcon from '../../../../components/ButtonWithIcon';
+import ContrastToggle from '../../../../components/ContrastToggle';
 
 export default function Tab() {
-    const router = useRouter();
-    const {colours} = useTheme();
+    const {colours, setMode} = useTheme();
     const styles = createStyles(colours);
-    const {setMode} = useTheme();
+
+
 
   return (
     <View>
-      <Button
-	    label="light mode"
-	    onPress={() => setMode('light')}
-      buttonType="primaryButton"
-      textType='textOnPrimary'
+
+      <Text> </Text>
+
+      <View style={styles.row}>
+      <Text> click to turn on dark mode</Text>
+      
+      <ThemeToggle 
       />
+      </View>
+
+      <Text> </Text>
       <Text> </Text>
       
-      <View style={styles.row}>
-      <Button
-	    label="dark mode"
-	    onPress={() => setMode('dark')}
-      buttonType="primaryButton"
-      textType='textOnPrimary'
-      />
- 
-      <ThemeToggle>
-      </ThemeToggle>
 
-    </View>
+      <View style={styles.row}>
+
+      <Text> click to turn on high contrast</Text>
+      
+      <ContrastToggle/>
+
+      </View>
+
+      <Text> </Text>
+      <Text> </Text>
+     
+      <TextDropdown>
+
+      </TextDropdown>
 
     </View>
   );

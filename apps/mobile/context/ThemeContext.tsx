@@ -1,7 +1,17 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useMemo } from 'react';
 import { useColorScheme } from 'react-native';
 import { themes, ThemeMode, themeColours } from '../constants/theme';
-export { ColourSet } from '../constants/colourScheme';
+import type { ColourSet } from '../constants/colourScheme';
+export type { ColourSet } from '../constants/colourScheme';
+
+type ThemeContextType = {
+  theme: typeof themes.light;
+  colours: ColourSet;
+  mode: ThemeMode,
+  setMode: (mode: ThemeMode) => void;
+  isDark: boolean;
+  isHC: boolean;
+};
 
 /**
  * createContext creates a native context object, so information, variables
@@ -10,11 +20,13 @@ export { ColourSet } from '../constants/colourScheme';
  * Components can access this using useContext.
  * 
  */
-const ThemeContext = createContext({
+const ThemeContext = createContext<ThemeContextType>({
   theme: themes.light,
   colours: themeColours.light,
   mode: 'light' as ThemeMode,
   setMode: (mode: ThemeMode) => {},
+  isDark: false,
+  isHC: false,
 });
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
@@ -31,9 +43,21 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
    */
   const [mode, setMode] = useState<ThemeMode>(systemScheme === 'dark' ? 'dark' : 'light');
 
+  const value = useMemo<ThemeContextType>(
+          () => ({
+              theme: themes[mode],
+              colours: themeColours[mode],
+              mode,
+              setMode,
+              isDark: mode === 'dark' || mode === 'darkHC',
+              isHC: mode === 'darkHC' || mode === 'lightHC',
+          }),
+          [mode]
+      );
+
   return (
     // <ThemeContext.Provider> provides values to anything nested inside
-    <ThemeContext.Provider value={{ theme: themes[mode], colours: themeColours[mode], mode, setMode }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );

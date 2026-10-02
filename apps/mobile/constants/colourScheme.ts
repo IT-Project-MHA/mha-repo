@@ -49,7 +49,7 @@ export const lightColours: ColourSet = {
 export const darkColours: ColourSet = {
   background: '#1D1B20',
   surface: '#4a4459',
-  primary: '#6750A4',
+  primary: '#241943',
   secondary: '#e8def8',
   tertiary: '#4a4459',
   onBackground: '#FFFFFF',
@@ -85,9 +85,9 @@ export const lightHcColours: ColourSet = {
  * M3 / sys / dark / high contrast in figma
  */
 export const darkHcColours: ColourSet = {
-  background: '#FFFFFF',
+  background: '#070707',
   surface: '#F2F2F7',
-  primary: '#6750A4',
+  primary: '#4705fc',
   secondary: '#e8def8',
   tertiary: '#4a4459',
   onBackground: '#000000',

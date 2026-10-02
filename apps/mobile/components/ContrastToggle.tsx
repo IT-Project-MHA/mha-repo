@@ -6,30 +6,34 @@ import { StyleSheet, Switch, View, Text } from 'react-native';
 import { useTheme, ColourSet} from '../context/ThemeContext';
 
 
-const ThemeToggle = () => {
-    const {colours, setMode, isHC, isDark} = useTheme();
+const ContrastToggle = () => {
+    const {colours, setMode, isDark, isHC} = useTheme();
     const styles = createStyles(colours);
 
     // isEnabled is true when the switch is off
     const [isEnabled, setIsEnabled] = useState(false);
 
-    // function that runs when the toggle is pressed
-    // changed between light and dark mode
+
+    /**
+     * function that runs when the toggle is pressed
+     * Normal constrast -> high contrast
+     * @param newValue 
+     */
     const toggleColour = (newValue: boolean) => {
         setIsEnabled(newValue);
         if (isEnabled){
-            if (isHC){
-                setMode('lightHC');
+            if (isDark){
+                setMode('dark');
             }else{
                 setMode('light');
-            }
+            } 
         }
-        else{
-            if (isHC){
+        else{ // when you press the toggle it goes to high contrast
+             if (isDark){
                 setMode('darkHC');
             }else{
-                setMode('dark');
-            }
+                setMode('lightHC');
+            } 
         } 
     };
 
@@ -47,7 +51,7 @@ const ThemeToggle = () => {
   );
 }
 
-export default ThemeToggle;
+export default ContrastToggle;
 
 function createStyles(colours: ColourSet){
     return StyleSheet.create({
