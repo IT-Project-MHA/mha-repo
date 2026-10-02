@@ -21,9 +21,6 @@ from datetime import date
 
 
 # QuestionOption APIs:
-# - select: must filter by app_section, question_key
-# - insert/update/delete: N/A, edit reference data through Django admin at /admin/
-
 class QuestionOptionList(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = QuestionOptionSerializer
@@ -45,9 +42,6 @@ class QuestionOptionRetrieve(generics.RetrieveAPIView):
     serializer_class = QuestionOptionSerializer
 
 # QuestionOptionOrdered APIs:
-# - select: must filter by app_section, question_key
-# - insert/update/delete: N/A, edit reference data through Django admin at /admin/
-
 class QuestionOptionOrderedList(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = QuestionOptionOrderedSerializer

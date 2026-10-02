@@ -386,7 +386,7 @@ export async function apiQuestionOptionOrdered(operation, values) {
 - create: action NN, target_type NN, target_id, patient_profile, audit_label, occurred_at,
           context
     - audit_user is set to the user
-    - patient_profile must be the user's own or one the user actively supports
+    - patient_profile must be the user's own
 - update/delete: N/A */
 export async function apiAuditEntry(operation, values) {
     return operate('auditEntry', operation, values, ['select', 'create']);
