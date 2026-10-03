@@ -49,7 +49,76 @@ const createTheme = (colours: ColourSet) =>
     transparentButton:{
       backgroundColor: 'transparent',
       ...transparentButtonLayout,
-    }
+    },
+    container: {
+      justifyContent: 'center',
+      backgroundColor: colours.surface,
+      paddingBlock: '6%', //lit
+      alignSelf: 'center',
+      width: '85%', // of page
+    
+      borderRadius: 28,
+ 
+      overflow: 'hidden',
+
+      shadowColor: colours.tertiary,
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.15,
+      shadowRadius: 16,
+      elevation: 4,
+    },
+    line: {
+      height: 2,
+      backgroundColor: colours.onBackground,
+      width: '90%',
+      borderRadius: 300,
+      alignSelf: 'center',
+
+    },
+    centerItemsHorizontal: {
+      alignItems: 'center',
+    },
+    clearContainer: {
+      justifyContent: 'center',
+      backgroundColor:'transparent',
+      paddingBlock: 30, //lit
+      alignSelf: 'center',
+      width: '85%', // of page
+
+      borderRadius: 28,
+      borderTopWidth: 0,     
+      borderBottomWidth: 0, 
+ 
+      overflow: 'hidden',
+    },
+    // for use within a container
+    centerText: {
+      textAlign: 'center',
+    },
+    leftText: {
+      textAlign: 'left',
+      paddingHorizontal: '5%',
+    },
+    rightText: {
+      textAlign: 'right',
+      paddingHorizontal: '5%',
+    },
+    centerItems: {
+      alignItems: 'center',
+    },
+    leftItems: {
+      alignItems: 'flex-start',
+    },
+    rightItems: {
+      alignItems: 'flex-end',
+    },
+    // places items within view in a row,
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      alignSelf: 'stretch',
+    },
   });
 
 /**
