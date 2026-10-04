@@ -4,6 +4,8 @@ from django.utils import timezone
 from accounts.models import SupportLink
 from appointment.models import Appointment, AppointmentAccess
 
+from audit.models import AuditEntry
+from audit.services import record
 
 class GrantError(Exception):
     # Grant refused
@@ -12,7 +14,7 @@ class GrantError(Exception):
         self.reason = reason
 
 
-def grant_access(appointment, support_link_id, can_add_questions, can_record_answers):
+def grant_access(appointment, support_link_id, can_add_questions, can_record_answers, actor):
 
     # Give a supporter access to appointment or update their flags if they already have it
     # The supporter must have accepted the support link first
@@ -37,6 +39,7 @@ def grant_access(appointment, support_link_id, can_add_questions, can_record_ans
             grant.can_add_questions = can_add_questions
             grant.can_record_answers = can_record_answers
             grant.save(update_fields = ["can_add_questions", "can_record_answers", "updated_at"])
+            record(actor, AuditEntry.Action.UPDATE, grant)
             return grant, False
 
         grant = AppointmentAccess.objects.create(
@@ -46,10 +49,12 @@ def grant_access(appointment, support_link_id, can_add_questions, can_record_ans
             can_record_answers = can_record_answers,
         )
 
+        record(actor, AuditEntry.Action.GRANT, grant)
+
     return grant, True
 
 
-def revoke_access(appointment, grant_pk):
+def revoke_access(appointment, grant_pk, actor):
 
     # Revoke a supporter's access to one appointment or sets revoked instead of deleting so there's a record
     # Returns False if there's no live grant
@@ -59,7 +64,9 @@ def revoke_access(appointment, grant_pk):
     if grant is None:
         return False
 
-    grant.revoked_at = timezone.now()
-    grant.save(update_fields = ["revoked_at", "updated_at"])
+    with transaction.atomic():
+        grant.revoked_at = timezone.now()
+        grant.save(update_fields = ["revoked_at", "updated_at"])
+        record(actor, AuditEntry.Action.REVOKE, grant)
 
     return True

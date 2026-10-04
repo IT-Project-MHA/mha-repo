@@ -8,6 +8,9 @@ from rest_framework.authtoken.models import Token
 from accounts.models import PatientProfile, PhoneVerification, TermsAndPrivacy, User, UserSettings
 from accounts import devices
 
+from audit.models import AuditEntry
+from audit.services import record
+
 VERIFICATION_WINDOW = timedelta(minutes = 10)
 
 class RegistrationError(Exception):
@@ -69,7 +72,8 @@ def register_user(verification_id, device_id, phone_number, display_name, pin, t
             )
 
             if track_health:
-                create_patient_profile(user, health or {})
+                profile = create_patient_profile(user, health or {})
+                record(user, AuditEntry.Action.CREATE, profile)
 
             devices.trust_device(user, device_id)
 

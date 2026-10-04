@@ -13,11 +13,13 @@ from reference.models import QuestionOption
 from accounts import permissions
 from appointment.models import AppointmentAccess, Appointment
 
+from audit.models import AuditEntry
+
 PHONE = "+61400000000"
 CODE = "123456"
 WRONG_CODE = "000000"
 PIN = "196712"
-NEW_PIN = "918273"
+NEW_PIN = "123433"
 DEVICE = "josh-phone"
 
 
@@ -210,7 +212,16 @@ class RegisterTests(APITestCase):
         self.register()
         self.assertTrue(TrustedDevice.objects.filter(user = User.objects.get(), device_id = DEVICE).exists())
 
+    def test_health_is_audited(self):
+        self.register(track_health = True)
+        entry = AuditEntry.objects.get()
+        self.assertEqual(entry.action, AuditEntry.Action.CREATE)
+        self.assertEqual(entry.target_type, AuditEntry.Target.PATIENT_PROFILE)
+        self.assertEqual(entry.audit_user, User.objects.get())
 
+    def test_no_audit_without_health(self):
+        self.register()
+        self.assertFalse(AuditEntry.objects.exists())
 
 # Login and Logout Tests
 class LoginTests(APITestCase):
@@ -305,6 +316,7 @@ class LoginTests(APITestCase):
         TrustedDevice.objects.update(last_seen_at = old)
         self.login()
         self.assertGreater(TrustedDevice.objects.get().last_seen_at, old)
+
 
 class DeviceTests(APITestCase):
     # GET /auth/devices

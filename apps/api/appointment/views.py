@@ -11,7 +11,7 @@ from appointment.serializers import AppointmentAccessSerializer, GrantAccessSeri
 
 
 def get_own_appointment(user, appointment_pk):
-    
+
     appointment = Appointment.objects.filter(pk = appointment_pk, deleted_at__isnull = True).first()
 
     if appointment is None or not can_edit_patient_data(user, appointment.patient_profile):
@@ -43,6 +43,7 @@ class GrantAccessView(APIView):
                 support_link_id = data["support_link_id"],
                 can_add_questions = data["can_add_questions"],
                 can_record_answers = data["can_record_answers"],
+                actor = request.user
             )
         except grants.GrantError as error:
             return Response({"detail": error.reason}, status = status.HTTP_400_BAD_REQUEST)
@@ -64,7 +65,7 @@ class RevokeAccessView(APIView):
     def post(self, request, appointment_pk, grant_pk):
         appointment = get_own_appointment(request.user, appointment_pk)
 
-        if appointment is None or not grants.revoke_access(appointment, grant_pk):
+        if appointment is None or not grants.revoke_access(appointment, grant_pk, request.user):
             return Response({"detail": "not_found"}, status = status.HTTP_404_NOT_FOUND)
 
         return Response(status = status.HTTP_204_NO_CONTENT)

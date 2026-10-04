@@ -7,7 +7,9 @@ from accounts import permissions
 from accounts.models import PatientProfile, SupportLink, User
 from appointment.models import Appointment, AppointmentAccess
 
-PIN = "123456"
+from audit.models import AuditEntry
+
+PIN = "196712"
 
 # Grant Tests
 class GrantAccessTests(APITestCase):
@@ -32,7 +34,7 @@ class GrantAccessTests(APITestCase):
     def add_supporter(self, phone, status):
         supporter = User.objects.create_user(phone, "Supporter", PIN)
         link = SupportLink.objects.create(patient_profile = self.profile, patient_user = self.patient, 
-                                          supporter_user = supporter, status = status,
+                                          supporter_user = supporter, status = status
         )
         return supporter, link
 
@@ -107,3 +109,29 @@ class GrantAccessTests(APITestCase):
     def test_needs_login(self):
         self.client.credentials()
         self.assertEqual(self.grant(self.link).status_code, 401)
+
+# Audit Tests
+
+    def test_grant_is_audited(self):
+        self.grant(self.link, can_add_questions = True)
+        entry = AuditEntry.objects.get()
+        self.assertEqual(entry.action, AuditEntry.Action.GRANT)
+        self.assertEqual(entry.target_type, AuditEntry.Target.APPOINTMENT_ACCESS)
+        self.assertEqual(entry.audit_user, self.patient)
+        self.assertEqual(entry.patient_profile, self.profile)
+
+    def test_change_is_audited(self):
+        self.grant(self.link)
+        self.grant(self.link, can_record_answers = True)
+        actions = list(AuditEntry.objects.order_by("occurred_at").values_list("action", flat = True))
+        self.assertEqual(actions, [AuditEntry.Action.GRANT, AuditEntry.Action.UPDATE])
+
+    def test_revoke_audited(self):
+        grant_id = self.grant(self.link).data["id"]
+        self.revoke(grant_id)
+        self.assertTrue(AuditEntry.objects.filter(action = AuditEntry.Action.REVOKE).exists())
+
+    def test_refused_grant_not_audited(self):
+        _, invited_link = self.add_supporter("+61422222222", SupportLink.Status.INVITED)
+        self.grant(invited_link)
+        self.assertFalse(AuditEntry.objects.exists())
