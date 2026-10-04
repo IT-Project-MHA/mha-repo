@@ -15,7 +15,7 @@ from appointment.models import AppointmentAccess, Appointment
 
 from audit.models import AuditEntry
 
-PHONE = "+61400000000"
+PHONE = "+61490813123"
 CODE = "123456"
 WRONG_CODE = "000000"
 PIN = "196712"
@@ -577,3 +577,63 @@ class PermissionTests(APITestCase):
 
         self.assertTrue(check.has_object_permission(supporter_get, None, self.appointment))
         self.assertFalse(check.has_object_permission(supporter_get, None, self.other_appointment))
+
+
+class PhoneNumberTests(APITestCase):
+
+    def setUp(self):
+        cache.clear()
+
+    def request_code(self, phone):
+        with mock.patch("accounts.otp.create_otp", return_value = CODE):
+            return self.client.post("/auth/request-code", {"phone_number": phone}, format = "json")
+
+    def test_any_format_saved_the_same(self):
+        self.request_code("0490 813 123")
+        self.assertEqual(PhoneVerification.objects.get().phone_number, PHONE)
+
+    def test_not_a_phone_number(self):
+        response = self.request_code("josh")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("phone_number", response.data)
+        self.assertFalse(PhoneVerification.objects.exists())
+
+    def test_landline_rejected(self):
+        response = self.request_code("03 9081 3123")
+        self.assertEqual(response.status_code, 400)
+
+    def test_phone_number_different_formatting(self):
+        self.request_code(PHONE)
+        response = self.request_code("0490-813-123")
+        self.assertEqual(response.status_code, 429)
+
+    def test_login_with_local_format(self):
+        user = User.objects.create_user(PHONE, "Josh", PIN)
+        TrustedDevice.objects.create(user = user, device_id = DEVICE)
+        response = self.client.post(
+            "/auth/login", {"phone_number": "0490 813 123", "pin": PIN, "device_id": DEVICE}, format = "json"
+        )
+        self.assertEqual(response.status_code, 200)
+
+
+
+class MissingFieldTests(APITestCase):
+    # Check every endpoint rejects a request missing a field
+
+    def setUp(self):
+        cache.clear()
+
+    def test_missing_fields(self):
+        cases = [
+            ("/auth/request-code", {}, "phone_number"),
+            ("/auth/verify-code", {"phone_number": PHONE}, "otp"),
+            ("/auth/register", {"phone_number": PHONE, "pin": PIN}, "display_name"),
+            ("/auth/login", {"phone_number": PHONE, "device_id": DEVICE}, "pin"),
+            ("/auth/reset-pin", {"phone_number": PHONE, "pin": PIN, "device_id": DEVICE}, "verification_id"),
+        ]
+
+        for url, body, missing in cases:
+            with self.subTest(url = url):
+                response = self.client.post(url, body, format = "json")
+                self.assertEqual(response.status_code, 400)
+                self.assertIn(missing, response.data)

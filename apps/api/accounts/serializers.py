@@ -4,10 +4,28 @@ from accounts.otp import OTP_LENGTH
 from accounts.models import PatientProfile, TrustedDevice
 from reference.models import QuestionOption
 
+from accounts.phone_normaliser import normalise_phone_number
+
 PIN_LENGTH = 6
 
+class PhoneNumberField(serializers.CharField):
+
+    default_error_messages = {"invalid_phone": "Enter an Australian mobile number."}
+
+    def __init__(self, **kwargs):
+        kwargs.setdefault("max_length", 20)
+        super().__init__(**kwargs)
+
+    def to_internal_value(self, data):
+        phone_number = normalise_phone_number(super().to_internal_value(data))
+
+        if phone_number is None:
+            self.fail("invalid_phone")
+
+        return phone_number
+    
 class RequestCodeSerializer(serializers.Serializer):
-    phone_number = serializers.CharField(max_length = 20)
+    phone_number = PhoneNumberField()
 
 
 class VerifyCodeSerializer(RequestCodeSerializer):
@@ -31,7 +49,7 @@ class HealthDetailsSerializer(serializers.ModelSerializer):
 
 class RegisterSerializer(serializers.Serializer):
     verification_id = serializers.UUIDField()
-    phone_number = serializers.CharField(max_length = 20)
+    phone_number = PhoneNumberField()
     display_name = serializers.CharField(max_length = 120)
     pin = serializers.RegexField(rf"^\d{{{PIN_LENGTH}}}$", write_only = True)
     accepted_terms = serializers.BooleanField()
@@ -64,7 +82,7 @@ class RegisterSerializer(serializers.Serializer):
 
 
 class LoginSerializer(serializers.Serializer):
-    phone_number = serializers.CharField(max_length = 20)
+    phone_number = PhoneNumberField()
     pin = serializers.RegexField(rf"^\d{{{PIN_LENGTH}}}$", write_only = True)
     device_id = serializers.CharField(max_length = 128)
 
@@ -79,7 +97,7 @@ class TrustedDeviceSerializer(serializers.ModelSerializer):
 
 
 class ResetPinSerializer(serializers.Serializer):
-    phone_number = serializers.CharField(max_length = 20)
+    phone_number = PhoneNumberField()
     verification_id = serializers.UUIDField()
     pin = serializers.RegexField(rf"^\d{{{PIN_LENGTH}}}$", write_only = True)
     device_id = serializers.CharField(max_length = 128)

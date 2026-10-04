@@ -110,6 +110,12 @@ class GrantAccessTests(APITestCase):
         self.client.credentials()
         self.assertEqual(self.grant(self.link).status_code, 401)
 
+    def test_revoke_needs_login(self):
+        grant_id = self.grant(self.link).data["id"]
+        self.client.credentials()
+        self.assertEqual(self.revoke(grant_id).status_code, 401)
+        self.assertIsNone(AppointmentAccess.objects.get().revoked_at)
+
 # Audit Tests
 
     def test_grant_is_audited(self):
