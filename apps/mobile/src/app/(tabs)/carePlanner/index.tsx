@@ -1,16 +1,17 @@
 /**
- * All user types have access to this scree
+ * All user types have access to this screen
  */
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme, ColourSet } from '../../../context/ThemeContext';
-import { textLayout } from '../../../constants/layout';
+import { useRouter } from 'expo-router';
+import Button from '../../../../components/atomicUI/Button';
+import { useTheme, ColourSet } from '../../../../context/ThemeContext';
+import { textLayout } from '../../../../constants/layout';
 
-const CARDS = ['My Appointments', 'Shared With You'];
-
-export default function Tab() {
+export default function Screen() {
   const { colours } = useTheme();
   const styles = createStyles(colours);
+  const router = useRouter();
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
@@ -18,11 +19,18 @@ export default function Tab() {
         <Text style={styles.headline}>Your Care Planner</Text>
         <Text style={styles.body}>Prepare for your appointments with confidence.</Text>
 
-        {CARDS.map((title) => (
-          <View key={title} style={styles.filledCard}>
-            <Text style={styles.cardTitle}>{title}</Text>
-          </View>
-        ))}
+        <View style={styles.filledCard}>
+          <Text style={styles.cardTitle}>My Appointments</Text>
+          <Button
+            label="Create new appointment"
+            onPress={() => router.push('/carePlanner/createAppointment')}
+            buttonType="primaryButton"
+          />
+        </View>
+
+        <View style={styles.filledCard}>
+          <Text style={styles.cardTitle}>Shared With You</Text>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -61,6 +69,7 @@ function createStyles(colours: ColourSet) {
       backgroundColor: colours.surface,
       borderRadius: 8,
       padding: 16,
+      gap: 12,
     },
 
     cardTitle: {
