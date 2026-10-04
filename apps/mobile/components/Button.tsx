@@ -21,7 +21,6 @@ type ButtonProps = {
   label: string;
   onPress: () => void;
   buttonType: ButtonType;
-  textType: TextType;
 };
 
 /**
@@ -34,7 +33,7 @@ type ButtonProps = {
  * @param textType string that maps to a text type, defined in theme.ts
  * @returns a styled button component, which performs some funtion when pressed
  */
-const Button = ({label, onPress, buttonType, textType}: ButtonProps) => {
+const Button = ({label, onPress, buttonType}: ButtonProps) => {
   const { theme } = useTheme();
 
   return (
@@ -43,7 +42,7 @@ const Button = ({label, onPress, buttonType, textType}: ButtonProps) => {
       style={theme[buttonType]}
       onPress={onPress}
     >
-    <Text style={theme[textType]}>{label}</Text>
+    <Text style={theme.h6}>{label}</Text>
     
     </TouchableOpacity>
   );

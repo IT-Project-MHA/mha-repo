@@ -3,7 +3,6 @@
   import { Dropdown } from 'react-native-element-dropdown';
   import { useTheme, ColourSet } from '../context/ThemeContext';
 
-
   const data = [
     { label: 'Size 1', value: 1 },
     { label: 'Size 2', value: 1.5 },
@@ -13,17 +12,17 @@
 
   const DropdownComponent = () => {
     const [value] = useState(null);
-    const {colours, setFontScale }= useTheme();
+    const {colours, setFontScale, theme}= useTheme();
     const styles = createStyles(colours);
 
     return (
       <Dropdown
         style={styles.dropdown}
-        placeholderStyle={styles.placeholderStyle}
-        selectedTextStyle={styles.selectedTextStyle}
-        inputSearchStyle={styles.inputSearchStyle}
+        placeholderStyle={theme.body}
+        selectedTextStyle={theme.body}
+        inputSearchStyle={theme.body}
         data={data}
-        maxHeight={300}
+        minHeight={300}
         labelField="label"
         valueField="value"
         placeholder="Select Size"
@@ -82,12 +81,6 @@ function createStyles(colours: ColourSet){
     },
     icon: {
       marginRight: 5,
-    },
-    placeholderStyle: {
-      fontSize: 16,
-    },
-    selectedTextStyle: {
-      fontSize: 16,
     },
     inputSearchStyle: {
       height: 0,

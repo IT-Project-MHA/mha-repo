@@ -1,7 +1,10 @@
-import { Stack } from 'expo-router'
+import { Stack} from 'expo-router'
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, ScrollView } from 'react-native';
 import BlurView from 'expo-blur';
+import { useRouter } from 'expo-router';
+import { Typography, TextSizeSet } from '../../../../constants/textSize';
+
 
 /**
  * Defines the structure of the screens within the settings page.
@@ -11,16 +14,19 @@ import BlurView from 'expo-blur';
  * @returns screens which correspond to different files as screens.
  */
 export default function ScreenLayout() {
-  const {colours} = useTheme();
-  const styles = createStyles(colours);
+  const {colours, theme} = useTheme();
+  const styles = createStyles(colours, theme);
+
 
   return (
-    // TO DO: fill this out properly
-
     <Stack 
       screenOptions={{
-        title: 'Back',
         headerStyle: styles.headerStyle,
+        headerTintColor: colours.onBackground,
+        headerTitleStyle: {
+          fontSize: theme.h4.fontSize,
+          fontWeight: theme.h4.fontWeight,
+        },
         contentStyle: { backgroundColor: colours.background},
       }}
     >
@@ -73,14 +79,15 @@ export default function ScreenLayout() {
         }}
       />
     </Stack>
-    
+
+   
   );
 }
 
 //** 
 // TO DO: ADD TO GLOBAL STYLE SHEET (header should be consistent through app)
 // */
-function createStyles(colours: ColourSet){
+function createStyles(colours: ColourSet, theme: Typography){
     return StyleSheet.create({
 
       headerStyle: {
@@ -88,6 +95,7 @@ function createStyles(colours: ColourSet){
         // blur???? (semi transparent)
         backgroundColor: colours.background,
         borderBottomWidth: 0, 
+        minHeight: 80,
     },
 });
  }

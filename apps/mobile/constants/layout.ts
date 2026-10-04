@@ -6,6 +6,8 @@
  * To be edited as new components are created, alongside theme.ts.
  */
 
+import { BottomTabs } from "react-native-screens";
+
 
 /**
  * Basic button layout
@@ -15,13 +17,6 @@ export const buttonLayout = {
   paddingHorizontal: 55, 
   borderRadius: 8,
   alignItems: 'center' as const,
-};
-
-/**
- * Basic text layout
- */
-export const textLayout = {
-  fontSize: 18,
 };
 
 /**
