@@ -25,7 +25,7 @@ export type FontScale = 1 | 1.5 | 2 | 2.5;
   h1: {fontSize: 47.78, lineHeight: 50, fontWeight: 'regular' },
   h2: {fontSize: 39.8, lineHeight: 40, fontWeight: 'regular' },
   h3: {fontSize: 33.18, lineHeight: 35, fontWeight: 'regular' },
-  h4: {fontSize: 27.65, lineHeight: 28, fontWeight: 'regular' },
+  h4: {fontSize: 27.65, lineHeight: 30, fontWeight: 'regular' },
   h5: {fontSize: 23.04, lineHeight: 26, fontWeight: 'regular' },
   h6: {fontSize: 19.2, lineHeight: 28, fontWeight: 'regular' },
   body: {fontSize: 16, lineHeight: 20, fontWeight: 'regular' },
@@ -48,7 +48,7 @@ export function createTypography(scale: FontScale): Typography {
     scaledText[key] ={
       ...baseFeatures,
       fontSize: baseFeatures.fontSize*scale,
-      lineHeight: baseFeatures.lineHeight*scale
+      //lineHeight: baseFeatures.lineHeight*scale
     };
   });
   return scaledText;
