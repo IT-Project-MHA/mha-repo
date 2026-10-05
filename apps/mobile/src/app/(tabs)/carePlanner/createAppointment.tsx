@@ -51,82 +51,86 @@ export default function Screen() {
   };
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Text style={styles.heading}>Appointment date</Text>
-      <DatePickerInput
-        locale="en-GB"
-        inputMode="start"
-        value={date}
-        onChange={(newDate) => {
-          setDate(newDate);
-          if (newDate) setShowError(false);
-        }}
-        validRange={{ startDate: startOfToday() }}
-        placeholder="Pick appointment date"
-        withDateFormatInLabel={false}
-        style={styles.dateInput}
-        // hides the M3 underline so the field matches the other rounded boxes
-        underlineColor="transparent"
-        activeUnderlineColor="transparent"
-      />
+    <View style={styles.screen}>
+      <ScrollView contentContainerStyle={styles.content}>
+        <Text style={styles.heading}>Appointment date</Text>
+        <DatePickerInput
+          locale="en-GB"
+          inputMode="start"
+          value={date}
+          onChange={(newDate) => {
+            setDate(newDate);
+            if (newDate) setShowError(false);
+          }}
+          validRange={{ startDate: startOfToday() }}
+          placeholder="Pick appointment date"
+          withDateFormatInLabel={false}
+          style={styles.dateInput}
+          underlineColor="transparent"
+          activeUnderlineColor="transparent"
+        />
 
-      <View>
-        <Text style={styles.heading}>Doctor's name</Text>
-        <Text style={styles.subheading}>Optional</Text>
-      </View>
-      <TextInput
-        style={[styles.field, styles.input]}
-        value={doctor}
-        onChangeText={setDoctor}
-        placeholder="Doctor's name"
-        placeholderTextColor={paperColours.onSurfaceVariant}
-      />
-
-      <View>
-        <Text style={styles.heading}>Health services</Text>
-        <Text style={styles.subheading}>Optional</Text>
-      </View>
-      <TouchableOpacity
-        style={[styles.field, styles.dropdown]}
-        onPress={() => setDropdownOpen(!dropdownOpen)}
-      >
-        <Text
-          style={
-            service ? styles.input : [styles.placeholder, { color: paperColours.onSurfaceVariant }]
-          }
-        >
-          {service ?? 'Select a health service'}
-        </Text>
-        <Text style={styles.input}>{dropdownOpen ? '▲' : '▼'}</Text>
-      </TouchableOpacity>
-      {dropdownOpen && (
-        // all options in one box, separated by dividers
-        <View style={styles.optionList}>
-          {HEALTH_SERVICES.map((option, index) => (
-            <TouchableOpacity
-              key={option}
-              style={[
-                styles.optionRow,
-                index > 0 && styles.divider,
-                service === option && styles.selectedRow, // highlights selected option
-              ]}
-              onPress={() => handleSelect(option)}
-            >
-              <Text style={[styles.input, service === option && styles.selectedText]}>
-                {option}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        <View>
+          <Text style={styles.heading}>Doctor's name</Text>
+          <Text style={styles.subheading}>Optional</Text>
         </View>
-      )}
+        <TextInput
+          style={[styles.field, styles.input]}
+          value={doctor}
+          onChangeText={setDoctor}
+          placeholder="Doctor's name"
+          placeholderTextColor={paperColours.onSurfaceVariant}
+        />
 
-      {showError && (
-        <Text style={[styles.error, { color: paperColours.error }]}>
-          Please fill in all mandatory fields
-        </Text>
-      )}
-      <Button label="Save" onPress={handleSubmit} buttonType="primaryButton" />
-    </ScrollView>
+        <View>
+          <Text style={styles.heading}>Health services</Text>
+          <Text style={styles.subheading}>Optional</Text>
+        </View>
+        <TouchableOpacity
+          style={[styles.field, styles.dropdown]}
+          onPress={() => setDropdownOpen(!dropdownOpen)}
+        >
+          <Text
+            style={
+              service
+                ? styles.input
+                : [styles.placeholder, { color: paperColours.onSurfaceVariant }]
+            }
+          >
+            {service ?? 'Select a health service'}
+          </Text>
+          <Text style={styles.input}>{dropdownOpen ? '▲' : '▼'}</Text>
+        </TouchableOpacity>
+        {dropdownOpen && (
+          <View style={styles.optionList}>
+            {HEALTH_SERVICES.map((option, index) => (
+              <TouchableOpacity
+                key={option}
+                style={[
+                  styles.optionRow,
+                  index > 0 && styles.divider,
+                  service === option && styles.selectedRow, // highlights selected option
+                ]}
+                onPress={() => handleSelect(option)}
+              >
+                <Text style={[styles.input, service === option && styles.selectedText]}>
+                  {option}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </ScrollView>
+
+      <View style={styles.bottomBar}>
+        {showError && (
+          <Text style={[styles.error, { color: paperColours.error }]}>
+            Please fill in all mandatory fields
+          </Text>
+        )}
+        <Button label="Save" onPress={handleSubmit} buttonType="primaryButton" />
+      </View>
+    </View>
   );
 }
 
@@ -140,7 +144,14 @@ function createStyles(colours: ColourSet) {
     content: {
       paddingHorizontal: 16,
       paddingTop: 24,
+      paddingBottom: 16,
       gap: 12,
+    },
+
+    bottomBar: {
+      paddingHorizontal: 16,
+      marginBottom: 44,
+      gap: 8,
     },
 
     heading: {
@@ -159,7 +170,6 @@ function createStyles(colours: ColourSet) {
       padding: 12,
     },
 
-    // overflow hidden rounds the bottom corners, which Paper leaves square for the underline
     dateInput: {
       backgroundColor: colours.surface,
       borderRadius: 8,
@@ -185,7 +195,6 @@ function createStyles(colours: ColourSet) {
       alignItems: 'center',
     },
 
-    // overflow hidden keeps the highlighted row inside the rounded corners
     optionList: {
       backgroundColor: colours.surface,
       borderRadius: 8,

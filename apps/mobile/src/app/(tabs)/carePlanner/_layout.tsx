@@ -35,6 +35,18 @@ export default function CarePlannerLayout() {
         name="addSupportPerson"
         options={{ title: 'Add a Support Person' }}
       />
+      <Stack.Screen
+        name="addSupportPerson1"
+        options={{ title: 'Add Support Person 1' }}
+      />
+      <Stack.Screen
+        name="addSupportPerson2"
+        options={{ title: 'Add Support Person 2' }}
+      />
+      <Stack.Screen
+        name="mySupportLinks"
+        options={{ title: 'My Support Links' }}
+      />
     </Stack>
   );
 }

@@ -49,7 +49,9 @@ export default function Screen() {
             onPress={() => {}}
             buttonType="primaryButton"
           />
-          <Text style={styles.sectionHeading}>Recent appointments</Text>
+          <Text style={styles.sectionHeading}>
+            {APPOINTMENTS.length > 0 ? 'Recent appointments' : 'You have no appointments'}
+          </Text>
           {APPOINTMENTS.map((appointment) => (
             <View key={appointment.id} style={styles.appointmentCard}>
               <Text style={styles.appointmentDate}>{formatDate(appointment.scheduled_date)}</Text>

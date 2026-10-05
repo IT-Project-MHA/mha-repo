@@ -6,6 +6,7 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
+import { textLayout } from '../../../../constants/layout';
 
 export default function Screen() {
   const { colours } = useTheme();
@@ -13,28 +14,45 @@ export default function Screen() {
   const router = useRouter();
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Text style={styles.body}>You can nominate someone to help you prepare for your appointment 
+    <View style={styles.screen}>
+      <ScrollView contentContainerStyle={styles.content}>
+        <Text style={styles.body}>You can nominate someone to help you prepare for your appointment 
         or you can skip below.</Text>
+
+        <View style={{ gap: 8, marginTop: 8 }}>
+          <Text style={styles.heading}>Support Person 1</Text>
+          <Button
+            label="Add person 1"
+            onPress={() => router.push('/carePlanner/addSupportPerson1')}
+            buttonType="primaryButton"
+          />
+        </View>
+
+        <View style={{ gap: 8, marginTop: 8 }}>
+          <Text style={styles.heading}>Support Person 2</Text>
+          <Button
+            label="Add person 2"
+            onPress={() => router.push('/carePlanner/addSupportPerson2')}
+            buttonType="primaryButton"
+          />
+        </View>
+      </ScrollView>
 
       <View style={styles.buttonRow}>
         <Button
           label="Skip"
-          // returns to the care planner, closing this page
           onPress={() => router.dismissTo('/carePlanner')}
           buttonType="secondaryButton"
           style={styles.rowButton}
         />
         <Button
           label="Save"
-          onPress={() => {
-            // no support person selection yet
-          }}
+          onPress={() => {}}
           buttonType="primaryButton"
           style={styles.rowButton}
         />
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -65,9 +83,16 @@ function createStyles(colours: ColourSet) {
       color: colours.onBackground,
     },
 
+    heading: {
+      ...textLayout,
+      color: colours.onBackground,
+    },
+
     buttonRow: {
       flexDirection: 'row',
       gap: 12,
+      paddingHorizontal: 16,
+      marginBottom: 44, // nav bar: 28 + extra 16 gap
     },
 
     rowButton: {
