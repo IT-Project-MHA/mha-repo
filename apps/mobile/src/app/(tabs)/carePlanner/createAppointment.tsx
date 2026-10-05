@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
+import { DatePickerInput } from 'react-native-paper-dates';
 import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
@@ -13,12 +14,19 @@ const HEALTH_SERVICES = [
   'Other',
 ];
 
+// start of today, appointments cannot be scheduled in the past
+const startOfToday = () => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
+};
+
 export default function Screen() {
   const { colours } = useTheme();
   const styles = createStyles(colours);
   const router = useRouter();
 
-  const [date, setDate] = useState('');
+  const [date, setDate] = useState<Date | undefined>(undefined);
   const [doctor, setDoctor] = useState('');
   // null until a service is chosen
   const [service, setService] = useState<string | null>(null);
@@ -38,12 +46,18 @@ export default function Screen() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Text style={styles.heading}>Appointment date</Text>
-      <TextInput
-        style={[styles.field, styles.input]}
+      <DatePickerInput
+        locale="en-GB"
+        inputMode="start"
         value={date}
-        onChangeText={setDate}
+        onChange={setDate}
+        validRange={{ startDate: startOfToday() }}
         placeholder="Pick appointment date"
-        placeholderTextColor={colours.ex3}
+        withDateFormatInLabel={false}
+        style={styles.dateInput}
+        // hides the M3 underline so the field matches the other rounded boxes
+        underlineColor="transparent"
+        activeUnderlineColor="transparent"
       />
 
       <View>
@@ -124,6 +138,13 @@ function createStyles(colours: ColourSet) {
       backgroundColor: colours.surface,
       borderRadius: 8,
       padding: 12,
+    },
+
+    // overflow hidden rounds the bottom corners, which Paper leaves square for the underline
+    dateInput: {
+      backgroundColor: colours.surface,
+      borderRadius: 8,
+      overflow: 'hidden',
     },
 
     input: {
