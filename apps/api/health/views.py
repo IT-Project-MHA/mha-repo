@@ -131,258 +131,93 @@ class AssessmentRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
 
 # Assessment task APIs (MyPain, MyMovement, MyPersonalCare, MySocialHealth, MyManagement):
-class MyPainListCreate(generics.ListCreateAPIView):
+# each subclass sets its model & serializer_class.
+
+# - select: assessment filter is required for lists
+# - insert: only into the user's own assessments, one record per assessment
+# - update/delete: only the user's own records, assessment cannot be changed
+class AssessmentTaskListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
+    model = None
+
+    def get_queryset(self):
+        user = self.request.user
+        assessment = self.request.query_params.get("assessment")
+        query_patient_profile = self.request.query_params.get("patient_profile")
+        query_set = self.model.objects.filter(assessment__in = visible_assessments(user))
+
+        if not assessment:
+            raise serializers.ValidationError({'assessment':'This field is required.'})
+        query_set = query_set.filter(assessment = assessment)
+
+        if query_patient_profile:
+            query_set = query_set.filter(
+                assessment__patient_profile = query_patient_profile)
+        return query_set.distinct()
+
+    def perform_create(self, serializer):
+        assessment = serializer.validated_data["assessment"]
+        if not own_assessments(self.request.user).filter(id = assessment.id).exists():
+            raise serializers.ValidationError({'assessment':'You do not have access.'})
+        serializer.save()
+
+class AssessmentTaskRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    model = None
+
+    def get_queryset(self):
+        user = self.request.user
+        assessment = self.request.query_params.get("assessment")
+        query_patient_profile = self.request.query_params.get("patient_profile")
+        query_set = self.model.objects.filter(assessment__in = visible_assessments(user))
+        if assessment:
+            query_set = query_set.filter(assessment = assessment)
+        if query_patient_profile:
+            query_set = query_set.filter(
+                assessment__patient_profile = query_patient_profile)
+        if self.request.method not in SAFE_METHODS:
+            query_set = query_set.filter(assessment__patient_profile__user = user)
+        return query_set.distinct()
+
+    def perform_update(self, serializer):
+        save_without_immutable_changes(serializer, ['assessment'])
+
+class MyPainListCreate(AssessmentTaskListCreate):
+    model = MyPain
     serializer_class = MyPainSerializer
 
-    def get_queryset(self):
-        user = self.request.user
-        assessment = self.request.query_params.get("assessment")
-        query_patient_profile = self.request.query_params.get("patient_profile")
-        query_set = MyPain.objects.filter(assessment__in = visible_assessments(user))
-
-        if not assessment:
-            raise serializers.ValidationError({'assessment':'This field is required.'})
-        query_set = query_set.filter(assessment = assessment)
-
-        if query_patient_profile:
-            query_set = query_set.filter(
-                assessment__patient_profile = query_patient_profile)
-        return query_set.distinct()
-
-    def perform_create(self, serializer):
-        user = self.request.user
-        assessment_id = self.request.data.get("assessment")
-        if not assessment_id:
-            raise serializers.ValidationError({'assessment': 'This field is required.'})
-        try:
-            assessment = Assessment.objects.get(id=assessment_id)
-        except Assessment.DoesNotExist:
-            raise serializers.ValidationError({'assessment': 'Invalid assessment.'})
-        if not own_assessments(user).filter(id=assessment.id).exists():
-            raise serializers.ValidationError({'assessment': 'You do not have access.'})
-        serializer.save(assessment=assessment)
-
-class MyPainRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated]
+class MyPainRetrieveUpdateDestroy(AssessmentTaskRetrieveUpdateDestroy):
+    model = MyPain
     serializer_class = MyPainSerializer
 
-    def get_queryset(self):
-        user = self.request.user
-        assessment = self.request.query_params.get("assessment")
-        query_patient_profile = self.request.query_params.get("patient_profile")
-        query_set = MyPain.objects.filter(assessment__in = visible_assessments(user))
-        if assessment:
-            query_set = query_set.filter(assessment = assessment)
-        if query_patient_profile:
-            query_set = query_set.filter(
-                assessment__patient_profile = query_patient_profile)
-        if self.request.method not in SAFE_METHODS:
-            query_set = query_set.filter(assessment__patient_profile__user = user)
-        return query_set.distinct()
-
-class MyMovementListCreate(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated]
+class MyMovementListCreate(AssessmentTaskListCreate):
+    model = MyMovement
     serializer_class = MyMovementSerializer
 
-    def get_queryset(self):
-        user = self.request.user
-        assessment = self.request.query_params.get("assessment")
-        query_patient_profile = self.request.query_params.get("patient_profile")
-        query_set = MyMovement.objects.filter(assessment__in = visible_assessments(user))
-
-        if not assessment:
-            raise serializers.ValidationError({'assessment':'This field is required.'})
-        query_set = query_set.filter(assessment = assessment)
-
-        if query_patient_profile:
-            query_set = query_set.filter(
-                assessment__patient_profile = query_patient_profile)
-        return query_set.distinct()
-
-    def perform_create(self, serializer):
-        user = self.request.user
-        assessment_id = self.request.data.get("assessment")
-        if not assessment_id:
-            raise serializers.ValidationError({'assessment': 'This field is required.'})
-        try:
-            assessment = Assessment.objects.get(id=assessment_id)
-        except Assessment.DoesNotExist:
-            raise serializers.ValidationError({'assessment': 'Invalid assessment.'})
-        if not own_assessments(user).filter(id=assessment.id).exists():
-            raise serializers.ValidationError({'assessment': 'You do not have access.'})
-        serializer.save(assessment=assessment)
-
-class MyMovementRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated]
+class MyMovementRetrieveUpdateDestroy(AssessmentTaskRetrieveUpdateDestroy):
+    model = MyMovement
     serializer_class = MyMovementSerializer
 
-    def get_queryset(self):
-        user = self.request.user
-        assessment = self.request.query_params.get("assessment")
-        query_patient_profile = self.request.query_params.get("patient_profile")
-        query_set = MyMovement.objects.filter(assessment__in = visible_assessments(user))
-        if assessment:
-            query_set = query_set.filter(assessment = assessment)
-        if query_patient_profile:
-            query_set = query_set.filter(
-                assessment__patient_profile = query_patient_profile)
-        if self.request.method not in SAFE_METHODS:
-            query_set = query_set.filter(assessment__patient_profile__user = user)
-        return query_set.distinct()
-
-class MyPersonalCareListCreate(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated]
+class MyPersonalCareListCreate(AssessmentTaskListCreate):
+    model = MyPersonalCare
     serializer_class = MyPersonalCareSerializer
 
-    def get_queryset(self):
-        user = self.request.user
-        assessment = self.request.query_params.get("assessment")
-        query_patient_profile = self.request.query_params.get("patient_profile")
-        query_set = MyPersonalCare.objects.filter(assessment__in = visible_assessments(user))
-
-        if not assessment:
-            raise serializers.ValidationError({'assessment':'This field is required.'})
-        query_set = query_set.filter(assessment = assessment)
-
-        if query_patient_profile:
-            query_set = query_set.filter(
-                assessment__patient_profile = query_patient_profile)
-        return query_set.distinct()
-
-    def perform_create(self, serializer):
-        user = self.request.user
-        assessment_id = self.request.data.get("assessment")
-        if not assessment_id:
-            raise serializers.ValidationError({'assessment': 'This field is required.'})
-        try:
-            assessment = Assessment.objects.get(id=assessment_id)
-        except Assessment.DoesNotExist:
-            raise serializers.ValidationError({'assessment': 'Invalid assessment.'})
-        if not own_assessments(user).filter(id=assessment.id).exists():
-            raise serializers.ValidationError({'assessment': 'You do not have access.'})
-        serializer.save(assessment=assessment)
-
-class MyPersonalCareRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated]
+class MyPersonalCareRetrieveUpdateDestroy(AssessmentTaskRetrieveUpdateDestroy):
+    model = MyPersonalCare
     serializer_class = MyPersonalCareSerializer
 
-    def get_queryset(self):
-        user = self.request.user
-        assessment = self.request.query_params.get("assessment")
-        query_patient_profile = self.request.query_params.get("patient_profile")
-        query_set = MyPersonalCare.objects.filter(assessment__in = visible_assessments(user))
-        if assessment:
-            query_set = query_set.filter(assessment = assessment)
-        if query_patient_profile:
-            query_set = query_set.filter(
-                assessment__patient_profile = query_patient_profile)
-        if self.request.method not in SAFE_METHODS:
-            query_set = query_set.filter(assessment__patient_profile__user = user)
-        return query_set.distinct()
-
-class MySocialHealthListCreate(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated]
+class MySocialHealthListCreate(AssessmentTaskListCreate):
+    model = MySocialHealth
     serializer_class = MySocialHealthSerializer
 
-    def get_queryset(self):
-        user = self.request.user
-        assessment = self.request.query_params.get("assessment")
-        query_patient_profile = self.request.query_params.get("patient_profile")
-        query_set = MySocialHealth.objects.filter(assessment__in = visible_assessments(user))
-
-        if not assessment:
-            raise serializers.ValidationError({'assessment':'This field is required.'})
-        query_set = query_set.filter(assessment = assessment)
-
-        if query_patient_profile:
-            query_set = query_set.filter(
-                assessment__patient_profile = query_patient_profile)
-        return query_set.distinct()
-
-    def perform_create(self, serializer):
-        user = self.request.user
-        assessment_id = self.request.data.get("assessment")
-        if not assessment_id:
-            raise serializers.ValidationError({'assessment': 'This field is required.'})
-        try:
-            assessment = Assessment.objects.get(id=assessment_id)
-        except Assessment.DoesNotExist:
-            raise serializers.ValidationError({'assessment': 'Invalid assessment.'})
-        if not own_assessments(user).filter(id=assessment.id).exists():
-            raise serializers.ValidationError({'assessment': 'You do not have access.'})
-        serializer.save(assessment=assessment)
-
-class MySocialHealthRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated]
+class MySocialHealthRetrieveUpdateDestroy(AssessmentTaskRetrieveUpdateDestroy):
+    model = MySocialHealth
     serializer_class = MySocialHealthSerializer
 
-    def get_queryset(self):
-        user = self.request.user
-        assessment = self.request.query_params.get("assessment")
-        query_patient_profile = self.request.query_params.get("patient_profile")
-        query_set = MySocialHealth.objects.filter(assessment__in = visible_assessments(user))
-        if assessment:
-            query_set = query_set.filter(assessment = assessment)
-        if query_patient_profile:
-            query_set = query_set.filter(
-                assessment__patient_profile = query_patient_profile)
-        if self.request.method not in SAFE_METHODS:
-            query_set = query_set.filter(assessment__patient_profile__user = user)
-        return query_set.distinct()
-
-class MyManagementListCreate(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated]
+class MyManagementListCreate(AssessmentTaskListCreate):
+    model = MyManagement
     serializer_class = MyManagementSerializer
 
-    def get_queryset(self):
-        user = self.request.user
-        assessment = self.request.query_params.get("assessment")
-        query_patient_profile = self.request.query_params.get("patient_profile")
-        query_set = MyManagement.objects.filter(assessment__in = visible_assessments(user))
-
-        if not assessment:
-            raise serializers.ValidationError({'assessment':'This field is required.'})
-        query_set = query_set.filter(assessment = assessment)
-
-        if query_patient_profile:
-            query_set = query_set.filter(
-                assessment__patient_profile = query_patient_profile)
-        return query_set.distinct()
-
-    def perform_create(self, serializer):
-        user = self.request.user
-        assessment_id = self.request.data.get("assessment")
-        if not assessment_id:
-            raise serializers.ValidationError({'assessment': 'This field is required.'})
-        try:
-            assessment = Assessment.objects.get(id=assessment_id)
-        except Assessment.DoesNotExist:
-            raise serializers.ValidationError({'assessment': 'Invalid assessment.'})
-        if not own_assessments(user).filter(id=assessment.id).exists():
-            raise serializers.ValidationError({'assessment': 'You do not have access.'})
-        if MyManagement.objects.filter(assessment=assessment).exists():
-            raise serializers.ValidationError({'assessment': 'A MyManagement record already exists for this assessment.'})
-        medication = serializer.validated_data.get('medication', [])
-        if any(p.patient_profile_id != assessment.patient_profile_id for p in medication):
-            raise serializers.ValidationError(
-                {'medication': 'Prescriptions must belong to the assessment\'s patient.'})
-        serializer.save(assessment=assessment)
-
-class MyManagementRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated]
+class MyManagementRetrieveUpdateDestroy(AssessmentTaskRetrieveUpdateDestroy):
+    model = MyManagement
     serializer_class = MyManagementSerializer
-
-    def get_queryset(self):
-        user = self.request.user
-        assessment = self.request.query_params.get("assessment")
-        query_patient_profile = self.request.query_params.get("patient_profile")
-        query_set = MyManagement.objects.filter(assessment__in = visible_assessments(user))
-        if assessment:
-            query_set = query_set.filter(assessment = assessment)
-        if query_patient_profile:
-            query_set = query_set.filter(
-                assessment__patient_profile = query_patient_profile)
-        if self.request.method not in SAFE_METHODS:
-            query_set = query_set.filter(assessment__patient_profile__user = user)
-        return query_set.distinct()

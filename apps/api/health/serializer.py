@@ -49,6 +49,10 @@ class AssessmentSerializer(serializers.ModelSerializer):
 # assessment task serializers: completed_at cannot be in the future
 # score is computed from QuestionOptionOrdered fields after save
 class AssessmentTaskSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = '__all__'
+        read_only_fields = ['score']
+
     def validate_completed_at(self, completed_at):
         return validate_not_future(completed_at)
 
@@ -72,10 +76,8 @@ class AssessmentTaskSerializer(serializers.ModelSerializer):
         return instance
 
 class MyPainSerializer(AssessmentTaskSerializer):
-    class Meta:
+    class Meta(AssessmentTaskSerializer.Meta):
         model = MyPain
-        fields = '__all__'
-        read_only_fields = ['assessment']
 
     # pain scores must be consistent: mildest <= average <= worst, mildest <= current <= worst
     def validate(self, data):
@@ -101,10 +103,8 @@ class MyPainSerializer(AssessmentTaskSerializer):
         return data
 
 class MyMovementSerializer(AssessmentTaskSerializer):
-    class Meta:
+    class Meta(AssessmentTaskSerializer.Meta):
         model = MyMovement
-        fields = '__all__'
-        read_only_fields = ['assessment', 'score']
 
     def calculate_score(self, instance):
         score = sum(
@@ -116,10 +116,8 @@ class MyMovementSerializer(AssessmentTaskSerializer):
         return score
 
 class MyPersonalCareSerializer(AssessmentTaskSerializer):
-    class Meta:
+    class Meta(AssessmentTaskSerializer.Meta):
         model = MyPersonalCare
-        fields = '__all__'
-        read_only_fields = ['assessment', 'score']
 
     def calculate_score(self, instance):
         score = sum(
@@ -131,10 +129,8 @@ class MyPersonalCareSerializer(AssessmentTaskSerializer):
         return score
 
 class MySocialHealthSerializer(AssessmentTaskSerializer):
-    class Meta:
+    class Meta(AssessmentTaskSerializer.Meta):
         model = MySocialHealth
-        fields = '__all__'
-        read_only_fields = ['assessment', 'score']
 
     def calculate_score(self, instance):
         return sum(
@@ -144,10 +140,8 @@ class MySocialHealthSerializer(AssessmentTaskSerializer):
         )
 
 class MyManagementSerializer(AssessmentTaskSerializer):
-    class Meta:
+    class Meta(AssessmentTaskSerializer.Meta):
         model = MyManagement
-        fields = '__all__'
-        read_only_fields = ['assessment', 'score']
 
     def calculate_score(self, instance):
         return instance.exercise.score if instance.exercise else 0
