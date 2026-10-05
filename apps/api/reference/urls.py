@@ -14,5 +14,8 @@ urlpatterns = [
          name = 'read_question_option_ordered'),
     path('questionOptionOrdered/<str:pk>', 
          views.QuestionOptionOrderedRetrieve.as_view(), 
-         name ='read_question_option_ordered_detail')
+         name ='read_question_option_ordered_detail'),
+    path('choices/<str:name>/',
+         views.ChoicesList.as_view(),
+         name ='read_choices')
 ]

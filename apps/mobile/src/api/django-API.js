@@ -6,7 +6,8 @@ Call the function for the relevant table in the format api`TableName`(2) with op
 from {'select', 'create', 'update', 'delete'}, followed by an object of attribute values. Each
 function returns the response data (a record or an array of records for 'select' without id),
 or null for 'delete'. The exceptions are reference tables (QuestionOption, QuestionOptionOrdered)
-which can only be selected, and AuditEntry which can only be selected & created.
+which can only be selected, AuditEntry which can only be selected & created, and TextChoices 
+(dropdown text fields in UI) (e.g. apiHealthService) which take no parameters and only select.
 
 - select: pass id to read one record, otherwise the other attributes given are used as filters
           (?attribute_name=value) and an array is returned.
@@ -29,6 +30,9 @@ const myMovement = await apiMyMovement('create', {
     'score': 9,
     'completed_at': new Date().toISOString(),
 })
+
+const healthServices = await apiHealthService(); 
+
         
 For tables that have a many-to-many relationship, their attribute value must be entered as an
 array of ids, and the attribute in the description will be followed by a [], e.g. locations[].
@@ -390,4 +394,81 @@ export async function apiQuestionOptionOrdered(operation, values) {
 - update/delete: N/A */
 export async function apiAuditEntry(operation, values) {
     return operate('auditEntry', operation, values, ['select', 'create']);
+}
+
+
+/* Choices:
+The options of each dropdown/choice attribute, defined on the Django models. Each function
+takes no parameters and returns an array of { value, label }: send value to the API, show
+label to the user. The table of each choice attribute is commented. */
+
+// helper function
+async function selectChoices(name) {
+    return operate(`choices/${name}`, 'select');
+}
+
+
+// PatientProfile
+export async function apiAssignedGender() {
+    return selectChoices('assignedGender');
+}
+
+
+// SupportLink
+export async function apiSupportLinkStatus() {
+    return selectChoices('supportLinkStatus');
+}
+
+
+// TermsAndPrivacy
+export async function apiDocumentType() {
+    return selectChoices('documentType');
+}
+
+
+// Appointment
+export async function apiAppointmentStatus() {
+    return selectChoices('appointmentStatus');
+}
+export async function apiHealthService() {
+    return selectChoices('healthService');
+}
+
+
+// AppointmentQuestion
+export async function apiAppointmentQuestionSource() {
+    return selectChoices('appointmentQuestionSource');
+}
+
+
+// Prescription
+export async function apiStrengthUnit() {
+    return selectChoices('strengthUnit');
+}
+export async function apiFormUnit() {
+    return selectChoices('formUnit');
+}
+export async function apiFrequencyUnit() {
+    return selectChoices('frequencyUnit');
+}
+
+
+// Assessment
+export async function apiAssessmentStatus() {
+    return selectChoices('assessmentStatus');
+}
+
+
+// AuditEntry
+export async function apiAuditAction() {
+    return selectChoices('auditAction');
+}
+export async function apiAuditTarget() {
+    return selectChoices('auditTarget');
+}
+
+
+// QuestionOption & QuestionOptionOrdered
+export async function apiAppSection() {
+    return selectChoices('appSection');
 }

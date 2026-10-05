@@ -60,3 +60,36 @@ class QuestionOptionOrderedRetrieve(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
     queryset = QuestionOptionOrdered.objects.all()
     serializer_class = QuestionOptionOrderedSerializer
+
+from django.http import Http404
+from .models import AppSection
+from accounts.models import PatientProfile, SupportLink, TermsAndPrivacy
+from appointment.models import Appointment, AppointmentQuestion
+from health.models import Prescription, Assessment
+from audit.models import AuditEntry
+
+CHOICES = {
+    'assignedGender': PatientProfile.AssignedGender,
+    'supportLinkStatus': SupportLink.Status,
+    'documentType': TermsAndPrivacy.Document,
+    'appointmentStatus': Appointment.Status,
+    'healthService': Appointment.HealthService,
+    'appointmentQuestionSource': AppointmentQuestion.Source,
+    'strengthUnit': Prescription.StrengthUnit,
+    'formUnit': Prescription.FormUnit,
+    'frequencyUnit': Prescription.FrequencyUnit,
+    'assessmentStatus': Assessment.Status,
+    'auditAction': AuditEntry.Action,
+    'auditTarget': AuditEntry.Target,
+    'appSection': AppSection,
+}
+
+class ChoicesList(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, name):
+        choices = CHOICES.get(name)
+        if choices is None:
+            raise Http404(f'No choices named {name}.')
+        return Response([{'value': value, 'label': label}
+                         for value, label in choices.choices])
