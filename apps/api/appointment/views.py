@@ -167,7 +167,7 @@ class AppointmentQuestionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPI
         return query_set.distinct()
 
     def perform_update(self, serializer):
-        save_without_immutable_changes(serializer, ['source'])
+        save_without_immutable_changes(serializer, ['appointment', 'source'])
 
     def perform_destroy(self, instance):
         destroy_or_reject_protected(instance)
@@ -226,7 +226,7 @@ class AppointmentAnswerRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIVi
     # file needs to be manually deleted from storage
     def perform_update(self, serializer):
         old_recording = serializer.instance.recording_file.name
-        serializer.save()
+        save_without_immutable_changes(serializer, ['question'])
         if old_recording and old_recording != serializer.instance.recording_file.name:
             serializer.instance.recording_file.storage.delete(old_recording)
 
@@ -308,4 +308,7 @@ class AppointmentAccessRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIVi
         if support_link:
             query_set = query_set.filter(support_link = support_link)
         return query_set.distinct()
+
+    def perform_update(self, serializer):
+        save_without_immutable_changes(serializer, ['appointment', 'support_link'])
 

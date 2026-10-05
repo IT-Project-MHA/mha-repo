@@ -19,13 +19,13 @@ class AppointmentQuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = AppointmentQuestion
         fields = '__all__'
-        read_only_fields = ['appointment', 'created_by']
+        read_only_fields = ['created_by']
 
 class AppointmentAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = AppointmentAnswer
         fields = '__all__'
-        read_only_fields = ['question', 'recorded_by']
+        read_only_fields = ['recorded_by']
 
     def validate_recording_file(self, recording_file):
         if recording_file is None:
@@ -50,7 +50,7 @@ class AppointmentAccessSerializer(serializers.ModelSerializer):
     class Meta:
         model = AppointmentAccess
         fields = '__all__'
-        read_only_fields = ['appointment', 'support_link', 'granted_at']
+        read_only_fields = ['granted_at']
 
     def validate_revoked_at(self, revoked_at):
         return validate_not_future(revoked_at)

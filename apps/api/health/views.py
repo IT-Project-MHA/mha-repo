@@ -13,6 +13,7 @@ from accounts.models import SupportLink
 from accounts.views import own_patient_profile
 from .serializer import *
 from datetime import date
+from mpowered_api.immutable import save_without_immutable_changes
 
 # instructions:
 # All views are protected by authenticated user id (can only see records where patient_profile
@@ -124,6 +125,9 @@ class AssessmentRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         if self.request.method not in SAFE_METHODS:
             query_set = query_set.filter(patient_profile__user = user)
         return query_set.distinct()
+
+    def perform_update(self, serializer):
+        save_without_immutable_changes(serializer, ['week_starting'])
 
 
 # Assessment task APIs (MyPain, MyMovement, MyPersonalCare, MySocialHealth, MyManagement):
