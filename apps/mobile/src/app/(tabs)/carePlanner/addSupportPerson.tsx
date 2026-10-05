@@ -38,18 +38,11 @@ export default function Screen() {
         </View>
       </ScrollView>
 
-      <View style={styles.buttonRow}>
-        <Button
-          label="Skip"
-          onPress={() => router.push('/carePlanner/addQuestions')}
-          buttonType="secondaryButton"
-          style={styles.rowButton}
-        />
+      <View style={styles.bottomBar}>
         <Button
           label="Save"
           onPress={() => router.push('/carePlanner/addQuestions')}
           buttonType="primaryButton"
-          style={styles.rowButton}
         />
       </View>
     </View>
@@ -88,16 +81,9 @@ function createStyles(colours: ColourSet) {
       color: colours.onBackground,
     },
 
-    buttonRow: {
-      flexDirection: 'row',
-      gap: 12,
+    bottomBar: {
       paddingHorizontal: 16,
       marginBottom: 44, // nav bar: 28 + extra 16 gap
-    },
-
-    rowButton: {
-      flex: 1,
-      paddingHorizontal: 16,
     },
   });
 }

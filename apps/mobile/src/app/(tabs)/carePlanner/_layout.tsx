@@ -51,6 +51,10 @@ export default function CarePlannerLayout() {
         name="addQuestions"
         options={{ title: 'Add Questions to Your Appointment' }}
       />
+      <Stack.Screen
+        name="reviewAppointment"
+        options={{ title: 'Review my Appointment Plan' }}
+      />
     </Stack>
   );
 }

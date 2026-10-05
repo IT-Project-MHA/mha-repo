@@ -4,6 +4,7 @@
  */
 import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, Pressable } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
@@ -13,6 +14,7 @@ import { Checkbox, useTheme as usePaperTheme } from 'react-native-paper';
 export default function Screen() {
   const { colours } = useTheme();
   const styles = createStyles(colours);
+  const router = useRouter();
   const { colors: paperColours } = usePaperTheme();
 
   // ids of the questions the patient has ticked
@@ -182,7 +184,11 @@ export default function Screen() {
       </ScrollView>
 
       <View style={styles.bottomBar}>
-        <Button label="Save" onPress={() => {}} buttonType="primaryButton" />
+        <Button
+          label="Save"
+          onPress={() => router.push('/carePlanner/reviewAppointment')}
+          buttonType="primaryButton"
+        />
       </View>
     </View>
   );
