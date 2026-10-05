@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTheme as usePaperTheme } from 'react-native-paper';
 import { DatePickerInput } from 'react-native-paper-dates';
 import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
@@ -25,12 +26,15 @@ export default function Screen() {
   const { colours } = useTheme();
   const styles = createStyles(colours);
   const router = useRouter();
+  // error red and placeholder colour from the Paper theme, which change for dark mode
+  const { colors: paperColours } = usePaperTheme();
 
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [doctor, setDoctor] = useState('');
   // null until a service is chosen
   const [service, setService] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [showError, setShowError] = useState(false);
 
   // choose a health service and close the dropdown, choosing it again clears it
   const handleSelect = (option: string) => {
@@ -38,8 +42,12 @@ export default function Screen() {
     setDropdownOpen(false);
   };
 
-  // closes this page, returning to the care planner underneath it
+  // closes this page, returning to the care planner underneath it, if mandatory fields are filled
   const handleSubmit = () => {
+    if (!date) {
+      setShowError(true);
+      return;
+    }
     router.back();
   };
 
@@ -50,7 +58,10 @@ export default function Screen() {
         locale="en-GB"
         inputMode="start"
         value={date}
-        onChange={setDate}
+        onChange={(newDate) => {
+          setDate(newDate);
+          if (newDate) setShowError(false);
+        }}
         validRange={{ startDate: startOfToday() }}
         placeholder="Pick appointment date"
         withDateFormatInLabel={false}
@@ -69,7 +80,7 @@ export default function Screen() {
         value={doctor}
         onChangeText={setDoctor}
         placeholder="Doctor's name"
-        placeholderTextColor={colours.ex3}
+        placeholderTextColor={paperColours.onSurfaceVariant}
       />
 
       <View>
@@ -80,7 +91,11 @@ export default function Screen() {
         style={[styles.field, styles.dropdown]}
         onPress={() => setDropdownOpen(!dropdownOpen)}
       >
-        <Text style={service ? styles.input : styles.placeholder}>
+        <Text
+          style={
+            service ? styles.input : [styles.placeholder, { color: paperColours.onSurfaceVariant }]
+          }
+        >
           {service ?? 'Select a health service'}
         </Text>
         <Text style={styles.input}>{dropdownOpen ? '▲' : '▼'}</Text>
@@ -106,6 +121,11 @@ export default function Screen() {
         </View>
       )}
 
+      {showError && (
+        <Text style={[styles.error, { color: paperColours.error }]}>
+          Please fill in all mandatory fields
+        </Text>
+      )}
       <Button label="submit" onPress={handleSubmit} buttonType="primaryButton" />
     </ScrollView>
   );
@@ -152,9 +172,12 @@ function createStyles(colours: ColourSet) {
       color: colours.onSurface,
     },
 
+    error: {
+      fontSize: 14,
+    },
+
     placeholder: {
       fontSize: 16,
-      color: colours.ex3,
     },
 
     dropdown: {

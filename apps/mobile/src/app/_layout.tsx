@@ -1,5 +1,6 @@
 import { Stack } from "expo-router";
-import { MD3DarkTheme, MD3LightTheme, PaperProvider } from "react-native-paper";
+import { Platform } from "react-native";
+import { configureFonts, MD3DarkTheme, MD3LightTheme, PaperProvider } from "react-native-paper";
 import { enGB, registerTranslation } from "react-native-paper-dates";
 import { ThemeProvider, useTheme } from "../../context/ThemeContext";
 import { UserProvider } from "../../context/AuthorisationContext";
@@ -19,6 +20,7 @@ function PaperThemeProvider({ children }: { children: React.ReactNode }) {
 
   const paperTheme = {
     ...baseTheme,
+    fonts: Platform.OS === "web" ? configureFonts({ config: { fontFamily: "System" } }) : baseTheme.fonts,
     colors: {
       ...baseTheme.colors,
       primary: colours.primary,
