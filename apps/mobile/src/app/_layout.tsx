@@ -8,7 +8,7 @@ export default function RootLayout() {
     <ThemeProvider>
       <UserProvider>
       <Stack>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
       </Stack>
       </UserProvider>
     </ThemeProvider>
