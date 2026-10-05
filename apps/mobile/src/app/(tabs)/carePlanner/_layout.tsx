@@ -31,6 +31,10 @@ export default function CarePlannerLayout() {
         name="createAppointment"
         options={{ title: 'Create Appointment' }}
       />
+      <Stack.Screen
+        name="addSupportPerson"
+        options={{ title: 'Add a Support Person' }}
+      />
     </Stack>
   );
 }

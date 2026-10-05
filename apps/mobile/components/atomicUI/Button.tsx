@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity } from "react-native";
+import { StyleProp, StyleSheet, Text, TouchableOpacity, ViewStyle } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 
 type ButtonType = "primaryButton" | "secondaryButton";
@@ -20,6 +20,7 @@ type ButtonProps = {
   label: string;
   onPress: () => void;
   buttonType: ButtonType;
+  style?: StyleProp<ViewStyle>; // optional, added on top of the button type's style, e.g. for layout
 };
 
 /**
@@ -29,15 +30,16 @@ type ButtonProps = {
  * @param label string that says what the button should say
  * @param onPress prescribes an action to the button when pressed
  * @param buttonType string that maps to a button type, defined in theme.ts
+ * @param style optional extra style, e.g. { flex: 1 } to share a row with another button
  * @returns a styled button component, which performs some funtion when pressed
  */
-const Button = ({ label, onPress, buttonType }: ButtonProps) => {
+const Button = ({ label, onPress, buttonType, style }: ButtonProps) => {
   const { theme } = useTheme();
 
   return (
     <TouchableOpacity
       activeOpacity={0.7}
-      style={theme[buttonType]}
+      style={[theme[buttonType], style]}
       onPress={onPress}
     >
       <Text style={theme.text}>{label}</Text>

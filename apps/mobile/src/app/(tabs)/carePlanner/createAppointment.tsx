@@ -26,7 +26,6 @@ export default function Screen() {
   const { colours } = useTheme();
   const styles = createStyles(colours);
   const router = useRouter();
-  // error red and placeholder colour from the Paper theme, which change for dark mode
   const { colors: paperColours } = usePaperTheme();
 
   const [date, setDate] = useState<Date | undefined>(undefined);
@@ -42,13 +41,13 @@ export default function Screen() {
     setDropdownOpen(false);
   };
 
-  // closes this page, returning to the care planner underneath it, if mandatory fields are filled
+  // opens the add a support person page on top of this one, if mandatory fields are filled
   const handleSubmit = () => {
     if (!date) {
       setShowError(true);
       return;
     }
-    router.back();
+    router.push('/carePlanner/addSupportPerson');
   };
 
   return (
@@ -126,7 +125,7 @@ export default function Screen() {
           Please fill in all mandatory fields
         </Text>
       )}
-      <Button label="submit" onPress={handleSubmit} buttonType="primaryButton" />
+      <Button label="Save" onPress={handleSubmit} buttonType="primaryButton" />
     </ScrollView>
   );
 }
