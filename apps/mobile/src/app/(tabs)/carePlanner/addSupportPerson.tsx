@@ -41,13 +41,13 @@ export default function Screen() {
       <View style={styles.buttonRow}>
         <Button
           label="Skip"
-          onPress={() => router.dismissTo('/carePlanner')}
+          onPress={() => router.push('/carePlanner/addQuestions')}
           buttonType="secondaryButton"
           style={styles.rowButton}
         />
         <Button
           label="Save"
-          onPress={() => {}}
+          onPress={() => router.push('/carePlanner/addQuestions')}
           buttonType="primaryButton"
           style={styles.rowButton}
         />

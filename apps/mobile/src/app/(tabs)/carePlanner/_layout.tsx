@@ -47,6 +47,10 @@ export default function CarePlannerLayout() {
         name="mySupportLinks"
         options={{ title: 'My Support Links' }}
       />
+      <Stack.Screen
+        name="addQuestions"
+        options={{ title: 'Add Questions to Your Appointment' }}
+      />
     </Stack>
   );
 }
