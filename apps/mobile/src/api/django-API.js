@@ -308,9 +308,13 @@ export async function apiMyManagement(operation, values) {
 /* Appointment:
 - select: id, or filter by patient_profile, status, scheduled_date (returns own appointments &
           appointments user has been given access to)
+    - scheduled_date filter is a date 'YYYY-MM-DD' (Australian time), returns appointments
+      on that day
 - create: scheduled_date NN, doctor, status, health_service, notes
-    - patient_profile is set to user's own or their patients, created_by is set to 
-      the user's own, scheduled_date must be in the present or future
+    - patient_profile is set to user's own or their patients, created_by is set to
+      the user's own
+    - scheduled_date is a date & time, e.g. new Date().toISOString(), and must be today or
+      later (Australian time)
     - user must have a patient_profile
 - update: id NN, scheduled_date, doctor, status, health_service, notes
     - patient_profile & created_by cannot be changed

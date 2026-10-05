@@ -11,6 +11,8 @@ from accounts.views import own_patient_profile
 from .serializer import *
 from mpowered_api.immutable import save_without_immutable_changes
 from mpowered_api.protected import destroy_or_reject_protected
+from mpowered_api.validators import australian_day_range
+from django.utils.dateparse import parse_date
 
 # instructions:
 # All views are protected by authenticated user id (can only see records where patient_profile
@@ -58,6 +60,18 @@ def visible_appointments(user):
               access_grants__revoked_at__isnull = True)
         )
 
+# helper function: filters appointments to those scheduled on the given date (YYYY-MM-DD) in
+# Australia
+def filter_scheduled_date(query_set, scheduled_date):
+    try:
+        day = parse_date(scheduled_date)
+    except ValueError:
+        day = None
+    if day is None:
+        raise serializers.ValidationError({'scheduled_date':'Date must be in YYYY-MM-DD format.'})
+    start, end = australian_day_range(day)
+    return query_set.filter(scheduled_date__gte = start, scheduled_date__lt = end)
+
 class AppointmentListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = AppointmentSerializer
@@ -73,7 +87,7 @@ class AppointmentListCreate(generics.ListCreateAPIView):
         if query_status:
             query_set = query_set.filter(status = query_status)
         if scheduled_date:
-            query_set = query_set.filter(scheduled_date = scheduled_date)
+            query_set = filter_scheduled_date(query_set, scheduled_date)
         return query_set.distinct()
 
     def perform_create(self, serializer):
@@ -99,7 +113,7 @@ class AppointmentRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         if query_status:
             query_set = query_set.filter(status = query_status)
         if scheduled_date:
-            query_set = query_set.filter(scheduled_date = scheduled_date)
+            query_set = filter_scheduled_date(query_set, scheduled_date)
         return query_set.distinct()
 
     def perform_destroy(self, instance):

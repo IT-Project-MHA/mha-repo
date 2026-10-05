@@ -9,7 +9,7 @@ class Appointment(BaseModel, SoftDeleteModel):
         CANCELLED = "cancelled", "Cancelled"
 
     patient_profile = models.ForeignKey("accounts.PatientProfile", on_delete = models.PROTECT, related_name = "appointment_patient")
-    scheduled_date = models.DateField()
+    scheduled_date = models.DateTimeField()
     doctor = models.CharField(max_length = 100, blank = True)
     status = models.CharField(choices = Status.choices, default = Status.PLANNED)
 

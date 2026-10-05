@@ -1,5 +1,5 @@
 import re
-from datetime import timedelta
+from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
 from django.utils import timezone
 from rest_framework import serializers
@@ -18,6 +18,12 @@ PHONE_NUMBER_PATTERN = re.compile(r'^\+61[23478]\d{8}$')
 def current_date():
     return timezone.now().astimezone(AUSTRALIA_TIMEZONE).date()
 
+# helper function: returns the start & end of a date in Australia,
+# for filtering timestamps by date
+def australian_day_range(day):
+    start = datetime.combine(day, time.min, tzinfo = AUSTRALIA_TIMEZONE)
+    return start, start + timedelta(days = 1)
+
 # helper function: returns the Monday of the current week in Australia
 def current_week_starting():
     today = current_date()
@@ -31,7 +37,11 @@ def validate_not_future(value):
 
 # date cannot be in the past
 def validate_not_past(value):
-    if value is not None and value < current_date():
+    if isinstance(value, datetime):
+        day = value.astimezone(AUSTRALIA_TIMEZONE).date()
+    else:
+        day = value
+    if day is not None and day < current_date():
         raise serializers.ValidationError('Cannot be in the past.')
     return value
 
