@@ -1,9 +1,8 @@
 import { Stack} from 'expo-router'
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
-import { StyleSheet, ScrollView } from 'react-native';
-import BlurView from 'expo-blur';
-import { useRouter } from 'expo-router';
-import { Typography, TextSizeSet } from '../../../../constants/textSize';
+import { StyleSheet,  } from 'react-native';
+import { Typography } from '../../../../constants/textSize';
+
 
 
 /**
@@ -27,7 +26,11 @@ export default function ScreenLayout() {
           fontSize: theme.h4.fontSize,
           fontWeight: theme.h4.fontWeight,
         },
+        headerBackTitleStyle: {
+          fontSize: theme.h6.fontSize,
+        },
         contentStyle: { backgroundColor: colours.background},
+        headerBackButtonDisplayMode: 'default',
       }}
     >
       <Stack.Screen 
@@ -39,43 +42,43 @@ export default function ScreenLayout() {
       <Stack.Screen 
         name="myAccount"
         options={{
-          title: 'My Account',
+          title: '',
         }}
       />
       <Stack.Screen 
         name="accesibility"
         options={{
-          title: 'Accesibility',
+          title: '',
         }}
       />
       <Stack.Screen 
         name="legal"
         options={{
-          title: 'Legal',
+          headerTitle: '',
         }}
       />
       <Stack.Screen 
         name="myConnections"
         options={{
-          title: 'My Connections',
+          title: '',
         }}
       />
       <Stack.Screen 
         name="myData"
         options={{
-          title: 'My Data',
+          title: '',
         }}
       />
       <Stack.Screen 
         name="permissions"
         options={{
-          title: 'Permissions',
+          title: '',
         }}
       />
       <Stack.Screen 
         name="support"
         options={{
-          title: 'Support',
+          title: '',
         }}
       />
     </Stack>
@@ -84,15 +87,10 @@ export default function ScreenLayout() {
   );
 }
 
-//** 
-// TO DO: ADD TO GLOBAL STYLE SHEET (header should be consistent through app)
-// */
 function createStyles(colours: ColourSet, theme: Typography){
     return StyleSheet.create({
 
       headerStyle: {
-        // make header less ugly
-        // blur???? (semi transparent)
         backgroundColor: colours.background,
         borderBottomWidth: 0, 
         minHeight: 80,

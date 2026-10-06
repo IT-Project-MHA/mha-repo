@@ -1,6 +1,6 @@
 import { StyleSheet } from "react-native";
 import { lightColours, darkColours, lightHcColours, darkHcColours, ColourSet } from "./colourScheme";
-import { primaryButtonLayout, buttonLayout, textLayout, settingsButtonLayout, squareButtonWithLineLayout, transparentButtonLayout } from "./layout";
+import { primaryButtonLayout, buttonLayout, settingsButtonLayout, squareButtonWithLineLayout, transparentButtonLayout } from "./layout";
 
 
 /**
@@ -23,14 +23,6 @@ const createTheme = (colours: ColourSet) =>
     secondaryButton: {
       backgroundColor: colours.secondary,
       ...buttonLayout,
-    },
-    textOnPrimary: {
-      color: colours.onPrimary,
-      ...textLayout,
-    },
-    textOnBackground: {
-      color: colours.onBackground,
-      ...textLayout,
     },
     screen: {
       flex: 1,
@@ -61,14 +53,14 @@ const createTheme = (colours: ColourSet) =>
  
       overflow: 'hidden',
 
-      shadowColor: colours.tertiary,
-      shadowOffset: { width: 0, height: 6 },
+      shadowColor: colours.primary,
+      shadowOffset: { width: 2, height: 4 },
       shadowOpacity: 0.15,
       shadowRadius: 16,
-      elevation: 4,
+
     },
     line: {
-      height: 2,
+      height: 1,
       backgroundColor: colours.onBackground,
       width: '90%',
       borderRadius: 300,
@@ -90,6 +82,17 @@ const createTheme = (colours: ColourSet) =>
       borderBottomWidth: 0, 
  
       overflow: 'hidden',
+    },
+    /**
+     * use only for manipulating layouts within a container
+     * use with other themes, for example:
+     * 
+     * <View style={[theme.layoutContainer, theme.centerItems]}>
+     */
+    layoutContainer: {
+      justifyContent: 'center',
+      backgroundColor:'transparent',
+      width: '100%',
     },
     // for use within a container
     centerText: {
@@ -118,6 +121,18 @@ const createTheme = (colours: ColourSet) =>
       alignItems: 'center',
       justifyContent: 'space-between',
       alignSelf: 'stretch',
+    },
+    bottomGap: {
+      height: 120,
+      color: 'transparent'
+    },
+    header: {
+      height: 20,
+      backgroundColor: colours.background,
+      width: '100%',
+      alignContent: 'flex-start',
+      paddingBottom: 50,
+      paddingTop: 5,
     },
   });
 

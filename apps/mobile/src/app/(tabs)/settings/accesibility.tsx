@@ -10,7 +10,11 @@ export default function Tab() {
     const styles = createStyles(colours);
 
   return (
-    <ScrollView>
+    <ScrollView stickyHeaderIndices={[0]}>
+      <View style={theme.header}>
+        <Text style={[theme.h4, theme.leftText]}>Accessibility</Text>
+      </View>
+
     <Text> </Text>
     <View style={theme.container}>
 
@@ -42,8 +46,10 @@ export default function Tab() {
       <TextDropdown>
       </TextDropdown>
       </View>
-
     </View>
+
+    <View style={theme.bottomGap}/>
+
     </ScrollView>
   );
 }
@@ -56,8 +62,5 @@ function createStyles(colours: ColourSet){
         justifyContent: 'space-between',
         alignSelf: 'stretch',
       },
-      leftToggle: {
-        width: 4000,
-      }
   })
 };
