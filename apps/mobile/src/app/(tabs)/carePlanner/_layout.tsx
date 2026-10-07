@@ -57,6 +57,14 @@ export default function CarePlannerLayout() {
           name="reviewAppointment"
           options={{ title: 'Review my Appointment Plan' }}
         />
+        <Stack.Screen
+          name="allAppointments"
+          options={{ title: 'All Appointments' }}
+        />
+        <Stack.Screen
+          name="appointmentDetails"
+          options={{ title: 'Appointment Details' }}
+        />
       </Stack>
     </AppointmentProvider>
   );

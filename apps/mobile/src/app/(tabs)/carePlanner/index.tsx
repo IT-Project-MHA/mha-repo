@@ -1,24 +1,14 @@
 /**
  * All user types have access to this screen
  */
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
+import { formatDate } from '../../../../constants/date';
 import { useAppointment } from '../../../../context/AppointmentContext';
-
-// formats a YYYY-MM-DD date as e.g. 'Mon, 12 Oct 2026'
-const formatDate = (date: string) => {
-  const [year, month, day] = date.split('-').map(Number);
-  return new Date(year, month - 1, day).toLocaleDateString('en-AU', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-};
 
 export default function Screen() {
   const { colours } = useTheme();
@@ -45,7 +35,7 @@ export default function Screen() {
           />
           <Button
             label="See all appointments"
-            onPress={() => {}}
+            onPress={() => router.push('/carePlanner/allAppointments')}
             buttonType="primaryButton"
           />
           <Text style={styles.sectionHeading}>
@@ -53,7 +43,18 @@ export default function Screen() {
           </Text>
           {/* newest appointments are first, only the 3 most recently added are shown */}
           {appointments.slice(0, 3).map((appointment) => (
-            <View key={appointment.id} style={styles.appointmentCard}>
+            // opens a summary of the appointment, going back returns here
+            <Pressable
+              key={appointment.id}
+              style={styles.appointmentCard}
+              onPress={() =>
+                router.push({
+                  pathname: '/carePlanner/appointmentDetails',
+                  params: { id: appointment.id },
+                })
+              }
+              accessibilityRole="button"
+            >
               <Text style={styles.appointmentDate}>{formatDate(appointment.scheduled_date)}</Text>
               {/* optional fields that are empty are left out */}
               {!!appointment.doctor && (
@@ -62,7 +63,7 @@ export default function Screen() {
               {!!appointment.health_service && (
                 <Text style={styles.appointmentDetails}>{appointment.health_service}</Text>
               )}
-            </View>
+            </Pressable>
           ))}
         </View>
 
