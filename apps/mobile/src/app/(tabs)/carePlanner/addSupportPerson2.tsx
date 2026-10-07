@@ -9,6 +9,7 @@ import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
 import { Checkbox, useTheme as usePaperTheme } from 'react-native-paper';
+import { useAppointment } from '../../../../context/AppointmentContext';
 
 export default function Screen() {
   const { colours } = useTheme();
@@ -16,12 +17,15 @@ export default function Screen() {
   const { colors: paperColours } = usePaperTheme();
   const router = useRouter();
   const navigation = useNavigation();
+  const { draft, updateDraft } = useAppointment();
+  const saved = draft.supportPerson2;
 
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-  const [canAddQuestions, setCanAddQuestions] = useState(false);
-  const [canAddAnswers, setCanAddAnswers] = useState(false);
+  // starts with the saved details, so the person can be edited after saving
+  const [name, setName] = useState(saved?.name ?? '');
+  const [phone, setPhone] = useState(saved?.phone ?? '');
+  const [email, setEmail] = useState(saved?.email ?? '');
+  const [canAddQuestions, setCanAddQuestions] = useState(saved?.canAddQuestions ?? false);
+  const [canAddAnswers, setCanAddAnswers] = useState(saved?.canAddAnswers ?? false);
   const [showError, setShowError] = useState(false);
 
   // name & phone number are mandatory, email is optional
@@ -30,6 +34,15 @@ export default function Screen() {
       setShowError(true);
       return;
     }
+    updateDraft({
+      supportPerson2: {
+        name: name.trim(),
+        phone: phone.trim(),
+        email: email.trim(),
+        canAddQuestions,
+        canAddAnswers,
+      },
+    });
     router.back();
   };
 

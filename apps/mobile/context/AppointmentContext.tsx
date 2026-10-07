@@ -1,10 +1,21 @@
 import React, { createContext, useContext, useState } from 'react';
 
+// Support person details
+export type SupportPerson = {
+  name: string;
+  phone: string;
+  email: string;
+  canAddQuestions: boolean;
+  canAddAnswers: boolean;
+};
+
 // A draft appointment, filled in across the care planner page
 export type AppointmentDraft = {
   scheduledDate: Date | null;
   doctor: string;
   healthService: string | null;
+  supportPerson1: SupportPerson | null;
+  supportPerson2: SupportPerson | null;
 };
 
 // A submitted appointment, shown in appointments list
@@ -13,19 +24,23 @@ export type Appointment = {
   scheduled_date: string;
   doctor: string;
   health_service: string;
+  supportPerson1: SupportPerson | null;
+  supportPerson2: SupportPerson | null;
 };
 
 const emptyDraft = (): AppointmentDraft => ({
   scheduledDate: null,
   doctor: '',
   healthService: null,
+  supportPerson1: null,
+  supportPerson2: null,
 });
 
 // placeholder appointments
 const PLACEHOLDER_APPOINTMENTS: Appointment[] = [
-  { id: '1', scheduled_date: '2026-10-12', doctor: 'John Doe', health_service: 'General Practitioner' },
-  { id: '2', scheduled_date: '2026-10-20', doctor: 'John Doe', health_service: '' },
-  { id: '3', scheduled_date: '2026-11-03', doctor: '', health_service: '' },
+  { id: '1', scheduled_date: '2026-10-12', doctor: 'John Doe', health_service: 'General Practitioner', supportPerson1: null, supportPerson2: null },
+  { id: '2', scheduled_date: '2026-10-20', doctor: 'John Doe', health_service: '', supportPerson1: null, supportPerson2: null },
+  { id: '3', scheduled_date: '2026-11-03', doctor: '', health_service: '', supportPerson1: null, supportPerson2: null },
 ];
 
 // formats a date as YYYY-MM-DD in local time
@@ -61,7 +76,7 @@ export function AppointmentProvider({ children }: { children: React.ReactNode })
 
   const resetDraft = () => setDraft(emptyDraft());
 
-  // adds the draft's create appointment details to the top of the appointments, then clears it
+  // adds the draft to the top of the appointments, then clears it
   const submitDraft = () => {
     if (!draft.scheduledDate) return;
     const appointment: Appointment = {
@@ -69,6 +84,8 @@ export function AppointmentProvider({ children }: { children: React.ReactNode })
       scheduled_date: toDateString(draft.scheduledDate),
       doctor: draft.doctor,
       health_service: draft.healthService ?? '',
+      supportPerson1: draft.supportPerson1,
+      supportPerson2: draft.supportPerson2,
     };
     setAppointments((previous) => [appointment, ...previous]);
     resetDraft();

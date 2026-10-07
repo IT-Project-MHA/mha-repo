@@ -50,6 +50,35 @@ export default function Screen() {
             <Text style={styles.input}>{appointment.health_service || 'Not given'}</Text>
           </View>
         </View>
+
+        <Text style={styles.headline}>Support Persons</Text>
+        {appointment.supportPerson1 || appointment.supportPerson2 ? (
+          [appointment.supportPerson1, appointment.supportPerson2].map((person, index) => {
+            if (!person) return null;
+            const access = [
+              person.canAddQuestions && 'Add questions',
+              person.canAddAnswers && "Add doctor's answer",
+            ].filter(Boolean);
+
+            return (
+              <View key={index} style={styles.section}>
+                <Text style={styles.heading}>Support Person {index + 1}</Text>
+                <View style={[styles.field, styles.personCard]}>
+                  <Text style={styles.personName}>{person.name}</Text>
+                  <Text style={styles.personDetails}>{person.phone}</Text>
+                  {!!person.email && <Text style={styles.personDetails}>{person.email}</Text>}
+                  <Text style={styles.personDetails}>
+                    Access: {access.length > 0 ? access.join(', ') : 'None'}
+                  </Text>
+                </View>
+              </View>
+            );
+          })
+        ) : (
+          <View style={styles.field}>
+            <Text style={styles.input}>No support persons added</Text>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -99,6 +128,20 @@ function createStyles(colours: ColourSet) {
       backgroundColor: colours.surface,
       borderRadius: 8,
       padding: 12,
+    },
+
+    personCard: {
+      gap: 4,
+    },
+
+    personName: {
+      ...textLayout,
+      color: colours.onSurface,
+    },
+
+    personDetails: {
+      fontSize: 14,
+      color: colours.onSurface,
     },
   });
 }
