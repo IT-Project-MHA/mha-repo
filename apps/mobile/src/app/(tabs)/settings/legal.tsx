@@ -1,90 +1,53 @@
 /**
- * My account
+ * Legal page, where use can view the terms and conditions and the privacy policy.
  * 
  */
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { useTheme, ColourSet } from '../../../../context/ThemeContext';
+import { View, Text, ScrollView} from 'react-native';
+import { useTheme } from '../../../../context/ThemeContext';
 import ButtonWithIcon from '../../../../components/ButtonWithIcon';
-import { useRouter } from 'expo-router';
-import Pdf from 'react-native-pdf'
+import * as WebBrowser from 'expo-web-browser';
 
 
 export default function Screen() {
-  const {colours, theme} = useTheme();
-  const router = useRouter();
-  const styles = createStyles(colours);
-
-
+  const {theme} = useTheme();
 
   /**
-   *   const localFilePath = {uri: 'bundle-assets://samplePDF.pdf' };
+   * Using a placeholder link for demonstration purposes. When the client 
+   * updates up with the PDF we can put it in a google drive, etc. (lots of options)
    * 
-   * const source = { 
-    uri: localFilePath, 
-    cache: false 
-
-
-    <Pdf
-        source={source}
-        style={styles.pdf}
-      />
-      
-  };
+   * Client will also be able to update this themselves.
    */
+  const TERMS_URL = 'https://s2.q4cdn.com/175719177/files/doc_presentations/Placeholder-PDF.pdf';
+  const openTerms = () => WebBrowser.openBrowserAsync(TERMS_URL);
+  
+  const PRIVACY_URL = 'https://s2.q4cdn.com/175719177/files/doc_presentations/Placeholder-PDF.pdf';
+  const openPrivacy = () => WebBrowser.openBrowserAsync(PRIVACY_URL);
   
   return (
     <ScrollView stickyHeaderIndices={[0]}>
       <View style={theme.header}>
-        <Text style={[theme.h4, theme.leftText]}>Legal</Text>
+        <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>Legal</Text>
       </View>
+    
+    <Text> </Text>
 
-      <Text> </Text>
-
-      <View style={[theme.container, theme.centerItems]}>
+    <View style={[theme.container, theme.centerItems]}>
       <ButtonWithIcon
-	        label="Terms of service"
-	        onPress={() => {}}
-          buttonType="transparentButton"
-          name="arrow-up-right-box-outline"
-          colour={colours.onBackground}
-        />
-        <View style={theme.line}></View>
-      </View>
+	          label="Privacy Policy"
+	          onPress={openPrivacy}
+            buttonType="transparentButton"
+            name="arrow-up-right-box-outline"
+          />
 
-      <Text> </Text>
-      <Text> </Text>
-
-      <View style={[theme.container, theme.centerItems]}>
+      <View style ={theme.line}/>
       <ButtonWithIcon
-	        label="Privacy Policy"
-	        onPress={() => router.navigate('/settings/myAccount')}
-          buttonType="transparentButton"
-          name="arrow-up-right-box-outline"
-          colour={colours.onBackground}
-        />
-        <View style={theme.line}></View>
+	          label="Terms & Conditions"
+	          onPress={openTerms}
+            buttonType="transparentButton"
+            name="arrow-up-right-box-outline"
+          />
       </View>
-
-      <View style={styles.floatingContainer}>
-        
-    </View>
-
     <View style={theme.bottomGap}/>
-
     </ScrollView>
   );
 }
-function createStyles(colours: ColourSet){
-    return StyleSheet.create({  
-      floatingContainer: {
-        position: 'absolute', // Forces the view to float
-        bottom: 30,           // Distance from bottom of the screen
-        right: 30,            // Distance from right side of the screen
-        zIndex: 999,          // Ensures it sits on top of other elements
-  },
-  pdf: {
-        flex:1,
-    }
-})
-};
-
