@@ -2,7 +2,7 @@ import SwitchToggle from "react-native-switch-toggle";
 /**
  * Creates a toggle button using a Switch component
  */
-import React, { useState } from 'react';
+import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useTheme, ColourSet} from '../context/ThemeContext';
 
@@ -11,30 +11,18 @@ const ContrastToggle = () => {
     const {colours, setMode, isHC, isDark} = useTheme();
     const styles = createStyles(colours);
 
-     const [isEnabled, setIsEnabled] = useState(false);
-
     /**
      * function that runs when the toggle is pressed
      * Normal constrast -> high contrast
-     * @param newValue 
      */
-    const toggleColour = (newValue: boolean) => {
-        setIsEnabled(newValue);
-        if (isEnabled){
+    const toggleContrast = () => {
             if (isDark){
-                setMode('dark');
+                setMode(!isHC ? 'darkHC' : 'dark');
             }else{
-                setMode('light');
+                setMode(!isHC ? 'lightHC' : 'light');
             } 
-        }
-        else{ // when you press the toggle it goes to high contrast
-             if (isDark){
-                setMode('darkHC');
-            }else{
-                setMode('lightHC');
-            } 
-        } 
     };
+
 
   return (
     <View style={styles.container}>
@@ -43,8 +31,8 @@ const ContrastToggle = () => {
                 circleColorOff={colours.tertiary}
                 circleColorOn={colours.secondary}
                 backgroundColorOff={colours.secondary}
-                switchOn= {isEnabled}
-                onPress={() => [toggleColour(true), isEnabled ? setIsEnabled(false) : setIsEnabled(true)]}
+                switchOn= {isHC}
+                onPress={toggleContrast}
                 containerStyle= {styles.buttonContainer}
                 circleStyle={styles.circle}
                 />
@@ -60,18 +48,18 @@ function createStyles(colours: ColourSet){
             alignItems: 'center',
             flexDirection: 'row',
             justifyContent: 'space-between',
-            paddingHorizontal: 30,
+            paddingHorizontal: 20,
         },
         buttonContainer: {
             marginTop: 8,
-            width: 58,
-            height: 29,
+            width: 50,
+            height: 28,
             borderRadius: 25,
             padding: 5,
         },
         circle: {
-            width: 25,
-            height: 25,    
+            width: 20,
+            height: 20,    
             borderRadius: 20,
         }
 })};
