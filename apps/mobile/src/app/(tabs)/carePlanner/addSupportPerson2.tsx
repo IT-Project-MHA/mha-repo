@@ -21,7 +21,17 @@ export default function Screen() {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [canAddQuestions, setCanAddQuestions] = useState(false);
-  const [canRecordAnswers, setCanRecordAnswers] = useState(false);
+  const [canAddAnswers, setCanAddAnswers] = useState(false);
+  const [showError, setShowError] = useState(false);
+
+  // name & phone number are mandatory, email is optional
+  const save = () => {
+    if (!name.trim() || !phone.trim()) {
+      setShowError(true);
+      return;
+    }
+    router.back();
+  };
 
   useEffect(
     () =>
@@ -101,8 +111,8 @@ export default function Screen() {
           />
           <Checkbox.Item
             label="Add doctor's answer"
-            status={canRecordAnswers ? 'checked' : 'unchecked'}
-            onPress={() => setCanRecordAnswers(!canRecordAnswers)}
+            status={canAddAnswers ? 'checked' : 'unchecked'}
+            onPress={() => setCanAddAnswers(!canAddAnswers)}
             labelStyle={styles.input}
             style={styles.divider}
           />
@@ -110,7 +120,12 @@ export default function Screen() {
       </ScrollView>
 
       <View style={styles.bottomBar}>
-        <Button label="Save" onPress={() => router.back()} buttonType="primaryButton" />
+        {showError && (
+          <Text style={[styles.error, { color: paperColours.error }]}>
+            Please fill in all mandatory fields
+          </Text>
+        )}
+        <Button label="Save" onPress={save} buttonType="primaryButton" />
       </View>
     </View>
   );
@@ -133,6 +148,12 @@ function createStyles(colours: ColourSet) {
     bottomBar: {
       paddingHorizontal: 16,
       marginBottom: 44,
+      gap: 8,
+    },
+
+    error: {
+      fontSize: 14,
+      textAlign: 'center',
     },
 
     headline: {

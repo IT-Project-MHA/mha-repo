@@ -9,6 +9,7 @@ import { DatePickerInput } from 'react-native-paper-dates';
 import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
+import { useAppointment } from '../../../../context/AppointmentContext';
 
 const HEALTH_SERVICES = [
   'General Practitioner',
@@ -27,11 +28,13 @@ export default function Screen() {
   const styles = createStyles(colours);
   const router = useRouter();
   const { colors: paperColours } = usePaperTheme();
+  const { draft, updateDraft } = useAppointment();
 
-  const [date, setDate] = useState<Date | undefined>(undefined);
-  const [doctor, setDoctor] = useState('');
+  // starts with the details already entered for this appointment
+  const [date, setDate] = useState<Date | undefined>(draft.scheduledDate ?? undefined);
+  const [doctor, setDoctor] = useState(draft.doctor);
   // null until a service is chosen
-  const [service, setService] = useState<string | null>(null);
+  const [service, setService] = useState<string | null>(draft.healthService);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showError, setShowError] = useState(false);
 
@@ -47,6 +50,7 @@ export default function Screen() {
       setShowError(true);
       return;
     }
+    updateDraft({ scheduledDate: date, doctor: doctor.trim(), healthService: service });
     router.push('/carePlanner/addSupportPerson');
   };
 

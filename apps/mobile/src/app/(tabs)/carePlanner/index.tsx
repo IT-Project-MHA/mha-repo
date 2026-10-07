@@ -7,13 +7,7 @@ import { useRouter } from 'expo-router';
 import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
-
-// placeholder appointments
-const APPOINTMENTS = [
-  { id: '1', scheduled_date: '2026-10-12', doctor: 'John Doe', health_service: 'General Practitioner' },
-  { id: '2', scheduled_date: '2026-10-20', doctor: 'John Doe', health_service: '' },
-  { id: '3', scheduled_date: '2026-11-03', doctor: '', health_service: '' },
-];
+import { useAppointment } from '../../../../context/AppointmentContext';
 
 // formats a YYYY-MM-DD date as e.g. 'Mon, 12 Oct 2026'
 const formatDate = (date: string) => {
@@ -30,6 +24,7 @@ export default function Screen() {
   const { colours } = useTheme();
   const styles = createStyles(colours);
   const router = useRouter();
+  const { appointments, resetDraft } = useAppointment();
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
@@ -41,7 +36,11 @@ export default function Screen() {
           <Text style={styles.cardTitle}>My Appointments</Text>
           <Button
             label="Create new appointment"
-            onPress={() => router.push('/carePlanner/createAppointment')}
+            onPress={() => {
+              // starts a new appointment without details left from a previous one
+              resetDraft();
+              router.push('/carePlanner/createAppointment');
+            }}
             buttonType="primaryButton"
           />
           <Button
@@ -50,9 +49,10 @@ export default function Screen() {
             buttonType="primaryButton"
           />
           <Text style={styles.sectionHeading}>
-            {APPOINTMENTS.length > 0 ? 'Recent appointments' : 'You have no appointments'}
+            {appointments.length > 0 ? 'Recently added appointments' : 'You have no appointments'}
           </Text>
-          {APPOINTMENTS.map((appointment) => (
+          {/* newest appointments are first, only the 3 most recently added are shown */}
+          {appointments.slice(0, 3).map((appointment) => (
             <View key={appointment.id} style={styles.appointmentCard}>
               <Text style={styles.appointmentDate}>{formatDate(appointment.scheduled_date)}</Text>
               {/* optional fields that are empty are left out */}

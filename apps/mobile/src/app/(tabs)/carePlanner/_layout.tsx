@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
 import { useTheme } from '../../../../context/ThemeContext';
+import { AppointmentProvider } from '../../../../context/AppointmentContext';
 
 // keeps the care planner screen under every page in this stack
 export const unstable_settings = {
@@ -16,45 +17,47 @@ export default function CarePlannerLayout() {
   const { colours } = useTheme();
 
   return (
-    <Stack
-      screenOptions={{
-        headerStyle: { backgroundColor: colours.background },
-        headerTintColor: colours.onBackground,
-      }}
-    >
-      <Stack.Screen
-        // the care planner screen has its own heading
-        name="index"
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="createAppointment"
-        options={{ title: 'Create Appointment' }}
-      />
-      <Stack.Screen
-        name="addSupportPerson"
-        options={{ title: 'Add a Support Person' }}
-      />
-      <Stack.Screen
-        name="addSupportPerson1"
-        options={{ title: 'Add Support Person 1' }}
-      />
-      <Stack.Screen
-        name="addSupportPerson2"
-        options={{ title: 'Add Support Person 2' }}
-      />
-      <Stack.Screen
-        name="mySupportLinks"
-        options={{ title: 'My Support Links' }}
-      />
-      <Stack.Screen
-        name="addQuestions"
-        options={{ title: 'Add Questions to Your Appointment' }}
-      />
-      <Stack.Screen
-        name="reviewAppointment"
-        options={{ title: 'Review my Appointment Plan' }}
-      />
-    </Stack>
+    <AppointmentProvider>
+      <Stack
+        screenOptions={{
+          headerStyle: { backgroundColor: colours.background },
+          headerTintColor: colours.onBackground,
+        }}
+      >
+        <Stack.Screen
+          // the care planner screen has its own heading
+          name="index"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="createAppointment"
+          options={{ title: 'Create Appointment' }}
+        />
+        <Stack.Screen
+          name="addSupportPerson"
+          options={{ title: 'Add a Support Person' }}
+        />
+        <Stack.Screen
+          name="addSupportPerson1"
+          options={{ title: 'Add Support Person 1' }}
+        />
+        <Stack.Screen
+          name="addSupportPerson2"
+          options={{ title: 'Add Support Person 2' }}
+        />
+        <Stack.Screen
+          name="mySupportLinks"
+          options={{ title: 'My Support Links' }}
+        />
+        <Stack.Screen
+          name="addQuestions"
+          options={{ title: 'Add Questions to Your Appointment' }}
+        />
+        <Stack.Screen
+          name="reviewAppointment"
+          options={{ title: 'Review my Appointment Plan' }}
+        />
+      </Stack>
+    </AppointmentProvider>
   );
 }

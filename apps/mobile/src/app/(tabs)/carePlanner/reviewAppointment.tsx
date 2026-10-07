@@ -7,11 +7,19 @@ import { useRouter } from 'expo-router';
 import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
+import { useAppointment } from '../../../../context/AppointmentContext';
 
 export default function Screen() {
   const { colours } = useTheme();
   const styles = createStyles(colours);
   const router = useRouter();
+  const { draft, submitDraft } = useAppointment();
+
+  // adds the appointment to the care planner and goes back to it
+  const handleSubmit = () => {
+    submitDraft();
+    router.dismissTo('/carePlanner');
+  };
 
   return (
     <View style={styles.screen}>
@@ -20,21 +28,28 @@ export default function Screen() {
         <View style={styles.section}>
           <Text style={styles.heading}>Appointment date</Text>
           <View style={styles.field}>
-            <Text style={styles.input}>Mon, 12 Oct 2026</Text>
+            <Text style={styles.input}>
+              {draft.scheduledDate?.toLocaleDateString('en-AU', {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+              })}
+            </Text>
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.heading}>Doctor's name</Text>
           <View style={styles.field}>
-            <Text style={styles.input}>John Doe</Text>
+            <Text style={styles.input}>{draft.doctor || 'Not given'}</Text>
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.heading}>Health service</Text>
           <View style={styles.field}>
-            <Text style={styles.input}>General Practitioner</Text>
+            <Text style={styles.input}>{draft.healthService ?? 'Not given'}</Text>
           </View>
         </View>
 
@@ -86,7 +101,7 @@ export default function Screen() {
       <View style={styles.bottomBar}>
         <Button
           label="Submit"
-          onPress={() => router.dismissTo('/carePlanner')}
+          onPress={handleSubmit}
           buttonType="primaryButton"
         />
       </View>
