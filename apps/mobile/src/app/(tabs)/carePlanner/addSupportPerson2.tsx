@@ -1,10 +1,10 @@
 /**
  * Patients choose their second support person for an appointment from this screen, opened from the
- * add a support person page.
+ * add a support person page, or from an appointment's details to add them to that appointment.
  */
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput } from 'react-native';
-import { useNavigation, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
@@ -16,9 +16,12 @@ export default function Screen() {
   const styles = createStyles(colours);
   const { colors: paperColours } = usePaperTheme();
   const router = useRouter();
-  const navigation = useNavigation();
-  const { draft, updateDraft } = useAppointment();
-  const saved = draft.supportPerson2;
+  const { draft, updateDraft, appointments, updateAppointment } = useAppointment();
+
+  // set when opened from a submitted appointment's details, otherwise the draft is changed
+  const { appointmentId } = useLocalSearchParams<{ appointmentId?: string }>();
+  const appointment = appointments.find((item) => item.id === appointmentId);
+  const saved = appointmentId ? appointment?.supportPerson2 : draft.supportPerson2;
 
   // starts with the saved details, so the person can be edited after saving
   const [name, setName] = useState(saved?.name ?? '');
@@ -34,31 +37,17 @@ export default function Screen() {
       setShowError(true);
       return;
     }
-    updateDraft({
-      supportPerson2: {
-        name: name.trim(),
-        phone: phone.trim(),
-        email: email.trim(),
-        canAddQuestions,
-        canAddAnswers,
-      },
-    });
+    const person = {
+      name: name.trim(),
+      phone: phone.trim(),
+      email: email.trim(),
+      canAddQuestions,
+      canAddAnswers,
+    };
+    if (appointmentId) updateAppointment(appointmentId, { supportPerson2: person });
+    else updateDraft({ supportPerson2: person });
     router.back();
   };
-
-  useEffect(
-    () =>
-      navigation.addListener('beforeRemove', (event) => {
-        const routes = navigation.getState()?.routes ?? [];
-        const previous = routes[routes.length - 2];
-        const isBack = event.data.action.type === 'GO_BACK' || event.data.action.type === 'POP';
-        if (!isBack || previous?.name === 'addSupportPerson') return;
-
-        event.preventDefault();
-        router.replace('/carePlanner/addSupportPerson');
-      }),
-    [navigation, router],
-  );
 
   return (
     <View style={styles.screen}>

@@ -20,7 +20,6 @@ const SUGGESTED_QUESTIONS: { key: string; heading: string; questions: string[] }
     questions: [
       'What could be causing pain in my lower back, neck, and knee?',
       'Are these areas related, or are they likely separate issues?',
-      'x',
     ],
   },
   {

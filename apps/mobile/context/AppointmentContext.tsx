@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
+import { toDateString } from '../constants/date';
 
 // Support person details
 export type SupportPerson = {
@@ -55,16 +56,13 @@ const PLACEHOLDER_APPOINTMENTS: Appointment[] = [
   { id: '3', scheduled_date: '2026-11-03', doctor: '', health_service: '', supportPerson1: null, supportPerson2: null, questions: [] },
 ];
 
-// formats a date as YYYY-MM-DD in local time
-const toDateString = (date: Date) =>
-  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-
 type AppointmentState = {
   draft: AppointmentDraft;
   appointments: Appointment[];
   updateDraft: (changes: Partial<AppointmentDraft>) => void;
   resetDraft: () => void;
   submitDraft: () => void;
+  updateAppointment: (id: string, changes: Partial<Appointment>) => void;
 };
 
 const AppointmentContext = createContext<AppointmentState>({
@@ -73,6 +71,7 @@ const AppointmentContext = createContext<AppointmentState>({
   updateDraft: () => {},
   resetDraft: () => {},
   submitDraft: () => {},
+  updateAppointment: () => {},
 });
 
 /**
@@ -104,9 +103,17 @@ export function AppointmentProvider({ children }: { children: React.ReactNode })
     resetDraft();
   };
 
+  // changes the fields of a submitted appointment, e.g. its support persons
+  const updateAppointment = (id: string, changes: Partial<Appointment>) =>
+    setAppointments((previous) =>
+      previous.map((appointment) =>
+        appointment.id === id ? { ...appointment, ...changes } : appointment,
+      ),
+    );
+
   return (
     <AppointmentContext.Provider
-      value={{ draft, appointments, updateDraft, resetDraft, submitDraft }}
+      value={{ draft, appointments, updateDraft, resetDraft, submitDraft, updateAppointment }}
     >
       {children}
     </AppointmentContext.Provider>

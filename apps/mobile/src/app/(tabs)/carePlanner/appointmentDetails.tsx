@@ -2,16 +2,33 @@
  * Shows a summary of the details of an appointment, opened by pressing an appointment on the
  * care planner.
  */
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
+import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
 import { formatDate } from '../../../../constants/date';
 import { useAppointment } from '../../../../context/AppointmentContext';
 
+// the pages to edit or add each support person spot
+const SUPPORT_PERSON_PAGES = [
+  {
+    number: 1,
+    editPage: '/carePlanner/editSupportPerson1',
+    addPage: '/carePlanner/addSupportPerson1',
+  },
+  {
+    number: 2,
+    editPage: '/carePlanner/editSupportPerson2',
+    addPage: '/carePlanner/addSupportPerson2',
+  },
+] as const;
+
 export default function Screen() {
   const { colours } = useTheme();
   const styles = createStyles(colours);
+  const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { appointments } = useAppointment();
   const appointment = appointments.find((item) => item.id === id);
@@ -51,19 +68,48 @@ export default function Screen() {
           </View>
         </View>
 
-        <Text style={styles.headline}>Support Persons</Text>
-        {appointment.supportPerson1 || appointment.supportPerson2 ? (
-          [appointment.supportPerson1, appointment.supportPerson2].map((person, index) => {
-            if (!person) return null;
-            const access = [
-              person.canAddQuestions && 'Add questions',
-              person.canAddAnswers && "Add doctor's answer",
-            ].filter(Boolean);
+        <Button
+          label="Edit"
+          onPress={() =>
+            router.push({ pathname: '/carePlanner/editAppointment', params: { id: appointment.id } })
+          }
+          buttonType="primaryButton"
+        />
 
+        <Text style={styles.headline}>Support Persons</Text>
+        {SUPPORT_PERSON_PAGES.map(({ number, editPage, addPage }) => {
+          const person = number === 1 ? appointment.supportPerson1 : appointment.supportPerson2;
+
+          // an empty spot shows a button to add a person instead of their card
+          if (!person) {
             return (
-              <View key={index} style={styles.section}>
-                <Text style={styles.heading}>Support Person {index + 1}</Text>
-                <View style={[styles.field, styles.personCard]}>
+              <Button
+                key={number}
+                label={`Add support person ${number}`}
+                onPress={() =>
+                  router.push({ pathname: addPage, params: { appointmentId: appointment.id } })
+                }
+                buttonType="primaryButton"
+              />
+            );
+          }
+
+          const access = [
+            person.canAddQuestions && 'Add questions',
+            person.canAddAnswers && "Add doctor's answer",
+          ].filter(Boolean);
+
+          // pressing the card opens the page to change their access or delete them
+          return (
+            <View key={number} style={styles.section}>
+              <Text style={styles.heading}>Support Person {number}</Text>
+              <Pressable
+                style={[styles.field, styles.personCard]}
+                onPress={() => router.push({ pathname: editPage, params: { id: appointment.id } })}
+                accessibilityRole="button"
+                accessibilityLabel={`Edit support person ${number}`}
+              >
+                <View style={styles.personInfo}>
                   <Text style={styles.personName}>{person.name}</Text>
                   <Text style={styles.personDetails}>{person.phone}</Text>
                   {!!person.email && <Text style={styles.personDetails}>{person.email}</Text>}
@@ -71,14 +117,11 @@ export default function Screen() {
                     Access: {access.length > 0 ? access.join(', ') : 'None'}
                   </Text>
                 </View>
-              </View>
-            );
-          })
-        ) : (
-          <View style={styles.field}>
-            <Text style={styles.input}>No support persons added</Text>
-          </View>
-        )}
+                <Ionicons name="chevron-forward" size={24} color={colours.onSurface} />
+              </Pressable>
+            </View>
+          );
+        })}
 
         <Text style={styles.headline}>Questions to ask</Text>
         <View style={[styles.field, styles.list]}>
@@ -147,6 +190,13 @@ function createStyles(colours: ColourSet) {
     },
 
     personCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+
+    personInfo: {
+      flex: 1,
       gap: 4,
     },
 
