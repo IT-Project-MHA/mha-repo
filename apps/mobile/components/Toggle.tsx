@@ -6,29 +6,29 @@ import { StyleSheet, View } from 'react-native';
 import { useTheme, ColourSet} from '../context/ThemeContext';
 import SwitchToggle from "react-native-switch-toggle";
 
-const ThemeToggle = () => {
+type ToggleProps = {
+  onToggle: () => void;
+  switchOn: boolean;
+};
+
+const Toggle = ({onToggle, switchOn}: ToggleProps)  => {
     const {colours, setMode, isHC, isDark} = useTheme();
     const styles = createStyles(colours);
 
     // function that runs when the toggle is pressed
     // changes between light and dark mode
-    const toggleColour = () => {
-            if (isDark){
-                setMode(!isHC ? 'light' : 'lightHC');
-            }else{
-                setMode(!isHC ? 'dark' : 'darkHC');
-            } 
-    };
 
   return (
     <View style={styles.container}>
             <SwitchToggle
-                circleColorOn={colours.secondary}
                 backgroundColorOn={colours.primary}
-                circleColorOff={colours.tertiary}
+                circleColorOn={colours.tertiary}
+
+                circleColorOff={colours.primary}
                 backgroundColorOff={colours.secondary}
-                switchOn= {isDark}
-                onPress={toggleColour}
+
+                switchOn= {switchOn}
+                onPress={onToggle}
                 containerStyle= {styles.buttonContainer}
                 circleStyle={styles.circle}
             />
@@ -36,7 +36,7 @@ const ThemeToggle = () => {
   );
 }
 
-export default ThemeToggle;
+export default Toggle;
 
 function createStyles(colours: ColourSet){
     return StyleSheet.create({

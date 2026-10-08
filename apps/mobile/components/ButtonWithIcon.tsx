@@ -23,7 +23,6 @@ type ButtonProps = {
   onPress: () => void;
   buttonType: ButtonType;
   name: IoniconsIconName;
-  colour: string; 
 };
 
 /**
@@ -35,8 +34,8 @@ type ButtonProps = {
  * @param buttonType string that maps to a button type, defined in theme.ts
  * @returns a styled button component, which performs some funtion when pressed
  */
-const Button = ({label, onPress, buttonType, name, colour}: ButtonProps) => {
-  const { theme } = useTheme();
+const Button = ({label, onPress, buttonType, name}: ButtonProps) => {
+  const { theme, colours} = useTheme();
 
   return (
     
@@ -46,11 +45,11 @@ const Button = ({label, onPress, buttonType, name, colour}: ButtonProps) => {
       onPress={onPress}
     >
     <View style={styles.row}>
-      <Text style={[theme.h6]}>{label}</Text>
+      <Text style={[theme.h6, theme.fontOnSurface]}>{label}</Text>
         <Ionicons
             name={name}
             size={16}
-            color={colour}  
+            color={colours.onSurface}  
             style={styles.icon}
         />
    
