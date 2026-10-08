@@ -10,27 +10,91 @@ import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
 import { Checkbox, useTheme as usePaperTheme } from 'react-native-paper';
+import { useAppointment, AppointmentQuestion } from '../../../../context/AppointmentContext';
+
+// suggested questions shown under each heading, a checkbox is made for each question
+const SUGGESTED_QUESTIONS: { key: string; heading: string; questions: string[] }[] = [
+  {
+    key: 'location',
+    heading: 'Pain location',
+    questions: [
+      'What could be causing pain in my lower back, neck, and knee?',
+      'Are these areas related, or are they likely separate issues?',
+      'x',
+    ],
+  },
+  {
+    key: 'intensity',
+    heading: 'Pain intensity',
+    questions: [
+      'My average pain over the past two weeks has been around 7 — what does this indicate?',
+      'Even though I don’t have pain right now, I’ve had severe pain at times (up to 9). What could explain these flare-ups?',
+      'Is it normal for pain to vary between mild (2) and very severe (9)?',
+      'What can I do to better manage days when the pain is high?',
+    ],
+  },
+  {
+    key: 'impact',
+    heading: 'Pain impact',
+    questions: [
+      'What treatments or therapies could help improve my mobility?',
+      'Would physiotherapy or a specific exercise program be appropriate for me?',
+      'Are there movements or activities I should avoid right now?',
+      'My pain is making it hard to take care of myself independently — what can we do to improve this?',
+      'Are there strategies, aids, or supports that could help with daily tasks?',
+      'Should we adjust my treatment plan given how much this is affecting my independence?',
+      'Is this level of impact typical for my condition?',
+      'What options are available to improve my quality of life?'
+    ],
+  },
+  {
+    key: 'management',
+    heading: 'Management',
+    questions: [
+      'Are there additional investigations or referrals that might help?',
+      'How can I prevent the pain from becoming severe again?',
+      'What are realistic goals for improving my function and independence?'
+    ],
+  },
+];
+
+//  a suggested question's checkbox id is its category key and number, e.g. 'location1'
+const suggestedId = (key: string, index: number) => `${key}${index + 1}`;
 
 export default function Screen() {
   const { colours } = useTheme();
   const styles = createStyles(colours);
   const router = useRouter();
   const { colors: paperColours } = usePaperTheme();
+  const { draft, updateDraft } = useAppointment();
 
-  // ids of the questions the patient has ticked
-  const [checked, setChecked] = useState<Set<string>>(new Set());
+  // set of ids of the questions the patient has ticked
+  const [checked, setChecked] = useState<Set<string>>(
+    () =>
+      new Set(
+        draft.questions
+          // filter out questions that don't have a suggestedId
+          .map((question) => question.suggestedId)
+          .filter((id): id is string => !!id),
+      ),
+  );
 
   const toggle = (id: string) => // toggle checkbox
     setChecked((previous) => {
+      // make a new copy of the set of ticked ids and add/delete
       const next = new Set(previous);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
 
-  // questions the patient has typed themselves
-  const [ownQuestions, setOwnQuestions] = useState<{ id: number; text: string }[]>([]);
-  const [nextId, setNextId] = useState(0);
+  // questions the patient has typed themselves, starts with the saved ones
+  const [ownQuestions, setOwnQuestions] = useState<{ id: number; text: string }[]>(() =>
+    draft.questions
+      .filter((question) => question.source === 'patient')
+      .map((question, index) => ({ id: index, text: question.text })),
+  );
+  const [nextId, setNextId] = useState(ownQuestions.length);
 
   const addOwnQuestion = () => {
     setOwnQuestions((previous) => [...previous, { id: nextId, text: '' }]);
@@ -47,115 +111,51 @@ export default function Screen() {
   const removeOwnQuestion = (id: number) =>
     setOwnQuestions((previous) => previous.filter((question) => question.id !== id));
 
+  // saves the ticked suggestions & own questions (blank ones left out) to the appointment
+  const save = () => {
+    const suggested: AppointmentQuestion[] = SUGGESTED_QUESTIONS.flatMap(({ key, questions }) =>
+      questions
+        // converts SUGGESTED_QUESTIONS into [{text, suggestedId}]
+        .map((text, index) => ({ text, id: suggestedId(key, index) }))
+        // remove non-checked items
+        .filter(({ id }) => checked.has(id))
+        // map to AppointmentQuestion object
+        .map(({ text, id }) => ({ text, source: 'suggested' as const, suggestedId: id })),
+    );
+    const own: AppointmentQuestion[] = ownQuestions
+      .map((question) => question.text.trim())
+      .filter((text) => text !== '')
+      .map((text) => ({ text, source: 'patient' }));
+    updateDraft({ questions: [...suggested, ...own] });
+    router.push('/carePlanner/reviewAppointment');
+  };
+
   return (
     <View style={styles.screen}>
         <Text style={[styles.body, styles.intro]}>Based on your answers to the four impact sections, 
             we have provided some suggested questions to ask your healthcare professional/s.
             </Text>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={{ gap: 8, marginTop: 8 }}>
-          <Text style={styles.heading}>Pain location</Text>
-          <View style={[styles.field, styles.checkboxList]}>
-            <Checkbox.Item
-              label="x"
-              status={checked.has('location1') ? 'checked' : 'unchecked'}
-              onPress={() => toggle('location1')}
-              labelStyle={styles.input}
-            />
-            <Checkbox.Item
-              label="x"
-              status={checked.has('location2') ? 'checked' : 'unchecked'}
-              onPress={() => toggle('location2')}
-              labelStyle={styles.input}
-              style={styles.divider}
-            />
-            <Checkbox.Item
-              label="x"
-              status={checked.has('location3') ? 'checked' : 'unchecked'}
-              onPress={() => toggle('location3')}
-              labelStyle={styles.input}
-              style={styles.divider}
-            />
+        {SUGGESTED_QUESTIONS.map(({ key, heading, questions }) => (
+          <View key={key} style={{ gap: 8, marginTop: 8 }}>
+            <Text style={styles.heading}>{heading}</Text>
+            <View style={[styles.field, styles.checkboxList]}>
+              {questions.map((text, index) => {
+                const id = suggestedId(key, index);
+                return (
+                  <Checkbox.Item
+                    key={id}
+                    label={text}
+                    status={checked.has(id) ? 'checked' : 'unchecked'}
+                    onPress={() => toggle(id)}
+                    labelStyle={styles.input}
+                    style={index > 0 ? styles.divider : undefined}
+                  />
+                );
+              })}
+            </View>
           </View>
-        </View>
-
-        <View style={{ gap: 8, marginTop: 8 }}>
-          <Text style={styles.heading}>Pain intensity</Text>
-          <View style={[styles.field, styles.checkboxList]}>
-            <Checkbox.Item
-              label="x"
-              status={checked.has('intensity1') ? 'checked' : 'unchecked'}
-              onPress={() => toggle('intensity1')}
-              labelStyle={styles.input}
-            />
-            <Checkbox.Item
-              label="x"
-              status={checked.has('intensity2') ? 'checked' : 'unchecked'}
-              onPress={() => toggle('intensity2')}
-              labelStyle={styles.input}
-              style={styles.divider}
-            />
-            <Checkbox.Item
-              label="x"
-              status={checked.has('intensity3') ? 'checked' : 'unchecked'}
-              onPress={() => toggle('intensity3')}
-              labelStyle={styles.input}
-              style={styles.divider}
-            />
-          </View>
-        </View>
-
-        <View style={{ gap: 8, marginTop: 8 }}>
-          <Text style={styles.heading}>Pain impact</Text>
-          <View style={[styles.field, styles.checkboxList]}>
-            <Checkbox.Item
-              label="x"
-              status={checked.has('impact1') ? 'checked' : 'unchecked'}
-              onPress={() => toggle('impact1')}
-              labelStyle={styles.input}
-            />
-            <Checkbox.Item
-              label="x"
-              status={checked.has('impact2') ? 'checked' : 'unchecked'}
-              onPress={() => toggle('impact2')}
-              labelStyle={styles.input}
-              style={styles.divider}
-            />
-            <Checkbox.Item
-              label="x"
-              status={checked.has('impact3') ? 'checked' : 'unchecked'}
-              onPress={() => toggle('impact3')}
-              labelStyle={styles.input}
-              style={styles.divider}
-            />
-          </View>
-        </View>
-
-        <View style={{ gap: 8, marginTop: 8 }}>
-          <Text style={styles.heading}>Management</Text>
-          <View style={[styles.field, styles.checkboxList]}>
-            <Checkbox.Item
-              label="x"
-              status={checked.has('management1') ? 'checked' : 'unchecked'}
-              onPress={() => toggle('management1')}
-              labelStyle={styles.input}
-            />
-            <Checkbox.Item
-              label="x"
-              status={checked.has('management2') ? 'checked' : 'unchecked'}
-              onPress={() => toggle('management2')}
-              labelStyle={styles.input}
-              style={styles.divider}
-            />
-            <Checkbox.Item
-              label="x"
-              status={checked.has('management3') ? 'checked' : 'unchecked'}
-              onPress={() => toggle('management3')}
-              labelStyle={styles.input}
-              style={styles.divider}
-            />
-          </View>
-        </View>
+        ))}
 
         <View style={{ gap: 8, marginTop: 8 }}>
           <Text style={styles.heading}>Add your own questions</Text>
@@ -184,11 +184,7 @@ export default function Screen() {
       </ScrollView>
 
       <View style={styles.bottomBar}>
-        <Button
-          label="Save"
-          onPress={() => router.push('/carePlanner/reviewAppointment')}
-          buttonType="primaryButton"
-        />
+        <Button label="Save" onPress={save} buttonType="primaryButton" />
       </View>
     </View>
   );

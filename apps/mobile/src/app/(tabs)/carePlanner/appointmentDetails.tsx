@@ -79,6 +79,22 @@ export default function Screen() {
             <Text style={styles.input}>No support persons added</Text>
           </View>
         )}
+
+        <Text style={styles.headline}>Questions to ask</Text>
+        <View style={[styles.field, styles.list]}>
+          {appointment.questions.length > 0 ? (
+            appointment.questions.map((question, index) => (
+              <Text
+                key={index}
+                style={[styles.input, styles.listItem, index > 0 && styles.divider]}
+              >
+                {question.text}
+              </Text>
+            ))
+          ) : (
+            <Text style={[styles.input, styles.listItem]}>No questions added</Text>
+          )}
+        </View>
       </ScrollView>
     </View>
   );
@@ -132,6 +148,20 @@ function createStyles(colours: ColourSet) {
 
     personCard: {
       gap: 4,
+    },
+
+    list: {
+      padding: 0,
+      overflow: 'hidden',
+    },
+
+    listItem: {
+      padding: 12,
+    },
+
+    divider: {
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colours.ex3,
     },
 
     personName: {

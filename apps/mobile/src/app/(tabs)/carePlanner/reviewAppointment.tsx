@@ -73,41 +73,19 @@ export default function Screen() {
         </View>
 
         <Text style={styles.headline}>Questions to ask</Text>
-        <View style={styles.section}>
-          <Text style={styles.heading}>Pain location</Text>
-          <View style={[styles.field, styles.list]}>
-            <Text style={[styles.input, styles.listItem]}>x</Text>
-            <Text style={[styles.input, styles.listItem, styles.divider]}>x</Text>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.heading}>Pain intensity</Text>
-          <View style={[styles.field, styles.list]}>
-            <Text style={[styles.input, styles.listItem]}>x</Text>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.heading}>Pain impact</Text>
-          <View style={[styles.field, styles.list]}>
-            <Text style={[styles.input, styles.listItem]}>x</Text>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.heading}>Management</Text>
-          <View style={[styles.field, styles.list]}>
-            <Text style={[styles.input, styles.listItem]}>x</Text>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.heading}>Your own questions</Text>
-          <View style={[styles.field, styles.list]}>
-            <Text style={[styles.input, styles.listItem]}>x</Text>
-            <Text style={[styles.input, styles.listItem, styles.divider]}>x</Text>
-          </View>
+        <View style={[styles.field, styles.list]}>
+          {draft.questions.length > 0 ? (
+            draft.questions.map((question, index) => (
+              <Text
+                key={index}
+                style={[styles.input, styles.listItem, index > 0 && styles.divider]}
+              >
+                {question.text}
+              </Text>
+            ))
+          ) : (
+            <Text style={[styles.input, styles.listItem]}>No questions added</Text>
+          )}
         </View>
       </ScrollView>
 

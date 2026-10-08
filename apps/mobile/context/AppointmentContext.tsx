@@ -9,6 +9,15 @@ export type SupportPerson = {
   canAddAnswers: boolean;
 };
 
+// A question to ask the doctor, source matches the backend's AppointmentQuestion source:
+// 'suggested' for questions ticked from the suggestions, 'patient' for the patient's own
+// suggestedId is the checkbox a suggested question came from, so it can be ticked again
+export type AppointmentQuestion = {
+  text: string;
+  source: 'suggested' | 'patient';
+  suggestedId?: string;
+};
+
 // A draft appointment, filled in across the care planner page
 export type AppointmentDraft = {
   scheduledDate: Date | null;
@@ -16,6 +25,7 @@ export type AppointmentDraft = {
   healthService: string | null;
   supportPerson1: SupportPerson | null;
   supportPerson2: SupportPerson | null;
+  questions: AppointmentQuestion[];
 };
 
 // A submitted appointment, shown in appointments list
@@ -26,6 +36,7 @@ export type Appointment = {
   health_service: string;
   supportPerson1: SupportPerson | null;
   supportPerson2: SupportPerson | null;
+  questions: AppointmentQuestion[];
 };
 
 const emptyDraft = (): AppointmentDraft => ({
@@ -34,13 +45,14 @@ const emptyDraft = (): AppointmentDraft => ({
   healthService: null,
   supportPerson1: null,
   supportPerson2: null,
+  questions: [],
 });
 
 // placeholder appointments
 const PLACEHOLDER_APPOINTMENTS: Appointment[] = [
-  { id: '1', scheduled_date: '2026-10-12', doctor: 'John Doe', health_service: 'General Practitioner', supportPerson1: null, supportPerson2: null },
-  { id: '2', scheduled_date: '2026-10-20', doctor: 'John Doe', health_service: '', supportPerson1: null, supportPerson2: null },
-  { id: '3', scheduled_date: '2026-11-03', doctor: '', health_service: '', supportPerson1: null, supportPerson2: null },
+  { id: '1', scheduled_date: '2026-10-12', doctor: 'John Doe', health_service: 'General Practitioner', supportPerson1: null, supportPerson2: null, questions: [] },
+  { id: '2', scheduled_date: '2026-10-20', doctor: 'John Doe', health_service: '', supportPerson1: null, supportPerson2: null, questions: [] },
+  { id: '3', scheduled_date: '2026-11-03', doctor: '', health_service: '', supportPerson1: null, supportPerson2: null, questions: [] },
 ];
 
 // formats a date as YYYY-MM-DD in local time
@@ -86,6 +98,7 @@ export function AppointmentProvider({ children }: { children: React.ReactNode })
       health_service: draft.healthService ?? '',
       supportPerson1: draft.supportPerson1,
       supportPerson2: draft.supportPerson2,
+      questions: draft.questions,
     };
     setAppointments((previous) => [appointment, ...previous]);
     resetDraft();
