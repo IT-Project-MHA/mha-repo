@@ -123,6 +123,12 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# Uploaded files (e.g. appointment answer recordings)
+# Temporarily stored on local disk until cloud storage is set up. MEDIA_URL is deliberately not
+# set & media is not served publicly, recordings are downloaded through an authenticated endpoint.
+
+MEDIA_ROOT = BASE_DIR / 'media'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 

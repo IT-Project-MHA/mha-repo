@@ -1,4 +1,4 @@
-from datetime import date
+from django.utils import timezone
 
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
@@ -20,7 +20,7 @@ class GrantAccessTests(APITestCase):
         self.patient = User.objects.create_user("+61490813123", "Josh", PIN)
         self.profile = PatientProfile.objects.create(user = self.patient)
         self.appointment = Appointment.objects.create(
-            patient_profile = self.profile, scheduled_date = date.today(), created_by = self.patient,
+            patient_profile = self.profile, scheduled_date = timezone.now(), created_by = self.patient,
         )
         self.sign_in(self.patient)
 

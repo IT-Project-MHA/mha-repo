@@ -17,7 +17,6 @@ class UserManager(BaseUserManager):
         return user
 
     def create_superuser(self, phone_number, display_name, pin=None, **extra):
-        extra.setdefault("is_staff", True)
         extra.setdefault("is_superuser", True)
         extra.setdefault("is_active", True)
 
@@ -60,7 +59,8 @@ class PatientProfile(BaseModel, SoftDeleteModel):
     user = models.OneToOneField(User, on_delete = models.PROTECT, related_name = "patient_profile")
     has_diagnosis = models.BooleanField(default = False)
     other_conditions = models.TextField(blank = True)
-    pain_types = models.ManyToManyField("reference.QuestionOption", blank = True, related_name = "pain_type_patient_profiles")
+    pain_types = models.ManyToManyField("reference.QuestionOption", blank = True, related_name = "pain_type_patient_profiles",
+                                        limit_choices_to = {"question_key": "pain_type"})
     assigned_gender_at_birth = models.CharField(max_length = 40, choices = AssignedGender.choices, blank = True)
     birth_year = models.SmallIntegerField(null = True, blank = True, validators = [MinValueValidator(1900), MaxValueValidator(2100)])
 

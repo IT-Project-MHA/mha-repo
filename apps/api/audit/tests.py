@@ -1,12 +1,11 @@
-from datetime import date
-
+from django.utils import timezone
 from django.test import TestCase
 
 from accounts.models import PatientProfile, User
 from appointment.access import record_appointment_view, record_question_view
 from appointment.models import Appointment, AppointmentAnswer, AppointmentQuestion
 
-from audit.models import AppointmentAccessLog, AuditEntry, QuestionAccessLog
+from audit.models import AuditEntry
 from audit.services import record, record_view
 
 PIN = "196712"
@@ -18,7 +17,7 @@ class AuditTests(TestCase):
         self.patient = User.objects.create_user("+61400000000", "Josh", PIN)
         self.profile = PatientProfile.objects.create(user = self.patient)
         self.appointment = Appointment.objects.create(
-            patient_profile = self.profile, scheduled_date = date.today(), created_by = self.patient
+            patient_profile = self.profile, scheduled_date = timezone.now(), created_by = self.patient
         )
         self.question = AppointmentQuestion.objects.create(
             appointment = self.appointment, text = "Is this normal?", created_by = self.patient
@@ -54,13 +53,11 @@ class AuditTests(TestCase):
     def test_appointment_view_by_supporter(self):
         record_appointment_view(self.supporter, self.appointment)
         self.assertTrue(AuditEntry.objects.filter(action = AuditEntry.Action.VIEW).exists())
-        self.assertTrue(AppointmentAccessLog.objects.filter(support_person = self.supporter).exists())
 
     def test_appointment_view_by_patient(self):
         record_appointment_view(self.patient, self.appointment)
         self.assertFalse(AuditEntry.objects.exists())
-        self.assertFalse(AppointmentAccessLog.objects.exists())
 
     def test_question_view_by_supporter(self):
         record_question_view(self.supporter, self.question)
-        self.assertTrue(QuestionAccessLog.objects.filter(question = self.question, support_person = self.supporter).exists())
+        self.assertTrue(AuditEntry.objects.filter(action = AuditEntry.Action.VIEW, target_id = self.question.id).exists())

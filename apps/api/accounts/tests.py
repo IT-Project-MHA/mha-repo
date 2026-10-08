@@ -470,10 +470,10 @@ class PermissionTests(APITestCase):
         self.patient = User.objects.create_user(PHONE, "Josh", PIN)
         self.profile = PatientProfile.objects.create(user = self.patient)
         self.appointment = Appointment.objects.create(
-            patient_profile = self.profile, scheduled_date = date.today(), created_by = self.patient,
+            patient_profile = self.profile, scheduled_date = timezone.now(), created_by = self.patient,
         )
         self.other_appointment = Appointment.objects.create(
-            patient_profile = self.profile, scheduled_date = date.today(), created_by = self.patient,
+            patient_profile = self.profile, scheduled_date = timezone.now(), created_by = self.patient,
         )
 
         # Supporter with an active link but switches off

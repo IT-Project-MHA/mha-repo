@@ -11,7 +11,6 @@ TARGET_TYPES = {
     "AppointmentAnswer": AuditEntry.Target.APPOINTMENT_ANSWER,
     "AppointmentAccess": AuditEntry.Target.APPOINTMENT_ACCESS,
     "SupportLink": AuditEntry.Target.SUPPORT_LINK,
-    "GeneratedDocument": AuditEntry.Target.GENERATED_DOCUMENT,
     "PatientProfile": AuditEntry.Target.PATIENT_PROFILE,
 }
 

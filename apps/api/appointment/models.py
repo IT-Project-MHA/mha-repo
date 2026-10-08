@@ -9,7 +9,7 @@ class Appointment(BaseModel, SoftDeleteModel):
         CANCELLED = "cancelled", "Cancelled"
 
     patient_profile = models.ForeignKey("accounts.PatientProfile", on_delete = models.PROTECT, related_name = "appointment_patient")
-    scheduled_date = models.DateField()
+    scheduled_date = models.DateTimeField()
     doctor = models.CharField(max_length = 100, blank = True)
     status = models.CharField(choices = Status.choices, default = Status.PLANNED)
 
@@ -36,19 +36,6 @@ class Appointment(BaseModel, SoftDeleteModel):
             # Search by patient
             models.Index(fields = ["patient_profile"], name = "appointment_by_patient_idx"),
         ]
-
-
-
-class CarePerson(BaseModel, SoftDeleteModel):
-    patient_profile = models.ForeignKey("accounts.PatientProfile", on_delete = models.PROTECT, related_name = "care_people")
-    name = models.CharField(max_length = 120)
-    phone_number = models.CharField(max_length = 20, blank = True)
-    email = models.EmailField(blank = True)
-
-    class Meta:
-        db_table = "care_person"
-        ordering = ["name"]
-        indexes = [models.Index(fields = ["patient_profile"], name = "care_person_by_patient_idx")]
 
 
 

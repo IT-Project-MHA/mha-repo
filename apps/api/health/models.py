@@ -6,7 +6,7 @@ from mpowered_api.base_models import BaseModel, SoftDeleteModel
 # Prescriptions and Weekly Assessments
 
 class Prescription(BaseModel, SoftDeleteModel): 
-    patient_profile = models.ForeignKey(PatientProfile, on_delete = models.CASCADE, related_name = "perscriptions")
+    patient_profile = models.ForeignKey(PatientProfile, on_delete = models.CASCADE, related_name = "prescriptions")
     name = models.CharField(max_length = 50)
     dosage = models.PositiveSmallIntegerField()
 
@@ -56,7 +56,7 @@ class Assessment(BaseModel):
     submitted_at = models.DateTimeField(null = True, blank = True)
     reflection = models.CharField(null = True, blank = True, max_length = 300)
     week_starting = models.DateField()
-    status = models.CharField()
+    status = models.CharField(default = Status.DRAFT, max_length = 10, choices = Status.choices)
 
     class Meta:
         db_table = "assessment"
@@ -72,7 +72,7 @@ class Assessment(BaseModel):
 
 
 class MyPain(BaseModel):
-    assessment_id = models.OneToOneField(Assessment, on_delete = models.CASCADE, related_name = "my_pain")
+    assessment = models.OneToOneField(Assessment, on_delete = models.CASCADE, related_name = "my_pain")
     current = models.PositiveSmallIntegerField(null = True, blank = True, validators = [MinValueValidator(0), MaxValueValidator(10)])
     worst = models.PositiveSmallIntegerField(null = True, blank = True, validators = [MinValueValidator(0), MaxValueValidator(10)])
     average = models.PositiveSmallIntegerField(null = True, blank = True, validators = [MinValueValidator(0), MaxValueValidator(10)])
@@ -91,7 +91,7 @@ class MyPain(BaseModel):
 
 
 class MyMovement(BaseModel):
-    assessment_id = models.OneToOneField(Assessment, on_delete = models.CASCADE, related_name = "my_movement")
+    assessment = models.OneToOneField(Assessment, on_delete = models.CASCADE, related_name = "my_movement")
     active_hours = models.PositiveSmallIntegerField(null = True, blank = True, validators = [MinValueValidator(0), MaxValueValidator(168)])
     general_impacts = models.ManyToManyField("reference.QuestionOptionOrdered", blank = True, related_name = "+",
                                              limit_choices_to = {"question_key": "movement_general_impacts"})
@@ -152,22 +152,3 @@ class MyManagement(BaseModel):
     completed_at = models.DateTimeField(null = True, blank = True)
 
     class Meta: db_table = "my_management"
-
-class GeneratedDocument(BaseModel):
-    class DocumentType(models.TextChoices):
-        PAIN_CHART = "pain_chart", "Pain Chart"
-        PAIN_PROFILE = "pain_profile", "Pain Profile"
-        APPOINTMENT = "appointment", "Appointment Summary"
-
-    patient_profile = models.ForeignKey("accounts.PatientProfile", on_delete = models.PROTECT, related_name = "documents")
-    generated_by = models.ForeignKey("accounts.User", on_delete = models.PROTECT, related_name = "+")
-    type = models.CharField(max_length = 20, choices = DocumentType.choices)
-    document_file = models.FileField(upload_to = "documents/%Y/%m/", null = True, blank = True)
-    date_from = models.DateField(null = True, blank = True)
-    date_until = models.DateField(null = True, blank = True)
-    generated_at = models.DateTimeField(auto_now_add = True)
-
-    class Meta:
-        db_table = "generated_document"
-        ordering = ["-generated_at"]
-        indexes = [models.Index(fields = ["patient_profile", "-generated_at"], name = "document_by_patient_idx")]
