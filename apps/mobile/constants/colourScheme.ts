@@ -22,82 +22,79 @@ export type ColourSet = {
 
 /**
  * Light mode
- * M3 / sys / light in figma
  */
 export const lightColours: ColourSet = {
-  background: '#FFFFFF',
-  surface: '#F2F2F7',
-  primary: '#6750A4',
-  secondary: '#e8def8',
-  tertiary: '#4a4459',
-  onBackground: '#000000',
-  onSurface: '#1D1B20',
-  onPrimary: '#FFFFFF',
-  onSecondary: '#6750A4',
-  onTertiary: '#FEF7FF',
-  ex1: '#EADDFF',
-  ex2: '#D9D9D9',
-  ex3: '#CED0D4',
+  background: '#fff9f9',
+  surface: '#f9eded',
+  primary: '#e8756b',
+  secondary: '#f6ce76',
+  tertiary: '#79b0c6',
+  onBackground: '#1d1b20',
+  onSurface: '#35313b',
+  onPrimary: '#fff9f9',
+  onSecondary: '#fff9f9',
+  onTertiary: '#fff9f9',
+  ex1: '#ff7f74', // a brighter coral
+  ex2: '#5292ab', // a deeper teal
+  ex3: '#d0ab59', // shaded yellow
   
 };
 
 /**
  * Dark mode
- * M3 / sys / dark in figma
  */
- 
 export const darkColours: ColourSet = {
-  background: '#1D1B20',
-  surface: '#4a4459',
-  primary: '#241943',
-  secondary: '#e8def8',
-  tertiary: '#4a4459',
-  onBackground: '#FFFFFF',
-  onSurface: '#CED0D4',
-  onPrimary: '#FFFFFF',
-  onSecondary: '#6750A4',
-  onTertiary: '#FEF7FF',
-  ex1: '#EADDFF',
-  ex2: '#D9D9D9',
-  ex3: '#CED0D4',
+  background: '#1d1b20',
+  surface: '#37363b',
+  primary: '#e8756b',
+  secondary: '#f6ce76',
+  tertiary: '#79b0c6',
+  onBackground: '#fff9f9',
+  onSurface: '#fff3f3',
+  onPrimary: '#1d1b20',
+  onSecondary: '#1d1b20',
+  onTertiary: '1d1b20',
+  ex1: '#ff7f74', // a brighter coral
+  ex2: '#5292ab', // a deeper teal
+  ex3: '#d0ab59', // shaded yellow
 };
 
 /**
- * M3 / sys / light / high contrast in figma
+ * High Contrast light colour scheme
  */
 export const lightHcColours: ColourSet = {
-  background: '#FFFFFF',
-  surface: '#F2F2F7',
-  primary: '#27174E',
-  secondary: '#FDF7FF',
-  tertiary: '#322F35',
-  onBackground: '#000000',
-  onSurface: '#1D1B20',
-  onPrimary: '#FFFFFF',
-  onSecondary: '#7174E',
-  onTertiary: '#FEF7FF',
-  ex1: '#EADDFF',
-  ex2: '#440F0E',
-  ex3: '#6E2F2B',
+  background: '#fff9f9',
+  surface: '#fff9f9',
+  primary: '#ff6254',
+  secondary: '#b1eb10',
+  tertiary: '#48cbff',
+  onBackground: '#080808',
+  onSurface: '#080808',
+  onPrimary: '#fff9f9',
+  onSecondary: '#fff9f9',
+  onTertiary: '#fff9f9',
+  ex1: '#ff2b18', 
+  ex2: '#00b7ff', 
+  ex3: '#604c20', 
 };
 
 /**
- * M3 / sys / dark / high contrast in figma
+ * High contrast dark colour scheme
  */
 export const darkHcColours: ColourSet = {
-  background: '#070707',
-  surface: '#F2F2F7',
-  primary: '#4705fc',
-  secondary: '#e8def8',
-  tertiary: '#4a4459',
-  onBackground: '#000000',
-  onSurface: '#1D1B20',
-  onPrimary: '#FFFFFF',
-  onSecondary: '#6750A4',
-  onTertiary: '#FEF7FF',
-  ex1: '#EADDFF',
-  ex2: '#440F0E',
-  ex3: '#21222D',
+  background: '#121114',
+  surface: '#262429',
+  primary: '#ff6254',
+  secondary: '#00fbff',
+  tertiary: '#f4ff1f',
+  onBackground: '#fff9f9',
+  onSurface: '#fff3f3',
+  onPrimary: '#1d1b20',
+  onSecondary: '#1d1b20',
+  onTertiary: '1d1b20',
+  ex1: '#ff7f74', // a brighter coral
+  ex2: '#5292ab', // a deeper teal
+  ex3: '#d0ab59', // shaded yellow
 };
 
 /**
