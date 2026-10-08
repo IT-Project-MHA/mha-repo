@@ -3,29 +3,33 @@ import { useState } from "react";
 import { Text, View, StyleSheet, Button} from "react-native";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { Question, QuestionProps } from "../../components/baseComponents/Question";
+import {EmptyQuestionArrayError} from "../../src/customErrors/QuestionErrors";
 
 
 class AssessmentProps {
   title?: String;
   questions!: QuestionProps[];
-  firstIndex!: number
 }
 
 export default function Assessment({ properties }: {properties: AssessmentProps}) {
-  const [currIndex, setNumber] = useState(properties.firstIndex);
+  const [currIndex, setNumber] = useState(0);
+  if (properties.questions == null) {
+    throw new EmptyQuestionArrayError("properties.questions is null");
+  } else if (properties.questions.length < 1) {
+    throw new EmptyQuestionArrayError("properties.questions has length " + properties.questions.length);
+  }
   let currQuestion: QuestionProps = properties.questions[currIndex];
   return (
     <SafeAreaView>
       <Button title="<- Back"></Button>
       <Question qProperties={properties.questions[currIndex]} />
-      <Text>{currIndex+1}/{properties.questions.length}</Text>
-      <Button  onPress={() => {
+      <Text>{'Progress: ' + (currIndex+1) + '/' + properties.questions.length}</Text>
+      {<button onClick={() => {
         if (currIndex >= properties.questions.length-1) {
             // submit assessment
           } else {
             setNumber(currIndex + 1);
-          }}} 
-          title="Record"></Button>
+          }}}>Record</button>}
     </SafeAreaView>
   )
 }
