@@ -94,6 +94,7 @@ export default function Screen() {
             );
           }
 
+          // get list of access strings
           const access = [
             person.canAddQuestions && 'Add questions',
             person.canAddAnswers && "Add doctor's answer",
@@ -124,20 +125,40 @@ export default function Screen() {
         })}
 
         <Text style={styles.headline}>Questions to ask</Text>
-        <View style={[styles.field, styles.list]}>
-          {appointment.questions.length > 0 ? (
-            appointment.questions.map((question, index) => (
-              <Text
+        {appointment.questions.length > 0 ? (
+          <View style={[styles.field, styles.list]}>
+            {/* pressing a question opens the page to answer it */}
+            {appointment.questions.map((question, index) => (
+              <Pressable
                 key={index}
-                style={[styles.input, styles.listItem, index > 0 && styles.divider]}
+                style={[styles.listItem, styles.questionRow, index > 0 && styles.divider]}
+                onPress={() =>
+                  router.push({
+                    pathname: '/carePlanner/answerQuestion',
+                    params: { id: appointment.id, index },
+                  })
+                }
+                accessibilityRole="button"
               >
-                {question.text}
-              </Text>
-            ))
-          ) : (
-            <Text style={[styles.input, styles.listItem]}>No questions added</Text>
-          )}
-        </View>
+                <Text style={[styles.input, styles.questionText]}>{question.text}</Text>
+                <Ionicons name="chevron-forward" size={24} color={colours.onSurface} />
+              </Pressable>
+            ))}
+          </View>
+        ) : (
+          // no card when there are no questions
+          <Text style={styles.body}>No Questions Added</Text>
+        )}
+        <Button
+          label="Edit questions"
+          onPress={() =>
+            router.push({
+              pathname: '/carePlanner/addQuestions',
+              params: { appointmentId: appointment.id },
+            })
+          }
+          buttonType="primaryButton"
+        />
       </ScrollView>
     </View>
   );
@@ -178,6 +199,13 @@ function createStyles(colours: ColourSet) {
       color: colours.onBackground,
     },
 
+    body: {
+      fontSize: 16,
+      lineHeight: 24,
+      letterSpacing: 0.5,
+      color: colours.onBackground,
+    },
+
     input: {
       fontSize: 16,
       color: colours.onSurface,
@@ -207,6 +235,16 @@ function createStyles(colours: ColourSet) {
 
     listItem: {
       padding: 12,
+    },
+
+    questionRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+
+    questionText: {
+      flex: 1,
     },
 
     divider: {

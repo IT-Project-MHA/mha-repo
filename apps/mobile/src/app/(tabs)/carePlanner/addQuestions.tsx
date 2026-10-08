@@ -4,7 +4,7 @@
  */
 import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
@@ -65,15 +65,22 @@ export default function Screen() {
   const styles = createStyles(colours);
   const router = useRouter();
   const { colors: paperColours } = usePaperTheme();
-  const { draft, updateDraft } = useAppointment();
+  const { draft, updateDraft, appointments, updateAppointment } = useAppointment();
+
+  // set when opened from a submitted appointment's details, otherwise the draft is changed
+  const { appointmentId } = useLocalSearchParams<{ appointmentId?: string }>();
+  const savedQuestions = appointmentId
+    ? (appointments.find((item) => item.id === appointmentId)?.questions ?? [])
+    : draft.questions;
 
   // set of ids of the questions the patient has ticked
   const [checked, setChecked] = useState<Set<string>>(
     () =>
       new Set(
-        draft.questions
-          // filter out questions that don't have a suggestedId
+        savedQuestions
+          // get array of suggestedIds
           .map((question) => question.suggestedId)
+          // filter out questions that don't have a suggestedId
           .filter((id): id is string => !!id),
       ),
   );
@@ -87,11 +94,12 @@ export default function Screen() {
       return next;
     });
 
-  // questions the patient has typed themselves, starts with the saved ones
-  const [ownQuestions, setOwnQuestions] = useState<{ id: number; text: string }[]>(() =>
-    draft.questions
-      .filter((question) => question.source === 'patient')
-      .map((question, index) => ({ id: index, text: question.text })),
+  // questions the patient has typed themselves, starts with the saved ones and keeps their answers
+  const [ownQuestions, setOwnQuestions] = useState<{ id: number; text: string; answer?: string }[]>(
+    () =>
+      savedQuestions
+        .filter((question) => question.source === 'patient')
+        .map((question, index) => ({ id: index, text: question.text, answer: question.answer })),
   );
   const [nextId, setNextId] = useState(ownQuestions.length);
 
@@ -110,8 +118,12 @@ export default function Screen() {
   const removeOwnQuestion = (id: number) =>
     setOwnQuestions((previous) => previous.filter((question) => question.id !== id));
 
-  // saves the ticked suggestions & own questions (blank ones left out) to the appointment
+  // saves the ticked suggestions & own questions (blank ones left out) to the appointment,
+  // keeping the answers already saved for them
   const save = () => {
+    const savedAnswer = (id: string) =>
+      savedQuestions.find((question) => question.suggestedId === id)?.answer;
+
     const suggested: AppointmentQuestion[] = SUGGESTED_QUESTIONS.flatMap(({ key, questions }) =>
       questions
         // converts SUGGESTED_QUESTIONS into [{text, suggestedId}]
@@ -119,14 +131,25 @@ export default function Screen() {
         // remove non-checked items
         .filter(({ id }) => checked.has(id))
         // map to AppointmentQuestion object
-        .map(({ text, id }) => ({ text, source: 'suggested' as const, suggestedId: id })),
+        .map(({ text, id }) => ({
+          text,
+          source: 'suggested' as const,
+          suggestedId: id,
+          answer: savedAnswer(id),
+        })),
     );
     const own: AppointmentQuestion[] = ownQuestions
-      .map((question) => question.text.trim())
-      .filter((text) => text !== '')
-      .map((text) => ({ text, source: 'patient' }));
-    updateDraft({ questions: [...suggested, ...own] });
-    router.push('/carePlanner/reviewAppointment');
+      // copy each question attribute but trim text
+      .map((question) => ({ ...question, text: question.text.trim() }))
+      .filter(({ text }) => text !== '')
+      .map(({ text, answer }) => ({ text, source: 'patient', answer }));
+    if (appointmentId) {
+      updateAppointment(appointmentId, { questions: [...suggested, ...own] });
+      router.back();
+    } else {
+      updateDraft({ questions: [...suggested, ...own] });
+      router.push('/carePlanner/reviewAppointment');
+    }
   };
 
   return (

@@ -73,20 +73,21 @@ export default function Screen() {
         </View>
 
         <Text style={styles.headline}>Questions to ask</Text>
-        <View style={[styles.field, styles.list]}>
-          {draft.questions.length > 0 ? (
-            draft.questions.map((question, index) => (
+        {draft.questions.length > 0 ? (
+          <View style={[styles.field, styles.list]}>
+            {draft.questions.map((question, index) => (
               <Text
                 key={index}
                 style={[styles.input, styles.listItem, index > 0 && styles.divider]}
               >
                 {question.text}
               </Text>
-            ))
-          ) : (
-            <Text style={[styles.input, styles.listItem]}>No questions added</Text>
-          )}
-        </View>
+            ))}
+          </View>
+        ) : (
+          // no card when there are no questions
+          <Text style={styles.body}>No Questions Added</Text>
+        )}
       </ScrollView>
 
       <View style={styles.bottomBar}>
@@ -137,6 +138,13 @@ function createStyles(colours: ColourSet) {
 
     heading: {
       ...textLayout,
+      color: colours.onBackground,
+    },
+
+    body: {
+      fontSize: 16,
+      lineHeight: 24,
+      letterSpacing: 0.5,
       color: colours.onBackground,
     },
 

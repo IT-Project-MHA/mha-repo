@@ -13,10 +13,12 @@ export type SupportPerson = {
 // A question to ask the doctor, source matches the backend's AppointmentQuestion source:
 // 'suggested' for questions ticked from the suggestions, 'patient' for the patient's own
 // suggestedId is the checkbox a suggested question came from, so it can be ticked again
+// answer is the doctor's answer typed in after the appointment
 export type AppointmentQuestion = {
   text: string;
   source: 'suggested' | 'patient';
   suggestedId?: string;
+  answer?: string;
 };
 
 // A draft appointment, filled in across the care planner page
