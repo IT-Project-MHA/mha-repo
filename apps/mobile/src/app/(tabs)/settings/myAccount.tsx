@@ -1,8 +1,5 @@
 /**
  * My account page, where the user can view/change their details, as well as health conditions.
- *
- * Not implemented: API conenct
- * This page has not been connected to the apo
  */
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
@@ -12,50 +9,49 @@ import ConfirmModal from '../../../../components/ConfirmModal';
 import AboutMeModal from '../../../../components/AboutMeModal';
 import TextButton from '../../../../components/TextButton';
 import MyConditionsModal from '../../../../components/MyConditionsModal';
-
+import { useUser } from '../../../../context/AuthorisationContext';
 
 export default function Screen() {
   const {theme} = useTheme();
-  const [pending, setPending] = useState< 'logout' | 'delete' | 'editAboutMe' | 'editMyConditions' | null>(null);
+  const {setUserType} = useUser();
+  const [pending, setPending] = useState< 'logout' | 'delete' | 'editAboutMe' | 'editMyConditions' | null>(null); // modal visibility triggered by pending state
 
+  /**
+   * PLACEHOLDERS to be replaced by API calls
+   */
+  const placeholderDetails = {
+    name: 'Jane Doe',
+    sex: 'Female',
+    email: 'janedoe@awesome.com',
+    phone: '61 *** *** ***',
+    primaryCondition: 'Osteoperosis',
+    otherConditions: 'Arthritis', // How many other conditions, 10 max?
+  };
+
+  /**
+   * Handles confirmations (when user clicks confirm in a modal) whilst in pending states.
+   */
   const handleConfirmations = () => {
     if (pending === 'delete'){
       // API call for deleting account
     } else if (pending === 'logout'){
-      // user type = undefined
-      // trigger login / onboarding
-    } 
+        setUserType('Undefined') // should trigger log in / onboarding
+    } else if (pending === 'editAboutMe'){
+      // changes should be checked for validity before save can happen
+      // save changes to backend 
+    } else if (pending === 'editMyConditions'){
+      // changes should be checked for validity before save can happen
+      // save changes to backend 
+    }
     setPending(null);
   };
-  
-  /* PatientProfile:
-- select: id, or filter by user (returns own profile & profiles of patients user supports)
-- create: has_diagnosis, other_conditions, assigned_gender_at_birth, birth_year, pain_types[]
-    - user is set to the user's own, only one profile per user
-- update: id NN, has_diagnosis, other_conditions, assigned_gender_at_birth, birth_year,
-          pain_types[]
-    - id cannot be changed
-- delete: id NN */
 
   /**
-   *   const name = await apiUser('select', {
-    'name' : display_name,
-  })
-
-  const sex = await apiPatientProfile('select', {
-    'sex' : assigned_gender_at_birth,
-  })
-
-  const phone = await apiUser('select', {
-    'phone' : phone_number,
-  })
-
-  const email = await apiUser('select', {
-    'email' : email,
-  })
+   * Renders screen, which include user details (with option to edit with modal), user conditions (with option to edit with modal)
+   * as well as the option to delete account and log out, both of which trigger confirm modals that ask the user
+   * to confirm their decision.
    */
   return (
-   
     <ScrollView stickyHeaderIndices={[0]}>
       <View style={theme.header}>
         <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>My Account</Text>
@@ -64,17 +60,17 @@ export default function Screen() {
       <Text> </Text>
       
       <View style={theme.container}>
-        <Text style={[theme.h3, theme.leftText, theme.fontOnSurface]}>About Me </Text>
+        <Text style={[theme.h3, theme.leftText, theme.fontOnSurface]}>About Me</Text>
 
         <Text> </Text>
 
         <View style={theme.line}></View>
 
         <Text> </Text>
-        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>name</Text>
-        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>sex</Text>
-        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>phone number</Text>
-        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>email</Text>
+        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>{placeholderDetails.name}</Text>
+        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>{placeholderDetails.sex}</Text>
+        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>{placeholderDetails.phone}</Text>
+        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>{placeholderDetails.email}</Text>
         <Text> </Text>
 
         <View style={[theme.rightItems]}>
@@ -94,10 +90,13 @@ export default function Screen() {
         <View style={theme.line}></View>
         <Text> </Text>
         <Text style={[theme.h6, theme.leftText, theme.fontOnSurface]}>Primary Condition </Text>
-        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>Osteoperiosis </Text>
+        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>{placeholderDetails.primaryCondition} </Text>
         <Text> </Text>
-        <Text style={[theme.h6, theme.leftText, theme.fontOnSurface]}>Other Conditions </Text>
-        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>Arthritis </Text>
+
+        {placeholderDetails.otherConditions !== null && (
+          <Text style={[theme.h6, theme.leftText, theme.fontOnSurface]}>Other Conditions</Text>
+        )}
+        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>{placeholderDetails.otherConditions}</Text>
         
         <View style={[theme.rightItems]}>
         <TextButton
@@ -131,14 +130,14 @@ export default function Screen() {
         <View style={theme.line}></View>
 
         <ConfirmModal
-        visible={pending === 'delete'}
-        title="Are you sure you want to delete your account?"
-        message="This will permanently delete your account and data."
-        confirmLabel="Delete"
-        cancelLabel='go back'
-        onConfirm={handleConfirmations}
-        onCancel={() => setPending(null)}
-      />
+          visible={pending === 'delete'}
+          title="Are you sure you want to delete your account?"
+          message="This will permanently delete your account and data."
+          confirmLabel="Delete"
+          cancelLabel='go back'
+          onConfirm={handleConfirmations}
+          onCancel={() => setPending(null)}
+        />
 
       <ConfirmModal
         visible={pending === 'logout'}
@@ -150,23 +149,16 @@ export default function Screen() {
         onCancel={() => setPending(null)}
       />
 
-      <MyConditionsModal
-      /**
-       * <AboutMeModal
+      <AboutMeModal
         visible={pending === 'editAboutMe'}
-        name = {name}
-        sex = {sex}
-        phone = {phone}
-        email = {email}
+        initialValues = {placeholderDetails}
         onConfirm={handleConfirmations}
         onCancel={() => setPending(null)}
       />
-       */
+
+      <MyConditionsModal
         visible={pending === 'editMyConditions'}
-        title="Edit my conditions!?"
-        message="You'll need to sign in again to access your account."
-        confirmLabel="Log out"
-        cancelLabel='go back'
+        initialValues = {placeholderDetails}
         onConfirm={handleConfirmations}
         onCancel={() => setPending(null)}
       />
@@ -178,13 +170,3 @@ export default function Screen() {
     </ScrollView>
   );
 }
-function createStyles(colours: ColourSet){
-    return StyleSheet.create({  
-      floatingContainer: {
-        position: 'absolute', // Forces the view to float
-        bottom: 30,           // Distance from bottom of the screen
-        right: 30,            // Distance from right side of the screen
-        zIndex: 999,          // Ensures it sits on top of other elements
-  },
-})
-};
