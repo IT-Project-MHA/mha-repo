@@ -36,7 +36,8 @@
       "expo-font",
       "expo-web-browser",
       "@react-native-vector-icons/ionicons",
-      "@react-native-vector-icons/material-design-icons"
+      "@react-native-vector-icons/material-design-icons",
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true,

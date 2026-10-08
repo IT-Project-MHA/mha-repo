@@ -95,11 +95,17 @@ export default function Screen() {
     });
 
   // questions the patient has typed themselves, starts with the saved ones and keeps their answers
-  const [ownQuestions, setOwnQuestions] = useState<{ id: number; text: string; answer?: string }[]>(
-    () =>
-      savedQuestions
-        .filter((question) => question.source === 'patient')
-        .map((question, index) => ({ id: index, text: question.text, answer: question.answer })),
+  const [ownQuestions, setOwnQuestions] = useState<
+    { id: number; text: string; answer?: string; recording?: string }[]
+  >(() =>
+    savedQuestions
+      .filter((question) => question.source === 'patient')
+      .map((question, index) => ({
+        id: index,
+        text: question.text,
+        answer: question.answer,
+        recording: question.recording,
+      })),
   );
   const [nextId, setNextId] = useState(ownQuestions.length);
 
@@ -119,10 +125,10 @@ export default function Screen() {
     setOwnQuestions((previous) => previous.filter((question) => question.id !== id));
 
   // saves the ticked suggestions & own questions (blank ones left out) to the appointment,
-  // keeping the answers already saved for them
+  // keeping the answers & recordings already saved for them
   const save = () => {
-    const savedAnswer = (id: string) =>
-      savedQuestions.find((question) => question.suggestedId === id)?.answer;
+    const savedSuggestion = (id: string) =>
+      savedQuestions.find((question) => question.suggestedId === id);
 
     const suggested: AppointmentQuestion[] = SUGGESTED_QUESTIONS.flatMap(({ key, questions }) =>
       questions
@@ -135,14 +141,15 @@ export default function Screen() {
           text,
           source: 'suggested' as const,
           suggestedId: id,
-          answer: savedAnswer(id),
+          answer: savedSuggestion(id)?.answer,
+          recording: savedSuggestion(id)?.recording,
         })),
     );
     const own: AppointmentQuestion[] = ownQuestions
       // copy each question attribute but trim text
       .map((question) => ({ ...question, text: question.text.trim() }))
       .filter(({ text }) => text !== '')
-      .map(({ text, answer }) => ({ text, source: 'patient', answer }));
+      .map(({ text, answer, recording }) => ({ text, source: 'patient', answer, recording }));
     if (appointmentId) {
       updateAppointment(appointmentId, { questions: [...suggested, ...own] });
       router.back();

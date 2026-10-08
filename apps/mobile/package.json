@@ -9,6 +9,7 @@
     "@react-native-vector-icons/ionicons": "^13.1.4",
     "@react-native-vector-icons/material-design-icons": "^13.1.4",
     "expo": "^57.0.27",
+    "expo-audio": "~57.0.5",
     "expo-blur": "~57.0.3",
     "expo-constants": "~57.0.21",
     "expo-device": "~57.0.2",
