@@ -1,50 +1,71 @@
 /**
- * My account
+ * My Data page, where users can delete their data, which deletes all their health data making
+ * their account a 'support person' account
  * 
  */
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import ButtonWithIcon from '../../../../components/ButtonWithIcon';
-import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import ConfirmModal from '../../../../components/ConfirmModal';
+import * as WebBrowser from 'expo-web-browser';
 
 export default function Screen() {
-  const {colours, theme} = useTheme();
-  const router = useRouter();
-  const styles = createStyles(colours);
+  const {theme} = useTheme();
+
+  const PRIVACY_URL = 'https://s2.q4cdn.com/175719177/files/doc_presentations/Placeholder-PDF.pdf';
+  const openPrivacy = () => WebBrowser.openBrowserAsync(PRIVACY_URL);
+    
+
+  const [pending, setPending] = useState< 'delete' | null>(null);
+  
+    const handleConfirmations = () => {
+      if (pending === 'delete'){
+        // API call for deleting data
+        // change user type to support person
+      } 
+      setPending(null);
+    };
 
   return (
    
     <ScrollView stickyHeaderIndices={[0]}>
       <View style={theme.header}>
-        <Text style={[theme.h4, theme.leftText]}>My Data</Text>
+        <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>My Data</Text>
       </View>
 
       <Text> </Text>
       
       <View style={[theme.container, theme.centerItems]}>
+
       <ButtonWithIcon
 	        label="Delete my Data"
-	        onPress={() => router.navigate('/settings/myAccount')}
+	        onPress={() => setPending('delete')}
           buttonType="transparentButton"
           name="trash-bin-outline"
-          colour={colours.onBackground}
         />
-        <View style={theme.line}></View>
-      </View>
 
-      <Text> </Text>
-      <Text> </Text>
+       <View style={theme.line}></View>
 
-      <View style={[theme.container, theme.centerItems]}>
       <ButtonWithIcon
 	        label="Privacy Policy"
-	        onPress={() => router.navigate('/settings/myAccount')}
+	        onPress={openPrivacy}
           buttonType="transparentButton"
           name="arrow-up-right-box-outline"
-          colour={colours.onBackground}
         />
-        <View style={theme.line}></View>
+
       </View>
+
+      <ConfirmModal
+        visible={pending === 'delete'}
+        title="Are you sure you want to delete your data?"
+        message="This will permanently delete your data."
+        confirmLabel="Delete"
+        cancelLabel='go back'
+        onConfirm={handleConfirmations}
+        onCancel={() => setPending(null)}
+      />
+
 
     <View style={theme.bottomGap}/>
 
@@ -53,11 +74,5 @@ export default function Screen() {
 }
 function createStyles(colours: ColourSet){
     return StyleSheet.create({  
-      floatingContainer: {
-        position: 'absolute', // Forces the view to float
-        bottom: 30,           // Distance from bottom of the screen
-        right: 30,            // Distance from right side of the screen
-        zIndex: 999,          // Ensures it sits on top of other elements
-  },
 })
 };
