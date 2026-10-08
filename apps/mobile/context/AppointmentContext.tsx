@@ -32,6 +32,8 @@ export type AppointmentDraft = {
 };
 
 // A submitted appointment, shown in appointments list
+// doctorPermission is true once the doctor has signed to allow their answers to be recorded,
+// doctorSignature is that signature as a PNG data URL
 export type Appointment = {
   id: string;
   scheduled_date: string;
@@ -40,6 +42,8 @@ export type Appointment = {
   supportPerson1: SupportPerson | null;
   supportPerson2: SupportPerson | null;
   questions: AppointmentQuestion[];
+  doctorPermission?: boolean;
+  doctorSignature?: string;
 };
 
 const emptyDraft = (): AppointmentDraft => ({
