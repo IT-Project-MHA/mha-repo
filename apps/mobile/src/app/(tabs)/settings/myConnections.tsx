@@ -28,13 +28,33 @@ const peoplePermissions: Permissions  = {
 };
 
 /**
+ * examples of how data will be input
+ */
+const johnSmithPermissions: Permissions  = {
+  viewAppointments: false,
+  addQuestions: false,
+  addRecords: true,
+};
+const susanPermissions: Permissions  = {
+  viewAppointments: true,
+  addQuestions: false,
+  addRecords: true,
+};
+const underscoresPermissions: Permissions  = {
+  viewAppointments: false,
+  addQuestions: false,
+  addRecords: true,
+};
+
+/**
  * these values will be retreived with API
  */
 const placeholderPeople: People[] =[
-  {id: '1', name: 'John Smith', role: 'Support Person', phone: '61 *** *** ***', relationship: 'supportsMe', permissions: peoplePermissions},
+  {id: '1', name: 'John Smith', role: 'Support Person', phone: '61 *** *** ***', relationship: 'supportsMe', permissions: johnSmithPermissions},
   {id: '2', name: 'Frida Kahlo', role: 'Support Person', phone: '61 *** *** ***', relationship: 'supportsMe', permissions: peoplePermissions},
-  {id: '1', name: 'Susan Sontag', role: 'Im Supporting', phone: '61 *** *** ***', relationship: 'imSupporting', permissions: peoplePermissions},
+  {id: '1', name: 'Susan Sontag', role: 'Im Supporting', phone: '61 *** *** ***', relationship: 'imSupporting', permissions: susanPermissions},
   {id: '2', name: 'Georgia OKeefe', role: 'Im Supporting', phone: '61 *** *** ***', relationship: 'imSupporting', permissions: peoplePermissions},
+  {id: '3', name: 'Underscores', role: 'Im Supporting', phone: '61 *** *** ***', relationship: 'imSupporting', permissions: underscoresPermissions},
 ]
   
 

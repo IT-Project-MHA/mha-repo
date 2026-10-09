@@ -30,7 +30,7 @@ export type Permissions = {
 const permissionsLabels: Record<keyof Permissions, string> ={
     viewAppointments: "View my appointments",
     addQuestions: "Add questions to my appointments",
-    addRecords: "Add records to appointments"
+    addRecords: "Add records to my appointments"
 }
 
 const permissionsLabelsImSupporting: Record<keyof Permissions, string> ={
@@ -129,12 +129,19 @@ const PeopleModal = ({visible, name, role, phone, permissions, onChange, onCance
             <>
                 <Text style={[theme.small, theme.leftItems, theme.fontOnSurface]}>You can:</Text>
                 <Text style={theme.xSmall}> </Text>
-                
+
                 {(Object.keys(permissionsLabels) as (keyof Permissions)[]).map((key)=>(
-                <View style={theme.leftItems}>
-                    <Text style={[theme.small, theme.fontOnSurface]}>• {permissionsLabelsImSupporting[key]}</Text>
-                    <Text style={theme.xSmall}> </Text>
-                </View>
+                    
+                    <View style={theme.leftItems}>
+                        {checked[key] ? ( //only renders if checked[key] === true
+                        <>
+                        <Text style={[theme.small, theme.fontOnSurface]}>• {permissionsLabelsImSupporting[key]}</Text>  
+                        <Text style={[theme.small, theme.fontOnSurface]}> </Text>  
+                        </>
+                     ) : (
+                        null
+                    )}
+                    </View>
                 ))}
             </> 
     )}
