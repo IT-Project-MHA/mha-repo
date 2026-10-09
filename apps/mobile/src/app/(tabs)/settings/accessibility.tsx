@@ -6,8 +6,8 @@
  */
 import { View, Text, ScrollView } from 'react-native';
 import { useTheme } from '../../../../context/ThemeContext';
-import TextDropdown from '../../../../components/TextDropdown'
-import Toggle from '../../../../components/Toggle';
+import TextDropdown from '../../../../components/atomicUI/TextDropdown'
+import Toggle from '../../../../components/atomicUI/Toggle';
 
 export default function Tab() {
     const {theme, setMode, isDark, isHC} = useTheme();

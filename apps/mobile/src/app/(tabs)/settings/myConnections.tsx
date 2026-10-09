@@ -7,10 +7,10 @@
  */
 import { View, Text, StyleSheet, ScrollView} from 'react-native';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
-import ButtonWithIcon from '../../../../components/ButtonWithIcon';
+import ButtonWithIcon from '../../../../components/atomicUI/ButtonWithIcon';
 import { useState } from 'react';
-import TextButton from '../../../../components/TextButton';
-import PeopleModal, {Permissions} from '../../../../components/PeopleModal';
+import TextButton from '../../../../components/atomicUI/TextButton';
+import PeopleModal, {Permissions} from '../../../../components/atomicUI/PeopleModal';
 
 type People ={
   id: string;

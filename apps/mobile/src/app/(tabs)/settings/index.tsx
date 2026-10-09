@@ -2,7 +2,7 @@
  * Every user can access this screen and uses it to navigate to other pages within settings.
  */
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import ButtonWithIcon from '../../../../components/ButtonWithIcon';
+import ButtonWithIcon from '../../../../components/atomicUI/ButtonWithIcon';
 import { useRouter } from 'expo-router';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 

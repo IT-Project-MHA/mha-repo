@@ -3,12 +3,12 @@
  */
 import { View, Text, ScrollView } from 'react-native';
 import { useTheme } from '../../../../context/ThemeContext';
-import ButtonWithIcon from '../../../../components/ButtonWithIcon';
+import ButtonWithIcon from '../../../../components/atomicUI/ButtonWithIcon';
 import { useState } from 'react';
-import ConfirmModal from '../../../../components/ConfirmModal';
-import AboutMeModal from '../../../../components/AboutMeModal';
-import TextButton from '../../../../components/TextButton';
-import MyConditionsModal from '../../../../components/MyConditionsModal';
+import ConfirmModal from '../../../../components/atomicUI/ConfirmModal';
+import AboutMeModal from '../../../../components/atomicUI/AboutMeModal';
+import TextButton from '../../../../components/atomicUI/TextButton';
+import MyConditionsModal from '../../../../components/atomicUI/MyConditionsModal';
 import { useUser } from '../../../../context/AuthorisationContext';
 
 export default function Screen() {
