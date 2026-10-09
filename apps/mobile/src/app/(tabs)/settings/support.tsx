@@ -1,31 +1,26 @@
 /**
- * 'Patients' and 'Both' users can access this screen (exclusive support people can not)
+ * Support page, providing MHA contact details
  */
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { useTheme, ColourSet } from '../../../../context/ThemeContext';
-import ButtonWithIcon from '../../../../components/ButtonWithIcon';
-
+import { View, Text, ScrollView } from 'react-native';
+import { useTheme } from '../../../../context/ThemeContext';
 
 export default function Tab() {
-    const {colours, theme} = useTheme();
-    const styles = createStyles(colours);
+    const {theme} = useTheme();
 
-  /**
-   * <Text style = {styles.body}> if made bigger, body should be updated automatically via context
-   */
   return (
+    //header
     <ScrollView stickyHeaderIndices={[0]}>
       <View style={theme.header}>
-        <Text style={[theme.h4, theme.leftText]}>Support</Text>
+        <Text style={[theme.h4, theme.leftText, theme.fontOnBackground]}>Support</Text>
       </View>
 
       <Text> </Text>
-      
+    
     <View style={theme.clearContainer}>
 
-    <Text style={[theme.body,theme.leftText]}>Contact us at: </Text>
+    <Text style={[theme.body,theme.leftText, theme.fontOnBackground]}>Contact us at: </Text>
     <Text> </Text>
-    <Text style={[theme.body,theme.centerText]}>info@muscha.org</Text>
+    <Text style={[theme.body,theme.centerText, theme.fontOnBackground]}>info@muscha.org</Text>
 
   <Text> </Text>
     <View style={theme.line}>
@@ -33,14 +28,13 @@ export default function Tab() {
 
     </View>
 
-
     <View style={theme.clearContainer}>
 
-    <Text style={[theme.body,theme.leftText]}>B.A.M Helpline: </Text>
+    <Text style={[theme.body,theme.leftText, theme.fontOnBackground]}>B.A.M Helpline: </Text>
     <Text style={theme.xSmall}> </Text>
-    <Text style={[theme.xSmall,theme.leftText]}>Call the team Monday to Friday 9am – 9pm or email helpline@muscha.org </Text>
+    <Text style={[theme.xSmall,theme.leftText, theme.fontOnBackground]}>Call the team Monday to Friday 9am – 9pm or email helpline@muscha.org </Text>
     <Text> </Text>
-    <Text style={[theme.body,theme.centerText]}>1800 263 265</Text>
+    <Text style={[theme.body,theme.centerText, theme.fontOnBackground]}>1800 263 265</Text>
     <Text> </Text>
 
     <View style={theme.line}>
@@ -53,10 +47,3 @@ export default function Tab() {
     </ScrollView>
   );
 }
-
-function createStyles(colours: ColourSet){
-    return StyleSheet.create({
-
-})
-};
-

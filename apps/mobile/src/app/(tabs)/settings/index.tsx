@@ -1,6 +1,5 @@
 /**
  * Every user can access this screen and uses it to navigate to other pages within settings.
- * 
  */
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import ButtonWithIcon from '../../../../components/ButtonWithIcon';
@@ -9,21 +8,18 @@ import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 
 export default function Screen() {
   const router = useRouter();
-  const {colours, theme} = useTheme();
-  const styles = createStyles(colours);
+  const { theme } = useTheme();
 
   return (
     <ScrollView>
       <Text> </Text>
       <View style={[theme.container, theme.centerItems]}>
-
         
         <ButtonWithIcon
 	        label="My Account"
 	        onPress={() => router.navigate('/settings/myAccount')}
           buttonType="transparentButton"
           name="chevron-forward-outline"
-          colour={colours.onBackground}
         />
 
         <View style={theme.line}
@@ -34,7 +30,6 @@ export default function Screen() {
 	        onPress={() => router.navigate('/settings/myData')}
           buttonType="transparentButton"
           name="chevron-forward-outline"
-          colour={colours.onBackground}
         />
 
         <View style={theme.line}
@@ -45,7 +40,6 @@ export default function Screen() {
 	        onPress={() => router.navigate('/settings/myConnections')}
           buttonType="transparentButton"
           name="chevron-forward-outline"
-          colour={colours.onBackground}
         />
 
          <View style={theme.line}
@@ -53,11 +47,10 @@ export default function Screen() {
       
    
         <ButtonWithIcon
-	        label="Accesibility"
-	        onPress={() => router.navigate('/settings/accesibility')}
+	        label="Accessibility"
+	        onPress={() => router.navigate('/settings/accessibility')}
           buttonType="transparentButton"
           name="chevron-forward-outline"
-          colour={colours.onBackground}
         />
 
         <View style={theme.line}
@@ -68,7 +61,6 @@ export default function Screen() {
 	        onPress={() => router.navigate('/settings/permissions')}
           buttonType="transparentButton"
           name="chevron-forward-outline"
-          colour={colours.onBackground}
         />
 
       </View>
@@ -82,7 +74,6 @@ export default function Screen() {
 	          onPress={() => router.navigate('/settings/legal')}
             buttonType="transparentButton"
             name="chevron-forward-outline"
-            colour={colours.onBackground}
           />
 
           <View style={theme.line}
@@ -93,7 +84,6 @@ export default function Screen() {
 	          onPress={() => router.navigate('/settings/support')}
             buttonType="transparentButton"
             name="chevron-forward-outline"
-            colour={colours.onBackground}
           />
       </View>
 

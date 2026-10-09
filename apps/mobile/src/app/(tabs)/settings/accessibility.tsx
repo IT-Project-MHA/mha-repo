@@ -1,32 +1,56 @@
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { useTheme, ColourSet } from '../../../../context/ThemeContext';
-import ThemeToggle from '../../../../components/ThemeToggle'
+/**
+ * Accessibility page
+ * 
+ * User can change theme and font size
+ * 
+ */
+import { View, Text, ScrollView } from 'react-native';
+import { useTheme } from '../../../../context/ThemeContext';
 import TextDropdown from '../../../../components/TextDropdown'
-import ContrastToggle from '../../../../components/ContrastToggle';
-import Button from '../../../../components/Button';
+import Toggle from '../../../../components/Toggle';
 
 export default function Tab() {
-    const {colours, theme, setMode} = useTheme();
-    const styles = createStyles(colours);
+    const {theme, setMode, isDark, isHC} = useTheme();
+
+    /**
+     * function that runs when the theme toggle is pressed
+     * light mode -> dark mode
+     */
+    const toggleColour = () => {
+            if (isDark){
+                setMode(!isHC ? 'light' : 'lightHC');
+            }else{
+                setMode(!isHC ? 'dark' : 'darkHC');
+            } 
+    };
+
+    /**
+     * function that runs when the contrast toggle is pressed
+     * Normal constrast -> high contrast
+     */
+    const toggleContrast = () => {
+            if (isDark){
+                setMode(!isHC ? 'darkHC' : 'dark');
+            }else{
+                setMode(!isHC ? 'lightHC' : 'light');
+            } 
+    };
 
   return (
     <ScrollView stickyHeaderIndices={[0]}>
       <View style={theme.header}>
-        <Text style={[theme.h4, theme.leftText]}>Accessibility</Text>
+        <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>Accessibility</Text>
       </View>
 
     <Text> </Text>
     <View style={theme.container}>
 
-      <Text> </Text>
-
-      <View style={styles.row}>
-        <Button
-          label= "Dark Mode"
-          onPress={() => {}}
-          buttonType= "transparentButton"
+      <View style={theme.row}>
+        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>Dark Mode</Text>
+        <Toggle
+          onToggle={toggleColour}
+          switchOn={isDark}
         />
-        <ThemeToggle />
       </View>
 
       <Text> </Text>
@@ -34,18 +58,23 @@ export default function Tab() {
       <Text> </Text>
       
       <View style={theme.row}>
-        <Text style={[theme.body, theme.leftText]}>High Contrast</Text>
-        <ContrastToggle/>
+        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>High Contrast</Text>
+        <Toggle
+          onToggle={toggleContrast}
+          switchOn={isHC}
+        />
       </View>
 
       <Text> </Text>
       <View style={theme.line}/>
+ 
       <Text> </Text>
-     
-     <View style={[theme.layoutContainer, theme.rightItems]}>
-      <TextDropdown>
-      </TextDropdown>
-      </View>
+
+      <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>Adjust Text Size</Text>
+
+      <View style={theme.centerItems}>
+      <TextDropdown/>
+    </View>
     </View>
 
     <View style={theme.bottomGap}/>
@@ -53,14 +82,3 @@ export default function Tab() {
     </ScrollView>
   );
 }
-
-function createStyles(colours: ColourSet){
-    return StyleSheet.create({
-      row: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        alignSelf: 'stretch',
-      },
-  })
-};

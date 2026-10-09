@@ -1,8 +1,8 @@
 /**
  * My account page, where the user can view/change their details, as well as health conditions.
  */
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { useTheme, ColourSet } from '../../../../context/ThemeContext';
+import { View, Text, ScrollView } from 'react-native';
+import { useTheme } from '../../../../context/ThemeContext';
 import ButtonWithIcon from '../../../../components/ButtonWithIcon';
 import { useState } from 'react';
 import ConfirmModal from '../../../../components/ConfirmModal';

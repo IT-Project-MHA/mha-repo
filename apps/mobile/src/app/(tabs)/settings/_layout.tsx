@@ -1,25 +1,20 @@
 import { Stack} from 'expo-router'
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { StyleSheet,  } from 'react-native';
-import { Typography } from '../../../../constants/textSize';
-
-
 
 /**
  * Defines the structure of the screens within the settings page.
- * 
- * backgorund page colours being white should happen here :(
  * 
  * @returns screens which correspond to different files as screens.
  */
 export default function ScreenLayout() {
   const {colours, theme} = useTheme();
-  const styles = createStyles(colours, theme);
-
+  const styles = createStyles(colours);
 
   return (
     <Stack 
       screenOptions={{
+        // First layer of header: back button 
         headerStyle: styles.headerStyle,
         headerTintColor: colours.onBackground,
         headerTitleStyle: {
@@ -46,7 +41,7 @@ export default function ScreenLayout() {
         }}
       />
       <Stack.Screen 
-        name="accesibility"
+        name="accessibility"
         options={{
           title: '',
         }}
@@ -87,9 +82,8 @@ export default function ScreenLayout() {
   );
 }
 
-function createStyles(colours: ColourSet, theme: Typography){
+function createStyles(colours: ColourSet){
     return StyleSheet.create({
-
       headerStyle: {
         backgroundColor: colours.background,
         borderBottomWidth: 0, 

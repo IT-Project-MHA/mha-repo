@@ -5,7 +5,7 @@
  * 
  * not linked to api yet- for demonstration purposes rn
  */
-import { View, Text, StyleSheet, ScrollView, Modal} from 'react-native';
+import { View, Text, StyleSheet, ScrollView} from 'react-native';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import ButtonWithIcon from '../../../../components/ButtonWithIcon';
 import { useState } from 'react';
