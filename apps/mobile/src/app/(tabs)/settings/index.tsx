@@ -24,17 +24,7 @@ export default function Screen() {
 
         <View style={theme.line}
         />
-      
-        <ButtonWithIcon
-	        label="My Data"
-	        onPress={() => router.navigate('/settings/myData')}
-          buttonType="transparentButton"
-          name="chevron-forward-outline"
-        />
 
-        <View style={theme.line}
-        />
-     
         <ButtonWithIcon
 	        label="My Connections"
 	        onPress={() => router.navigate('/settings/myConnections')}
@@ -42,17 +32,26 @@ export default function Screen() {
           name="chevron-forward-outline"
         />
 
-         <View style={theme.line}
+        <View style={theme.line}
         />
-      
-   
+
         <ButtonWithIcon
 	        label="Accessibility"
 	        onPress={() => router.navigate('/settings/accessibility')}
           buttonType="transparentButton"
           name="chevron-forward-outline"
         />
-
+    
+         <View style={theme.line}
+        />
+      
+        <ButtonWithIcon
+	        label="My Data"
+	        onPress={() => router.navigate('/settings/myData')}
+          buttonType="transparentButton"
+          name="chevron-forward-outline"
+        />
+   
         <View style={theme.line}
         />
        
