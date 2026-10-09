@@ -12,11 +12,8 @@ type ToggleProps = {
 };
 
 const Toggle = ({onToggle, switchOn}: ToggleProps)  => {
-    const {colours, setMode, isHC, isDark} = useTheme();
+    const {colours} = useTheme();
     const styles = createStyles(colours);
-
-    // function that runs when the toggle is pressed
-    // changes between light and dark mode
 
   return (
     <View style={styles.container}>
