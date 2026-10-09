@@ -1,98 +1,148 @@
 /**
- * My account
+ * My Connections
  * 
+ * in this screen users can view their support people, who theyre supporting, and remove them.
+ * 
+ * not linked to api yet- for demonstration purposes rn
  */
-import { View, Text, StyleSheet, ScrollView} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Modal} from 'react-native';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import ButtonWithIcon from '../../../../components/ButtonWithIcon';
-import { Router, useRouter } from 'expo-router';
+import { useState } from 'react';
+import TextButton from '../../../../components/TextButton';
+import PeopleModal, {Permissions} from '../../../../components/PeopleModal';
+
+type People ={
+  id: string;
+  name: string;
+  role: string;
+  phone: string;
+  relationship: 'supportsMe' | 'imSupporting';
+  permissions: Permissions;
+};
+
+const peoplePermissions: Permissions  = {
+  viewAppointments: true,
+  addQuestions: true,
+  addRecords: true,
+};
+
+/**
+ * these values will be retreived with API
+ */
+const placeholderPeople: People[] =[
+  {id: '1', name: 'John Smith', role: 'Support Person', phone: '61 *** *** ***', relationship: 'supportsMe', permissions: peoplePermissions},
+  {id: '2', name: 'Frida Kahlo', role: 'Support Person', phone: '61 *** *** ***', relationship: 'supportsMe', permissions: peoplePermissions},
+  {id: '1', name: 'Susan Sontag', role: 'Im Supporting', phone: '61 *** *** ***', relationship: 'imSupporting', permissions: peoplePermissions},
+  {id: '2', name: 'Georgia OKeefe', role: 'Im Supporting', phone: '61 *** *** ***', relationship: 'imSupporting', permissions: peoplePermissions},
+]
+  
 
 export default function Screen() {
-  const {colours, theme} = useTheme();
-  const router = useRouter();
+  const {theme} = useTheme();
+  const [people, setPeople] =useState<People[]>(placeholderPeople);
+  const [selected, setselected] = useState<People | null >(null);
+  const [pending, setPending] = useState< 'removeSupportPeople' | 'removeImSupporting' | null>(null);
 
+  /**
+   * This function manages rendering people of different relationship types.
+   * @param title Title of the button, being the persons name.
+   * @param relationship 'Support Person' or 'I'm Supporting'
+   * @returns A styled list of people of a certain relationship to the user.
+   */
+  const renderSection = (title: string, relationship: People['relationship']) => {
+    const peopleList = people.filter((by)=>by.relationship === relationship);
+    
+    return (
+      <View style ={theme.layoutContainer}>
+       <View>
+          {peopleList.map((people,index) => (
+            <View key={people.id} style={[[theme.layoutContainer,theme.centerItems]]}>
+              {index > 0 && <View style={theme.line} />}
+              <ButtonWithIcon
+                label={people.name}
+                onPress={()=> setselected(people)}
+                buttonType='transparentButton'
+                name="chevron-forward-outline"
+                />
+            </View>
+            
+          ))}
+        </View>  
+        </View>   
+    );
+  };
+
+  /**
+   * Returns screen displaying users support people and users that they support
+   * 
+   * By pressing edit details, user should be a able to remove people
+   * 
+   * By pressing on the name of a Support Person, user can see their details and update their permissions.
+   */
   return (
    
     <ScrollView stickyHeaderIndices={[0]}>
       <View style={theme.header}>
-        <Text style={[theme.h4, theme.leftText]}>My Connections</Text>
+        <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>My Connections</Text>
       </View>
-
       <Text> </Text>
       
       <View style={[theme.container]}>
-        <Text style={[theme.h3, theme.leftText]}>My Support People </Text>
+        <Text style={[theme.h5, theme.leftText, theme.fontOnSurface]}>My Support People </Text>
         <Text> </Text>
         <View style={theme.line}></View>
         <Text> </Text>
-
-        <View style={[theme.layoutContainer,theme.centerItems]}>
-        <ButtonWithIcon
-	        label="Jane Doe"
-	        onPress={() => router.navigate('/settings/myAccount')}
-          buttonType="transparentButton"
-          name="chevron-forward-outline"
-          colour={colours.onBackground}
-        />
-        <View style={theme.line}></View>
-        <Text> </Text>
-        <ButtonWithIcon
-	        label="John Smith"
-	        onPress={() => router.navigate('/settings/myAccount')}
-          buttonType="transparentButton"
-          name="chevron-forward-outline"
-          colour={colours.onBackground}
-        />
-        <View style={theme.line}></View>
-        <Text> </Text>
-        </View>
-        
-        
-        <Text style={[theme.body, theme.rightText]}>Edit details </Text> 
+        {renderSection('My Support People', 'supportsMe')}
+  
+        <View style={[theme.rightItems]}>
+          <TextButton
+	        label="Edit Details"
+	        onPress={() => setPending('removeSupportPeople')}
+          />
+        </View> 
+          
       </View>
 
       <Text> </Text>
       <Text> </Text>
 
       <View style={theme.container}>
-        <Text style={[theme.h3, theme.leftText]}>I'm Supporting </Text>
+        <Text style={[theme.h5, theme.leftText, theme.fontOnSurface]}>I'm Supporting </Text>
         <Text> </Text>
         <View style={theme.line}></View>
         <Text> </Text>
+
+        {renderSection('Im Supporting', 'imSupporting')}
+
         <View style={[theme.layoutContainer,theme.centerItems]}>
-        <ButtonWithIcon
-	        label="Jane Doe"
-	        onPress={() => router.navigate('/settings/myAccount')}
-          buttonType="transparentButton"
-          name="chevron-forward-outline"
-          colour={colours.onBackground}
-        />
-        <View style={theme.line}></View>
-        <Text> </Text>
-        <ButtonWithIcon
-	        label="John Smith"
-	        onPress={() => router.navigate('/settings/myAccount')}
-          buttonType="transparentButton"
-          name="chevron-forward-outline"
-          colour={colours.onBackground}
-        />
-        <View style={theme.line}></View>
-        <Text> </Text>
+  
         </View>
+        <View style={[theme.rightItems]}>
+          <TextButton
+	        label="Edit Details"
+	        onPress={() => setPending('removeSupportPeople')}
+          />
+        </View> 
       </View>
+
+      <PeopleModal
+        visible={selected !== null}
+        name={selected?.name??''} // name or null
+        role={selected?.role??''}
+        phone={selected?.phone??''}
+        permissions={selected?.permissions ?? peoplePermissions}
+        onChange = {() => {}} // void atm
+        onCancel={() => setselected(null)}
+      />
 
       <View style={theme.bottomGap}/>
 
     </ScrollView>
   );
 }
+
 function createStyles(colours: ColourSet){
     return StyleSheet.create({  
-      floatingContainer: {
-        position: 'absolute', // Forces the view to float
-        bottom: 30,           // Distance from bottom of the screen
-        right: 30,            // Distance from right side of the screen
-        zIndex: 999,          // Ensures it sits on top of other elements
-  },
 })
 };
