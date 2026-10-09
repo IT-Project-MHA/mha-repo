@@ -67,7 +67,6 @@ export default function TabLayout() {
         name="carePlanner"
         options={{
           title: 'Care Planner',
-          href: isPatient ? undefined : null,
           tabBarIcon: ({ color }) => (
             <Ionicons name ="book-outline" size={24} color={color} />
           ),
@@ -77,6 +76,7 @@ export default function TabLayout() {
         name="sharedWithMe"
         options={{
           title: 'Shared With Me',
+          href: null, 
           tabBarIcon: ({ color }) => (
             <Ionicons name ="search-outline" size={24} color={color} />
           ),
