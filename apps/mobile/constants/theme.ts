@@ -1,7 +1,6 @@
 import { StyleSheet } from "react-native";
 import { lightColours, darkColours, lightHcColours, darkHcColours, ColourSet } from "./colourScheme";
-import { primaryButtonLayout, buttonLayout, settingsButtonLayout, squareButtonWithLineLayout, transparentButtonLayout } from "./layout";
-
+import { primaryButtonLayout, buttonLayout, squareButtonWithLineLayout, transparentButtonLayout, textButtonLayout } from "./layout";
 
 /**
  * Builds a style sheet for each theme, using colour schemes defined in colourScheme.ts
@@ -28,11 +27,6 @@ const createTheme = (colours: ColourSet) =>
       flex: 1,
       backgroundColor: colours.background,
     },
-    settingsButton: {
-      backgroundColor: colours.primary,
-      borderColor: colours.ex1,
-      ...settingsButtonLayout,
-    },
     squareButtonWithLine:{
       backgroundColor: colours.secondary,
       borderColor: colours.primary,
@@ -42,49 +36,54 @@ const createTheme = (colours: ColourSet) =>
       backgroundColor: 'transparent',
       ...transparentButtonLayout,
     },
+    textButton:{
+      backgroundColor: 'transparent',
+      ...textButtonLayout,
+    },
     container: {
       justifyContent: 'center',
       backgroundColor: colours.surface,
-      paddingBlock: '6%', //lit
+      paddingBlock: '6%',
       alignSelf: 'center',
-      width: '85%', // of page
+      width: '85%',
+      paddingHorizontal: '3%',
     
       borderRadius: 28,
- 
       overflow: 'hidden',
 
       shadowColor: colours.primary,
-      shadowOffset: { width: 2, height: 4 },
-      shadowOpacity: 0.15,
+      shadowOffset: { width: 2, height: 2 },
+      shadowOpacity: 0.25,
       shadowRadius: 16,
-
     },
+
+    // divider
     line: {
       height: 1,
-      backgroundColor: colours.onBackground,
+      backgroundColor: colours.onSurface,
       width: '90%',
       borderRadius: 300,
       alignSelf: 'center',
 
     },
-    centerItemsHorizontal: {
-      alignItems: 'center',
-    },
+    // clear container with pa
     clearContainer: {
       justifyContent: 'center',
       backgroundColor:'transparent',
-      paddingBlock: 30, //lit
+      paddingBlock: 30,
       alignSelf: 'center',
-      width: '85%', // of page
-
+      width: '85%',
       borderRadius: 28,
       borderTopWidth: 0,     
       borderBottomWidth: 0, 
  
       overflow: 'hidden',
     },
+    
     /**
-     * use only for manipulating layouts within a container
+     * use only for manipulating layouts within a container as it
+     * has no padding.
+     * 
      * use with other themes, for example:
      * 
      * <View style={[theme.layoutContainer, theme.centerItems]}>
@@ -98,22 +97,29 @@ const createTheme = (colours: ColourSet) =>
     centerText: {
       textAlign: 'center',
     },
+    // for use within a container
     leftText: {
       textAlign: 'left',
       paddingHorizontal: '5%',
     },
+    // for use within a container
     rightText: {
       textAlign: 'right',
       paddingHorizontal: '5%',
     },
+    // for use within a container
     centerItems: {
       alignItems: 'center',
     },
+    // for use within a container
     leftItems: {
       alignItems: 'flex-start',
+      paddingHorizontal: '5%',
     },
+    // for use within a container
     rightItems: {
       alignItems: 'flex-end',
+      paddingHorizontal: '5%',
     },
     // places items within view in a row,
     row: {
@@ -122,6 +128,7 @@ const createTheme = (colours: ColourSet) =>
       justifyContent: 'space-between',
       alignSelf: 'stretch',
     },
+    // gap at the bottom of the screen, so nav bar doesnt cover it
     bottomGap: {
       height: 120,
       color: 'transparent'
@@ -133,6 +140,21 @@ const createTheme = (colours: ColourSet) =>
       alignContent: 'flex-start',
       paddingBottom: 50,
       paddingTop: 5,
+      borderColor: colours.background,
+      borderWidth: 3,
+    },
+
+    /**
+     * the following are styles for font details (colour, underline, etc)
+     */
+    fontOnSurface: {
+      color: colours.onSurface,
+    },
+    fontOnBackground: {
+      color: colours.onBackground,
+    },
+    fontUnderlined: {
+      textDecorationLine: 'underline',
     },
   });
 
