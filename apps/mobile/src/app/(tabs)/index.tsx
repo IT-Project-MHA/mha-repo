@@ -1,26 +1,10 @@
 import { StyleSheet, Text, View} from "react-native";
-import Button from "../../../components/Button";
-import { useTheme } from "../../../context/ThemeContext";
-
 
 export default function Tab() {
-    const {mode, setMode, theme} = useTheme();
 
   return (
     <View style={styles.container}>
-        <Text>INDEX- this screen has no functional purpose rn</Text>
-        <Text> </Text>
-        <Text> </Text>
-      <Button
-	    label="light mode"
-	    onPress={() => setMode('light')}
-        buttonType="primaryButton"
-      />
-      <Button
-	    label="dark mode"
-	    onPress={() => setMode('dark')}
-        buttonType="secondaryButton"
-      />
+        <Text>INDEX</Text>
     </View>
   );
 }
