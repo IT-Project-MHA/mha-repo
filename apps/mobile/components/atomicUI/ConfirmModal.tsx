@@ -1,6 +1,6 @@
 import React from "react";
 import {Modal, View, Text, Pressable, StyleSheet} from 'react-native'
-import { useTheme, ColourSet } from "../context/ThemeContext";
+import { useTheme, ColourSet } from "../../context/ThemeContext";
 
 type ConfirmModalProps = {
     visible: boolean;

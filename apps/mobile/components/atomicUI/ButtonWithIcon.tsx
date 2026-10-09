@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
 import {Ionicons, IoniconsIconName} from '@react-native-vector-icons/ionicons'
 
 type ButtonType = "primaryButton" | "secondaryButton" | "settingsButton" | "squareButtonWithLine" | "transparentButton";
@@ -15,7 +15,6 @@ type ButtonType = "primaryButton" | "secondaryButton" | "settingsButton" | "squa
         onPress={() => setMode('light')}
         buttonType="primaryButton"
         name="alarm"
-        colour='pink'
     />
  */
 type ButtonProps = {

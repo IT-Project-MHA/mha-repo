@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, TouchableOpacity } from 'react-native';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
 
 type ButtonType = "textButton";
 
@@ -13,7 +13,6 @@ type ButtonType = "textButton";
  * <Button
         label="light mode"
         onPress={() => setMode('light')}
-      buttonType="primaryButton"
     />
  */
 type ButtonProps = {
@@ -22,12 +21,10 @@ type ButtonProps = {
 };
 
 /**
- * Themed button that changes style based on current theme, and selected
- * button type, of the button types defined in theme.ts
  * 
  * @param label string that says what the button should say
  * @param onPress prescribes an action to the button when pressed
- * @returns a styled button component, which performs some funtion when pressed
+ * @returns  button that is styled to look like plain text
  */
 const TextButton = ({label, onPress}: ButtonProps) => {
   const { theme } = useTheme();

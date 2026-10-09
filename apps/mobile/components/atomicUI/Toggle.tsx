@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useTheme, ColourSet} from '../context/ThemeContext';
+import { useTheme, ColourSet} from '../../context/ThemeContext';
 import SwitchToggle from "react-native-switch-toggle";
 
 type ToggleProps = {

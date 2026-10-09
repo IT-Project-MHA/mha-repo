@@ -1,7 +1,7 @@
  import React, { useState } from 'react';
   import { StyleSheet } from 'react-native';
   import { Dropdown } from 'react-native-element-dropdown';
-  import { useTheme, ColourSet } from '../context/ThemeContext';
+  import { useTheme, ColourSet } from '../../context/ThemeContext';
 
   const data = [
     { label: 'Size 1', value: 1 },

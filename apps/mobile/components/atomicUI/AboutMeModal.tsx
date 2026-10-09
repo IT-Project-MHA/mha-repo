@@ -8,7 +8,7 @@
 import React, { useEffect } from "react";
 import {Modal, View, Text, Pressable, StyleSheet, TextInput} from 'react-native'
 import { useState } from "react";
-import { useTheme, ColourSet } from "../context/ThemeContext";
+import { useTheme, ColourSet } from "../../context/ThemeContext";
 
 export type UserDetails ={
   name: string;

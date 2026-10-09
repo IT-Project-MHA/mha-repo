@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, TouchableOpacity } from 'react-native';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
 
 
 type ButtonType = "primaryButton" | "secondaryButton" | "settingsButton" | "transparentButton" | "textButton";

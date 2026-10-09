@@ -7,7 +7,7 @@
  */
 import React from "react";
 import {Modal, View, Text, Pressable, StyleSheet, ScrollView} from 'react-native'
-import { useTheme, ColourSet } from "../context/ThemeContext";
+import { useTheme, ColourSet } from "../../context/ThemeContext";
 import { Checkbox } from 'expo-checkbox';
 import { useState, useEffect, useRef } from "react";
 
