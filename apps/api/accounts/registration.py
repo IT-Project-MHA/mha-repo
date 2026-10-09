@@ -45,7 +45,7 @@ def create_patient_profile(user, health):
 def register_user(verification_id, device_id, phone_number, display_name, pin, track_health, health = None):
 
     # Create the account and return user and token
-    # All saved in one transaction so nothing is left half made if a step fails
+    # All saved in one transaction so nothing is left half made if step fails
     # Raises RegistrationError if the phone number isn't verified or is already taken
 
     if not check_verification(verification_id, phone_number):
@@ -80,7 +80,7 @@ def register_user(verification_id, device_id, phone_number, display_name, pin, t
             token = Token.objects.create(user = user)
 
     except IntegrityError:
-        # If multiple registrations for the same number the database stops the second
+        # If multiple registrations for same number the database stops the second
         raise RegistrationError("phone_taken")
 
     return user, token

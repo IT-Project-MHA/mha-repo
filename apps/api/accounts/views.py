@@ -14,12 +14,9 @@ from accounts import devices, login, otp, registration, reset_pin
 from accounts.models import PatientProfile, PhoneVerification, SupportLink, TermsAndPrivacy, TrustedDevice, User, UserSettings
 from accounts.rate_limits import PhoneBurstThrottle, PhoneLoginThrottle, PhoneSustainedThrottle
 
-from accounts.serializer import PatientProfileSerializer, PhoneVerificationSerializer, SupportLinkSerializer, \
-    TermsAndPrivacySerializer, TrustedDeviceSerializer, UserSerializer, UserSettingsSerializer
-
-# Auth serializers, the device one is renamed as the data serializers have one with the same name
-from accounts.serializers import LoginSerializer, RegisterSerializer, RequestCodeSerializer, ResetPinSerializer, \
-    VerifyCodeSerializer, TrustedDeviceSerializer as DeviceListSerializer
+from accounts.serializer import DeviceListSerializer, LoginSerializer, PatientProfileSerializer, PhoneVerificationSerializer, \
+    RegisterSerializer, RequestCodeSerializer, ResetPinSerializer, SupportLinkSerializer, TermsAndPrivacySerializer, \
+    TrustedDeviceSerializer, UserSerializer, UserSettingsSerializer, VerifyCodeSerializer
 
 LOGIN_ERROR_STATUS = {
     "invalid_credentials": status.HTTP_401_UNAUTHORIZED,
@@ -81,7 +78,7 @@ class VerifyCodeView(APIView):
                 body["attempts_remaining"] = error.attempts_remaining
 
             return Response(body, status = status.HTTP_400_BAD_REQUEST)
-        # register / login / reset-pin (B4, B5, B8) take this id as proof the phone was verified
+        
         return Response({"verification_id": verification.id}, status = status.HTTP_200_OK)
 
 

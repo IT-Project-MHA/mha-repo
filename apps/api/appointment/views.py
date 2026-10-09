@@ -12,12 +12,8 @@ from accounts.views import own_patient_profile
 from appointment import grants
 from appointment.models import Appointment, AppointmentAccess, AppointmentAnswer, AppointmentQuestion
 
-# Appointment data serializers
-from appointment.serializer import AppointmentAccessSerializer, AppointmentAnswerSerializer, \
-    AppointmentQuestionSerializer, AppointmentSerializer
-
-# Access grant serializers, renamed as the data serializers have one with the same name
-from appointment.serializers import GrantAccessSerializer, AppointmentAccessSerializer as AccessGrantSerializer
+from appointment.serializer import AccessGrantSerializer, AppointmentAccessSerializer, AppointmentAnswerSerializer, \
+    AppointmentQuestionSerializer, AppointmentSerializer, GrantAccessSerializer
 
 from mpowered_api.immutable import save_without_immutable_changes
 from mpowered_api.protected import destroy_or_reject_protected
