@@ -1,15 +1,6 @@
-from django.shortcuts import render
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework import generics
-from rest_framework import status
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import serializers
+from django.db.models import Q
 from .models import AuditEntry
-from accounts.models import PatientProfile
 from .serializer import *
-from datetime import date
 
 # instructions:
 # All views are protected by authenticated user id (can only see records where patient_profile
@@ -20,28 +11,20 @@ from datetime import date
 # ?attribute_name1=value&?attribute_name2=value...
 
 
+def visible_audit_entries(user):
+    return AuditEntry.objects.filter(Q(audit_user = user) | Q(patient_profile__user = user))
+
 # AuditEntry APIs:
-class AuditEntryListCreate(generics.ListCreateAPIView):
+class AuditEntryList(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = AuditEntrySerializer
 
     def get_queryset(self):
-        user = self.request.user
-        return AuditEntry.objects.filter(audit_user = user)
-
-    def perform_create(self, serializer):
-        user = self.request.user
-        patient_profile = serializer.validated_data.get("patient_profile")
-        if patient_profile:
-            if not PatientProfile.objects.filter(id = patient_profile.id, user = user).exists():
-                raise serializers.ValidationError({'patient_profile':'You do not have access.'})
-
-        serializer.save(audit_user = user)
+        return visible_audit_entries(self.request.user)
 
 class AuditEntryRetrieve(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = AuditEntrySerializer
 
     def get_queryset(self):
-        user = self.request.user
-        return AuditEntry.objects.filter(audit_user = user)
+        return visible_audit_entries(self.request.user)

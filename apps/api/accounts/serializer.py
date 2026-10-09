@@ -1,7 +1,6 @@
 from rest_framework import serializers
-from .models import User, PatientProfile, UserSettings, SupportLink, TermsAndPrivacy, \
-    PhoneVerification, TrustedDevice
-from mpowered_api.validators import validate_phone_number, current_date
+from .models import User, PatientProfile, UserSettings, SupportLink, TermsAndPrivacy, TrustedDevice
+from mpowered_api.validators import current_date
 
 from accounts.otp import OTP_LENGTH
 from accounts.phone_normaliser import normalise_phone_number
@@ -10,16 +9,8 @@ from reference.models import QuestionOption
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        # excludes password (pin) & permission fields
-        fields = ['id', 'phone_number', 'display_name', 'email', 'created_at', 'updated_at',
-                  'deleted_at']
-
-    def create(self, validated_data):
-        # use the create_user function in UserManager in accounts\models.py
-        return User.objects.create_user(**validated_data)
-
-    def validate_phone_number(self, phone_number):
-        return validate_phone_number(phone_number)
+        fields = ['id', 'phone_number', 'display_name', 'email', 'created_at', 'updated_at', 'deleted_at']
+        read_only_fields = ['phone_number', 'deleted_at']
 
 class PatientProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -53,15 +44,6 @@ class TermsAndPrivacySerializer(serializers.ModelSerializer):
         model = TermsAndPrivacy
         fields = '__all__'
         read_only_fields = ['user']
-
-class PhoneVerificationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PhoneVerification
-        fields = '__all__'
-        read_only_fields = ['code', 'attempts', 'used_at', 'expires_at']
-
-    def validate_phone_number(self, phone_number):
-        return validate_phone_number(phone_number)
 
 class TrustedDeviceSerializer(serializers.ModelSerializer):
     class Meta:

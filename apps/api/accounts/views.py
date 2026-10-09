@@ -11,17 +11,23 @@ from mpowered_api.protected import destroy_or_reject_protected
 
 
 from accounts import devices, login, otp, registration, reset_pin
-from accounts.models import PatientProfile, PhoneVerification, SupportLink, TermsAndPrivacy, TrustedDevice, User, UserSettings
+from accounts.models import PatientProfile, SupportLink, TermsAndPrivacy, TrustedDevice, User, UserSettings
 from accounts.rate_limits import PhoneBurstThrottle, PhoneLoginThrottle, PhoneSustainedThrottle
 
-from accounts.serializer import DeviceListSerializer, LoginSerializer, PatientProfileSerializer, PhoneVerificationSerializer, \
-    RegisterSerializer, RequestCodeSerializer, ResetPinSerializer, SupportLinkSerializer, TermsAndPrivacySerializer, \
+from accounts.serializer import DeviceListSerializer, LoginSerializer, PatientProfileSerializer, RegisterSerializer, \
+    RequestCodeSerializer, ResetPinSerializer, SupportLinkSerializer, TermsAndPrivacySerializer, \
     TrustedDeviceSerializer, UserSerializer, UserSettingsSerializer, VerifyCodeSerializer
 
 LOGIN_ERROR_STATUS = {
     "invalid_credentials": status.HTTP_401_UNAUTHORIZED,
     "verification_required": status.HTTP_403_FORBIDDEN,
     "verification_invalid": status.HTTP_400_BAD_REQUEST,
+}
+
+SUPPORTER_STATUS_CHANGES = {
+    SupportLink.Status.INVITED: [SupportLink.Status.ACTIVE, SupportLink.Status.REVOKED],
+    SupportLink.Status.ACTIVE: [SupportLink.Status.REVOKED],
+    SupportLink.Status.REVOKED: [],
 }
 
 # Instructions:
@@ -214,7 +220,7 @@ class ResetPinView(APIView):
 
 
 # User APIs:
-class UserListCreate(generics.ListCreateAPIView):
+class UserList(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
 
@@ -376,10 +382,10 @@ class SupportLinkRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
             for field, value in serializer.validated_data.items():
                 if field != 'status' and value != getattr(instance, field):
                     errors[field] = 'Supporters can only change status.'
-            new_status = serializer.validated_data.get('status', instance.status)
-            if new_status != instance.status and new_status not in [SupportLink.Status.ACTIVE,
-                                                                     SupportLink.Status.REVOKED]:
-                errors['status'] = 'Supporters can only change status to active or revoked.'
+                    new_status = serializer.validated_data.get('status', instance.status)
+                if new_status != instance.status and new_status not in SUPPORTER_STATUS_CHANGES[instance.status]:
+                    errors['status'] = f'Supporters cannot change status from {instance.status} to {new_status}.'
+            
         if errors:
             raise serializers.ValidationError(errors)
         save_without_immutable_changes(serializer, ['supporter_user', 'invited_phone_number',
@@ -387,7 +393,6 @@ class SupportLinkRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_destroy(self, instance):
         destroy_or_reject_protected(instance)
-
 
 
 # TermsAndPrivacy APIs:
@@ -407,6 +412,7 @@ class TermsAndPrivacyListCreate(generics.ListCreateAPIView):
         user = self.request.user
         serializer.save(user = user)
 
+
 class TermsAndPrivacyRetrieve(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = TermsAndPrivacySerializer
@@ -420,31 +426,17 @@ class TermsAndPrivacyRetrieve(generics.RetrieveAPIView):
         return query_set
 
 
-
-# PhoneVerification APIs:
-class PhoneVerificationCreate(generics.CreateAPIView):
-    permission_classes = [AllowAny]
-    serializer_class = PhoneVerificationSerializer
-
-
-
 # TrustedDevice APIs:
-class TrustedDeviceListCreate(generics.ListCreateAPIView):
+class TrustedDeviceList(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = TrustedDeviceSerializer
 
     def get_queryset(self):
         return TrustedDevice.objects.filter(user = self.request.user)
 
-    def perform_create(self, serializer):
-        serializer.save(user = self.request.user)
-
-class TrustedDeviceRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+class TrustedDeviceRetrieve(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = TrustedDeviceSerializer
 
     def get_queryset(self):
         return TrustedDevice.objects.filter(user = self.request.user)
-
-    def perform_update(self, serializer):
-        save_without_immutable_changes(serializer, ['device_id'])

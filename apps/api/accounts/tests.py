@@ -637,3 +637,11 @@ class MissingFieldTests(APITestCase):
                 response = self.client.post(url, body, format = "json")
                 self.assertEqual(response.status_code, 400)
                 self.assertIn(missing, response.data)
+
+
+# API Security tests
+class AccountApiSecurityTests(APITestCase):
+
+    def setUp(self):
+        self.patient = User.objects.create_user(PHONE, "Josh", PIN)
+        self.profile = PatientProfile.objects.create(user = self.patient)
