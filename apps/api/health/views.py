@@ -15,19 +15,21 @@ from .serializer import *
 from datetime import date
 from mpowered_api.immutable import save_without_immutable_changes
 
-# instructions:
-# All views are protected by authenticated user id (can only see records where patient_profile
-# is user's own, or who user supports), for relevant tables.
+# Instructions:
+# All views need the header Authorization: Token <token>, without they return 401.
+
+# Can only see records where patient_profile is user's or who user supports if the patient
+# has turned on can_view_assessments or can_view_prescriptions.
 
 # To filter by attribute, put in the URL ?attribute_name=value. For multiple attributes:
-# ?attribute_name1=value&?attribute_name2=value...
+# ?attribute_name1=value&attribute_name2=value...
 
 # Attributes that are read only are specified in it's serializer. Sending a different value for
 # them in an update request returns a 400 error.
 
-# Records that other records depend on cannot be deleted; deleting them returns a 409 error.
+# Records that other records depend on cannot be deleted, deleting them returns a 409 error.
 
-# Who can insert/update/delete is specified in the comments. Records the user can see but is not
+# Who can insert/update/delete is specified in the comments and records the user can see but is not
 # allowed to update/delete return a 404 error for those requests.
 
 def visible_prescriptions(user):

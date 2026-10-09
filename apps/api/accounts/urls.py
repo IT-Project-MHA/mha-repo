@@ -16,7 +16,7 @@ auth_patterns = [
 
 # Account data
 api_patterns = [
-    path('user/', views.UserListCreate.as_view(), name ='read_user'),
+    path('user/', views.UserList.as_view(), name ='read_user'),
     path('user/<str:pk>', views.UserRetrieveUpdateDestroy.as_view(), name ='update_user'),
     
     path('patientProfile/', views.PatientProfileListCreate.as_view(), name ='read_create_patient_profile'),

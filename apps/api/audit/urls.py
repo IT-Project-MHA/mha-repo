@@ -4,7 +4,7 @@ from .views import *
 
 urlpatterns = [
     path('auditEntry/', 
-         views.AuditEntryListCreate.as_view(), 
+         views.AuditEntryList.as_view(), 
          name ='read_audit_entry'),
     path('auditEntry/<str:pk>', 
          views.AuditEntryRetrieve.as_view(), 

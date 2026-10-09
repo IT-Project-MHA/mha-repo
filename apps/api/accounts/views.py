@@ -31,20 +31,28 @@ SUPPORTER_STATUS_CHANGES = {
 }
 
 # Instructions:
-# All views are protected by authenticated user id (can only see records where patient_profile
-# is user's own, or who user supports), for relevant tables.
+# All views need the header Authorization: Token <token> from /auth/register or /auth/login.
+# Without they return 401.
 
-# To filter by attribute, put
-# in the URL ?attribute_name=value. For multiple attributes:
-# ?attribute_name1=value&?attribute_name2=value...
+# Can only see records where patient_profile is user's own, or who user supports.
 
-# Attributes that are read only are specified in it's serializer. Sending a different value for
-# them in an update request returns a 400 error.
+# To filter by attribute, put in the URL ?attribute_name=value. For multiple attributes:
+# ?attribute_name1=value&attribute_name2=value...
+
+# Attributes that are read only are specified in it's serializer. They are ignored if sent
+# in an update request except the ones listed in save_without_immutable_changes which return 400.
 
 # Records that other records depend on cannot be deleted; deleting them returns a 409 error.
 
 # Who can insert/update/delete is specified in the comments. Records the user can see but is not
 # allowed to update/delete return a 404 error for those requests.
+
+# Auth instructions:
+# Sign up: request-code, then verify-code (gives verification_id), then register (gives token).
+# Log in: login with phone number, PIN and device_id. If it returns 403 verification_required,
+#       it's a new device, so do request-code and verify-code then login again with the verification_id.
+# Forgot PIN: request-code, verify-code, then reset-pin.
+# Logout: reset-pin and revoking a device all sign out every device.
 
 class RequestCodeView(APIView):
     # POST /auth/request-code - send otp to phone number
@@ -220,7 +228,7 @@ class ResetPinView(APIView):
 
 
 # User APIs:
-class UserList(generics.ListCreateAPIView):
+class UserList(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
 
@@ -378,13 +386,12 @@ class SupportLinkRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         if instance.patient_user_id == user.id:
             raise serializers.ValidationError('Patients cannot update a support link.')
         else:
-            # supporter can only change status, to active (accept) or revoked
             for field, value in serializer.validated_data.items():
                 if field != 'status' and value != getattr(instance, field):
                     errors[field] = 'Supporters can only change status.'
-                    new_status = serializer.validated_data.get('status', instance.status)
-                if new_status != instance.status and new_status not in SUPPORTER_STATUS_CHANGES[instance.status]:
-                    errors['status'] = f'Supporters cannot change status from {instance.status} to {new_status}.'
+            new_status = serializer.validated_data.get('status', instance.status)
+            if new_status != instance.status and new_status not in SUPPORTER_STATUS_CHANGES[instance.status]:
+                errors['status'] = f'Supporters cannot change status from {instance.status} to {new_status}.'
             
         if errors:
             raise serializers.ValidationError(errors)

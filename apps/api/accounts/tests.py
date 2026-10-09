@@ -645,3 +645,55 @@ class AccountApiSecurityTests(APITestCase):
     def setUp(self):
         self.patient = User.objects.create_user(PHONE, "Josh", PIN)
         self.profile = PatientProfile.objects.create(user = self.patient)
+
+        # Supporter who has been invited but not accepted yet
+        self.supporter = User.objects.create_user("+61411111111", "Mum", PIN)
+        self.link = SupportLink.objects.create(
+            patient_profile = self.profile,
+            patient_user = self.patient,
+            supporter_user = self.supporter,
+            status = SupportLink.Status.INVITED,
+        )
+
+    def set_status(self, status):
+        self.client.force_authenticate(self.supporter)
+        return self.client.patch(f"/api/supportLink/{self.link.pk}", {"status": status}, format = "json")
+
+    def test_phone_verification_endpoint_removed(self):
+        response = self.client.post("/api/phoneVerification/", {"phone_number": PHONE}, format = "json")
+        self.assertEqual(response.status_code, 404)
+
+    def test_cannot_create_user(self):
+        self.client.force_authenticate(self.patient)
+        response = self.client.post("/api/user/", {"phone_number": "+61433333333", "display_name": "New"}, format = "json")
+        self.assertEqual(response.status_code, 405)
+        self.assertFalse(User.objects.filter(phone_number = "+61433333333").exists())
+
+    def test_trusted_device_read_only(self):
+        device = TrustedDevice.objects.create(user = self.patient, device_id = DEVICE, revoked_at = timezone.now())
+        self.client.force_authenticate(self.patient)
+
+        self.assertEqual(self.client.get("/api/trustedDevice/").status_code, 200)
+        self.assertEqual(self.client.post("/api/trustedDevice/", {"device_id": "new-phone"}, format = "json").status_code, 405)
+        self.assertEqual(self.client.patch(f"/api/trustedDevice/{device.pk}", {"revoked_at": None}, format = "json").status_code, 405)
+        self.assertEqual(self.client.delete(f"/api/trustedDevice/{device.pk}").status_code, 405)
+        device.refresh_from_db()
+        self.assertIsNotNone(device.revoked_at)
+
+    def test_supporter_can_accept_then_leave(self):
+        self.assertEqual(self.set_status("active").status_code, 200)
+        self.assertEqual(self.set_status("revoked").status_code, 200)
+
+    def test_supporter_can_decline_invite(self):
+        self.assertEqual(self.set_status("revoked").status_code, 200)
+
+    def test_supporter_cannot_unrevoke(self):
+        SupportLink.objects.filter(pk = self.link.pk).update(status = SupportLink.Status.REVOKED)
+        self.assertEqual(self.set_status("active").status_code, 400)
+        self.assertEqual(self.set_status("invited").status_code, 400)
+        self.link.refresh_from_db()
+        self.assertEqual(self.link.status, SupportLink.Status.REVOKED)
+
+    def test_supporter_cannot_go_back_to_invited(self):
+        SupportLink.objects.filter(pk = self.link.pk).update(status = SupportLink.Status.ACTIVE)
+        self.assertEqual(self.set_status("invited").status_code, 400)

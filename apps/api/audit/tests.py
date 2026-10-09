@@ -1,7 +1,8 @@
 from django.utils import timezone
 from django.test import TestCase
+from rest_framework.test import APITestCase
 
-from accounts.models import PatientProfile, User
+from accounts.models import PatientProfile, User, SupportLink
 from appointment.access import record_appointment_view, record_question_view
 from appointment.models import Appointment, AppointmentAnswer, AppointmentQuestion
 
@@ -61,3 +62,40 @@ class AuditTests(TestCase):
     def test_question_view_by_supporter(self):
         record_question_view(self.supporter, self.question)
         self.assertTrue(AuditEntry.objects.filter(action = AuditEntry.Action.VIEW, target_id = self.question.id).exists())
+
+class AuditEntryApiTests(APITestCase):
+
+    def setUp(self):
+        self.patient = User.objects.create_user("+61400000000", "Josh", PIN)
+        self.profile = PatientProfile.objects.create(user = self.patient)
+        self.supporter = User.objects.create_user("+61411111111", "Mum", PIN)
+        self.stranger = User.objects.create_user("+61422222222", "Stranger", PIN)
+        link = SupportLink.objects.create(
+            patient_profile = self.profile, patient_user = self.patient, supporter_user = self.supporter,
+            status = SupportLink.Status.ACTIVE,
+        )
+
+        # Supporter viewed the patient's support link
+        self.entry = record(self.supporter, AuditEntry.Action.VIEW, link)
+
+    def test_self_cannot_create_entry(self):
+        self.client.force_authenticate(self.patient)
+        response = self.client.post(
+            "/api/auditEntry/", {"action": "view", "target_type": "assessment"}, format = "json"
+        )
+        self.assertEqual(response.status_code, 405)
+        self.assertEqual(AuditEntry.objects.count(), 1)
+
+    def test_patient_sees_entries_about_them(self):
+        self.client.force_authenticate(self.patient)
+        self.assertEqual(len(self.client.get("/api/auditEntry/").data), 1)
+        self.assertEqual(self.client.get(f"/api/auditEntry/{self.entry.pk}").status_code, 200)
+
+    def test_actor_sees_own_entries(self):
+        self.client.force_authenticate(self.supporter)
+        self.assertEqual(len(self.client.get("/api/auditEntry/").data), 1)
+
+    def test_stranger_sees_no_entries(self):
+        self.client.force_authenticate(self.stranger)
+        self.assertEqual(len(self.client.get("/api/auditEntry/").data), 0)
+        self.assertEqual(self.client.get(f"/api/auditEntry/{self.entry.pk}").status_code, 404)
