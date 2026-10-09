@@ -3,7 +3,7 @@
  */
 import { View, Text, ScrollView } from 'react-native';
 import { useTheme } from '../../../../context/ThemeContext';
-import Toggle from '../../../../components/Toggle'
+import Toggle from '../../../../components/atomicUI/Toggle'
 import { useState } from 'react';
 
 export default function Screen() {

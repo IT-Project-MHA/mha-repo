@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useMemo } from 'react';
 import { useColorScheme } from 'react-native';
 import { themes, ThemeMode, themeColours } from '../constants/theme';
 import type { ColourSet } from '../constants/colourScheme';
-import { createTypography, TextSizeSet, FontScale, Typography } from '../constants/textSize';
+import { createTypography, FontScale, Typography } from '../constants/textSize';
 export type { ColourSet } from '../constants/colourScheme';
 
 

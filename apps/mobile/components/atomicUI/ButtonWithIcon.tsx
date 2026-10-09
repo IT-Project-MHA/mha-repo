@@ -3,7 +3,7 @@ import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import {Ionicons, IoniconsIconName} from '@react-native-vector-icons/ionicons'
 
-type ButtonType = "primaryButton" | "secondaryButton" | "settingsButton" | "squareButtonWithLine" | "transparentButton";
+type ButtonType = "primaryButton" | "secondaryButton" | "squareButtonWithLine" | "transparentButton";
 
 /**
  * defines the required input on button creation

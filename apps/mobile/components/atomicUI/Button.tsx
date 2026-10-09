@@ -3,7 +3,7 @@ import { Text, TouchableOpacity } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 
 
-type ButtonType = "primaryButton" | "secondaryButton" | "settingsButton" | "transparentButton" | "textButton";
+type ButtonType = "primaryButton" | "secondaryButton" | "transparentButton" | "textButton";
 
 
 /**

@@ -5,9 +5,9 @@
  */
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
-import ButtonWithIcon from '../../../../components/ButtonWithIcon';
+import ButtonWithIcon from '../../../../components/atomicUI/ButtonWithIcon';
 import { useState } from 'react';
-import ConfirmModal from '../../../../components/ConfirmModal';
+import ConfirmModal from '../../../../components/atomicUI/ConfirmModal';
 import * as WebBrowser from 'expo-web-browser';
 
 export default function Screen() {

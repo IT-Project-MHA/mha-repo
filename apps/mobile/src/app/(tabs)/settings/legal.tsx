@@ -4,7 +4,7 @@
  */
 import { View, Text, ScrollView} from 'react-native';
 import { useTheme } from '../../../../context/ThemeContext';
-import ButtonWithIcon from '../../../../components/ButtonWithIcon';
+import ButtonWithIcon from '../../../../components/atomicUI/ButtonWithIcon';
 import * as WebBrowser from 'expo-web-browser';
 
 
