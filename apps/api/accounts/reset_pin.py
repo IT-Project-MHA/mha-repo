@@ -17,8 +17,7 @@ class PinResetError(Exception):
 
 def reset_pin(phone_number, verification_id, pin, device_id):
 
-    # Set new PIN once the phone has passed the otp again
-    # Signs out every device but signs in the one doing the reset
+    # Set new PIN once the phone has passed the otp again, signs out every device but signs in the one doing the reset
     # Returns user and token and PinResetError if errors
 
     if not check_verification(verification_id, phone_number):

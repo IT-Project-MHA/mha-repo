@@ -15,6 +15,5 @@ class SoftDeleteModel(models.Model):
     class Meta:
         abstract = True
 
-    @property
-    def is_deleted(self) -> bool:
+    def is_deleted(self):
         return self.deleted_at is not None

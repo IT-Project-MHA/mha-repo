@@ -24,7 +24,7 @@ class GrantAccessTests(APITestCase):
         )
         self.sign_in(self.patient)
 
-        # Supporter has accepted
+        # Supporter accepted
         self.supporter, self.link = self.add_supporter("+61411111111", SupportLink.Status.ACTIVE)
 
     def sign_in(self, user):
@@ -34,8 +34,7 @@ class GrantAccessTests(APITestCase):
     def add_supporter(self, phone, status):
         supporter = User.objects.create_user(phone, "Supporter", PIN)
         link = SupportLink.objects.create(patient_profile = self.profile, patient_user = self.patient, 
-                                          supporter_user = supporter, status = status
-        )
+                                          supporter_user = supporter, status = status)
         return supporter, link
 
     def grant(self, link, **flags):
@@ -141,3 +140,46 @@ class GrantAccessTests(APITestCase):
         _, invited_link = self.add_supporter("+61422222222", SupportLink.Status.INVITED)
         self.grant(invited_link)
         self.assertFalse(AuditEntry.objects.exists())
+
+
+class AppointmentSwitchTests(APITestCase):
+
+    def setUp(self):
+        self.patient = User.objects.create_user("+61490813123", "Josh", PIN)
+        self.profile = PatientProfile.objects.create(user = self.patient)
+        self.appointment = Appointment.objects.create(patient_profile = self.profile, scheduled_date = timezone.now(), created_by = self.patient)
+
+        # Active link with every switch off and no grants
+        self.supporter = User.objects.create_user("+61411111111", "Mum", PIN)
+        self.link = SupportLink.objects.create(
+            patient_profile = self.profile,
+            patient_user = self.patient,
+            supporter_user = self.supporter,
+            status = SupportLink.Status.ACTIVE,
+        )
+        self.client.force_authenticate(self.supporter)
+
+    def update_link(self, **changes):
+        SupportLink.objects.filter(pk = self.link.pk).update(**changes)
+
+    def test_hidden_when_switch_off(self):
+        self.assertEqual(len(self.client.get("/api/appointment/").data), 0)
+        self.assertEqual(self.client.get(f"/api/appointment/{self.appointment.pk}").status_code, 404)
+
+    def test_shown_when_switch_on(self):
+        self.update_link(can_view_appointments = True)
+        self.assertEqual(len(self.client.get("/api/appointment/").data), 1)
+        self.assertEqual(self.client.get(f"/api/appointment/{self.appointment.pk}").status_code, 200)
+
+    def test_grant_still_works_with_switch_off(self):
+        AppointmentAccess.objects.create(appointment = self.appointment, support_link = self.link)
+        self.assertEqual(len(self.client.get("/api/appointment/").data), 1)
+
+    def test_hidden_once_link_revoked(self):
+        self.update_link(can_view_appointments = True, status = SupportLink.Status.REVOKED)
+        self.assertEqual(len(self.client.get("/api/appointment/").data), 0)
+
+    def test_switch_does_not_allow_editing(self):
+        self.update_link(can_view_appointments = True)
+        response = self.client.patch(f"/api/appointment/{self.appointment.pk}", {"doctor": "Dr Who"}, format = "json")
+        self.assertEqual(response.status_code, 404)

@@ -3,7 +3,7 @@ from rest_framework.throttling import SimpleRateThrottle
 from accounts.phone_normaliser import normalise_phone_number
 
 class PhoneRateThrottle(SimpleRateThrottle):
-    # Throttle keyed on the phone number
+    # Throttle on the phone number
     
     def get_cache_key(self, request, view):
         data = request.data if hasattr(request.data, "get") else {}

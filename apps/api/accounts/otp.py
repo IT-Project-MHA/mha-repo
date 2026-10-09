@@ -15,7 +15,6 @@ MAX_ATTEMPTS = 3
 
 class VerificationError(Exception):
     # Code was rejected
-
     def __init__(self, reason, attempts_remaining = None):
         super().__init__(reason)
         self.reason = reason
@@ -23,7 +22,6 @@ class VerificationError(Exception):
 
 
 def create_otp():
-    # Random numeric code. Secrets as it must be unguessable.
     return "".join(secrets.choice("0123456789") for _ in range(OTP_LENGTH))
 
 
@@ -34,7 +32,7 @@ def send_otp(phone_number, code):
 
 
 def issue_otp(phone_number):
-    # Create a new code for phone, store only its hash, and send it.
+    # Create a new code for phone, store only the hash and send it.
     otp = create_otp()
 
     verification = PhoneVerification.objects.create(
@@ -68,12 +66,11 @@ def usable(verification):
 
 def verify_otp(phone_number, otp):
     
-    # Check otp against newest issued for this phone
-    # Requesting new code retires the old one.
+    # Check otp against newest for this phone, requesting new code retires the old one.
     # Returns the PhoneVerification on success or VerificationError.
     
     with transaction.atomic():
-        # Lock the row so two guesses sent at the same time can't both read the same attempt count
+        # Lock the row so two guesses sent at the same time can't both read the same attempt
         verification = (
             PhoneVerification.objects.select_for_update()
             .filter(phone_number = phone_number)

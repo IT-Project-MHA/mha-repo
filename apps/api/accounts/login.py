@@ -19,8 +19,7 @@ def find_user(phone_number):
 
 def login_user(phone_number, pin, device_id, verification_id = None):
 
-    # Check phone, pin and device
-    # New devices need a verification_id from verify code
+    # Check phone, pin and device, new devices need a verification_id from verify code
     # Returns user and token raises LoginError if error
 
     user = find_user(phone_number)

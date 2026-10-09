@@ -23,7 +23,9 @@ from mpowered_api.validators import australian_day_range
 # Instructions:
 # All views need the header Authorization: Token <token> without they return 401.
 
-# Can only see appointments that are the user's or that the patient has given the user access to.
+# Can only see appointments that are the users, or all of a patients appointments if the patient has
+# turned on can_view_appointments or one appointment the patient has given the user access to.
+
 # Supporters need can_add_questions or can_record_answers to add questions or answers.
 
 # To filter by attribute, put in the URL ?attribute_name=value. For multiple attributes:
@@ -122,10 +124,12 @@ def is_appointment_patient(user, appointment):
 def visible_appointments(user):
     return Appointment.objects.filter(
             Q(patient_profile__user = user) |
+            Q(patient_profile__support_links__supporter_user = user,
+              patient_profile__support_links__status = SupportLink.Status.ACTIVE,
+              patient_profile__support_links__can_view_appointments = True) |
             Q(access_grants__support_link__supporter_user = user,
               access_grants__support_link__status = SupportLink.Status.ACTIVE,
-              access_grants__revoked_at__isnull = True)
-        )
+              access_grants__revoked_at__isnull = True))
 
 # helper function: filters appointments to those scheduled on the given date (YYYY-MM-DD) in
 # Australia
