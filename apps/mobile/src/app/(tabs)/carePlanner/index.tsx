@@ -4,17 +4,45 @@
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
 import { formatDate } from '../../../../constants/date';
-import { useAppointment } from '../../../../context/AppointmentContext';
+import { useAppointment, Appointment } from '../../../../context/AppointmentContext';
 
 export default function Screen() {
   const { colours } = useTheme();
   const styles = createStyles(colours);
   const router = useRouter();
-  const { appointments, resetDraft } = useAppointment();
+  const { appointments, sharedAppointments, resetDraft } = useAppointment();
+
+  // a pressable appointment summary, patientName is shown first on appointments shared with you
+  const renderAppointmentCard = (
+    appointment: Appointment,
+    onPress: () => void,
+    patientName?: string,
+  ) => (
+    <Pressable
+      key={appointment.id}
+      style={styles.appointmentCard}
+      onPress={onPress}
+      accessibilityRole="button"
+    >
+      <View style={styles.appointmentInfo}>
+        {!!patientName && <Text style={styles.patientName}>{patientName}</Text>}
+        <Text style={styles.appointmentDate}>{formatDate(appointment.scheduled_date)}</Text>
+        {/* optional fields that are empty are left out */}
+        {!!appointment.doctor && (
+          <Text style={styles.appointmentDetails}>{appointment.doctor}</Text>
+        )}
+        {!!appointment.health_service && (
+          <Text style={styles.appointmentDetails}>{appointment.health_service}</Text>
+        )}
+      </View>
+      <Ionicons name="chevron-forward" size={24} color={colours.onBackground} />
+    </Pressable>
+  );
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
@@ -42,33 +70,40 @@ export default function Screen() {
             {appointments.length > 0 ? 'Recently added appointments' : 'You have no appointments'}
           </Text>
           {/* newest appointments are first, only the 3 most recently added are shown */}
-          {appointments.slice(0, 3).map((appointment) => (
-            // opens a summary of the appointment, going back returns here
-            <Pressable
-              key={appointment.id}
-              style={styles.appointmentCard}
-              onPress={() =>
-                router.push({
-                  pathname: '/carePlanner/appointmentDetails',
-                  params: { id: appointment.id },
-                })
-              }
-              accessibilityRole="button"
-            >
-              <Text style={styles.appointmentDate}>{formatDate(appointment.scheduled_date)}</Text>
-              {/* optional fields that are empty are left out */}
-              {!!appointment.doctor && (
-                <Text style={styles.appointmentDetails}>{appointment.doctor}</Text>
-              )}
-              {!!appointment.health_service && (
-                <Text style={styles.appointmentDetails}>{appointment.health_service}</Text>
-              )}
-            </Pressable>
-          ))}
+          {appointments.slice(0, 3).map((appointment) =>
+            renderAppointmentCard(appointment, () =>
+              router.push({
+                pathname: '/carePlanner/appointmentDetails',
+                params: { id: appointment.id },
+              }),
+            ),
+          )}
         </View>
 
         <View style={styles.filledCard}>
           <Text style={styles.cardTitle}>Shared With You</Text>
+          <Button
+            label="See all shared appointments"
+            onPress={() => router.push('/carePlanner/allSharedAppointments')}
+            buttonType="primaryButton"
+          />
+          <Text style={styles.sectionHeading}>
+            {sharedAppointments.length > 0
+              ? 'Recently added appointments'
+              : 'No appointments have been shared with you'}
+          </Text>
+          {/* newest shared appointments are first, only the 3 most recently shared are shown */}
+          {sharedAppointments.slice(0, 3).map((appointment) =>
+            renderAppointmentCard(
+              appointment,
+              () =>
+                router.push({
+                  pathname: '/carePlanner/editSharedAppointment',
+                  params: { id: appointment.id },
+                }),
+              appointment.patientName,
+            ),
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -128,7 +163,21 @@ function createStyles(colours: ColourSet) {
       backgroundColor: colours.background,
       borderRadius: 8,
       padding: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+
+    // takes the card's width apart from the chevron
+    appointmentInfo: {
+      flex: 1,
       gap: 4,
+    },
+
+    patientName: {
+      ...textLayout,
+      fontWeight: 'bold',
+      color: colours.onBackground,
     },
 
     appointmentDate: {

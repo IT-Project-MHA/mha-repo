@@ -1,6 +1,7 @@
 /**
- * Patients type or record the doctor's answer to a question from this screen, opened by pressing
- * a question on the appointment details page.
+ * Patients, or support persons allowed to add answers, type or record the doctor's answer to a
+ * question from this screen, opened by pressing a question on the appointment details or shared
+ * appointment page.
  */
 import { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, Alert } from 'react-native';
@@ -54,9 +55,9 @@ export default function Screen() {
   const { colors: paperColours } = usePaperTheme();
   const { id, index } = useLocalSearchParams<{ id: string; index: string }>();
   const navigation = useNavigation();
-  const { appointments, updateAppointment, updateQuestion: updateAppointmentQuestion } =
+  const { findAppointment, updateAppointment, updateQuestion: updateAppointmentQuestion } =
     useAppointment();
-  const appointment = appointments.find((item) => item.id === id);
+  const appointment = findAppointment(id);
   const question = appointment?.questions[Number(index)];
 
   // starts with the saved answer, saved to the appointment as it is typed

@@ -1,6 +1,7 @@
 /**
- * Patients can choose auto-generated questions to ask their doctor in the appointment
- * or add their own.
+ * Support persons allowed to add questions choose auto-generated questions or add, edit and remove
+ * their own on an appointment shared with them, opened from the shared appointment page. The
+ * patient's questions aren't shown as only the patient can change them.
  */
 import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, Pressable } from 'react-native';
@@ -13,24 +14,36 @@ import { Checkbox, useTheme as usePaperTheme } from 'react-native-paper';
 import { useAppointment, AppointmentQuestion } from '../../../../context/AppointmentContext';
 import { SUGGESTED_QUESTIONS, suggestedId } from '../../../../constants/suggestedQuestions';
 
+// a question with a written or recorded answer can still be edited, but the backend refuses to
+// delete it
+const isAnswered = (question?: { answer?: string; recording?: string }) =>
+  !!question?.answer || !!question?.recording;
+
 export default function Screen() {
   const { colours } = useTheme();
   const styles = createStyles(colours);
   const router = useRouter();
   const { colors: paperColours } = usePaperTheme();
-  const { draft, updateDraft, appointments, updateAppointment } = useAppointment();
+  const { findAppointment, updateAppointment } = useAppointment();
 
-  // set when opened from a submitted appointment's details, otherwise the draft is changed
-  const { appointmentId } = useLocalSearchParams<{ appointmentId?: string }>();
-  const savedQuestions = appointmentId
-    ? (appointments.find((item) => item.id === appointmentId)?.questions ?? [])
-    : draft.questions;
+  const { appointmentId } = useLocalSearchParams<{ appointmentId: string }>();
+  const savedQuestions = findAppointment(appointmentId)?.questions ?? [];
+  const savedSuggestion = (id: string) =>
+    savedQuestions.find((question) => question.suggestedId === id);
+  // suggestions the patient ticked are hidden and kept as they are when saving
+  const patientSuggestion = (id: string) =>
+    !!savedSuggestion(id) && savedSuggestion(id)?.addedBy !== 'support';
+  // questions the patient typed are hidden and kept as they are when saving
+  const patientTyped = savedQuestions.filter(
+    (question) => question.source === 'patient',
+  );
 
-  // set of ids of the questions the patient has ticked
+  // set of ids of the suggested questions support persons have ticked
   const [checked, setChecked] = useState<Set<string>>(
     () =>
       new Set(
         savedQuestions
+          .filter((question) => question.addedBy === 'support')
           // get array of suggestedIds
           .map((question) => question.suggestedId)
           // filter out questions that don't have a suggestedId
@@ -47,15 +60,16 @@ export default function Screen() {
       return next;
     });
 
-  // questions the patient has typed themselves, starts with the saved ones and keeps their answers
+  // questions support persons have typed, starts with the saved ones and keeps their answers
   const [ownQuestions, setOwnQuestions] = useState<
-    { id: number; text: string; answer?: string; recording?: string }[]
+    { id: number; text: string; savedText?: string; answer?: string; recording?: string }[]
   >(() =>
     savedQuestions
-      .filter((question) => question.source === 'patient')
+      .filter((question) => question.source === 'support')
       .map((question, index) => ({
         id: index,
         text: question.text,
+        savedText: question.text,
         answer: question.answer,
         recording: question.recording,
       })),
@@ -77,73 +91,82 @@ export default function Screen() {
   const removeOwnQuestion = (id: number) =>
     setOwnQuestions((previous) => previous.filter((question) => question.id !== id));
 
-  // saves the ticked suggestions & own questions (blank ones left out) to the appointment,
-  // keeping the answers & recordings already saved for them
+  // saves the patient's questions as they are, with the ticked suggestions & own questions (blank
+  // ones left out), keeping the answers & recordings already saved for them
   const save = () => {
-    const savedSuggestion = (id: string) =>
-      savedQuestions.find((question) => question.suggestedId === id);
-
     const suggested: AppointmentQuestion[] = SUGGESTED_QUESTIONS.flatMap(({ key, questions }) =>
       questions
         // converts SUGGESTED_QUESTIONS into [{text, suggestedId}]
         .map((text, index) => ({ text, id: suggestedId(key, index) }))
-        // remove non-checked items
-        .filter(({ id }) => checked.has(id))
+        // keep the patient's and the ticked ones
+        .filter(({ id }) => patientSuggestion(id) || checked.has(id))
         // map to AppointmentQuestion object
         .map(({ text, id }) => ({
           text,
           source: 'suggested' as const,
-          // a suggestion a support person ticked stays theirs
-          addedBy: savedSuggestion(id)?.addedBy,
+          // a suggestion the patient ticked stays theirs
+          addedBy: patientSuggestion(id) ? undefined : ('support' as const),
           suggestedId: id,
           answer: savedSuggestion(id)?.answer,
           recording: savedSuggestion(id)?.recording,
         })),
     );
     const own: AppointmentQuestion[] = ownQuestions
-      // copy each question attribute but trim text
-      .map((question) => ({ ...question, text: question.text.trim() }))
+      // copy each question attribute but trim text, an answered question left blank keeps its
+      // saved text so it isn't removed
+      .map((question) => ({
+        ...question,
+        text: question.text.trim() || (isAnswered(question) ? question.savedText ?? '' : ''),
+      }))
       .filter(({ text }) => text !== '')
-      .map(({ text, answer, recording }) => ({ text, source: 'patient', answer, recording }));
-    if (appointmentId) {
-      // keeps the questions support persons typed, they aren't shown on this page
-      const supportQuestions = savedQuestions.filter((question) => question.source === 'support');
-      updateAppointment(appointmentId, { questions: [...suggested, ...own, ...supportQuestions] });
-      router.back();
-    } else {
-      updateDraft({ questions: [...suggested, ...own] });
-      router.push('/carePlanner/reviewAppointment');
-    }
+      .map(({ text, answer, recording }) => ({
+        text,
+        source: 'support',
+        addedBy: 'support',
+        answer,
+        recording,
+      }));
+    updateAppointment(appointmentId, { questions: [...suggested, ...patientTyped, ...own] });
+    router.back();
   };
+
+  // only headings with a suggestion the patient hasn't ticked are shown
+  const shownSuggestions = SUGGESTED_QUESTIONS.map(({ key, heading, questions }) => ({
+    key,
+    heading,
+    questions: questions
+      .map((text, index) => ({ text, id: suggestedId(key, index) }))
+      .filter(({ id }) => !patientSuggestion(id)),
+  })).filter(({ questions }) => questions.length > 0);
 
   return (
     <View style={styles.screen}>
-        <Text style={[styles.body, styles.intro]}>Based on your answers to the four impact sections, 
-            we have provided some suggested questions to ask your healthcare professional/s.
-            </Text>
+      <Text style={[styles.body, styles.intro]}>
+        Based on the patient's answers to the four impact sections, we have provided some suggested
+        questions to ask their healthcare professional/s.
+      </Text>
       <ScrollView contentContainerStyle={styles.content}>
-        {SUGGESTED_QUESTIONS.map(({ key, heading, questions }) => (
-          <View key={key} style={{ gap: 8, marginTop: 8 }}>
+        {shownSuggestions.map(({ key, heading, questions }) => (
+          <View key={key} style={styles.section}>
             <Text style={styles.heading}>{heading}</Text>
             <View style={[styles.field, styles.checkboxList]}>
-              {questions.map((text, index) => {
-                const id = suggestedId(key, index);
-                return (
-                  <Checkbox.Item
-                    key={id}
-                    label={text}
-                    status={checked.has(id) ? 'checked' : 'unchecked'}
-                    onPress={() => toggle(id)}
-                    labelStyle={styles.input}
-                    style={index > 0 ? styles.divider : undefined}
-                  />
-                );
-              })}
+              {questions.map(({ text, id }, index) => (
+                <Checkbox.Item
+                  key={id}
+                  label={text}
+                  status={checked.has(id) ? 'checked' : 'unchecked'}
+                  onPress={() => toggle(id)}
+                  // an answered suggestion can't be unticked as that removes it
+                  disabled={isAnswered(savedSuggestion(id))}
+                  labelStyle={styles.input}
+                  style={index > 0 ? styles.divider : undefined}
+                />
+              ))}
             </View>
           </View>
         ))}
 
-        <View style={{ gap: 8, marginTop: 8 }}>
+        <View style={styles.section}>
           <Text style={styles.heading}>Add your own questions</Text>
           {ownQuestions.map((question) => (
             <View key={question.id} style={[styles.field, styles.ownQuestion]}>
@@ -155,14 +178,17 @@ export default function Screen() {
                 placeholderTextColor={paperColours.onSurfaceVariant}
                 multiline
               />
-              <Pressable
-                onPress={() => removeOwnQuestion(question.id)}
-                accessibilityRole="button"
-                accessibilityLabel="Delete question"
-                hitSlop={8}
-              >
-                <Ionicons name="trash-outline" size={24} color={colours.onSurface} />
-              </Pressable>
+              {/* an answered question has no delete button */}
+              {!isAnswered(question) && (
+                <Pressable
+                  onPress={() => removeOwnQuestion(question.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Delete question"
+                  hitSlop={8}
+                >
+                  <Ionicons name="trash-outline" size={24} color={colours.onSurface} />
+                </Pressable>
+              )}
             </View>
           ))}
           <Button label="Add new question" onPress={addOwnQuestion} buttonType="primaryButton" />
@@ -191,21 +217,19 @@ function createStyles(colours: ColourSet) {
 
     content: {
       paddingHorizontal: 16,
-      paddingTop: 12, 
-      paddingBottom: 16, 
+      paddingTop: 12,
+      paddingBottom: 16,
       gap: 12,
+    },
+
+    section: {
+      gap: 8,
+      marginTop: 8,
     },
 
     bottomBar: {
       paddingHorizontal: 16,
       marginBottom: 44,
-    },
-
-    headline: {
-      fontSize: 28,
-      lineHeight: 36,
-      fontWeight: '400',
-      color: colours.onBackground,
     },
 
     body: {

@@ -78,6 +78,22 @@ export default function CarePlannerLayout() {
           options={{ title: 'All Appointments' }}
         />
         <Stack.Screen
+          name="allSharedAppointments"
+          options={{ title: 'All shared appointments' }}
+        />
+        <Stack.Screen
+          name="editSharedAppointment"
+          options={{ title: 'Shared Appointment' }}
+        />
+        <Stack.Screen
+          name="addSharedQuestion"
+          options={{ title: 'Add Questions to the Appointment' }}
+        />
+        <Stack.Screen
+          name="viewAnswer"
+          options={{ title: 'View Answer' }}
+        />
+        <Stack.Screen
           name="appointmentDetails"
           options={{ title: 'Appointment Details' }}
         />
