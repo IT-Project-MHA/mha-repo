@@ -1,5 +1,7 @@
-import React from 'react';
-import { Text, TouchableOpacity } from 'react-native';
+/**
+ * button componant styled to theme.ts and themeContext
+ */
+import { Pressable, Text } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 
 
@@ -36,14 +38,12 @@ const Button = ({label, onPress, buttonType}: ButtonProps) => {
   const { theme } = useTheme();
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.7}
+    <Pressable
       style={theme[buttonType]}
       onPress={onPress}
     >
     <Text style={[theme.h6, theme.fontOnSurface]}>{label}</Text>
-    
-    </TouchableOpacity>
+    </Pressable>
   );
 };
 

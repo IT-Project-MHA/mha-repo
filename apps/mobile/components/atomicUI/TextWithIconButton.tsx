@@ -1,11 +1,12 @@
 /**
- * Button with an icon
+ * Button which generates a plain-text button, with an icon
  */
-import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Text, TouchableOpacity, StyleSheet, View} from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import {Ionicons, IoniconsIconName} from '@react-native-vector-icons/ionicons'
 
-type ButtonType = "primaryButton" | "secondaryButton" | "squareButtonWithLine" | "transparentButton";
+type ButtonType = "textButton";
+
 
 /**
  * defines the required input on button creation
@@ -15,57 +16,47 @@ type ButtonType = "primaryButton" | "secondaryButton" | "squareButtonWithLine" |
  * <Button
         label="light mode"
         onPress={() => setMode('light')}
-        buttonType="primaryButton"
-        name="alarm"
+        iconName="person-outline"
     />
  */
 type ButtonProps = {
   label: string;
   onPress: () => void;
-  buttonType: ButtonType;
-  name: IoniconsIconName;
+  iconName: IoniconsIconName;
 };
 
 /**
- * Themed button that changes style based on current theme, and selected
- * button type, of the button types defined in theme.ts
  * 
  * @param label string that says what the button should say
  * @param onPress prescribes an action to the button when pressed
- * @param buttonType string that maps to a button type, defined in theme.ts
- * @returns a styled button component, which performs some funtion when pressed, with an icon
+ * @returns  button that is styled to look like plain text
  */
-const Button = ({label, onPress, buttonType, name}: ButtonProps) => {
-  const { theme, colours} = useTheme();
+const TextButton = ({label, onPress,iconName}: ButtonProps) => {
+  const { theme, colours } = useTheme();
 
   return (
-    
     <TouchableOpacity
-  
       activeOpacity={0.7}
-      style={theme[buttonType]}
+      style={theme['textButton']}
       onPress={onPress}
     >
     <View style={styles.row}>
-      <Text style={[theme.h6, theme.fontOnSurface]}>{label}</Text>
-        <Ionicons
-            name={name}
-            size={16}
-            color={colours.onSurface}  
-            style={styles.icon}
-        />
-   
+          <Text style={[theme.body, theme.fontOnSurface]}>{label}</Text>
+            <Ionicons
+                name={iconName}
+                size={16}
+                color={colours.onSurface}  
+                style={styles.icon}
+            />
     </View>
-    
     </TouchableOpacity>
-    
   );
 };
 
-export default Button;
+export default TextButton;
 
 const styles = StyleSheet.create({
-   row: {
+    row: {
     flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
