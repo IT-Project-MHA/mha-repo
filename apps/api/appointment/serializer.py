@@ -54,3 +54,15 @@ class AppointmentAccessSerializer(serializers.ModelSerializer):
 
     def validate_revoked_at(self, revoked_at):
         return validate_not_future(revoked_at)
+    
+class GrantAccessSerializer(serializers.Serializer):
+    support_link_id = serializers.UUIDField()
+    can_add_questions = serializers.BooleanField(default = False)
+    can_record_answers = serializers.BooleanField(default = False)
+
+
+class AccessGrantSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = AppointmentAccess
+        fields = ["id", "support_link", "can_add_questions", "can_record_answers", "granted_at", "revoked_at"]

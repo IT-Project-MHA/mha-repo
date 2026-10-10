@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     "appointment",
     "audit",
     "health",
-    "reference"
+    "reference",
+    "rest_framework.authtoken"
 ]
 
 MIDDLEWARE = [
@@ -136,3 +137,24 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.User'
 
 SILENCED_SYSTEM_CHECKS = ["auth.E003"]
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.TokenAuthentication"],
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
+    "DEFAULT_THROTTLE_RATES": {
+        
+        "otp_request": "10/hour",
+        "otp_verify": "20/hour",
+        "otp_phone_burst": "1/min",
+        "otp_phone_sustained": "5/hour",
+
+        "register": "10/hour",
+        "login": "20/hour",
+        "login_phone": "10/hour",
+
+        "reset_pin": "10/hour"
+    },
+}
+
+TERMS_VERSION = "1.0"
+PRIVACY_VERSION = "1.0"

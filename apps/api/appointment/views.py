@@ -1,26 +1,35 @@
-from django.shortcuts import render
+from django.db.models import Max, Q
 from django.http import FileResponse, Http404
-from rest_framework import generics
+from django.utils.dateparse import parse_date
+from rest_framework import generics, serializers, status
 from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
-from django.db.models import Q, Max
-from rest_framework import serializers
-from .models import Appointment, AppointmentQuestion, AppointmentAnswer, \
-   AppointmentAccess
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from accounts.models import SupportLink
+from accounts.permissions import can_edit_patient_data
 from accounts.views import own_patient_profile
-from .serializer import *
+from appointment import grants
+from appointment.models import Appointment, AppointmentAccess, AppointmentAnswer, AppointmentQuestion
+
+from appointment.serializer import AccessGrantSerializer, AppointmentAccessSerializer, AppointmentAnswerSerializer, \
+    AppointmentQuestionSerializer, AppointmentSerializer, GrantAccessSerializer
+
 from mpowered_api.immutable import save_without_immutable_changes
 from mpowered_api.protected import destroy_or_reject_protected
 from mpowered_api.validators import australian_day_range
-from django.utils.dateparse import parse_date
 
-# instructions:
-# All views are protected by authenticated user id (can only see records where patient_profile
-# is user's own, or who user supports), for relevant tables.
 
-# To filter by attribute, put
-# in the URL ?attribute_name=value. For multiple attributes:
-# ?attribute_name1=value&?attribute_name2=value...
+# Instructions:
+# All views need the header Authorization: Token <token> without they return 401.
+
+# Can only see appointments that are the users, or all of a patients appointments if the patient has
+# turned on can_view_appointments or one appointment the patient has given the user access to.
+
+# Supporters need can_add_questions or can_record_answers to add questions or answers.
+
+# To filter by attribute, put in the URL ?attribute_name=value. For multiple attributes:
+# ?attribute_name1=value&attribute_name2=value...
 
 # Attributes that are read only are specified in it's serializer. Sending a different value for
 # them in an update request returns a 400 error.
@@ -30,6 +39,66 @@ from django.utils.dateparse import parse_date
 # Who can insert/update/delete is specified in the comments. Records the user can see but is not
 # allowed to update/delete return a 404 error for those requests.
 
+
+def get_own_appointment(user, appointment_pk):
+
+    appointment = Appointment.objects.filter(pk = appointment_pk, deleted_at__isnull = True).first()
+
+    if appointment is None or not can_edit_patient_data(user, appointment.patient_profile):
+        return None
+
+    return appointment
+
+
+class GrantAccessView(APIView):
+    # POST /appointments/{id}/access
+    # Patient gives access to appointment or changes access
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, appointment_pk):
+
+        appointment = get_own_appointment(request.user, appointment_pk)
+
+        if appointment is None:
+            return Response({"detail": "not_found"}, status = status.HTTP_404_NOT_FOUND)
+
+        serializer = GrantAccessSerializer(data = request.data)
+        serializer.is_valid(raise_exception = True)
+        data = serializer.validated_data
+
+        try:
+            grant, created = grants.grant_access(
+                appointment = appointment,
+                support_link_id = data["support_link_id"],
+                can_add_questions = data["can_add_questions"],
+                can_record_answers = data["can_record_answers"],
+                actor = request.user
+            )
+        except grants.GrantError as error:
+            return Response({"detail": error.reason}, status = status.HTTP_400_BAD_REQUEST)
+
+        if created:
+            code = status.HTTP_201_CREATED
+        else:
+            code = status.HTTP_200_OK
+
+        return Response(AccessGrantSerializer(grant).data, status = code)
+
+
+class RevokeAccessView(APIView):
+    # POST /appointments/{id}/access/{grantid}/revoke
+    # Patient takes a supporter's access to this appointment away
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, appointment_pk, grant_pk):
+        appointment = get_own_appointment(request.user, appointment_pk)
+
+        if appointment is None or not grants.revoke_access(appointment, grant_pk, request.user):
+            return Response({"detail": "not_found"}, status = status.HTTP_404_NOT_FOUND)
+
+        return Response(status = status.HTTP_204_NO_CONTENT)
 
 
 # helper function: checks if user has valid (not revoked, active support link) access to
@@ -55,10 +124,12 @@ def is_appointment_patient(user, appointment):
 def visible_appointments(user):
     return Appointment.objects.filter(
             Q(patient_profile__user = user) |
+            Q(patient_profile__support_links__supporter_user = user,
+              patient_profile__support_links__status = SupportLink.Status.ACTIVE,
+              patient_profile__support_links__can_view_appointments = True) |
             Q(access_grants__support_link__supporter_user = user,
               access_grants__support_link__status = SupportLink.Status.ACTIVE,
-              access_grants__revoked_at__isnull = True)
-        )
+              access_grants__revoked_at__isnull = True))
 
 # helper function: filters appointments to those scheduled on the given date (YYYY-MM-DD) in
 # Australia

@@ -15,21 +15,30 @@ from .serializer import *
 from datetime import date
 from mpowered_api.immutable import save_without_immutable_changes
 
-# instructions:
-# All views are protected by authenticated user id (can only see records where patient_profile
-# is user's own, or who user supports), for relevant tables.
+# Instructions:
+# All views need the header Authorization: Token <token>, without they return 401.
+
+# Can only see records where patient_profile is user's or who user supports if the patient
+# has turned on can_view_assessments or can_view_prescriptions.
 
 # To filter by attribute, put in the URL ?attribute_name=value. For multiple attributes:
-# ?attribute_name1=value&?attribute_name2=value...
+# ?attribute_name1=value&attribute_name2=value...
 
 # Attributes that are read only are specified in it's serializer. Sending a different value for
 # them in an update request returns a 400 error.
 
-# Records that other records depend on cannot be deleted; deleting them returns a 409 error.
+# Records that other records depend on cannot be deleted, deleting them returns a 409 error.
 
-# Who can insert/update/delete is specified in the comments. Records the user can see but is not
+# Who can insert/update/delete is specified in the comments and records the user can see but is not
 # allowed to update/delete return a 404 error for those requests.
 
+def visible_prescriptions(user):
+    return Prescription.objects.filter(
+            Q(patient_profile__user = user) |
+            Q(patient_profile__support_links__supporter_user = user,
+              patient_profile__support_links__status = SupportLink.Status.ACTIVE,
+              patient_profile__support_links__can_view_prescriptions = True)
+        )
 
 # Prescription APIs: 
 class PrescriptionListCreate(generics.ListCreateAPIView):
@@ -39,10 +48,9 @@ class PrescriptionListCreate(generics.ListCreateAPIView):
     def get_queryset(self):
         user = self.request.user
         query_patient_profile = self.request.query_params.get("patient_profile")
-        query_set =  Prescription.objects.filter(
-            Q(patient_profile__user = user) |
-            Q(patient_profile__support_links__supporter_user = user,
-              patient_profile__support_links__status = SupportLink.Status.ACTIVE))
+        
+        query_set = visible_prescriptions(user)
+        
         if query_patient_profile:
             query_set = query_set.filter(patient_profile = query_patient_profile)
         return query_set.distinct()
@@ -58,10 +66,9 @@ class PrescriptionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         user = self.request.user
         query_patient_profile = self.request.query_params.get("patient_profile")
-        query_set =  Prescription.objects.filter(
-            Q(patient_profile__user = user) |
-            Q(patient_profile__support_links__supporter_user = user,
-              patient_profile__support_links__status = SupportLink.Status.ACTIVE))
+        
+        query_set = visible_prescriptions(user)
+        
         if query_patient_profile:
             query_set = query_set.filter(patient_profile = query_patient_profile)
         if self.request.method not in SAFE_METHODS:
@@ -77,8 +84,8 @@ def visible_assessments(user):
     return Assessment.objects.filter(
             Q(patient_profile__user = user) |
             Q(patient_profile__support_links__supporter_user = user,
-              patient_profile__support_links__status = SupportLink.Status.ACTIVE)
-        )
+              patient_profile__support_links__status = SupportLink.Status.ACTIVE,
+              patient_profile__support_links__can_view_assessments = True))
 
 # helper function: returns set of assessments that belong to the user's own patient profile
 def own_assessments(user):

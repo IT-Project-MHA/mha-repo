@@ -1,34 +1,234 @@
-from django.shortcuts import render
-from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated, AllowAny, SAFE_METHODS
 from django.db.models import Q
-from rest_framework import serializers
-from .models import User, PatientProfile, UserSettings, SupportLink, TermsAndPrivacy, \
-    PhoneVerification, TrustedDevice
-from .serializer import *
+from rest_framework import generics, serializers, status
+from rest_framework.permissions import AllowAny, IsAuthenticated, SAFE_METHODS
+from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
+from rest_framework.views import APIView
+
+
 from mpowered_api.immutable import save_without_immutable_changes
 from mpowered_api.protected import destroy_or_reject_protected
 
-# instructions:
-# All views are protected by authenticated user id (can only see records where patient_profile
-# is user's own, or who user supports), for relevant tables.
 
-# To filter by attribute, put
-# in the URL ?attribute_name=value. For multiple attributes:
-# ?attribute_name1=value&?attribute_name2=value...
+from accounts import devices, login, otp, registration, reset_pin
+from accounts.models import PatientProfile, SupportLink, TermsAndPrivacy, TrustedDevice, User, UserSettings
+from accounts.rate_limits import PhoneBurstThrottle, PhoneLoginThrottle, PhoneSustainedThrottle
 
-# Attributes that are read only are specified in it's serializer. Sending a different value for
-# them in an update request returns a 400 error.
+from accounts.serializer import DeviceListSerializer, LoginSerializer, PatientProfileSerializer, RegisterSerializer, \
+    RequestCodeSerializer, ResetPinSerializer, SupportLinkSerializer, TermsAndPrivacySerializer, \
+    TrustedDeviceSerializer, UserSerializer, UserSettingsSerializer, VerifyCodeSerializer
+
+LOGIN_ERROR_STATUS = {
+    "invalid_credentials": status.HTTP_401_UNAUTHORIZED,
+    "verification_required": status.HTTP_403_FORBIDDEN,
+    "verification_invalid": status.HTTP_400_BAD_REQUEST,
+}
+
+SUPPORTER_STATUS_CHANGES = {
+    SupportLink.Status.INVITED: [SupportLink.Status.ACTIVE, SupportLink.Status.REVOKED],
+    SupportLink.Status.ACTIVE: [SupportLink.Status.REVOKED],
+    SupportLink.Status.REVOKED: [],
+}
+
+# Instructions:
+# All views need the header Authorization: Token <token> from /auth/register or /auth/login.
+# Without they return 401.
+
+# Can only see records where patient_profile is user's own, or who user supports.
+
+# To filter by attribute, put in the URL ?attribute_name=value. For multiple attributes:
+# ?attribute_name1=value&attribute_name2=value...
+
+# Attributes that are read only are specified in it's serializer. They are ignored if sent
+# in an update request except the ones listed in save_without_immutable_changes which return 400.
 
 # Records that other records depend on cannot be deleted; deleting them returns a 409 error.
 
 # Who can insert/update/delete is specified in the comments. Records the user can see but is not
 # allowed to update/delete return a 404 error for those requests.
 
+# Auth instructions:
+# Sign up: request-code, then verify-code (gives verification_id), then register (gives token).
+# Log in: login with phone number, PIN and device_id. If it returns 403 verification_required,
+#       it's a new device, so do request-code and verify-code then login again with the verification_id.
+# Forgot PIN: request-code, verify-code, then reset-pin.
+# Logout: reset-pin and revoking a device all sign out every device.
+
+class RequestCodeView(APIView):
+    # POST /auth/request-code - send otp to phone number
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    throttle_classes = [ScopedRateThrottle, PhoneBurstThrottle, PhoneSustainedThrottle]
+    throttle_scope = "otp_request"
+
+    def post(self, request):
+        serializer = RequestCodeSerializer(data = request.data)
+        serializer.is_valid(raise_exception = True)
+        otp.issue_otp(serializer.validated_data["phone_number"])
+
+        # Same reply for every number so it cannot be used to probe who has an account
+        return Response({"detail": "Code sent."}, status = status.HTTP_202_ACCEPTED)
+
+
+class VerifyCodeView(APIView):
+    # POST /auth/verify-code
+    # Exchange a correct code for a verification_id
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "otp_verify"
+
+    def post(self, request):
+        serializer = VerifyCodeSerializer(data = request.data)
+        serializer.is_valid(raise_exception = True)
+        try:
+            verification = otp.verify_otp(**serializer.validated_data)
+        except otp.VerificationError as error:
+            body = {"detail": error.reason}
+
+            if error.attempts_remaining is not None:
+                body["attempts_remaining"] = error.attempts_remaining
+
+            return Response(body, status = status.HTTP_400_BAD_REQUEST)
+        
+        return Response({"verification_id": verification.id}, status = status.HTTP_200_OK)
+
+
+class RegisterView(APIView):
+    # POST /auth/register
+    # Create an account once the phone is verified
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "register"
+
+    def post(self, request):
+        serializer = RegisterSerializer(data = request.data)
+        serializer.is_valid(raise_exception = True)
+        data = serializer.validated_data
+
+        try:
+            user, token = registration.register_user(
+                verification_id = data["verification_id"],
+                phone_number = data["phone_number"],
+                display_name = data["display_name"],
+                pin = data["pin"],
+                track_health = data["track_health"],
+                health = data.get("health"),
+                device_id = data["device_id"]
+            )
+        except registration.RegistrationError as error:
+            # Phone already has an account so 409
+            # Anything else 400
+            if error.reason == "phone_taken":
+                code = status.HTTP_409_CONFLICT
+            else: 
+                code = status.HTTP_400_BAD_REQUEST
+
+            return Response({"detail": error.reason}, status = code)
+
+        return Response(
+            {"token": token.key, "user_id": user.id, "has_patient_profile": data["track_health"]},
+            status = status.HTTP_201_CREATED,
+        )
+
+
+class LoginView(APIView):
+    # POST /auth/login
+    # Phone number, pin and verification_id if it's a new device
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    throttle_classes = [ScopedRateThrottle, PhoneLoginThrottle]
+    throttle_scope = "login"
+
+    def post(self, request):
+        serializer = LoginSerializer(data = request.data)
+        serializer.is_valid(raise_exception = True)
+        data = serializer.validated_data
+
+        try:
+            user, token = login.login_user(
+                phone_number = data["phone_number"],
+                pin = data["pin"],
+                device_id = data["device_id"],
+                verification_id = data.get("verification_id")
+            )
+        except login.LoginError as error:
+            return Response({"detail": error.reason}, status = LOGIN_ERROR_STATUS[error.reason])
+
+        has_patient_profile = PatientProfile.objects.filter(user = user, deleted_at__isnull = True).exists()
+
+        return Response(
+            {"token": token.key, "user_id": user.id, "has_patient_profile": has_patient_profile},
+            status = status.HTTP_200_OK,
+        )
+
+class LogoutView(APIView):
+    # POST /auth/logout
+    # Deletes token so all devices signed out
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        login.logout_user(request.user)
+
+        return Response(status = status.HTTP_204_NO_CONTENT)
+
+class DeviceListView(APIView):
+    # GET /auth/devices
+    # Devices user is signed in on
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = DeviceListSerializer(devices.list_devices(request.user), many = True)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+
+
+class RevokeDeviceView(APIView):
+    # POST /auth/devices/{id}/revoke
+    # Revoke a device so it needs an otp again, also signs out everywhere
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, device_pk):
+        # 404 for someone else's device so ids can't be probed
+        if not devices.revoke_device(request.user, device_pk):
+            return Response({"detail": "not_found"}, status = status.HTTP_404_NOT_FOUND)
+
+        return Response(status = status.HTTP_204_NO_CONTENT)
+
+class ResetPinView(APIView):
+    # POST /auth/reset-pin
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "reset_pin"
+
+    def post(self, request):
+        serializer = ResetPinSerializer(data = request.data)
+        serializer.is_valid(raise_exception = True)
+
+        data = serializer.validated_data
+
+        try:
+            user, token = reset_pin.reset_pin(
+                phone_number = data["phone_number"],
+                verification_id = data["verification_id"],
+                pin = data["pin"],
+                device_id = data["device_id"]
+            )
+        except reset_pin.PinResetError as error:
+            return Response({"detail": error.reason}, status = status.HTTP_400_BAD_REQUEST)
+
+        return Response({"token": token.key, "user_id": user.id}, status = status.HTTP_200_OK)
 
 
 # User APIs:
-class UserListCreate(generics.ListCreateAPIView):
+class UserList(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
 
@@ -186,14 +386,13 @@ class SupportLinkRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         if instance.patient_user_id == user.id:
             raise serializers.ValidationError('Patients cannot update a support link.')
         else:
-            # supporter can only change status, to active (accept) or revoked
             for field, value in serializer.validated_data.items():
                 if field != 'status' and value != getattr(instance, field):
                     errors[field] = 'Supporters can only change status.'
             new_status = serializer.validated_data.get('status', instance.status)
-            if new_status != instance.status and new_status not in [SupportLink.Status.ACTIVE,
-                                                                     SupportLink.Status.REVOKED]:
-                errors['status'] = 'Supporters can only change status to active or revoked.'
+            if new_status != instance.status and new_status not in SUPPORTER_STATUS_CHANGES[instance.status]:
+                errors['status'] = f'Supporters cannot change status from {instance.status} to {new_status}.'
+            
         if errors:
             raise serializers.ValidationError(errors)
         save_without_immutable_changes(serializer, ['supporter_user', 'invited_phone_number',
@@ -201,7 +400,6 @@ class SupportLinkRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_destroy(self, instance):
         destroy_or_reject_protected(instance)
-
 
 
 # TermsAndPrivacy APIs:
@@ -221,6 +419,7 @@ class TermsAndPrivacyListCreate(generics.ListCreateAPIView):
         user = self.request.user
         serializer.save(user = user)
 
+
 class TermsAndPrivacyRetrieve(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = TermsAndPrivacySerializer
@@ -234,31 +433,17 @@ class TermsAndPrivacyRetrieve(generics.RetrieveAPIView):
         return query_set
 
 
-
-# PhoneVerification APIs:
-class PhoneVerificationCreate(generics.CreateAPIView):
-    permission_classes = [AllowAny]
-    serializer_class = PhoneVerificationSerializer
-
-
-
 # TrustedDevice APIs:
-class TrustedDeviceListCreate(generics.ListCreateAPIView):
+class TrustedDeviceList(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = TrustedDeviceSerializer
 
     def get_queryset(self):
         return TrustedDevice.objects.filter(user = self.request.user)
 
-    def perform_create(self, serializer):
-        serializer.save(user = self.request.user)
-
-class TrustedDeviceRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+class TrustedDeviceRetrieve(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = TrustedDeviceSerializer
 
     def get_queryset(self):
         return TrustedDevice.objects.filter(user = self.request.user)
-
-    def perform_update(self, serializer):
-        save_without_immutable_changes(serializer, ['device_id'])

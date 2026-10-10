@@ -98,6 +98,10 @@ class SupportLink(BaseModel):
     accepted_at = models.DateTimeField(null = True, blank = True)
     revoked_at = models.DateTimeField(null = True, blank = True)
 
+    can_view_assessments = models.BooleanField(default = False)
+    can_view_prescriptions = models.BooleanField(default = False)
+    can_view_appointments = models.BooleanField(default = False)
+
     class Meta:
         db_table = "support_link"
         constraints = [

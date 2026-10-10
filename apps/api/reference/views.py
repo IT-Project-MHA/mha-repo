@@ -11,13 +11,13 @@ from .models import QuestionOption, QuestionOptionOrdered
 from .serializer import *
 from datetime import date
 
-# instructions:
-# All views are protected by authenticated user id (can only see records where patient_profile
-# is user's own, or who user supports), for relevant tables.
+# Instructions:
+# All views need the header Authorization: Token <token> without they return 401.
 
-# Attributes that can be filtered are specified in the comments. To filter by attribute, put 
-# in the URL ?attribute_name=value. For multiple attributes: 
-# ?attribute_name1=value&?attribute_name2=value...
+# Read only and the same for every user.
+
+# To filter by attribute, put in the URL ?attribute_name=value. For multiple attributes:
+# ?attribute_name1=value&attribute_name2=value...
 
 
 # QuestionOption APIs:
