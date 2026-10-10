@@ -23,7 +23,7 @@ export default function Screen() {
     name: 'Jane Doe',
     sex: 'Female',
     email: 'janedoe@awesome.com',
-    phone: '61 *** *** ***',
+    phone: '+61 348 985 216',
     primaryCondition: 'Osteoperosis',
     otherConditions: 'Arthritis', // How many other conditions, 10 max?
   };
@@ -60,7 +60,8 @@ export default function Screen() {
       <Text> </Text>
       
       <View style={theme.container}>
-        <Text style={[theme.h3, theme.leftText, theme.fontOnSurface]}>About Me</Text>
+        <Text> </Text>
+        <Text style={[theme.h5, theme.leftText, theme.fontOnSurface]}>About Me</Text>
 
         <Text> </Text>
 
@@ -68,8 +69,11 @@ export default function Screen() {
 
         <Text> </Text>
         <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>{placeholderDetails.name}</Text>
+        <Text style={theme.body}> </Text>
         <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>{placeholderDetails.sex}</Text>
+        <Text style={theme.body}> </Text>
         <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>{placeholderDetails.phone}</Text>
+        <Text style={theme.body}> </Text>
         <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>{placeholderDetails.email}</Text>
         <Text> </Text>
 
@@ -85,18 +89,24 @@ export default function Screen() {
       <Text> </Text>
 
       <View style={theme.container}>
-        <Text style={[theme.h3, theme.leftText, theme.fontOnSurface]}>My Conditions </Text>
+        <Text> </Text>
+        <Text style={[theme.h5, theme.leftText, theme.fontOnSurface]}>My Conditions</Text>
         <Text> </Text>
         <View style={theme.line}></View>
         <Text> </Text>
         <Text style={[theme.h6, theme.leftText, theme.fontOnSurface]}>Primary Condition </Text>
+        <Text style={theme.body}> </Text>
         <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>{placeholderDetails.primaryCondition} </Text>
         <Text> </Text>
 
         {placeholderDetails.otherConditions !== null && (
+          <View>
           <Text style={[theme.h6, theme.leftText, theme.fontOnSurface]}>Other Conditions</Text>
+          <Text style={theme.body}> </Text>
+          <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>{placeholderDetails.otherConditions}</Text>
+          </View>
         )}
-        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>{placeholderDetails.otherConditions}</Text>
+        
         
         <View style={[theme.rightItems]}>
         <TextButton

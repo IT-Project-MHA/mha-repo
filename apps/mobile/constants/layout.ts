@@ -42,12 +42,10 @@ export const transparentButtonLayout = {
   justifyContent: 'center' as const,
   paddingBlock: 40,
   width: '85%' as const,
-  height: 64,
 }
 
 export const textButtonLayout = {
   alignItems: 'center' as const,
   justifyContent: 'center' as const,
   paddingBlock: 0,
-  height: 40,
 }

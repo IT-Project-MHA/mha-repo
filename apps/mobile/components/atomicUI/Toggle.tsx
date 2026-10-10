@@ -41,7 +41,6 @@ function createStyles(colours: ColourSet){
             alignItems: 'center',
             flexDirection: 'row',
             justifyContent: 'space-between',
-            paddingHorizontal: 20,
         },
         buttonContainer: {
             marginTop: 8,

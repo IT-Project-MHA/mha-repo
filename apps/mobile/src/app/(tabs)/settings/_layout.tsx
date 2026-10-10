@@ -14,24 +14,35 @@ export default function ScreenLayout() {
   return (
     <Stack 
       screenOptions={{
-        // First layer of header: back button 
         headerStyle: styles.headerStyle,
-        headerTintColor: colours.onBackground,
+        headerShadowVisible: false, // no line 
+        headerTitleAlign: 'left', // text to left
+    
+        // header text
         headerTitleStyle: {
           fontSize: theme.h4.fontSize,
           fontWeight: theme.h4.fontWeight,
         },
+        headerTintColor: colours.onBackground,
+
+        // content of the page
+        contentStyle: { 
+          backgroundColor: colours.background
+        },
+
+        // back button
         headerBackTitleStyle: {
           fontSize: theme.h6.fontSize,
         },
-        contentStyle: { backgroundColor: colours.background},
         headerBackButtonDisplayMode: 'default',
+        headerBackTitle: 'Settings',
       }}
     >
       <Stack.Screen 
       name="index"
         options={{
           title: 'Settings',
+          headerTitle: '',
         }}
       />
       <Stack.Screen 
@@ -77,8 +88,6 @@ export default function ScreenLayout() {
         }}
       />
     </Stack>
-
-   
   );
 }
 
@@ -86,9 +95,9 @@ function createStyles(colours: ColourSet){
     return StyleSheet.create({
       headerStyle: {
         backgroundColor: colours.background,
-        borderBottomWidth: 0, 
-        minHeight: 80,
+        padding: 30,
     },
+
 });
  }
 

@@ -21,8 +21,7 @@ export default function Screen() {
       </View>
       <Text> </Text>
 
-    <View style={theme.container}>
-
+    <View style={[theme.container]}>
       <View style={theme.row}>
         <Text style={[theme.h6, theme.leftText, theme.fontOnSurface]}>Microphone</Text>
           <Toggle
@@ -45,7 +44,7 @@ export default function Screen() {
       </View>
       <Text> </Text>
 
-      <View style={theme.row}>
+      <View style={[theme.row]}>
         <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>Weekly Assesment Reminders</Text>
           <Toggle
             onToggle={onToggle}
@@ -53,7 +52,7 @@ export default function Screen() {
           />
       </View>
 
-      <View style={theme.row}>
+      <View style={[theme.row]}>
         <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>Appointment Reminders</Text>
          <Toggle
             onToggle={onToggle}
@@ -61,9 +60,7 @@ export default function Screen() {
           />
       </View>
       
-  
     </View>
-
     <View style={theme.bottomGap}/>
     </ScrollView>
   );

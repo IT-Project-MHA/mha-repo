@@ -47,14 +47,12 @@ const createTheme = (colours: ColourSet) =>
       alignSelf: 'center',
       width: '85%',
       paddingHorizontal: '3%',
-    
       borderRadius: 28,
-      overflow: 'hidden',
 
       shadowColor: colours.primary,
       shadowOffset: { width: 2, height: 2 },
-      shadowOpacity: 0.25,
-      shadowRadius: 16,
+      shadowOpacity: 0.15,
+      shadowRadius: 6,
     },
 
     // divider
@@ -76,7 +74,6 @@ const createTheme = (colours: ColourSet) =>
       borderRadius: 28,
       borderTopWidth: 0,     
       borderBottomWidth: 0, 
- 
       overflow: 'hidden',
     },
     
@@ -92,6 +89,15 @@ const createTheme = (colours: ColourSet) =>
       justifyContent: 'center',
       backgroundColor:'transparent',
       width: '100%',
+    },
+    boxContainer: {
+      justifyContent: 'center',
+      backgroundColor:'transparent',
+      width: '100%',
+      borderWidth: 1,
+      borderColor: colours.onSurface,
+      padding: 10,
+      borderRadius: 10,
     },
     // for use within a container
     centerText: {
@@ -134,12 +140,12 @@ const createTheme = (colours: ColourSet) =>
       color: 'transparent'
     },
     header: {
-      height: 20,
       backgroundColor: colours.background,
+      justifyContent: 'center',
       width: '100%',
       alignContent: 'flex-start',
-      paddingBottom: 50,
-      paddingTop: 5,
+      paddingBottom: 20,
+      paddingTop: 15,
       borderColor: colours.background,
       borderWidth: 3,
     },

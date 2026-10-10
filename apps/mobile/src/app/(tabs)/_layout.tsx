@@ -26,10 +26,8 @@ export default function TabLayout() {
           ...theme.xSmall,
         },
         tabBarActiveTintColor: colours.onPrimary,
-        tabBarInactiveTintColor: colours.onSurface,
-        headerShown: false,   
-        
-        
+        tabBarInactiveTintColor: colours.ex3,
+        headerShown: false,     
       }}
     >
       <Tabs.Screen
@@ -39,7 +37,7 @@ export default function TabLayout() {
           title: 'Index Home',
           href: null, 
           tabBarIcon: ({ color }) => (
-            <Ionicons name ="home-outline" size={24} color={color} />
+            <Ionicons name ="home-outline" size={26} color={color} />
           ),
         }}
       />
@@ -48,8 +46,9 @@ export default function TabLayout() {
         options={{
           title: 'Pain Tracker',
           href: isPatient ? undefined : null, // if isPatient is false, href = null (doesn't show tab)
+          tabBarLabel: "Pain Tracker",
           tabBarIcon: ({ color }) => (
-            <Ionicons name ="body-outline" size={24} color={color} />
+            <Ionicons name ="body-outline" size={26} color={color} />
           ),
         }}
       />
@@ -58,8 +57,9 @@ export default function TabLayout() {
         options={{
           title: 'My Health',
           href: isPatient ? undefined : null,
+          tabBarLabel: "Pain Tracker",
           tabBarIcon: ({ color }) => (
-            <Ionicons name ="pulse-outline" size={24} color={color} />
+            <Ionicons name ="pulse-outline" size={26} color={color} />
           ),
         }}
       />
@@ -67,8 +67,9 @@ export default function TabLayout() {
         name="carePlanner"
         options={{
           title: 'Care Planner',
+          tabBarLabel: "Pain Tracker",
           tabBarIcon: ({ color }) => (
-            <Ionicons name ="book-outline" size={24} color={color} />
+            <Ionicons name ="book-outline" size={26} color={color} />
           ),
         }}
       />
@@ -77,8 +78,9 @@ export default function TabLayout() {
         options={{
           title: 'Shared With Me',
           href: null, 
+          tabBarLabel: "Pain Tracker",
           tabBarIcon: ({ color }) => (
-            <Ionicons name ="search-outline" size={24} color={color} />
+            <Ionicons name ="search-outline" size={26} color={color} />
           ),
         }}
       />
@@ -87,8 +89,9 @@ export default function TabLayout() {
         options={{
           headerShown: false,
           title: 'Settings',
+          tabBarLabel: "Pain Tracker",
           tabBarIcon: ({ color }) => (
-            <Ionicons name ="cog-outline" size={24} color={color} />
+            <Ionicons name ="cog-outline" size={26} color={color} />
           ),
         }}
       />
@@ -112,28 +115,24 @@ function createStyles(colours: ColourSet){
 
   // the nav bar
   floatingTabBar: {
-    bottom: '2.5%',
-    //width: '100%',
+    bottom: '4%',
     position: 'absolute',
-    paddingTop: 29,
-    paddingBottom: 29,
-    left: 15,
-    right: 15,
+    //paddingTop: 29,
+    //paddingBottom: 29,
   
     flexDirection: 'row',
     alignItems: 'center',
 
-    borderRadius: 30,
+    borderRadius: 100,
     borderTopWidth: 0,     
     borderBottomWidth: 0, 
 
     backgroundColor: colours.primary,
-    overflow: 'hidden',
 
     shadowColor: colours.primary,
     shadowOffset: { width: 2, height: 2 },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
 
   },
 });

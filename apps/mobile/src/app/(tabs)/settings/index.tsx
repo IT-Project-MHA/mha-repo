@@ -11,7 +11,11 @@ export default function Screen() {
   const { theme } = useTheme();
 
   return (
-    <ScrollView>
+    <ScrollView stickyHeaderIndices={[0]}>
+      <View style={theme.header}>
+        <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>Settings</Text>
+      </View>
+
       <Text> </Text>
       <View style={[theme.container, theme.centerItems]}>
         
