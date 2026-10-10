@@ -44,8 +44,7 @@ def create_patient_profile(user, health):
 
 def register_user(verification_id, device_id, phone_number, display_name, pin, track_health, health = None):
 
-    # Create the account and return user and token
-    # All saved in one transaction so nothing is left half made if step fails
+    # Create the account and return user and token, all saved in one transaction so nothing is left half made if step fails
     # Raises RegistrationError if the phone number isn't verified or is already taken
 
     if not check_verification(verification_id, phone_number):
@@ -56,7 +55,6 @@ def register_user(verification_id, device_id, phone_number, display_name, pin, t
 
     try:
         with transaction.atomic():
-            # create_user hashes the PIN for us
             user = User.objects.create_user(phone_number, display_name, pin)
             UserSettings.objects.create(user = user)
 

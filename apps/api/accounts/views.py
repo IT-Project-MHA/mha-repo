@@ -21,13 +21,13 @@ from accounts.serializer import DeviceListSerializer, LoginSerializer, PatientPr
 LOGIN_ERROR_STATUS = {
     "invalid_credentials": status.HTTP_401_UNAUTHORIZED,
     "verification_required": status.HTTP_403_FORBIDDEN,
-    "verification_invalid": status.HTTP_400_BAD_REQUEST,
+    "verification_invalid": status.HTTP_400_BAD_REQUEST
 }
 
 SUPPORTER_STATUS_CHANGES = {
     SupportLink.Status.INVITED: [SupportLink.Status.ACTIVE, SupportLink.Status.REVOKED],
     SupportLink.Status.ACTIVE: [SupportLink.Status.REVOKED],
-    SupportLink.Status.REVOKED: [],
+    SupportLink.Status.REVOKED: []
 }
 
 # Instructions:
