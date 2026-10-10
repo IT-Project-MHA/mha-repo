@@ -2,14 +2,15 @@
  * Modal which presents information of user support people and users the user supports
  * 
  * change logic will be implemented with api:
- *  - user should be able to remove support people / remove themselves as a support person by pressing 'edit details'
+ *  - user should be able to remove support people / remove themselves as a support person
  *  - user can change support person permissions
  */
-import React from "react";
 import {Modal, View, Text, Pressable, StyleSheet, ScrollView} from 'react-native'
 import { useTheme, ColourSet } from "../../context/ThemeContext";
 import { Checkbox } from 'expo-checkbox';
 import { useState, useEffect, useRef } from "react";
+import ConfirmModal from './ConfirmModal';
+import TextWithIconButton from './TextWithIconButton'
 
 type Props = {
     visible: boolean;
@@ -43,6 +44,7 @@ const permissionsLabelsImSupporting: Record<keyof Permissions, string> ={
 const PeopleModal = ({visible, name, role, phone, permissions, onChange, onCancel} : Props) => {
     const { theme, colours } = useTheme();
     const styles = createStyles(colours);
+    const [pending, setPending] = useState< 'removeConnection' | 'removeSupportPerson' | 'addSupportPerson' | null>(null);
     const [checked, setChecked] = useState<Permissions>(permissions); // monitors check box's for permissions
     const last = useRef({role, name, phone});
 
@@ -64,6 +66,20 @@ const PeopleModal = ({visible, name, role, phone, permissions, onChange, onCance
      * @param key defines the key of permissions, so key must be one of the permissions defined in Permissions
      */
     const toggle = (key: keyof Permissions) => setChecked((prev) => ({...prev, [key]: !prev[key]}))
+
+    /**
+    * Handles confirmations (when user clicks confirm in a modal) whilst in pending states.
+    */
+    const handleConfirmations = () => {
+        if (pending === 'removeConnection'){
+            // API call for removing self as support person
+        } else if (pending === 'removeSupportPerson'){
+            // API call for removing support person
+        } else if (pending === 'addSupportPerson'){
+            // API call for adding support person?
+        }
+        setPending(null);
+        };
 
 
   return (
@@ -106,10 +122,9 @@ const PeopleModal = ({visible, name, role, phone, permissions, onChange, onCance
             </View>
 
             <Text> </Text>
-        
             <Text style={[theme.h6, theme.leftItems, theme.fontOnSurface]}>Permissions</Text>
             <Text style={theme.xSmall}> </Text>
-            
+                
             {/** 
              * manages rendering the permissions of the support person / person user supports
              * 
@@ -118,6 +133,7 @@ const PeopleModal = ({visible, name, role, phone, permissions, onChange, onCance
              * for people the user supports, they can only see the permissions that the patient has given them.
              */}
             {show.role === 'Support Person' ? (
+                <View>
                 <View>
                 <Text style={[theme.xSmall, theme.leftItems, theme.fontOnSurface]}>{show.name} can:</Text>
                 <Text style={theme.xSmall}> </Text>
@@ -138,6 +154,16 @@ const PeopleModal = ({visible, name, role, phone, permissions, onChange, onCance
                 </Pressable>
             ))}
             </View>
+                <Text style={theme.body}> </Text>
+                <Text style={theme.body}> </Text>
+                <View style={[theme.leftText, theme.boxContainer]}>
+                    <TextWithIconButton
+	                    label="Remove Support Person"
+	                    onPress={() => setPending('removeSupportPerson')}
+                        iconName="trash-bin-outline"
+                    />
+                </View>
+            </View>
         ) : (
             <View>
                 <Text style={[theme.small, theme.leftItems, theme.fontOnSurface]}>You can:</Text>
@@ -147,17 +173,45 @@ const PeopleModal = ({visible, name, role, phone, permissions, onChange, onCance
                     // goes through a list with .map
                     // only renders if checked[key] === true, due to .filter(id => checked[id])
                     <View key={id} style={theme.leftItems}>
-                        <View>
+                    <View>
                         <Text style={[theme.small, theme.fontOnSurface]}>• {permissionsLabelsImSupporting[id]}</Text>  
                         <Text style={[theme.small, theme.fontOnSurface]}> </Text>  
                         </View>    
                     </View>
                 ))}
+                <Text style={theme.body}> </Text>
+                <Text style={theme.body}> </Text>
+                <View style={[theme.leftText, theme.boxContainer]}>
+                    <TextWithIconButton
+	                    label="Remove Connection"
+	                    onPress={() => setPending('removeConnection')}
+                        iconName="trash-bin-outline"
+                    />
+                </View>
             </View> 
     )}
-            <Text> </Text>
           </ScrollView>
         </Pressable>
+
+    <ConfirmModal
+          visible={pending === 'removeConnection'}
+          title="Are You Sure?"
+          message={`Are you sure you want to remove ${show.name} as a connection?`}
+          confirmLabel="Remove"
+          cancelLabel='go back'
+          onConfirm={handleConfirmations}
+          onCancel={() => setPending(null)}
+        />
+    <ConfirmModal
+          visible={pending === 'removeSupportPerson'}
+          title="Are you Sure?"
+          message={`Are you sure you want to remove ${show.name} as a Support Person?`}
+          confirmLabel="Remove"
+          cancelLabel='go back'
+          onConfirm={handleConfirmations}
+          onCancel={() => setPending(null)}
+        />
+
     </Pressable>
     </Modal>
   );
@@ -176,8 +230,9 @@ function createStyles(colours: ColourSet){
         card: {
           width: '100%',
           borderRadius: 28,
-          padding: 24,
-          maxHeight: 400,
+          padding: 26,
+          paddingVertical:30,
+          maxHeight: 600,
         },
         backgroundColour: {
           position: 'absolute',

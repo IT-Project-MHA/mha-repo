@@ -50,11 +50,11 @@ const underscoresPermissions: Permissions  = {
  * these values will be retreived with API
  */
 const placeholderPeople: People[] =[
-  {id: '1', name: 'John Smith', role: 'Support Person', phone: '61 *** *** ***', relationship: 'supportsMe', permissions: johnSmithPermissions},
-  {id: '2', name: 'Frida Kahlo', role: 'Support Person', phone: '61 *** *** ***', relationship: 'supportsMe', permissions: peoplePermissions},
-  {id: '1', name: 'Susan Sontag', role: 'Im Supporting', phone: '61 *** *** ***', relationship: 'imSupporting', permissions: susanPermissions},
-  {id: '2', name: 'Georgia OKeefe', role: 'Im Supporting', phone: '61 *** *** ***', relationship: 'imSupporting', permissions: peoplePermissions},
-  {id: '3', name: 'Underscores', role: 'Im Supporting', phone: '61 *** *** ***', relationship: 'imSupporting', permissions: underscoresPermissions},
+  {id: '1', name: 'John Smith', role: 'Support Person', phone: '+61 254 973 921', relationship: 'supportsMe', permissions: johnSmithPermissions},
+  {id: '2', name: 'Frida Kahlo', role: 'Support Person', phone: '+61 254 973 921', relationship: 'supportsMe', permissions: peoplePermissions},
+  {id: '1', name: 'Susan Sontag', role: 'Im Supporting', phone: '+61 254 973 921', relationship: 'imSupporting', permissions: susanPermissions},
+  {id: '2', name: 'Georgia OKeefe', role: 'Im Supporting', phone: '+61 254 973 921', relationship: 'imSupporting', permissions: peoplePermissions},
+  {id: '3', name: 'Underscores', role: 'Im Supporting', phone: '+61 254 973 921', relationship: 'imSupporting', permissions: underscoresPermissions},
 ]
   
 
@@ -109,7 +109,8 @@ export default function Screen() {
       <Text> </Text>
       
       <View style={[theme.container]}>
-        <Text style={[theme.h5, theme.leftText, theme.fontOnSurface]}>My Support People </Text>
+        <Text> </Text>
+        <Text style={[theme.h5, theme.leftText, theme.fontOnSurface]}>My Support People</Text>
         <Text> </Text>
         <View style={theme.line}></View>
         <Text> </Text>
@@ -117,7 +118,7 @@ export default function Screen() {
   
         <View style={[theme.rightItems]}>
           <TextButton
-	        label="Edit Details"
+	        label="Add Support Person"
 	        onPress={() => setPending('removeSupportPeople')}
           />
         </View> 
@@ -128,7 +129,8 @@ export default function Screen() {
       <Text> </Text>
 
       <View style={theme.container}>
-        <Text style={[theme.h5, theme.leftText, theme.fontOnSurface]}>I'm Supporting </Text>
+        <Text> </Text>
+        <Text style={[theme.h5, theme.leftText, theme.fontOnSurface]}>My Connections </Text>
         <Text> </Text>
         <View style={theme.line}></View>
         <Text> </Text>
@@ -138,12 +140,7 @@ export default function Screen() {
         <View style={[theme.layoutContainer,theme.centerItems]}>
   
         </View>
-        <View style={[theme.rightItems]}>
-          <TextButton
-	        label="Edit Details"
-	        onPress={() => setPending('removeSupportPeople')}
-          />
-        </View> 
+      
       </View>
 
       <PeopleModal
@@ -152,7 +149,7 @@ export default function Screen() {
         role={selected?.role??''}
         phone={selected?.phone??''}
         permissions={selected?.permissions ?? peoplePermissions}
-        onChange = {() => {}} // void atm
+        onChange = {() => {}} // void atm, will deal with permission change logic
         onCancel={() => setselected(null)}
       />
 
