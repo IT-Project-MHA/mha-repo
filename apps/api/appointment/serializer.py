@@ -10,7 +10,8 @@ class AppointmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Appointment
         fields = '__all__'
-        read_only_fields = ['patient_profile', 'created_by']
+        # deleted_at is only set by deleting the appointment
+        read_only_fields = ['patient_profile', 'created_by', 'deleted_at']
 
     def validate_scheduled_date(self, scheduled_date):
         return validate_not_past(scheduled_date)
@@ -19,13 +20,16 @@ class AppointmentQuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = AppointmentQuestion
         fields = '__all__'
-        read_only_fields = ['created_by']
+        read_only_fields = ['created_by', 'deleted_at']
 
 class AppointmentAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = AppointmentAnswer
         fields = '__all__'
-        read_only_fields = ['recorded_by']
+        read_only_fields = ['recorded_by', 'deleted_at']
+        # one answer per question is checked by the view instead, so a soft deleted answer doesn't
+        # stop a new one being recorded
+        extra_kwargs = {'question': {'validators': []}}
 
     def validate_recording_file(self, recording_file):
         if recording_file is None:

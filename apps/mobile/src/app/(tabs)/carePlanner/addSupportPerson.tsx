@@ -2,19 +2,53 @@
  * Patients can add a support person to an appointment from this screen, opened after saving a new
  * appointment.
  */
+import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTheme as usePaperTheme } from 'react-native-paper';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
 import { useAppointment, SupportPerson } from '../../../../context/AppointmentContext';
+import { apiErrorMessage, apiSaveSupportPeople } from '../../../api/care_planner_api_helpers';
 
 export default function Screen() {
   const { colours } = useTheme();
   const styles = createStyles(colours);
   const router = useRouter();
+  const { colors: paperColours } = usePaperTheme();
   const { draft, updateDraft } = useAppointment();
+  // message shown above the save button, null when there is nothing wrong
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // invites the support persons & gives them access to the appointment on the server, then opens
+  // the add questions page. Persons removed from this page lose their access
+  const handleSave = async () => {
+    // stops a second press saving twice
+    if (saving || !draft.appointmentId) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const supportLinkIds = await apiSaveSupportPeople(draft.appointmentId, draft.supportPeople);
+      // keeps each person's link, so saving again doesn't invite them twice
+      updateDraft({
+        supportPeople: draft.supportPeople.map((person, index) => ({
+          ...person,
+          supportLinkId: supportLinkIds[index],
+        })),
+      });
+      router.push('/carePlanner/addQuestions');
+    } catch (saveError) {
+      console.error('Failed to save support persons', saveError);
+      setError(
+        apiErrorMessage(saveError, 'Your support persons could not be saved, please try again'),
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // shows a saved person's details, pressing it opens their page again to edit them and the
   // delete icon removes them
@@ -80,9 +114,12 @@ export default function Screen() {
       </ScrollView>
 
       <View style={styles.bottomBar}>
+        {!!error && (
+          <Text style={[styles.error, { color: paperColours.error }]}>{error}</Text>
+        )}
         <Button
-          label="Save"
-          onPress={() => router.push('/carePlanner/addQuestions')}
+          label={saving ? 'Saving...' : 'Save'}
+          onPress={handleSave}
           buttonType="primaryButton"
         />
       </View>
@@ -154,6 +191,11 @@ function createStyles(colours: ColourSet) {
     bottomBar: {
       paddingHorizontal: 16,
       marginBottom: 44, // nav bar: 28 + extra 16 gap
+      gap: 8,
+    },
+
+    error: {
+      fontSize: 14,
     },
   });
 }

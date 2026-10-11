@@ -12,6 +12,7 @@ import { textLayout } from '../../../../constants/layout';
 import { Checkbox, useTheme as usePaperTheme } from 'react-native-paper';
 import { useAppointment, AppointmentQuestion } from '../../../../context/AppointmentContext';
 import { SUGGESTED_QUESTIONS, suggestedId } from '../../../../constants/suggestedQuestions';
+import { apiErrorMessage, apiSaveQuestions } from '../../../api/care_planner_api_helpers';
 
 export default function Screen() {
   const { colours } = useTheme();
@@ -61,6 +62,9 @@ export default function Screen() {
       })),
   );
   const [nextId, setNextId] = useState(ownQuestions.length);
+  // message shown above the save button, null when there is nothing wrong
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const addOwnQuestion = () => {
     setOwnQuestions((previous) => [...previous, { id: nextId, text: '' }]);
@@ -79,7 +83,9 @@ export default function Screen() {
 
   // saves the ticked suggestions & own questions (blank ones left out) to the appointment,
   // keeping the answers & recordings already saved for them
-  const save = () => {
+  const save = async () => {
+    // stops a second press saving twice
+    if (saving) return;
     const savedSuggestion = (id: string) =>
       savedQuestions.find((question) => question.suggestedId === id);
 
@@ -110,9 +116,21 @@ export default function Screen() {
       const supportQuestions = savedQuestions.filter((question) => question.source === 'support');
       updateAppointment(appointmentId, { questions: [...suggested, ...own, ...supportQuestions] });
       router.back();
-    } else {
-      updateDraft({ questions: [...suggested, ...own] });
-      router.push('/carePlanner/reviewAppointment');
+    } else if (draft.appointmentId) {
+      // replaces the new appointment's questions on the server, then opens the review page
+      const questions = [...suggested, ...own];
+      setSaving(true);
+      setError(null);
+      try {
+        await apiSaveQuestions(draft.appointmentId, questions);
+        updateDraft({ questions });
+        router.push('/carePlanner/reviewAppointment');
+      } catch (saveError) {
+        console.error('Failed to save questions', saveError);
+        setError(apiErrorMessage(saveError, 'Your questions could not be saved, please try again'));
+      } finally {
+        setSaving(false);
+      }
     }
   };
 
@@ -170,7 +188,10 @@ export default function Screen() {
       </ScrollView>
 
       <View style={styles.bottomBar}>
-        <Button label="Save" onPress={save} buttonType="primaryButton" />
+        {!!error && (
+          <Text style={[styles.error, { color: paperColours.error }]}>{error}</Text>
+        )}
+        <Button label={saving ? 'Saving...' : 'Save'} onPress={save} buttonType="primaryButton" />
       </View>
     </View>
   );
@@ -199,6 +220,11 @@ function createStyles(colours: ColourSet) {
     bottomBar: {
       paddingHorizontal: 16,
       marginBottom: 44,
+      gap: 8,
+    },
+
+    error: {
+      fontSize: 14,
     },
 
     headline: {

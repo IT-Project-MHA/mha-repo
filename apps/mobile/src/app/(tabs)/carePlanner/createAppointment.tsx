@@ -1,7 +1,7 @@
 /**
  * Patients create a new appointment from this screen, opened from the care planner.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme as usePaperTheme } from 'react-native-paper';
@@ -18,8 +18,11 @@ import {
   withTime,
 } from '../../../../constants/date';
 import { useAppointment } from '../../../../context/AppointmentContext';
+import { apiHealthService } from '../../../api/django-API';
+import { apiErrorMessage, apiSaveAppointment } from '../../../api/care_planner_api_helpers';
 
-const HEALTH_SERVICES: string[] = [];
+// dropdown option from the server, value is saved & label is shown
+type HealthServiceOption = { value: string; label: string };
 
 // start of today, appointments cannot be scheduled in the past
 const startOfToday = () => {
@@ -44,8 +47,26 @@ export default function Screen() {
   // null until a service is chosen
   const [service, setService] = useState<string | null>(draft.healthService);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [healthServices, setHealthServices] = useState<HealthServiceOption[]>([]);
   // message shown above the save button, null when there is nothing wrong
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // loads the health service options once, the dropdown is empty if they can't be loaded
+  useEffect(() => {
+    const loadHealthServices = async () => {
+      try {
+        setHealthServices(await apiHealthService());
+      } catch (loadError) {
+        console.error('Failed to load health services', loadError);
+      }
+    };
+    loadHealthServices();
+  }, []);
+
+  // label of the chosen health service
+  const serviceLabel =
+    healthServices.find((option) => option.value === service)?.label ?? service;
 
   // choose a health service and close the dropdown, choosing it again clears it
   const handleSelect = (option: string) => {
@@ -54,7 +75,9 @@ export default function Screen() {
   };
 
   // opens the add a support person page on top of this one, if mandatory fields are filled
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    // stops a second press creating the appointment twice
+    if (saving) return;
     if (!date || !time) {
       setError('Please fill in all mandatory fields');
       return;
@@ -64,12 +87,26 @@ export default function Screen() {
       setError('Appointment cannot be in the past');
       return;
     }
-    updateDraft({
+    const details = {
       scheduledDate: withTime(date, time),
       doctor: doctor.trim(),
       healthService: service,
-    });
-    router.push('/carePlanner/addSupportPerson');
+    };
+
+    // creates the appointment on the server, or updates it when coming back to this page
+    setSaving(true);
+    setError(null);
+    try {
+      const saved = await apiSaveAppointment(draft.appointmentId, details);
+      // the server's health service, its default is used when none was chosen
+      updateDraft({ ...details, appointmentId: saved.id, healthService: saved.health_service });
+      router.push('/carePlanner/addSupportPerson');
+    } catch (saveError) {
+      console.error('Failed to save appointment', saveError);
+      setError(apiErrorMessage(saveError, 'Your appointment could not be saved, please try again'));
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -131,24 +168,24 @@ export default function Screen() {
                 : [styles.placeholder, { color: paperColours.onSurfaceVariant }]
             }
           >
-            {service ?? 'Select a health service'}
+            {serviceLabel ?? 'Select a health service'}
           </Text>
           <Text style={styles.input}>{dropdownOpen ? '▲' : '▼'}</Text>
         </TouchableOpacity>
         {dropdownOpen && (
           <View style={styles.optionList}>
-            {HEALTH_SERVICES.map((option, index) => (
+            {healthServices.map(({ value, label }, index) => (
               <TouchableOpacity
-                key={option}
+                key={value}
                 style={[
                   styles.optionRow,
                   index > 0 && styles.divider,
-                  service === option && styles.selectedRow, // highlights selected option
+                  service === value && styles.selectedRow, // highlights selected option
                 ]}
-                onPress={() => handleSelect(option)}
+                onPress={() => handleSelect(value)}
               >
-                <Text style={[styles.input, service === option && styles.selectedText]}>
-                  {option}
+                <Text style={[styles.input, service === value && styles.selectedText]}>
+                  {label}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -162,7 +199,11 @@ export default function Screen() {
             {error}
           </Text>
         )}
-        <Button label="Save" onPress={handleSubmit} buttonType="primaryButton" />
+        <Button
+          label={saving ? 'Saving...' : 'Save'}
+          onPress={handleSubmit}
+          buttonType="primaryButton"
+        />
       </View>
     </View>
   );

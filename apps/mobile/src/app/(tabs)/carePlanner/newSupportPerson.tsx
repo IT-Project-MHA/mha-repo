@@ -3,9 +3,9 @@
  * person page, or from an appointment's details to add them to that appointment. Pressing a person
  * on the add a support person page opens this screen again to edit them.
  */
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
@@ -17,7 +17,14 @@ export default function Screen() {
   const styles = createStyles(colours);
   const { colors: paperColours } = usePaperTheme();
   const router = useRouter();
-  const { draft, updateDraft, appointments, updateAppointment } = useAppointment();
+  const {
+    draft,
+    updateDraft,
+    appointments,
+    updateAppointment,
+    pickedSupportLink,
+    pickSupportLink,
+  } = useAppointment();
 
   // appointmentId is set when opened from a submitted appointment's details, otherwise the draft
   // is changed. index is set when editing a person already added, otherwise a new one is added
@@ -32,11 +39,29 @@ export default function Screen() {
   const [email, setEmail] = useState(saved?.email ?? '');
   const [canAddQuestions, setCanAddQuestions] = useState(saved?.canAddQuestions ?? false);
   const [canAddAnswers, setCanAddAnswers] = useState(saved?.canAddAnswers ?? false);
+  // set when the person was chosen from My Support Links
+  const [supportLinkId, setSupportLinkId] = useState(saved?.supportLinkId);
   const [showError, setShowError] = useState(false);
 
-  // name & phone number are mandatory, email is optional
+  // fills in the support link chosen on My Support Links when coming back from it
+  useFocusEffect(
+    useCallback(() => {
+      if (!pickedSupportLink) return;
+      setPhone(pickedSupportLink.phone);
+      setSupportLinkId(pickedSupportLink.id);
+      pickSupportLink(null);
+    }, [pickedSupportLink, pickSupportLink]),
+  );
+
+  // typing a different number makes them a new person to invite, not the chosen support link
+  const changePhone = (text: string) => {
+    setPhone(text);
+    setSupportLinkId(undefined);
+  };
+
+  // name & phone number are mandatory, email is optional. A support link may have no phone number
   const save = () => {
-    if (!name.trim() || !phone.trim()) {
+    if (!name.trim() || (!supportLinkId && !phone.trim())) {
       setShowError(true);
       return;
     }
@@ -46,6 +71,7 @@ export default function Screen() {
       email: email.trim(),
       canAddQuestions,
       canAddAnswers,
+      supportLinkId,
     };
     // replaces the person being edited, or adds the new person to the end
     const supportPeople =
@@ -89,7 +115,7 @@ export default function Screen() {
         <TextInput
           style={[styles.field, styles.input]}
           value={phone}
-          onChangeText={setPhone}
+          onChangeText={changePhone}
           placeholder="phone number"
           keyboardType="phone-pad"
           placeholderTextColor={paperColours.onSurfaceVariant}
@@ -111,6 +137,11 @@ export default function Screen() {
 
         <View>
           <Text style={styles.heading}>Access Type</Text>
+          <Text style={styles.subheading}>
+            {supportLinkId
+              ? 'Chosen from My Support Links. This access starts when you save your support persons, or once they accept your invite'
+              : 'They will be invited when you save your support persons. This access starts once they have an account and accept the invite'}
+          </Text>
         </View>
         <View style={[styles.field, styles.checkboxList]}>
           <Checkbox.Item

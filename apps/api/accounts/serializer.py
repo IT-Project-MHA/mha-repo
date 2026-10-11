@@ -37,6 +37,16 @@ class SupportLinkSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ['patient_profile', 'patient_user']
 
+    # saved in the same format as account phone numbers, so an invite can be matched to the
+    # account made with that number
+    def validate_invited_phone_number(self, invited_phone_number):
+        if not invited_phone_number:
+            return invited_phone_number
+        phone_number = normalise_phone_number(invited_phone_number)
+        if phone_number is None:
+            raise serializers.ValidationError('Enter an Australian mobile number.')
+        return phone_number
+
 
 
 class TermsAndPrivacySerializer(serializers.ModelSerializer):

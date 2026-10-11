@@ -5,7 +5,8 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 from rest_framework.authtoken.models import Token
 
-from accounts.models import PatientProfile, PhoneVerification, TermsAndPrivacy, User, UserSettings
+from accounts.models import PatientProfile, PhoneVerification, SupportLink, TermsAndPrivacy, User, \
+    UserSettings
 from accounts import devices
 
 from audit.models import AuditEntry
@@ -42,6 +43,16 @@ def create_patient_profile(user, health):
     return profile
 
 
+def link_invites(user):
+    # Invites sent to this phone number before it had an account are linked to this user, so they
+    # can see and accept them. The appointment access they were given starts once they accept
+    SupportLink.objects.filter(
+        invited_phone_number = user.phone_number,
+        supporter_user__isnull = True,
+        status = SupportLink.Status.INVITED,
+    ).update(supporter_user = user)
+
+
 def register_user(verification_id, device_id, phone_number, display_name, pin, track_health, health = None):
 
     # Create the account and return user and token
@@ -74,6 +85,8 @@ def register_user(verification_id, device_id, phone_number, display_name, pin, t
             if track_health:
                 profile = create_patient_profile(user, health or {})
                 record(user, AuditEntry.Action.CREATE, profile)
+
+            link_invites(user)
 
             devices.trust_device(user, device_id)
 

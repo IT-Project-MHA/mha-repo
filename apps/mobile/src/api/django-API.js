@@ -1,5 +1,6 @@
-// replace with active base URL before deployment
-const BASE_URL = "http://localhost:8000/api";
+// replace with active server URL before deployment
+const SERVER_URL = "http://localhost:8000";
+const BASE_URL = `${SERVER_URL}/api`;
 
 /* Instructions:
 Call the function for the relevant table in the format api`TableName`(2) with operation values
@@ -56,10 +57,11 @@ export class ApiError extends Error {
     }
 }
 
-async function request(method, path, body) {
+// baseUrl is BASE_URL for the /api endpoints, or SERVER_URL for endpoints outside /api
+async function request(method, path, body, baseUrl = BASE_URL) {
     // FormData bodies (file uploads) set their own multipart Content-Type
     const isFormData = body instanceof FormData;
-    const response = await fetch(`${BASE_URL}/${path}`, {
+    const response = await fetch(`${baseUrl}/${path}`, {
         method: method,
         headers: {
             ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
@@ -319,7 +321,7 @@ export async function apiMyManagement(operation, values) {
 - update: id NN, scheduled_date, doctor, status, health_service, notes
     - patient_profile & created_by cannot be changed
     - user can only update their own appointments where they are a patient
-- delete: id NN */
+- soft delete: id NN */
 export async function apiAppointment(operation, values) {
     return operate('appointment', operation, values);
 }
@@ -336,7 +338,7 @@ export async function apiAppointment(operation, values) {
     - appointment, source, created_by cannot be changed
     - if user is supporter: source can be SUPPORT (default) or SUGGESTED, can only create if 
       can_add_questions=True in AppointmentAccess
-- delete: id NN
+- soft delete: id NN
     - same as update */
 export async function apiAppointmentQuestion(operation, values) {
     return operate('appointmentQuestion', operation, values);
@@ -356,22 +358,37 @@ export async function apiAppointmentQuestion(operation, values) {
     - question cannot be changed
     - recording_file: null removes the recording    
     - patient, or supporter with can_record_answers=true in AppointmentAccess can create
-- delete: id NN
-    - patient only */
+- soft delete: id NN
+    - patient only
+    - if another answer is created, the old answer is permanently deleted */
 export async function apiAppointmentAnswer(operation, values) {
     return operate('appointmentAnswer', operation, values);
 }
 
 /* AppointmentAccess:
 - select: id, or filter by appointment, support_link (returns access for own appointments &
-          access given to user)
-- create: appointment NN, support_link NN, can_add_questions NN, can_record_answers NN
-    - appointment must be the user's own, support_link must be an active link of the same patient
+          access given to user, including revoked ones with revoked_at set)
+- create: appointment NN, support_link NN, can_add_questions, can_record_answers
+    - grants access, or if the support_link already has access to the appointment, replaces
+      its can_add_questions & can_record_answers (a flag left out is set to false)
+    - appointment must be the user's own, support_link must be an active or invited link of the
+      same patient. An invited link's access starts working once the invite is accepted
     - granted_at is auto generated
-- update: id NN, can_add_questions, can_record_answers, revoked_at
-    - appointment, support_link & granted_at cannot be changed
-- delete: id NN */
-export async function apiAppointmentAccess(operation, values) {
+- update: N/A, use create to change the access flags
+- delete: appointment NN, id NN
+    - revokes the access (revoked_at is set, the record is kept) */
+export async function apiAppointmentAccess(operation, values = {}) {
+    const { id, appointment, support_link, ...flags } = values;
+
+    if (operation == 'create') {
+        return request('POST', `appointments/${appointment}/access`,
+                       { support_link_id: support_link, ...flags }, SERVER_URL);
+    } else if (operation == 'delete') {
+        return request('POST', `appointments/${appointment}/access/${id}/revoke`, undefined,
+                       SERVER_URL);
+    } else if (operation == 'update') {
+        throw new Error("Operation 'update' is not allowed for appointmentAccess, use 'create'");
+    }
     return operate('appointmentAccess', operation, values);
 }
 

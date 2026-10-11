@@ -7,6 +7,7 @@ export type SupportPerson = {
   email: string;
   canAddQuestions: boolean;
   canAddAnswers: boolean;
+  supportLinkId?: string; // set when picked from My Support Links, left out when entered by hand
 };
 
 // Question to ask the doctor
@@ -21,6 +22,7 @@ export type AppointmentQuestion = {
 
 // Draft appointment, filled in across the care planner page
 export type AppointmentDraft = {
+  appointmentId: string | null; // set once the create appointment page has saved it to the server
   scheduledDate: Date | null;
   doctor: string;
   healthService: string | null;
@@ -55,7 +57,11 @@ export type SupportLink = {
   patientName: string;
 };
 
+// support link chosen on My Support Links, waiting for the support person form to use it
+export type PickedSupportLink = { id: string; phone: string };
+
 const emptyDraft = (): AppointmentDraft => ({
+  appointmentId: null,
   scheduledDate: null,
   doctor: '',
   healthService: null,
@@ -72,6 +78,8 @@ type AppointmentState = {
   updateDraft: (changes: Partial<AppointmentDraft>) => void;
   resetDraft: () => void;
   submitDraft: () => void;
+  pickedSupportLink: PickedSupportLink | null;
+  pickSupportLink: (link: PickedSupportLink | null) => void;
   updateAppointment: (id: string, changes: Partial<Appointment>) => void;
   updateQuestion: (id: string, index: number, changes: Partial<AppointmentQuestion>) => void;
 };
@@ -85,6 +93,8 @@ const AppointmentContext = createContext<AppointmentState>({
   updateDraft: () => {},
   resetDraft: () => {},
   submitDraft: () => {},
+  pickedSupportLink: null,
+  pickSupportLink: () => {},
   updateAppointment: () => {},
   updateQuestion: () => {},
 });
@@ -98,6 +108,7 @@ export function AppointmentProvider({ children }: { children: React.ReactNode })
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [sharedAppointments, setSharedAppointments] = useState<SharedAppointment[]>([]);
   const [supportLinks] = useState<SupportLink[]>([]);
+  const [pickedSupportLink, pickSupportLink] = useState<PickedSupportLink | null>(null);
 
   // looks in both the user's own and shared appointments, their ids don't overlap
   const findAppointment = (id: string) =>
@@ -109,11 +120,12 @@ export function AppointmentProvider({ children }: { children: React.ReactNode })
 
   const resetDraft = () => setDraft(emptyDraft());
 
-  // adds the draft to the top of the appointments, then clears it
+  // adds the draft to the top of the appointments with the id the server gave it, then clears it.
+  // Each page of the create appointment flow has already saved its part to the server
   const submitDraft = () => {
-    if (!draft.scheduledDate) return;
+    if (!draft.appointmentId || !draft.scheduledDate) return;
     const appointment: Appointment = {
-      id: Date.now().toString(),
+      id: draft.appointmentId,
       scheduled_date: draft.scheduledDate.toISOString(),
       doctor: draft.doctor,
       health_service: draft.healthService ?? '',
@@ -163,6 +175,8 @@ export function AppointmentProvider({ children }: { children: React.ReactNode })
         updateDraft,
         resetDraft,
         submitDraft,
+        pickedSupportLink,
+        pickSupportLink,
         updateAppointment,
         updateQuestion,
       }}

@@ -11,7 +11,7 @@ import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
 import { formatDateTime } from '../../../../constants/date';
 import { useAppointment } from '../../../../context/AppointmentContext';
-import { apiPatientAppointments, apiSupportAppointments } from '../../../helpers/care_planner_api_helpers';
+import { apiPatientAppointments, apiSupportAppointments } from '../../../api/care_planner_api_helpers';
 
 // appointment record returned by the API
 type ApiAppointment = {

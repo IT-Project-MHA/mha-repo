@@ -355,10 +355,34 @@ class SupportLinkListCreate(generics.ListCreateAPIView):
             query_set = query_set.filter(status = query_status)
         return query_set.distinct()
 
+    # an invited phone number that already has an account is linked to it straight away, otherwise
+    # it is linked when that number registers. Either way the supporter has to accept the invite
     def perform_create(self, serializer):
         user = self.request.user
-        serializer.save(patient_profile = own_patient_profile(user), patient_user = user,
-                        status = SupportLink.Status.INVITED)
+        patient_profile = own_patient_profile(user)
+        phone_number = serializer.validated_data.get("invited_phone_number")
+        supporter = serializer.validated_data.get("supporter_user")
+
+        if phone_number and supporter is None:
+            if phone_number == user.phone_number:
+                raise serializers.ValidationError(
+                    {'invited_phone_number':'You cannot be your own support person.'})
+            supporter = User.objects.filter(phone_number = phone_number,
+                                            deleted_at__isnull = True).first()
+            if supporter is None and SupportLink.objects.filter(
+                    patient_profile = patient_profile, supporter_user__isnull = True,
+                    invited_phone_number = phone_number,
+                    status = SupportLink.Status.INVITED).exists():
+                raise serializers.ValidationError(
+                    {'invited_phone_number':'This number has already been invited.'})
+
+        if supporter is not None and SupportLink.objects.filter(
+                patient_profile = patient_profile, supporter_user = supporter).exists():
+            raise serializers.ValidationError(
+                {'invited_phone_number':'This person is already your support person.'})
+
+        serializer.save(patient_profile = patient_profile, patient_user = user,
+                        supporter_user = supporter, status = SupportLink.Status.INVITED)
 
 class SupportLinkRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
