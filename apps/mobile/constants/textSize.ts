@@ -48,7 +48,7 @@ export function createTypography(scale: FontScale): Typography {
     scaledText[key] ={
       ...baseFeatures,
       fontSize: baseFeatures.fontSize*scale,
-      lineHeight: baseFeatures.lineHeight*(scale/1.5)
+      lineHeight: baseFeatures.lineHeight*(scale)
     };
   });
   return scaledText;
