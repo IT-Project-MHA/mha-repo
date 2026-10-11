@@ -226,8 +226,10 @@ class AppointmentQuestionListCreate(generics.ListCreateAPIView):
     def get_queryset(self):
         user = self.request.user
         appointment = self.request.query_params.get("appointment")
+        # each question's answer is loaded in the same query, it is included in the response
         query_set = AppointmentQuestion.objects.filter(
-            appointment__in = visible_appointments(user), deleted_at__isnull = True)
+            appointment__in = visible_appointments(user), deleted_at__isnull = True,
+            ).select_related('question_answer')
 
         if not appointment:
             raise serializers.ValidationError({'appointment':'This field is required.'})
@@ -266,8 +268,10 @@ class AppointmentQuestionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPI
     def get_queryset(self):
         user = self.request.user
         appointment = self.request.query_params.get("appointment")
+        # each question's answer is loaded in the same query, it is included in the response
         query_set = AppointmentQuestion.objects.filter(
-            appointment__in = visible_appointments(user), deleted_at__isnull = True)
+            appointment__in = visible_appointments(user), deleted_at__isnull = True,
+            ).select_related('question_answer')
         if self.request.method not in SAFE_METHODS:
             query_set = query_set.filter(
                 Q(appointment__patient_profile__user = user) |

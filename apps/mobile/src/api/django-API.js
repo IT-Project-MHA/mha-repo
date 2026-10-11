@@ -1,6 +1,11 @@
-// replace with active server URL before deployment
-const SERVER_URL = "http://localhost:8000";
+// replace with active server URL before deployment. EXPO_PUBLIC_SERVER_URL in apps/mobile/.env
+// overrides it for local testing
+const SERVER_URL = process.env.EXPO_PUBLIC_SERVER_URL ?? "http://localhost:8000";
 const BASE_URL = `${SERVER_URL}/api`;
+
+// DEV ONLY until login is built: token of a local test user from apps/mobile/.env, sent with
+// every request
+const DEV_TOKEN = process.env.EXPO_PUBLIC_DEV_TOKEN;
 
 /* Instructions:
 Call the function for the relevant table in the format api`TableName`(2) with operation values
@@ -65,6 +70,7 @@ async function request(method, path, body, baseUrl = BASE_URL) {
         method: method,
         headers: {
             ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+            ...(DEV_TOKEN ? { Authorization: `Token ${DEV_TOKEN}` } : {}),
             Accept: 'application/json',
         },
         // undefined if the operation is delete
@@ -329,6 +335,7 @@ export async function apiAppointment(operation, values) {
 /* AppointmentQuestion:
 - select: id, or filter by appointment NN
     - can only see one's own appointment questions or patient's appointment questions
+    - each question includes its answer (an AppointmentAnswer, see below), or answer: null
 - create: appointment NN, text NN, source, is_selected
     - created_by is set to the user, order_index is auto generated
     - patient, or supporter with can_add_questions=true in AppointmentAccess can create

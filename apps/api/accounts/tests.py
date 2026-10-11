@@ -625,7 +625,7 @@ class InviteTests(APITestCase):
 
     def setUp(self):
         cache.clear()
-        self.patient = User.objects.create_user(PHONE, "John Doe", PIN)
+        self.patient = User.objects.create_user(PHONE, "Josh", PIN)
         self.profile = PatientProfile.objects.create(user = self.patient)
         self.appointment = Appointment.objects.create(
             patient_profile = self.profile, scheduled_date = timezone.now(), created_by = self.patient,
@@ -723,6 +723,17 @@ class InviteTests(APITestCase):
         link = SupportLink.objects.get()
         self.assertIsNone(link.supporter_user)
         self.assertEqual(link.status, SupportLink.Status.INVITED)
+
+    def test_link_shows_both_names(self):
+        User.objects.create_user(self.INVITED, "Mum", PIN)
+        self.invite(self.INVITED)
+        link = self.client.get("/api/supportLink/").data[0]
+        self.assertEqual(link["patient_name"], self.patient.display_name)
+        self.assertEqual(link["supporter_name"], "Mum")
+
+    def test_invite_without_account_has_no_supporter_name(self):
+        self.invite(self.INVITED)
+        self.assertIsNone(self.client.get("/api/supportLink/").data[0]["supporter_name"])
 
 
 class MissingFieldTests(APITestCase):

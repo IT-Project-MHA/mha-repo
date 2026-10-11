@@ -3,22 +3,59 @@
  * shared appointments button on the care planner. Can be filtered to one patient from the user's
  * active support links.
  */
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useTheme as usePaperTheme } from 'react-native-paper';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
 import { formatDateTime } from '../../../../constants/date';
-import { useAppointment } from '../../../../context/AppointmentContext';
+import { ApiAppointment, SupportLink } from '../../../../context/AppointmentContext';
+import {
+  apiSharedAppointments,
+  apiSupportedPatients,
+} from '../../../api/care_planner_api_helpers';
+
+// shared appointment as the server lists it, with the patient's name
+type ApiSharedAppointment = ApiAppointment & { patientName: string };
 
 export default function Screen() {
   const { colours } = useTheme();
   const styles = createStyles(colours);
   const router = useRouter();
   const { colors: paperColours } = usePaperTheme();
-  const { sharedAppointments, supportLinks } = useAppointment();
+  // null while loading
+  const [sharedAppointments, setSharedAppointments] = useState<ApiSharedAppointment[] | null>(
+    null,
+  );
+  // patients the user supports, for the filter
+  const [supportLinks, setSupportLinks] = useState<SupportLink[]>([]);
+  const [loadFailed, setLoadFailed] = useState(false);
+
+  // reloads the shared appointments when the page is shown, so changes made on other pages appear
+  useFocusEffect(
+    useCallback(() => {
+      const loadAppointments = async () => {
+        try {
+          const [loaded, patients]: [ApiSharedAppointment[], SupportLink[]] = await Promise.all([
+            apiSharedAppointments(),
+            apiSupportedPatients(),
+          ]);
+          // newest shared first
+          setSharedAppointments(
+            [...loaded].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)),
+          );
+          setSupportLinks(patients);
+          setLoadFailed(false);
+        } catch (error) {
+          console.error('Failed to load shared appointments', error);
+          setLoadFailed(true);
+        }
+      };
+      loadAppointments();
+    }, []),
+  );
 
   // null shows the appointments of all patients
   const [patientId, setPatientId] = useState<string | null>(null);
@@ -26,8 +63,8 @@ export default function Screen() {
 
   const selectedLink = supportLinks.find((link) => link.patientId === patientId);
   const shownAppointments = patientId
-    ? sharedAppointments.filter((appointment) => appointment.patientId === patientId)
-    : sharedAppointments;
+    ? (sharedAppointments ?? []).filter((appointment) => appointment.patient_profile === patientId)
+    : (sharedAppointments ?? []);
 
   // choose a patient and close the dropdown
   const handleSelect = (id: string | null) => {
@@ -76,9 +113,13 @@ export default function Screen() {
 
         {shownAppointments.length === 0 && (
           <Text style={[styles.body, { color: paperColours.onSurfaceVariant }]}>
-            {selectedLink
-              ? `${selectedLink.patientName} has not shared any appointments with you`
-              : 'No appointments have been shared with you'}
+            {loadFailed
+              ? 'Shared appointments could not be loaded'
+              : sharedAppointments === null
+                ? 'Loading...'
+                : selectedLink
+                  ? `${selectedLink.patientName} has not shared any appointments with you`
+                  : 'No appointments have been shared with you'}
           </Text>
         )}
         {shownAppointments.map((appointment) => (

@@ -3,14 +3,23 @@
  * person page, or from an appointment's details to add them to that appointment. Pressing a person
  * on the add a support person page opens this screen again to edit them.
  */
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { Contact, requestPermissionsAsync } from 'expo-contacts';
 import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
 import { Checkbox, useTheme as usePaperTheme } from 'react-native-paper';
 import { useAppointment } from '../../../../context/AppointmentContext';
+import { apiMySupportLinks, normalisePhoneNumber } from '../../../api/care_planner_api_helpers';
+
+// support link record returned by the API
+type ApiSupportLink = {
+  id: string;
+  invited_phone_number: string;
+  supporter_name: string | null; // null until the invited phone number has an account
+};
 
 export default function Screen() {
   const { colours } = useTheme();
@@ -34,14 +43,25 @@ export default function Screen() {
   const saved = index !== undefined ? savedPeople[Number(index)] : undefined;
 
   // starts with the saved details, so the person can be edited after saving
-  const [name, setName] = useState(saved?.name ?? '');
   const [phone, setPhone] = useState(saved?.phone ?? '');
-  const [email, setEmail] = useState(saved?.email ?? '');
   const [canAddQuestions, setCanAddQuestions] = useState(saved?.canAddQuestions ?? false);
   const [canAddAnswers, setCanAddAnswers] = useState(saved?.canAddAnswers ?? false);
   // set when the person was chosen from My Support Links
   const [supportLinkId, setSupportLinkId] = useState(saved?.supportLinkId);
   const [showError, setShowError] = useState(false);
+  // the user's support links, to tell whether the number entered is one of them
+  const [links, setLinks] = useState<ApiSupportLink[]>([]);
+
+  useEffect(() => {
+    const loadLinks = async () => {
+      try {
+        setLinks(await apiMySupportLinks());
+      } catch (error) {
+        console.error('Failed to load support links', error);
+      }
+    };
+    loadLinks();
+  }, []);
 
   // fills in the support link chosen on My Support Links when coming back from it
   useFocusEffect(
@@ -53,25 +73,74 @@ export default function Screen() {
     }, [pickedSupportLink, pickSupportLink]),
   );
 
-  // typing a different number makes them a new person to invite, not the chosen support link
+  // typing a number replaces the chosen support link, it is matched to the links by number instead
   const changePhone = (text: string) => {
     setPhone(text);
     setSupportLinkId(undefined);
+    setShowError(false);
   };
 
-  // name & phone number are mandatory, email is optional. A support link may have no phone number
+  // shown under the contacts button when a contact's number can't be used, null otherwise
+  const [contactMessage, setContactMessage] = useState<string | null>(null);
+
+  // opens the phone's contacts, and puts the chosen contact's phone number in the field
+  const chooseContact = async () => {
+    setContactMessage(null);
+    try {
+      // reading the chosen contact's phone numbers needs permission
+      const { granted } = await requestPermissionsAsync();
+      if (!granted) {
+        setContactMessage('Allow access to your contacts in your phone settings to choose from them.');
+        return;
+      }
+      const contact = await Contact.presentPicker();
+      // null when the user closed the contacts without choosing
+      if (!contact) return;
+
+      const numbers = (await contact.getPhones())
+        .map((item) => item.number)
+        .filter((number): number is string => !!number);
+      // prefers an Australian mobile number, as only they can be invited
+      const number = numbers.find((item) => normalisePhoneNumber(item)) ?? numbers[0];
+      if (!number) {
+        setContactMessage('This contact has no phone number.');
+        return;
+      }
+      changePhone(number);
+    } catch (error) {
+      console.error('Failed to choose a contact', error);
+      setContactMessage('Your contacts could not be opened.');
+    }
+  };
+
+  // null when the number entered isn't an Australian mobile number
+  const serverPhone = normalisePhoneNumber(phone);
+  // the support link this person is, chosen from My Support Links or matched by the number entered
+  const link =
+    links.find((item) => item.id === supportLinkId) ??
+    (serverPhone ? links.find((item) => item.invited_phone_number === serverPhone) : undefined);
+
+  // shown under the phone number, says what happens with the number entered
+  const phoneHint = link?.supporter_name
+    ? `${link.supporter_name} will have view access to this appointment.`
+    : serverPhone
+      ? 'When the support person signs up with this phone number, they will be able to accept your appointment invite.'
+      : null;
+  const phoneInvalid = !link && !serverPhone && phone.trim() !== '';
+
+  // a support link or a valid phone number is mandatory
   const save = () => {
-    if (!name.trim() || (!supportLinkId && !phone.trim())) {
+    if (!link && !serverPhone) {
       setShowError(true);
       return;
     }
     const person = {
-      name: name.trim(),
-      phone: phone.trim(),
-      email: email.trim(),
+      // the server only knows the name of someone with an account
+      name: link?.supporter_name ?? '',
+      phone: link?.invited_phone_number || serverPhone || '',
       canAddQuestions,
       canAddAnswers,
-      supportLinkId,
+      supportLinkId: link?.id,
     };
     // replaces the person being edited, or adds the new person to the end
     const supportPeople =
@@ -86,31 +155,23 @@ export default function Screen() {
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content}>
+        <Text style={styles.subheading}>
+          Choose from My Support Links or invite someone with their phone number (you can choose from My Contacts or enter it manually). 
+        </Text>
         <Button
           label="Choose from My Support Links"
           onPress={() => router.push('/carePlanner/mySupportLinks')}
           buttonType="primaryButton"
         />
         <Button
-          label="Choose from my contacts"
-          onPress={() => {}}
+          label="Choose from My Contacts"
+          onPress={chooseContact}
           buttonType="primaryButton"
         />
-
-        <Text style={styles.headline}>Manual entry</Text>
-        <View>
-          <Text style={styles.heading}>Support person's Name</Text>
-        </View>
-        <TextInput
-          style={[styles.field, styles.input]}
-          value={name}
-          onChangeText={setName}
-          placeholder="name"
-          placeholderTextColor={paperColours.onSurfaceVariant}
-        />
+        {!!contactMessage && <Text style={styles.subheading}>{contactMessage}</Text>}
 
         <View>
-          <Text style={styles.heading}>Support person's phone number</Text>
+          <Text style={styles.heading}>phone number</Text>
         </View>
         <TextInput
           style={[styles.field, styles.input]}
@@ -120,28 +181,16 @@ export default function Screen() {
           keyboardType="phone-pad"
           placeholderTextColor={paperColours.onSurfaceVariant}
         />
-
-        <View>
-          <Text style={styles.heading}>Support person's email</Text>
-          <Text style={styles.subheading}>Optional</Text>
-        </View>
-        <TextInput
-          style={[styles.field, styles.input]}
-          value={email}
-          onChangeText={setEmail}
-          placeholder="email"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          placeholderTextColor={paperColours.onSurfaceVariant}
-        />
+        {phoneInvalid ? (
+          <Text style={[styles.subheading, { color: paperColours.error }]}>
+            Please enter a valid phone number.
+          </Text>
+        ) : (
+          !!phoneHint && <Text style={styles.subheading}>{phoneHint}</Text>
+        )}
 
         <View>
           <Text style={styles.heading}>Access Type</Text>
-          <Text style={styles.subheading}>
-            {supportLinkId
-              ? 'Chosen from My Support Links. This access starts when you save your support persons, or once they accept your invite'
-              : 'They will be invited when you save your support persons. This access starts once they have an account and accept the invite'}
-          </Text>
         </View>
         <View style={[styles.field, styles.checkboxList]}>
           <Checkbox.Item
@@ -195,6 +244,11 @@ function createStyles(colours: ColourSet) {
     error: {
       fontSize: 14,
       textAlign: 'center',
+    },
+
+    body: {
+      ...textLayout,
+      color: colours.onBackground,
     },
 
     headline: {

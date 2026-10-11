@@ -1,7 +1,7 @@
 /**
  * Patients create a new appointment from this screen, opened from the care planner.
  */
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme as usePaperTheme } from 'react-native-paper';
@@ -18,11 +18,8 @@ import {
   withTime,
 } from '../../../../constants/date';
 import { useAppointment } from '../../../../context/AppointmentContext';
-import { apiHealthService } from '../../../api/django-API';
+import { DEFAULT_HEALTH_SERVICE, useHealthServices } from '../../../../constants/dropdownOptions';
 import { apiErrorMessage, apiSaveAppointment } from '../../../api/care_planner_api_helpers';
-
-// dropdown option from the server, value is saved & label is shown
-type HealthServiceOption = { value: string; label: string };
 
 // start of today, appointments cannot be scheduled in the past
 const startOfToday = () => {
@@ -44,33 +41,20 @@ export default function Screen() {
     draft.scheduledDate ? timeOf(draft.scheduledDate) : undefined,
   );
   const [doctor, setDoctor] = useState(draft.doctor);
-  // null until a service is chosen
-  const [service, setService] = useState<string | null>(draft.healthService);
+  const [service, setService] = useState(draft.healthService ?? DEFAULT_HEALTH_SERVICE);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [healthServices, setHealthServices] = useState<HealthServiceOption[]>([]);
+  const healthServices = useHealthServices();
   // message shown above the save button, null when there is nothing wrong
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-
-  // loads the health service options once, the dropdown is empty if they can't be loaded
-  useEffect(() => {
-    const loadHealthServices = async () => {
-      try {
-        setHealthServices(await apiHealthService());
-      } catch (loadError) {
-        console.error('Failed to load health services', loadError);
-      }
-    };
-    loadHealthServices();
-  }, []);
 
   // label of the chosen health service
   const serviceLabel =
     healthServices.find((option) => option.value === service)?.label ?? service;
 
-  // choose a health service and close the dropdown, choosing it again clears it
+  // choose a health service and close the dropdown
   const handleSelect = (option: string) => {
-    setService((prev) => (prev === option ? null : option));
+    setService(option);
     setDropdownOpen(false);
   };
 
@@ -153,23 +137,12 @@ export default function Screen() {
           placeholderTextColor={paperColours.onSurfaceVariant}
         />
 
-        <View>
-          <Text style={styles.heading}>Health services</Text>
-          <Text style={styles.subheading}>Optional</Text>
-        </View>
+        <Text style={styles.heading}>Health services</Text>
         <TouchableOpacity
           style={[styles.field, styles.dropdown]}
           onPress={() => setDropdownOpen(!dropdownOpen)}
         >
-          <Text
-            style={
-              service
-                ? styles.input
-                : [styles.placeholder, { color: paperColours.onSurfaceVariant }]
-            }
-          >
-            {serviceLabel ?? 'Select a health service'}
-          </Text>
+          <Text style={styles.input}>{serviceLabel}</Text>
           <Text style={styles.input}>{dropdownOpen ? '▲' : '▼'}</Text>
         </TouchableOpacity>
         {dropdownOpen && (
@@ -258,10 +231,6 @@ function createStyles(colours: ColourSet) {
 
     error: {
       fontSize: 14,
-    },
-
-    placeholder: {
-      fontSize: 16,
     },
 
     dropdown: {

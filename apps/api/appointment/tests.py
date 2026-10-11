@@ -296,3 +296,54 @@ class SoftDeleteTests(APITestCase):
                           {"deleted_at": timezone.now().isoformat()}, format = "json")
         self.refresh()
         self.assertFalse(self.appointment.is_deleted())
+
+
+# Questions with answers tests
+class QuestionsWithAnswersTests(APITestCase):
+    # GET /api/appointmentQuestion/?appointment={id} includes each question's answer
+
+    def setUp(self):
+        self.patient = User.objects.create_user("+61490813123", "Josh", PIN)
+        self.profile = PatientProfile.objects.create(user = self.patient)
+        self.appointment = Appointment.objects.create(
+            patient_profile = self.profile, scheduled_date = timezone.now(), created_by = self.patient,
+        )
+        self.answered = AppointmentQuestion.objects.create(
+            appointment = self.appointment, text = "Why?", created_by = self.patient, order_index = 0,
+        )
+        self.unanswered = AppointmentQuestion.objects.create(
+            appointment = self.appointment, text = "How?", created_by = self.patient, order_index = 1,
+        )
+        self.answer = AppointmentAnswer.objects.create(
+            question = self.answered, text = "Because", recorded_by = self.patient,
+        )
+        self.client.force_authenticate(self.patient)
+
+    def list_questions(self):
+        return self.client.get(f"/api/appointmentQuestion/?appointment={self.appointment.pk}").data
+
+    def test_answer_included(self):
+        answered, unanswered = self.list_questions()
+        self.assertEqual(answered["answer"]["id"], str(self.answer.pk))
+        self.assertEqual(answered["answer"]["text"], "Because")
+        self.assertIsNone(unanswered["answer"])
+
+    def test_deleted_answer_not_included(self):
+        self.client.delete(f"/api/appointmentAnswer/{self.answer.pk}")
+        self.assertIsNone(self.list_questions()[0]["answer"])
+
+    def test_single_question_includes_answer(self):
+        response = self.client.get(f"/api/appointmentQuestion/{self.answered.pk}")
+        self.assertEqual(response.data["answer"]["text"], "Because")
+
+    def test_one_query_however_many_questions(self):
+        # answers are loaded with the questions, not one query per question
+        with self.assertNumQueries(1):
+            self.list_questions()
+        for number in range(5):
+            question = AppointmentQuestion.objects.create(
+                appointment = self.appointment, text = f"Q{number}", created_by = self.patient,
+            )
+            AppointmentAnswer.objects.create(question = question, text = "A", recorded_by = self.patient)
+        with self.assertNumQueries(1):
+            self.list_questions()

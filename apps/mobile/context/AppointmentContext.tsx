@@ -4,7 +4,6 @@ import React, { createContext, useContext, useState } from 'react';
 export type SupportPerson = {
   name: string;
   phone: string;
-  email: string;
   canAddQuestions: boolean;
   canAddAnswers: boolean;
   supportLinkId?: string; // set when picked from My Support Links, left out when entered by hand
@@ -12,12 +11,14 @@ export type SupportPerson = {
 
 // Question to ask the doctor
 export type AppointmentQuestion = {
+  id?: string; // the server's id, left out until it is saved
   text: string;
   source: 'suggested' | 'patient' | 'support';
   addedBy?: 'support'; // left out when the patient added it
   suggestedId?: string;
+  answerId?: string; // the server's id of the answer, left out until one is saved
   answer?: string;
-  recording?: string; // file uri
+  recording?: string; // file uri, or the server's download URL
 };
 
 // Draft appointment, filled in across the care planner page
@@ -42,6 +43,16 @@ export type Appointment = {
   doctorSignature?: string; // PNG data URL
 };
 
+// Appointment as the server lists it, without its questions & support persons
+export type ApiAppointment = {
+  id: string;
+  created_at: string;
+  scheduled_date: string; // ISO date and time
+  doctor: string;
+  health_service: string;
+  patient_profile: string;
+};
+
 // Appointment another patient has shared with this user as their support person
 export type SharedAppointment = Appointment & {
   patientId: string;
@@ -51,7 +62,7 @@ export type SharedAppointment = Appointment & {
   canAddAnswers: boolean;
 };
 
-// Active support link, a patient who has made this user their support person
+// A patient who has made this user their support person, from an active support link
 export type SupportLink = {
   patientId: string;
   patientName: string;
@@ -73,7 +84,6 @@ type AppointmentState = {
   draft: AppointmentDraft;
   appointments: Appointment[];
   sharedAppointments: SharedAppointment[];
-  supportLinks: SupportLink[];
   findAppointment: (id: string) => Appointment | undefined;
   updateDraft: (changes: Partial<AppointmentDraft>) => void;
   resetDraft: () => void;
@@ -82,13 +92,14 @@ type AppointmentState = {
   pickSupportLink: (link: PickedSupportLink | null) => void;
   updateAppointment: (id: string, changes: Partial<Appointment>) => void;
   updateQuestion: (id: string, index: number, changes: Partial<AppointmentQuestion>) => void;
+  rememberAppointment: (appointment: Appointment) => void;
+  rememberSharedAppointment: (appointment: SharedAppointment) => void;
 };
 
 const AppointmentContext = createContext<AppointmentState>({
   draft: emptyDraft(),
   appointments: [],
   sharedAppointments: [],
-  supportLinks: [],
   findAppointment: () => undefined,
   updateDraft: () => {},
   resetDraft: () => {},
@@ -97,17 +108,19 @@ const AppointmentContext = createContext<AppointmentState>({
   pickSupportLink: () => {},
   updateAppointment: () => {},
   updateQuestion: () => {},
+  rememberAppointment: () => {},
+  rememberSharedAppointment: () => {},
 });
 
 /**
  * Shares the appointment being created between the care planner pages, and keeps the submitted
- * appointments so they are shown on the care planner.
+ * appointments & the ones loaded from the server, so the pages opened from an appointment can find
+ * it.
  */
 export function AppointmentProvider({ children }: { children: React.ReactNode }) {
   const [draft, setDraft] = useState<AppointmentDraft>(emptyDraft);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [sharedAppointments, setSharedAppointments] = useState<SharedAppointment[]>([]);
-  const [supportLinks] = useState<SupportLink[]>([]);
   const [pickedSupportLink, pickSupportLink] = useState<PickedSupportLink | null>(null);
 
   // looks in both the user's own and shared appointments, their ids don't overlap
@@ -164,13 +177,22 @@ export function AppointmentProvider({ children }: { children: React.ReactNode })
     setSharedAppointments(update);
   };
 
+  // keeps an appointment loaded from the server, replacing the copy kept before
+  const replaceOrAdd = <T extends Appointment>(appointment: T) => (previous: T[]) =>
+    previous.some((item) => item.id === appointment.id)
+      ? previous.map((item) => (item.id === appointment.id ? appointment : item))
+      : [appointment, ...previous];
+  const rememberAppointment = (appointment: Appointment) =>
+    setAppointments(replaceOrAdd(appointment));
+  const rememberSharedAppointment = (appointment: SharedAppointment) =>
+    setSharedAppointments(replaceOrAdd(appointment));
+
   return (
     <AppointmentContext.Provider
       value={{
         draft,
         appointments,
         sharedAppointments,
-        supportLinks,
         findAppointment,
         updateDraft,
         resetDraft,
@@ -179,6 +201,8 @@ export function AppointmentProvider({ children }: { children: React.ReactNode })
         pickSupportLink,
         updateAppointment,
         updateQuestion,
+        rememberAppointment,
+        rememberSharedAppointment,
       }}
     >
       {children}

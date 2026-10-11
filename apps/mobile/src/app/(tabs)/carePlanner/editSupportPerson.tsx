@@ -54,22 +54,18 @@ export default function Screen() {
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.section}>
-          <Text style={styles.heading}>Name</Text>
-          <Text style={styles.body}>{person.name}</Text>
-        </View>
+        {/* someone invited without an account yet has no name */}
+        {!!person.name && (
+          <View style={styles.section}>
+            <Text style={styles.heading}>Name</Text>
+            <Text style={styles.body}>{person.name}</Text>
+          </View>
+        )}
 
         <View style={styles.section}>
           <Text style={styles.heading}>Phone number</Text>
           <Text style={styles.body}>{person.phone}</Text>
         </View>
-
-        {!!person.email && (
-          <View style={styles.section}>
-            <Text style={styles.heading}>Email</Text>
-            <Text style={styles.body}>{person.email}</Text>
-          </View>
-        )}
 
         <View>
           <Text style={styles.heading}>Access Type</Text>

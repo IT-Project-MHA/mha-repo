@@ -57,7 +57,7 @@ export default function Screen() {
                 key={index}
                 style={[styles.input, styles.listItem, index > 0 && styles.divider]}
               >
-                {person.name}
+                {person.name || person.phone}
               </Text>
             ))
           ) : (

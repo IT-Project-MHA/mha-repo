@@ -32,10 +32,21 @@ class UserSettingsSerializer(serializers.ModelSerializer):
         read_only_fields = ['user']
 
 class SupportLinkSerializer(serializers.ModelSerializer):
+    # display names, so the patient & support person can see who the link is with
+    patient_name = serializers.SerializerMethodField()
+    supporter_name = serializers.SerializerMethodField()
+
     class Meta:
         model = SupportLink
         fields = '__all__'
         read_only_fields = ['patient_profile', 'patient_user']
+
+    def get_patient_name(self, link):
+        return link.patient_user.display_name
+
+    # null for an invite to a phone number that has no account yet
+    def get_supporter_name(self, link):
+        return link.supporter_user.display_name if link.supporter_user else None
 
     # saved in the same format as account phone numbers, so an invite can be matched to the
     # account made with that number

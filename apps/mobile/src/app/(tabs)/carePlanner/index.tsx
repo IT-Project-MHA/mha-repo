@@ -10,20 +10,14 @@ import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
 import { formatDateTime } from '../../../../constants/date';
-import { useAppointment } from '../../../../context/AppointmentContext';
-import { apiPatientAppointments, apiSupportAppointments } from '../../../api/care_planner_api_helpers';
+import { ApiAppointment, useAppointment } from '../../../../context/AppointmentContext';
+import { apiPatientAppointments, apiSharedAppointments } from '../../../api/care_planner_api_helpers';
 
-// appointment record returned by the API
-type ApiAppointment = {
-  id: string;
-  created_at: string;
-  scheduled_date: string; // ISO date and time
-  doctor: string;
-  health_service: string;
-};
+// shared appointment as the server lists it, with the patient's name
+type ApiSharedAppointment = ApiAppointment & { patientName: string };
 
 // the 3 most recently added appointments, newest first
-const mostRecent = (list: ApiAppointment[]) =>
+const mostRecent = <T extends ApiAppointment>(list: T[]) =>
   [...list].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)).slice(0, 3);
 
 export default function Screen() {
@@ -32,7 +26,7 @@ export default function Screen() {
   const router = useRouter();
   const { resetDraft } = useAppointment();
   const [appointments, setAppointments] = useState<ApiAppointment[]>([]);
-  const [sharedAppointments, setSharedAppointments] = useState<ApiAppointment[]>([]);
+  const [sharedAppointments, setSharedAppointments] = useState<ApiSharedAppointment[]>([]);
 
   // reloads every appointment where the user is the patient or support person when the screen is
   // shown, so ones added or changed on other screens appear
@@ -42,7 +36,7 @@ export default function Screen() {
         try {
           const [own, shared] = await Promise.all([
             apiPatientAppointments(),
-            apiSupportAppointments(),
+            apiSharedAppointments(),
           ]);
           setAppointments(own);
           setSharedAppointments(shared);
@@ -136,6 +130,7 @@ export default function Screen() {
                   pathname: '/carePlanner/editSharedAppointment',
                   params: { id: appointment.id },
                 }),
+              appointment.patientName,
             ),
           )}
         </View>

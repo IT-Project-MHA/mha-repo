@@ -3,6 +3,7 @@
  * on the care planner or the all shared appointments page. Questions can only be added or edited,
  * and answers added or edited, if the patient has given this user permission.
  */
+import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
@@ -10,21 +11,42 @@ import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
 import { formatDateTime } from '../../../../constants/date';
-import { useAppointment } from '../../../../context/AppointmentContext';
+import { SharedAppointment, useAppointment } from '../../../../context/AppointmentContext';
+import { apiAppointmentDetails } from '../../../api/care_planner_api_helpers';
 
 export default function Screen() {
   const { colours } = useTheme();
   const styles = createStyles(colours);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { sharedAppointments } = useAppointment();
+  const { sharedAppointments, rememberSharedAppointment } = useAppointment();
   const appointment = sharedAppointments.find((item) => item.id === id);
+  const [loading, setLoading] = useState(true);
+
+  // loads the appointment with its questions & what the patient allows this user to do, and keeps
+  // it so the pages opened from here can find it. A copy kept from before is shown while it loads
+  useEffect(() => {
+    const loadAppointment = async () => {
+      try {
+        const loaded = (await apiAppointmentDetails(id)) as SharedAppointment;
+        rememberSharedAppointment(loaded);
+      } catch (error) {
+        console.error('Failed to load shared appointment', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadAppointment();
+    // loads again only for a different appointment, rememberSharedAppointment changes every render
+  }, [id]);
 
   if (!appointment) {
     return (
       <View style={styles.screen}>
         <View style={styles.content}>
-          <Text style={styles.input}>This appointment could not be found.</Text>
+          <Text style={styles.input}>
+            {loading ? 'Loading...' : 'This appointment could not be loaded.'}
+          </Text>
         </View>
       </View>
     );

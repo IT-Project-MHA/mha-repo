@@ -19,8 +19,7 @@ import {
   withTime,
 } from '../../../../constants/date';
 import { useAppointment } from '../../../../context/AppointmentContext';
-
-const HEALTH_SERVICES: string[] = [];
+import { DEFAULT_HEALTH_SERVICE, useHealthServices } from '../../../../constants/dropdownOptions';
 
 // start of today, appointments cannot be scheduled in the past
 const startOfToday = () => {
@@ -46,15 +45,19 @@ export default function Screen() {
     appointment ? timeOf(new Date(appointment.scheduled_date)) : undefined,
   );
   const [doctor, setDoctor] = useState(appointment?.doctor ?? '');
-  // null when no service is chosen
-  const [service, setService] = useState<string | null>(appointment?.health_service || null);
+  const [service, setService] = useState(appointment?.health_service || DEFAULT_HEALTH_SERVICE);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const healthServices = useHealthServices();
+
+  // label of the chosen health service
+  const serviceLabel =
+    healthServices.find((option) => option.value === service)?.label ?? service;
   // message shown above the save button, null when there is nothing wrong
   const [error, setError] = useState<string | null>(null);
 
-  // choose a health service and close the dropdown, choosing it again clears it
+  // choose a health service and close the dropdown
   const handleSelect = (option: string) => {
-    setService((prev) => (prev === option ? null : option));
+    setService(option);
     setDropdownOpen(false);
   };
 
@@ -72,7 +75,7 @@ export default function Screen() {
     updateAppointment(id, {
       scheduled_date: withTime(date, time).toISOString(),
       doctor: doctor.trim(),
-      health_service: service ?? '',
+      health_service: service,
     });
     router.back();
   };
@@ -131,39 +134,28 @@ export default function Screen() {
           placeholderTextColor={paperColours.onSurfaceVariant}
         />
 
-        <View>
-          <Text style={styles.heading}>Health services</Text>
-          <Text style={styles.subheading}>Optional</Text>
-        </View>
+        <Text style={styles.heading}>Health services</Text>
         <TouchableOpacity
           style={[styles.field, styles.dropdown]}
           onPress={() => setDropdownOpen(!dropdownOpen)}
         >
-          <Text
-            style={
-              service
-                ? styles.input
-                : [styles.placeholder, { color: paperColours.onSurfaceVariant }]
-            }
-          >
-            {service ?? 'Select a health service'}
-          </Text>
+          <Text style={styles.input}>{serviceLabel}</Text>
           <Text style={styles.input}>{dropdownOpen ? '▲' : '▼'}</Text>
         </TouchableOpacity>
         {dropdownOpen && (
           <View style={styles.optionList}>
-            {HEALTH_SERVICES.map((option, index) => (
+            {healthServices.map(({ value, label }, index) => (
               <TouchableOpacity
-                key={option}
+                key={value}
                 style={[
                   styles.optionRow,
                   index > 0 && styles.divider,
-                  service === option && styles.selectedRow, // highlights selected option
+                  service === value && styles.selectedRow, // highlights selected option
                 ]}
-                onPress={() => handleSelect(option)}
+                onPress={() => handleSelect(value)}
               >
-                <Text style={[styles.input, service === option && styles.selectedText]}>
-                  {option}
+                <Text style={[styles.input, service === value && styles.selectedText]}>
+                  {label}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -232,10 +224,6 @@ function createStyles(colours: ColourSet) {
 
     error: {
       fontSize: 14,
-    },
-
-    placeholder: {
-      fontSize: 16,
     },
 
     dropdown: {

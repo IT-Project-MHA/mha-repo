@@ -15,6 +15,7 @@ import { apiMySupportLinks } from '../../../api/care_planner_api_helpers';
 type ApiSupportLink = {
   id: string;
   invited_phone_number: string;
+  supporter_name: string | null; // null until the invited phone number has an account
   status: 'invited' | 'active';
 };
 
@@ -67,13 +68,18 @@ export default function Screen() {
               onPress={() => choose(link)}
               accessibilityRole="button"
             >
-              {/* the server only shares the phone number the invite was sent to */}
+              {/* someone invited without an account yet has no name, their number is shown */}
               <View style={styles.linkInfo}>
-                <Text style={styles.linkPhone}>
-                  {link.invited_phone_number || 'Support person with no phone number'}
+                <Text style={styles.linkName}>
+                  {link.supporter_name ||
+                    link.invited_phone_number ||
+                    'Support person with no phone number'}
                 </Text>
+                {!!link.supporter_name && !!link.invited_phone_number && (
+                  <Text style={styles.linkDetails}>{link.invited_phone_number}</Text>
+                )}
                 {link.status === 'invited' && (
-                  <Text style={styles.linkStatus}>Invite not accepted yet</Text>
+                  <Text style={styles.linkDetails}>Invite not accepted yet</Text>
                 )}
               </View>
               <Ionicons name="chevron-forward" size={24} color={colours.onSurface} />
@@ -118,12 +124,12 @@ function createStyles(colours: ColourSet) {
       gap: 4,
     },
 
-    linkPhone: {
+    linkName: {
       ...textLayout,
       color: colours.onSurface,
     },
 
-    linkStatus: {
+    linkDetails: {
       fontSize: 14,
       color: colours.onSurface,
     },

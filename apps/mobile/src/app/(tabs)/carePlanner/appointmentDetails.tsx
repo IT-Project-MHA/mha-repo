@@ -2,6 +2,7 @@
  * Shows a summary of the details of an appointment, opened by pressing an appointment on the
  * care planner.
  */
+import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
@@ -9,21 +10,42 @@ import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
 import { formatDateTime } from '../../../../constants/date';
-import { useAppointment } from '../../../../context/AppointmentContext';
+import { Appointment, useAppointment } from '../../../../context/AppointmentContext';
+import { apiAppointmentDetails } from '../../../api/care_planner_api_helpers';
 
 export default function Screen() {
   const { colours } = useTheme();
   const styles = createStyles(colours);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { appointments } = useAppointment();
+  const { appointments, rememberAppointment } = useAppointment();
   const appointment = appointments.find((item) => item.id === id);
+  const [loading, setLoading] = useState(true);
+
+  // loads the appointment with its questions & support persons, and keeps it so the pages opened
+  // from here can find it. A copy kept from before is shown while it loads
+  useEffect(() => {
+    const loadAppointment = async () => {
+      try {
+        const loaded = (await apiAppointmentDetails(id)) as Appointment;
+        rememberAppointment(loaded);
+      } catch (error) {
+        console.error('Failed to load appointment', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadAppointment();
+    // loads again only for a different appointment, rememberAppointment changes every render
+  }, [id]);
 
   if (!appointment) {
     return (
       <View style={styles.screen}>
         <View style={styles.content}>
-          <Text style={styles.input}>This appointment could not be found.</Text>
+          <Text style={styles.input}>
+            {loading ? 'Loading...' : 'This appointment could not be loaded.'}
+          </Text>
         </View>
       </View>
     );
@@ -86,9 +108,9 @@ export default function Screen() {
                 accessibilityLabel={`Edit support person ${index + 1}`}
               >
                 <View style={styles.personInfo}>
-                  <Text style={styles.personName}>{person.name}</Text>
-                  <Text style={styles.personDetails}>{person.phone}</Text>
-                  {!!person.email && <Text style={styles.personDetails}>{person.email}</Text>}
+                  {/* someone invited without an account yet has no name, their number is shown */}
+                  <Text style={styles.personName}>{person.name || person.phone}</Text>
+                  {!!person.name && <Text style={styles.personDetails}>{person.phone}</Text>}
                   <Text style={styles.personDetails}>
                     Access: {access.length > 0 ? access.join(', ') : 'None'}
                   </Text>

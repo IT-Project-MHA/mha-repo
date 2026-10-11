@@ -17,10 +17,20 @@ class AppointmentSerializer(serializers.ModelSerializer):
         return validate_not_past(scheduled_date)
 
 class AppointmentQuestionSerializer(serializers.ModelSerializer):
+    # the question's answer, so a page gets the questions & their answers in one request
+    answer = serializers.SerializerMethodField()
+
     class Meta:
         model = AppointmentQuestion
         fields = '__all__'
         read_only_fields = ['created_by', 'deleted_at']
+
+    # null when the question has no answer, or its answer was deleted
+    def get_answer(self, question):
+        answer = getattr(question, 'question_answer', None)
+        if answer is None or answer.is_deleted():
+            return None
+        return AppointmentAnswerSerializer(answer, context = self.context).data
 
 class AppointmentAnswerSerializer(serializers.ModelSerializer):
     class Meta:

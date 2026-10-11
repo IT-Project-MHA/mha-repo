@@ -6,6 +6,7 @@ import {
     apiSupportLink,
     apiUser,
 } from './django-API';
+import { SUGGESTED_QUESTIONS, suggestedId } from '../../constants/suggestedQuestions';
 
 /* Care planner API helpers, built on the calls in django-API.js. Use them inside a try/catch block,
 a failed request throws an ApiError. */
@@ -40,6 +41,104 @@ export async function apiSupportAppointments() {
     return appointments.filter((appointment) => appointment.patient_profile !== profileId);
 }
 
+/* Patients the user is a support person for:
+- takes no parameters and returns an array of { patientId, patientName } from the user's active
+  SupportLinks, where patientId is the patient's patient_profile id */
+export async function apiSupportedPatients() {
+    const [[user], links] = await Promise.all([apiUser('select'), apiSupportLink('select')]);
+    return links
+        .filter((link) => link.supporter_user === user.id && link.status === 'active')
+        .map((link) => ({ patientId: link.patient_profile, patientName: link.patient_name }));
+}
+
+/* Appointments where the user is the support person, with the patient's name:
+- same as apiSupportAppointments, with patientName added to each appointment */
+export async function apiSharedAppointments() {
+    const [appointments, patients] = await Promise.all([
+        apiSupportAppointments(),
+        apiSupportedPatients(),
+    ]);
+    const names = new Map(patients.map((patient) => [patient.patientId, patient.patientName]));
+    return appointments.map((appointment) => ({
+        ...appointment,
+        patientName: names.get(appointment.patient_profile) ?? '',
+    }));
+}
+
+// helper function: returns the id the care planner gives a suggested question, e.g. 'location1',
+// found by its text, or undefined if the text isn't one of the suggestions
+function suggestedIdOf(text) {
+    for (const { key, questions } of SUGGESTED_QUESTIONS) {
+        const index = questions.indexOf(text);
+        if (index !== -1) {
+            return suggestedId(key, index);
+        }
+    }
+    return undefined;
+}
+
+/* One appointment with everything the appointment pages show:
+- takes the appointment id, returns the Appointment with:
+    - questions: in order, each { id, text, source, addedBy, suggestedId, answerId, answer,
+      recording }. addedBy is 'support' when someone other than the patient added it, answerId is
+      the answer's id (left out when there is no answer), recording is the answer's recording URL
+      (it needs the user's token to download)
+    - supportPeople: each person with live access, { name, phone, canAddQuestions,
+      canAddAnswers, supportLinkId }. name is empty until they have an account
+    - patientId & patientName: the patient the appointment belongs to
+    - canAddQuestions & canAddAnswers: what the user may do as a support person of this
+      appointment, false when it's their own appointment */
+export async function apiAppointmentDetails(appointmentId) {
+    const [[user], appointment, questions, accessList, links] = await Promise.all([
+        apiUser('select'),
+        apiAppointment('select', { id: appointmentId }),
+        apiAppointmentQuestion('select', { appointment: appointmentId }),
+        apiAppointmentAccess('select', { appointment: appointmentId }),
+        apiSupportLink('select'),
+    ]);
+    const linksById = new Map(links.map((link) => [link.id, link]));
+    const liveAccess = accessList.filter((access) => access.revoked_at === null);
+    // the user's own access, which only works once their link is active
+    const ownAccess = liveAccess.filter((access) => {
+        const link = linksById.get(access.support_link);
+        return link?.supporter_user === user.id && link.status === 'active';
+    });
+    const patientLink = links.find((link) => link.patient_profile === appointment.patient_profile);
+
+    return {
+        ...appointment,
+        // each question comes with its answer, null if it has none
+        questions: questions.map((question) => {
+            const answer = question.answer;
+            return {
+                id: question.id,
+                text: question.text,
+                source: question.source,
+                addedBy: question.created_by !== appointment.created_by ? 'support' : undefined,
+                suggestedId:
+                    question.source === 'suggested' ? suggestedIdOf(question.text) : undefined,
+                answerId: answer?.id,
+                answer: answer?.text || undefined,
+                recording: answer?.recording_file || undefined,
+            };
+        }),
+        supportPeople: liveAccess.map((access) => {
+            const link = linksById.get(access.support_link);
+            return {
+                name: link?.supporter_name ?? '',
+                phone: link?.invited_phone_number ?? '',
+                canAddQuestions: access.can_add_questions,
+                canAddAnswers: access.can_record_answers,
+                supportLinkId: access.support_link,
+            };
+        }),
+        patientId: appointment.patient_profile,
+        patientName: patientLink?.patient_name ?? '',
+        canAddQuestions: ownAccess.some((access) => access.can_add_questions),
+        canAddAnswers: ownAccess.some((access) => access.can_record_answers),
+    };
+}
+
 /* Support links of the user:
 - takes no parameters and returns an array of the SupportLinks where the user is the patient, both
   active ones and invites the support person hasn't accepted yet. Revoked links are left out as
@@ -57,6 +156,13 @@ export async function apiMySupportLinks() {
 // helper function: returns an Australian mobile number in the format the server saves it in, e.g.
 // '0412 345 678' -> '+61412345678', or the number as typed if it isn't one
 function toServerPhone(phone) {
+    return normalisePhoneNumber(phone) ?? phone;
+}
+
+/* Phone number in the format the server saves it in:
+- takes a phone number as typed, returns it as e.g. '+61412345678', or null if it isn't an
+  Australian mobile number. Spaces & dashes are ignored, the same rules as the server */
+export function normalisePhoneNumber(phone) {
     const digits = phone.replace(/\D/g, '');
     if (digits.startsWith('04') && digits.length === 10) {
         return `+61${digits.slice(1)}`;
@@ -64,7 +170,7 @@ function toServerPhone(phone) {
     if (digits.startsWith('614') && digits.length === 11) {
         return `+${digits}`;
     }
-    return phone;
+    return null;
 }
 
 /* Error message to show the user for a failed request:
