@@ -13,10 +13,7 @@ import { textLayout } from '../../../../constants/layout';
 import { parseDate, toDateString } from '../../../../constants/date';
 import { useAppointment } from '../../../../context/AppointmentContext';
 
-const HEALTH_SERVICES = [
-  'General Practitioner',
-  'Other',
-];
+const HEALTH_SERVICES: string[] = [];
 
 // start of today, appointments cannot be scheduled in the past
 const startOfToday = () => {

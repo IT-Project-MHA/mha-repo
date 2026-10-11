@@ -64,36 +64,6 @@ const emptyDraft = (): AppointmentDraft => ({
   questions: [],
 });
 
-// placeholder appointments
-// upon integration replace this with all appointments of user id
-const PLACEHOLDER_APPOINTMENTS: Appointment[] = [
-  { id: '1', scheduled_date: '2026-10-12', doctor: 'John Doe', health_service: 'General Practitioner', supportPeople: [], questions: [] },
-  { id: '2', scheduled_date: '2026-10-20', doctor: 'John Doe', health_service: '', supportPeople: [], questions: [] },
-  { id: '3', scheduled_date: '2026-11-03', doctor: '', health_service: '', supportPeople: [], questions: [] },
-];
-
-// placeholder shared appointments, newest shared first
-// upon integration replace this with the appointments shared with user id
-const PLACEHOLDER_SHARED_APPOINTMENTS: SharedAppointment[] = [
-  {
-    id: 's1', patientId: 'p1', patientName: 'Jean doe', scheduled_date: '2026-10-15', doctor: 'Jane Deo', health_service: 'Physiotherapist', supportPeople: [],
-    canAddQuestions: true, canAddAnswers: true,
-    questions: [
-      { text: 'Q1', source: 'suggested', suggestedId: 'impact2' },
-      { text: 'Q2', source: 'patient' },
-      { text: 'q3', source: 'suggested', addedBy: 'support', suggestedId: 'intensity4', answer: 'test' },
-      { text: 'q4', source: 'support', addedBy: 'support' },
-    ],
-  },
-];
-
-// placeholder active support links
-// upon integration replace this with the active support links of user id
-const PLACEHOLDER_SUPPORT_LINKS: SupportLink[] = [
-  { patientId: 'p1', patientName: 'Jean doe' },
-  { patientId: 'p2', patientName: 'Jane Doe' },
-];
-
 type AppointmentState = {
   draft: AppointmentDraft;
   appointments: Appointment[];
@@ -126,9 +96,9 @@ const AppointmentContext = createContext<AppointmentState>({
  */
 export function AppointmentProvider({ children }: { children: React.ReactNode }) {
   const [draft, setDraft] = useState<AppointmentDraft>(emptyDraft);
-  const [appointments, setAppointments] = useState<Appointment[]>(PLACEHOLDER_APPOINTMENTS);
-  const [sharedAppointments, setSharedAppointments] = useState<SharedAppointment[]>(PLACEHOLDER_SHARED_APPOINTMENTS);
-  const [supportLinks] = useState<SupportLink[]>(PLACEHOLDER_SUPPORT_LINKS);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [sharedAppointments, setSharedAppointments] = useState<SharedAppointment[]>([]);
+  const [supportLinks] = useState<SupportLink[]>([]);
 
   // looks in both the user's own and shared appointments, their ids don't overlap
   const findAppointment = (id: string) =>
