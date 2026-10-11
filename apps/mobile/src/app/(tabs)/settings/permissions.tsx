@@ -21,7 +21,7 @@ export default function Screen() {
       </View>
       <Text> </Text>
 
-    <View style={[theme.container]}>
+    <View style={[theme.sectionContainer]}>
       <View style={theme.row}>
         <Text style={[theme.h6, theme.leftText, theme.fontOnSurface]}>Microphone</Text>
           <Toggle

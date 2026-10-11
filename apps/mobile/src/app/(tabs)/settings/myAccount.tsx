@@ -59,7 +59,7 @@ export default function Screen() {
 
       <Text> </Text>
       
-      <View style={theme.container}>
+      <View style={theme.sectionContainer}>
         <Text> </Text>
         <Text style={[theme.h5, theme.leftText, theme.fontOnSurface]}>About Me</Text>
 
@@ -88,7 +88,7 @@ export default function Screen() {
       <Text> </Text>
       <Text> </Text>
 
-      <View style={theme.container}>
+      <View style={theme.sectionContainer}>
         <Text> </Text>
         <Text style={[theme.h5, theme.leftText, theme.fontOnSurface]}>My Conditions</Text>
         <Text> </Text>
@@ -119,7 +119,7 @@ export default function Screen() {
       <Text> </Text>
       <Text> </Text>
 
-      <View style={[theme.container, theme.centerItems]}>
+      <View style={[theme.sectionContainer, theme.centerItems]}>
       <ButtonWithIcon
 	        label="Log Out"
 	        onPress={() => setPending('logout')}

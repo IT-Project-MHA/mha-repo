@@ -43,7 +43,7 @@ export default function Tab() {
       </View>
 
     <Text> </Text>
-    <View style={theme.container}>
+    <View style={theme.sectionContainer}>
 
       <View style={theme.row}>
         <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>Dark Mode</Text>

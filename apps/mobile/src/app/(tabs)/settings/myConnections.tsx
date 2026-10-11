@@ -108,7 +108,7 @@ export default function Screen() {
       </View>
       <Text> </Text>
       
-      <View style={[theme.container]}>
+      <View style={[theme.sectionContainer]}>
         <Text> </Text>
         <Text style={[theme.h5, theme.leftText, theme.fontOnSurface]}>My Support People</Text>
         <Text> </Text>
@@ -128,7 +128,7 @@ export default function Screen() {
       <Text> </Text>
       <Text> </Text>
 
-      <View style={theme.container}>
+      <View style={theme.sectionContainer}>
         <Text> </Text>
         <Text style={[theme.h5, theme.leftText, theme.fontOnSurface]}>My Connections </Text>
         <Text> </Text>

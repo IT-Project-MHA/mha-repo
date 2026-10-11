@@ -36,7 +36,7 @@ export default function Screen() {
 
       <Text> </Text>
       
-      <View style={[theme.container, theme.centerItems]}>
+      <View style={[theme.sectionContainer, theme.centerItems]}>
 
       <ButtonWithIcon
 	        label="Delete my Data"

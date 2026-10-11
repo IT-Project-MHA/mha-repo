@@ -1,6 +1,9 @@
 /**
  * Home screen for 'Patients' and 'Both' users (exclusive support people do not have this screen)
  */
+
+//we want some buttons in here that take us to assessments
+
 import { View, Text, StyleSheet } from 'react-native';
 
 export default function Tab() {

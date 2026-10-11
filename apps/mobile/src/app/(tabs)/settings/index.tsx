@@ -17,7 +17,7 @@ export default function Screen() {
       </View>
 
       <Text> </Text>
-      <View style={[theme.container, theme.centerItems]}>
+      <View style={[theme.sectionContainer, theme.centerItems]}>
         
         <ButtonWithIcon
 	        label="My Account"
@@ -71,7 +71,7 @@ export default function Screen() {
       <Text> </Text>
       <Text> </Text>
 
-      <View style={[theme.container, theme.centerItems]}>
+      <View style={[theme.sectionContainer, theme.centerItems]}>
           <ButtonWithIcon
 	          label="Legal"
 	          onPress={() => router.navigate('/settings/legal')}
