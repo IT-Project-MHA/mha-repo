@@ -46,7 +46,6 @@ export default function TabLayout() {
         options={{
           title: 'Pain Tracker',
           href: isPatient ? undefined : null, // if isPatient is false, href = null (doesn't show tab)
-          tabBarLabel: "Pain Tracker",
           tabBarIcon: ({ color }) => (
             <Ionicons name ="body-outline" size={26} color={color} />
           ),
@@ -57,7 +56,6 @@ export default function TabLayout() {
         options={{
           title: 'My Health',
           href: isPatient ? undefined : null,
-          tabBarLabel: "Pain Tracker",
           tabBarIcon: ({ color }) => (
             <Ionicons name ="pulse-outline" size={26} color={color} />
           ),
@@ -67,7 +65,6 @@ export default function TabLayout() {
         name="carePlanner"
         options={{
           title: 'Care Planner',
-          tabBarLabel: "Pain Tracker",
           tabBarIcon: ({ color }) => (
             <Ionicons name ="book-outline" size={26} color={color} />
           ),
@@ -78,7 +75,6 @@ export default function TabLayout() {
         options={{
           title: 'Shared With Me',
           href: null, 
-          tabBarLabel: "Pain Tracker",
           tabBarIcon: ({ color }) => (
             <Ionicons name ="search-outline" size={26} color={color} />
           ),
@@ -89,7 +85,6 @@ export default function TabLayout() {
         options={{
           headerShown: false,
           title: 'Settings',
-          tabBarLabel: "Pain Tracker",
           tabBarIcon: ({ color }) => (
             <Ionicons name ="cog-outline" size={26} color={color} />
           ),
@@ -107,7 +102,6 @@ export default function TabLayout() {
  */
 function createStyles(colours: ColourSet){
     return StyleSheet.create({
-
     // the tab buttons
     tabItem: {
       justifyContent: 'center',
@@ -117,8 +111,7 @@ function createStyles(colours: ColourSet){
   floatingTabBar: {
     bottom: '4%',
     position: 'absolute',
-    //paddingTop: 29,
-    //paddingBottom: 29,
+    height: 70,
   
     flexDirection: 'row',
     alignItems: 'center',
