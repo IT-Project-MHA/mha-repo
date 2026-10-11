@@ -53,7 +53,7 @@ export const darkColours: ColourSet = {
   onSurface: '#fff3f3',
   onPrimary: '#1d1b20',
   onSecondary: '#1d1b20',
-  onTertiary: '1d1b20',
+  onTertiary: '#1d1b20',
   ex1: '#ff7f74', // a brighter coral
   ex2: '#5292ab', // a deeper teal
   ex3: '#d0ab59', // shaded yellow
@@ -91,7 +91,7 @@ export const darkHcColours: ColourSet = {
   onSurface: '#fff3f3',
   onPrimary: '#1d1b20',
   onSecondary: '#1d1b20',
-  onTertiary: '1d1b20',
+  onTertiary: '#1d1b20',
   ex1: '#ff7f74', // a brighter coral
   ex2: '#5292ab', // a deeper teal
   ex3: '#d0ab59', // shaded yellow
