@@ -1,8 +1,21 @@
 {
   "name": "mha-repo",
   "private": true,
-  "workspaces": ["apps/*"],
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
     "mobile": "npm run start --workspace apps/mobile"
+  },
+  "devDependencies": {
+    "@jest/globals": "^30.5.2",
+    "@types/jest": "29.5.14",
+    "jest": "~29.7.0",
+    "jest-expo": "~57.0.5",
+    "ts-jest": "^29.4.14"
+  },
+  "allowScripts": {
+    "unrs-resolver": true,
+    "@parcel/watcher": true
   }
 }

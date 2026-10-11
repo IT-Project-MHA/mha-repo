@@ -48,3 +48,7 @@ SQLite
 python manage.py migrate
 python manage.py runserver
 ```
+
+
+# Testing the app
+npm test
