@@ -74,6 +74,7 @@ export default function Screen() {
   const [recordingStarted, setRecordingStarted] = useState(false);
   const player = useAudioPlayer(question?.recording ?? null);
   const { playing, currentTime, duration } = useAudioPlayerStatus(player);
+
   // played to the end, so the next play starts from the beginning
   const finished = duration > 0 && currentTime >= duration - 0.1;
   // paused part way through, so the next play carries on
@@ -179,24 +180,26 @@ export default function Screen() {
     setSigning(false);
   };
 
-  return (
-    <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content} scrollEnabled={!drawing}>
-        {!!question && <Text style={styles.question}>{question.text}</Text>}
+  // which buttons the record answer section shows, recording is only allowed once the doctor has
+  // signed
+  const recordingStep = signing ? 'signing'
+    : !appointment?.doctorPermission ? 'needsPermission'
+    : recordingStarted ? 'recording'
+    : question?.recording ? 'recorded'
+    : 'ready';
 
-        <Text style={styles.heading}>Type answer</Text>
-        <TextInput
-          style={[styles.field, styles.input, styles.answerInput]}
-          value={answer}
-          onChangeText={changeAnswer}
-          placeholder="answer"
-          placeholderTextColor={paperColours.onSurfaceVariant}
-          multiline
-          numberOfLines={3}
-        />
+  const signatureButton = (
+    <Button
+      label={appointment?.doctorPermission ? "View doctor's signature" : "Get doctor's permission"}
+      onPress={startSigning}
+      buttonType="primaryButton"
+    />
+  );
 
-        <Text style={styles.heading}>Record answer</Text>
-        {signing ? (
+  const renderRecordingSection = () => {
+    switch (recordingStep) {
+      case 'signing':
+        return (
           <>
             <View style={styles.canvas}>
               <SignatureCanvas
@@ -230,68 +233,81 @@ export default function Screen() {
               />
             </View>
           </>
-        ) : (
+        );
+
+      case 'needsPermission':
+        return signatureButton;
+
+      case 'recording':
+        return (
           <>
-            {/* recording is only allowed once the doctor has signed */}
-            {appointment?.doctorPermission && (
-              <>
-                {recordingStarted ? (
-                  <>
-                    <Button
-                      label={
-                        (isRecording ? 'Pause' : 'Resume') +
-                        `\n${formatTime(durationMillis / 1000)}/${formatTime(MAX_RECORDING_SECONDS)}`
-                      }
-                      onPress={togglePauseRecording}
-                      buttonType="primaryButton"
-                      style={styles.tallButton}
-                      textStyle={styles.centredText}
-                    />
-                    {/* replaces the doctor's signature button while recording */}
-                    <Button label="Submit" onPress={submitRecording} buttonType="primaryButton" />
-                  </>
-                ) : question?.recording ? (
-                  <>
-                    {/* the time left shows once the recording has loaded */}
-                    <Button
-                      label={
-                        (playing ? 'Pause' : pausedPartWay ? 'Resume recording' : 'Play recording') +
-                        (duration > 0
-                          ? `\n${formatTime(timePlayed)}/${formatTime(duration)}`
-                          : '')
-                      }
-                      onPress={togglePlayback}
-                      buttonType="primaryButton"
-                      style={styles.tallButton}
-                      textStyle={styles.centredText}
-                    />
-                    <Button
-                      label="Delete recording"
-                      onPress={deleteRecording}
-                      buttonType="secondaryButton"
-                    />
-                  </>
-                ) : (
-                  <Button
-                    label="Record"
-                    onPress={startRecording}
-                    buttonType="primaryButton"
-                    style={styles.tallButton}
-                  />
-                )}
-              </>
-            )}
-            {!recordingStarted && (
-              <Button
-                label={
-                  appointment?.doctorPermission ? "View doctor's signature" : "Get doctor's permission"
-                }
-                onPress={startSigning}
-                buttonType="primaryButton"
-              />
-            )}
+            <Button
+              label={
+                (isRecording ? 'Pause' : 'Resume') +
+                `\n${formatTime(durationMillis / 1000)}/${formatTime(MAX_RECORDING_SECONDS)}`
+              }
+              onPress={togglePauseRecording}
+              buttonType="primaryButton"
+              style={styles.tallButton}
+              textStyle={styles.centredText}
+            />
+            {/* replaces the doctor's signature button while recording */}
+            <Button label="Submit" onPress={submitRecording} buttonType="primaryButton" />
           </>
-        )}
+        );
+
+      case 'recorded':
+        return (
+          <>
+            {/* the time left shows once the recording has loaded */}
+            <Button
+              label={
+                (playing ? 'Pause' : pausedPartWay ? 'Resume recording' : 'Play recording') +
+                (duration > 0 ? `\n${formatTime(timePlayed)}/${formatTime(duration)}` : '')
+              }
+              onPress={togglePlayback}
+              buttonType="primaryButton"
+              style={styles.tallButton}
+              textStyle={styles.centredText}
+            />
+            <Button label="Delete recording" onPress={deleteRecording} buttonType="secondaryButton" />
+            {signatureButton}
+          </>
+        );
+
+      case 'ready':
+        return (
+          <>
+            <Button
+              label="Record"
+              onPress={startRecording}
+              buttonType="primaryButton"
+              style={styles.tallButton}
+            />
+            {signatureButton}
+          </>
+        );
+    }
+  };
+
+  return (
+    <View style={styles.screen}>
+      <ScrollView contentContainerStyle={styles.content} scrollEnabled={!drawing}>
+        {!!question && <Text style={styles.question}>{question.text}</Text>}
+
+        <Text style={styles.heading}>Type answer</Text>
+        <TextInput
+          style={[styles.field, styles.input, styles.answerInput]}
+          value={answer}
+          onChangeText={changeAnswer}
+          placeholder="answer"
+          placeholderTextColor={paperColours.onSurfaceVariant}
+          multiline
+          numberOfLines={3}
+        />
+
+        <Text style={styles.heading}>Record answer</Text>
+        {renderRecordingSection()}
       </ScrollView>
     </View>
   );
