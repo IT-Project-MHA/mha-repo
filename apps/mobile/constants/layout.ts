@@ -16,6 +16,14 @@ export const buttonLayout = {
   alignItems: 'center' as const,
 };
 
+/**
+ * Basic text layout
+ */
+export const textLayout = {
+  fontSize: 16,
+  fontWeight: 'bold' as const,
+};
+
 export const primaryButtonLayout = {
   paddingVertical: 12, 
   paddingHorizontal: 80, 
