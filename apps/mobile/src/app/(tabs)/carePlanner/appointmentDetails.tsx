@@ -11,20 +11,6 @@ import { textLayout } from '../../../../constants/layout';
 import { formatDate } from '../../../../constants/date';
 import { useAppointment } from '../../../../context/AppointmentContext';
 
-// the pages to edit or add each support person spot
-const SUPPORT_PERSON_PAGES = [
-  {
-    number: 1,
-    editPage: '/carePlanner/editSupportPerson1',
-    addPage: '/carePlanner/addSupportPerson1',
-  },
-  {
-    number: 2,
-    editPage: '/carePlanner/editSupportPerson2',
-    addPage: '/carePlanner/addSupportPerson2',
-  },
-] as const;
-
 export default function Screen() {
   const { colours } = useTheme();
   const styles = createStyles(colours);
@@ -77,23 +63,7 @@ export default function Screen() {
         />
 
         <Text style={styles.headline}>Support Persons</Text>
-        {SUPPORT_PERSON_PAGES.map(({ number, editPage, addPage }) => {
-          const person = number === 1 ? appointment.supportPerson1 : appointment.supportPerson2;
-
-          // an empty spot shows a button to add a person instead of their card
-          if (!person) {
-            return (
-              <Button
-                key={number}
-                label={`Add support person ${number}`}
-                onPress={() =>
-                  router.push({ pathname: addPage, params: { appointmentId: appointment.id } })
-                }
-                buttonType="primaryButton"
-              />
-            );
-          }
-
+        {appointment.supportPeople.map((person, index) => {
           // get list of access strings
           const access = [
             person.canAddQuestions && 'Add questions',
@@ -102,13 +72,18 @@ export default function Screen() {
 
           // pressing the card opens the page to change their access or delete them
           return (
-            <View key={number} style={styles.section}>
-              <Text style={styles.heading}>Support Person {number}</Text>
+            <View key={index} style={styles.section}>
+              <Text style={styles.heading}>Support Person {index + 1}</Text>
               <Pressable
                 style={[styles.field, styles.personCard]}
-                onPress={() => router.push({ pathname: editPage, params: { id: appointment.id } })}
+                onPress={() =>
+                  router.push({
+                    pathname: '/carePlanner/editSupportPerson',
+                    params: { id: appointment.id, index },
+                  })
+                }
                 accessibilityRole="button"
-                accessibilityLabel={`Edit support person ${number}`}
+                accessibilityLabel={`Edit support person ${index + 1}`}
               >
                 <View style={styles.personInfo}>
                   <Text style={styles.personName}>{person.name}</Text>
@@ -123,6 +98,20 @@ export default function Screen() {
             </View>
           );
         })}
+        <Text style={styles.body}>
+          We recommend to assign a maximum of 2 support people to ensure the conduciveness of the
+          appointment.
+        </Text>
+        <Button
+          label="Add support person"
+          onPress={() =>
+            router.push({
+              pathname: '/carePlanner/newSupportPerson',
+              params: { appointmentId: appointment.id },
+            })
+          }
+          buttonType="primaryButton"
+        />
 
         <Text style={styles.headline}>Questions to ask</Text>
         {appointment.questions.length > 0 ? (

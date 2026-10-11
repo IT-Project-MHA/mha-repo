@@ -25,8 +25,7 @@ export type AppointmentDraft = {
   scheduledDate: Date | null;
   doctor: string;
   healthService: string | null;
-  supportPerson1: SupportPerson | null;
-  supportPerson2: SupportPerson | null;
+  supportPeople: SupportPerson[];
   questions: AppointmentQuestion[];
 };
 
@@ -36,8 +35,7 @@ export type Appointment = {
   scheduled_date: string;
   doctor: string;
   health_service: string;
-  supportPerson1: SupportPerson | null;
-  supportPerson2: SupportPerson | null;
+  supportPeople: SupportPerson[];
   questions: AppointmentQuestion[];
   doctorPermission?: boolean;
   doctorSignature?: string; // PNG data URL
@@ -62,24 +60,23 @@ const emptyDraft = (): AppointmentDraft => ({
   scheduledDate: null,
   doctor: '',
   healthService: null,
-  supportPerson1: null,
-  supportPerson2: null,
+  supportPeople: [],
   questions: [],
 });
 
 // placeholder appointments
 // upon integration replace this with all appointments of user id
 const PLACEHOLDER_APPOINTMENTS: Appointment[] = [
-  { id: '1', scheduled_date: '2026-10-12', doctor: 'John Doe', health_service: 'General Practitioner', supportPerson1: null, supportPerson2: null, questions: [] },
-  { id: '2', scheduled_date: '2026-10-20', doctor: 'John Doe', health_service: '', supportPerson1: null, supportPerson2: null, questions: [] },
-  { id: '3', scheduled_date: '2026-11-03', doctor: '', health_service: '', supportPerson1: null, supportPerson2: null, questions: [] },
+  { id: '1', scheduled_date: '2026-10-12', doctor: 'John Doe', health_service: 'General Practitioner', supportPeople: [], questions: [] },
+  { id: '2', scheduled_date: '2026-10-20', doctor: 'John Doe', health_service: '', supportPeople: [], questions: [] },
+  { id: '3', scheduled_date: '2026-11-03', doctor: '', health_service: '', supportPeople: [], questions: [] },
 ];
 
 // placeholder shared appointments, newest shared first
 // upon integration replace this with the appointments shared with user id
 const PLACEHOLDER_SHARED_APPOINTMENTS: SharedAppointment[] = [
   {
-    id: 's1', patientId: 'p1', patientName: 'Jean doe', scheduled_date: '2026-10-15', doctor: 'Jane Deo', health_service: 'Physiotherapist', supportPerson1: null, supportPerson2: null,
+    id: 's1', patientId: 'p1', patientName: 'Jean doe', scheduled_date: '2026-10-15', doctor: 'Jane Deo', health_service: 'Physiotherapist', supportPeople: [],
     canAddQuestions: true, canAddAnswers: true,
     questions: [
       { text: 'Q1', source: 'suggested', suggestedId: 'impact2' },
@@ -151,8 +148,7 @@ export function AppointmentProvider({ children }: { children: React.ReactNode })
       scheduled_date: toDateString(draft.scheduledDate),
       doctor: draft.doctor,
       health_service: draft.healthService ?? '',
-      supportPerson1: draft.supportPerson1,
-      supportPerson2: draft.supportPerson2,
+      supportPeople: draft.supportPeople,
       questions: draft.questions,
     };
     setAppointments((previous) => [appointment, ...previous]);

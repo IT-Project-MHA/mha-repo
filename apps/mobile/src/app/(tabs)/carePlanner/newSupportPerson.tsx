@@ -1,6 +1,7 @@
 /**
- * Patients choose their second support person for an appointment from this screen, opened from the
- * add a support person page, or from an appointment's details to add them to that appointment.
+ * Patients add a support person to an appointment from this screen, opened from the add a support
+ * person page, or from an appointment's details to add them to that appointment. Pressing a person
+ * on the add a support person page opens this screen again to edit them.
  */
 import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput } from 'react-native';
@@ -18,10 +19,12 @@ export default function Screen() {
   const router = useRouter();
   const { draft, updateDraft, appointments, updateAppointment } = useAppointment();
 
-  // set when opened from a submitted appointment's details, otherwise the draft is changed
-  const { appointmentId } = useLocalSearchParams<{ appointmentId?: string }>();
+  // appointmentId is set when opened from a submitted appointment's details, otherwise the draft
+  // is changed. index is set when editing a person already added, otherwise a new one is added
+  const { appointmentId, index } = useLocalSearchParams<{ appointmentId?: string; index?: string }>();
   const appointment = appointments.find((item) => item.id === appointmentId);
-  const saved = appointmentId ? appointment?.supportPerson2 : draft.supportPerson2;
+  const savedPeople = (appointmentId ? appointment?.supportPeople : draft.supportPeople) ?? [];
+  const saved = index !== undefined ? savedPeople[Number(index)] : undefined;
 
   // starts with the saved details, so the person can be edited after saving
   const [name, setName] = useState(saved?.name ?? '');
@@ -44,8 +47,13 @@ export default function Screen() {
       canAddQuestions,
       canAddAnswers,
     };
-    if (appointmentId) updateAppointment(appointmentId, { supportPerson2: person });
-    else updateDraft({ supportPerson2: person });
+    // replaces the person being edited, or adds the new person to the end
+    const supportPeople =
+      index !== undefined
+        ? savedPeople.map((item, itemIndex) => (itemIndex === Number(index) ? person : item))
+        : [...savedPeople, person];
+    if (appointmentId) updateAppointment(appointmentId, { supportPeople });
+    else updateDraft({ supportPeople });
     router.back();
   };
 

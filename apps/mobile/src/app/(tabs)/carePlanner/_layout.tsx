@@ -38,12 +38,8 @@ export default function CarePlannerLayout() {
           options={{ title: 'Add a Support Person' }}
         />
         <Stack.Screen
-          name="addSupportPerson1"
-          options={{ title: 'Add Support Person 1' }}
-        />
-        <Stack.Screen
-          name="addSupportPerson2"
-          options={{ title: 'Add Support Person 2' }}
+          name="newSupportPerson"
+          options={{ title: 'Add Support Person' }}
         />
         <Stack.Screen
           name="answerQuestion"
@@ -54,12 +50,8 @@ export default function CarePlannerLayout() {
           options={{ title: 'Edit Appointment' }}
         />
         <Stack.Screen
-          name="editSupportPerson1"
-          options={{ title: 'Edit Support Person 1' }}
-        />
-        <Stack.Screen
-          name="editSupportPerson2"
-          options={{ title: 'Edit Support Person 2' }}
+          name="editSupportPerson"
+          options={{ title: 'Edit Support Person' }}
         />
         <Stack.Screen
           name="mySupportLinks"

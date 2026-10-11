@@ -1,6 +1,6 @@
 /**
- * Patients change the access of the first support person of an appointment, or remove them, from
- * this screen, opened by pressing their card on the appointment details page.
+ * Patients change the access of a support person of an appointment, or remove them, from this
+ * screen, opened by pressing their card on the appointment details page.
  */
 import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
@@ -15,9 +15,11 @@ export default function Screen() {
   const { colours } = useTheme();
   const styles = createStyles(colours);
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  // index is the person's position in the appointment's support people
+  const { id, index } = useLocalSearchParams<{ id: string; index: string }>();
   const { appointments, updateAppointment } = useAppointment();
-  const person = appointments.find((item) => item.id === id)?.supportPerson1;
+  const supportPeople = appointments.find((item) => item.id === id)?.supportPeople ?? [];
+  const person = supportPeople[Number(index)];
 
   // starts with the saved access, only saved to the appointment when save is pressed
   const [canAddQuestions, setCanAddQuestions] = useState(person?.canAddQuestions ?? false);
@@ -34,12 +36,18 @@ export default function Screen() {
   }
 
   const save = () => {
-    updateAppointment(id, { supportPerson1: { ...person, canAddQuestions, canAddAnswers } });
+    updateAppointment(id, {
+      supportPeople: supportPeople.map((item, itemIndex) =>
+        itemIndex === Number(index) ? { ...person, canAddQuestions, canAddAnswers } : item,
+      ),
+    });
     router.back();
   };
 
   const remove = () => {
-    updateAppointment(id, { supportPerson1: null });
+    updateAppointment(id, {
+      supportPeople: supportPeople.filter((_, itemIndex) => itemIndex !== Number(index)),
+    });
     router.back();
   };
 

@@ -14,9 +14,6 @@ export default function Screen() {
   const styles = createStyles(colours);
   const router = useRouter();
   const { draft, submitDraft } = useAppointment();
-  const supportPeople = [draft.supportPerson1, draft.supportPerson2].filter(
-    (person) => person !== null,
-  );
 
   // adds the appointment to the care planner and goes back to it
   const handleSubmit = () => {
@@ -58,8 +55,8 @@ export default function Screen() {
 
         <Text style={styles.headline}>Support Persons</Text>
         <View style={[styles.field, styles.list]}>
-          {supportPeople.length > 0 ? (
-            supportPeople.map((person, index) => (
+          {draft.supportPeople.length > 0 ? (
+            draft.supportPeople.map((person, index) => (
               <Text
                 key={index}
                 style={[styles.input, styles.listItem, index > 0 && styles.divider]}

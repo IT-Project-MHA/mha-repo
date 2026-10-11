@@ -3,7 +3,7 @@
  * appointment.
  */
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
-import { useRouter, Href } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
@@ -18,14 +18,19 @@ export default function Screen() {
 
   // shows a saved person's details, pressing it opens their page again to edit them and the
   // delete icon removes them
-  const renderPerson = (person: SupportPerson, number: 1 | 2, page: Href) => {
+  const renderPerson = (person: SupportPerson, index: number) => {
     const access = [
       person.canAddQuestions && 'Add questions',
       person.canAddAnswers && "Add doctor's answer",
     ].filter(Boolean);
 
     return (
-      <Pressable style={styles.personCard} onPress={() => router.push(page)}>
+      <Pressable
+        style={styles.personCard}
+        onPress={() =>
+          router.push({ pathname: '/carePlanner/newSupportPerson', params: { index } })
+        }
+      >
         <View style={styles.personInfo}>
           <Text style={styles.personName}>{person.name}</Text>
           <Text style={styles.personDetails}>{person.phone}</Text>
@@ -35,9 +40,13 @@ export default function Screen() {
           </Text>
         </View>
         <Pressable
-          onPress={() => updateDraft(number === 1 ? { supportPerson1: null } : { supportPerson2: null })}
+          onPress={() =>
+            updateDraft({
+              supportPeople: draft.supportPeople.filter((_, itemIndex) => itemIndex !== index),
+            })
+          }
           accessibilityRole="button"
-          accessibilityLabel={`Remove support person ${number}`}
+          accessibilityLabel={`Remove support person ${index + 1}`}
           hitSlop={8}
         >
           <Ionicons name="trash-outline" size={24} color={colours.onSurface} />
@@ -52,31 +61,22 @@ export default function Screen() {
         <Text style={styles.body}>You can nominate someone to help you prepare for your appointment 
         or you can skip below.</Text>
 
-        <View style={{ gap: 8, marginTop: 8 }}>
-          <Text style={styles.heading}>Support Person 1</Text>
-          {draft.supportPerson1 ? (
-            renderPerson(draft.supportPerson1, 1, '/carePlanner/addSupportPerson1')
-          ) : (
-            <Button
-              label="Add person 1"
-              onPress={() => router.push('/carePlanner/addSupportPerson1')}
-              buttonType="primaryButton"
-            />
-          )}
-        </View>
+        {draft.supportPeople.map((person, index) => (
+          <View key={index} style={styles.section}>
+            <Text style={styles.heading}>Support Person {index + 1}</Text>
+            {renderPerson(person, index)}
+          </View>
+        ))}
 
-        <View style={{ gap: 8, marginTop: 8 }}>
-          <Text style={styles.heading}>Support Person 2</Text>
-          {draft.supportPerson2 ? (
-            renderPerson(draft.supportPerson2, 2, '/carePlanner/addSupportPerson2')
-          ) : (
-            <Button
-              label="Add person 2"
-              onPress={() => router.push('/carePlanner/addSupportPerson2')}
-              buttonType="primaryButton"
-            />
-          )}
-        </View>
+        <Text style={styles.body}>
+          We recommend to assign a maximum of 2 support people to ensure the conduciveness of the
+          appointment.
+        </Text>
+        <Button
+          label="Add support person"
+          onPress={() => router.push('/carePlanner/newSupportPerson')}
+          buttonType="primaryButton"
+        />
       </ScrollView>
 
       <View style={styles.bottomBar}>
@@ -115,6 +115,11 @@ function createStyles(colours: ColourSet) {
       lineHeight: 24,
       letterSpacing: 0.5,
       color: colours.onBackground,
+    },
+
+    section: {
+      gap: 8,
+      marginTop: 8,
     },
 
     heading: {

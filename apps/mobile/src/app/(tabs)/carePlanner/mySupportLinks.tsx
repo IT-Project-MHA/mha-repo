@@ -1,6 +1,6 @@
 /**
  * Patients choose a support person from their saved support links on this screen, opened from the
- * add support person 1 and 2 pages.
+ * new support person page.
  */
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
