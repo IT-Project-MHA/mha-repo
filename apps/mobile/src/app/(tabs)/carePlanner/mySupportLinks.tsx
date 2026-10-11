@@ -82,7 +82,7 @@ export default function Screen() {
                   <Text style={styles.linkDetails}>Invite not accepted yet</Text>
                 )}
               </View>
-              <Ionicons name="chevron-forward" size={24} color={colours.onSurface} />
+              <Ionicons name="add" size={24} color={colours.onSurface} />
             </Pressable>
           ))
         )}

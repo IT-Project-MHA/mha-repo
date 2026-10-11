@@ -94,30 +94,28 @@ export default function Screen() {
 
           // pressing the card opens the page to change their access or delete them
           return (
-            <View key={index} style={styles.section}>
-              <Text style={styles.heading}>Support Person {index + 1}</Text>
-              <Pressable
-                style={[styles.field, styles.personCard]}
-                onPress={() =>
-                  router.push({
-                    pathname: '/carePlanner/editSupportPerson',
-                    params: { id: appointment.id, index },
-                  })
-                }
-                accessibilityRole="button"
-                accessibilityLabel={`Edit support person ${index + 1}`}
-              >
-                <View style={styles.personInfo}>
-                  {/* someone invited without an account yet has no name, their number is shown */}
-                  <Text style={styles.personName}>{person.name || person.phone}</Text>
-                  {!!person.name && <Text style={styles.personDetails}>{person.phone}</Text>}
-                  <Text style={styles.personDetails}>
-                    Access: {access.length > 0 ? access.join(', ') : 'None'}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={24} color={colours.onSurface} />
-              </Pressable>
-            </View>
+            <Pressable
+              key={index}
+              style={[styles.field, styles.personCard]}
+              onPress={() =>
+                router.push({
+                  pathname: '/carePlanner/editSupportPerson',
+                  params: { id: appointment.id, index },
+                })
+              }
+              accessibilityRole="button"
+              accessibilityLabel={`Edit support person ${person.name || person.phone}`}
+            >
+              <View style={styles.personInfo}>
+                {/* someone invited without an account yet has no name, their number is shown */}
+                <Text style={styles.personName}>{person.name || person.phone}</Text>
+                {!!person.name && <Text style={styles.personDetails}>{person.phone}</Text>}
+                <Text style={styles.personDetails}>
+                  Access: {access.length > 0 ? access.join(', ') : 'None'}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={24} color={colours.onSurface} />
+            </Pressable>
           );
         })}
         <Text style={styles.body}>

@@ -48,32 +48,49 @@ export default function Screen() {
         ? 'You have no appointments'
         : null;
 
+  // appointments whose time hasn't passed yet, then the rest, each keeping the newest added first
+  const now = Date.now();
+  const upcoming = (appointments ?? []).filter(
+    (appointment) => Date.parse(appointment.scheduled_date) >= now,
+  );
+  const past = (appointments ?? []).filter(
+    (appointment) => Date.parse(appointment.scheduled_date) < now,
+  );
+
+  const renderAppointmentCard = (appointment: ApiAppointment) => (
+    // opens a summary of the appointment, going back returns here
+    <Pressable
+      key={appointment.id}
+      style={styles.appointmentCard}
+      onPress={() =>
+        router.push({
+          pathname: '/carePlanner/appointmentDetails',
+          params: { id: appointment.id },
+        })
+      }
+      accessibilityRole="button"
+    >
+      <Text style={styles.appointmentDate}>{formatDateTime(appointment.scheduled_date)}</Text>
+      {!!appointment.doctor && (
+        <Text style={styles.appointmentDetails}>{appointment.doctor}</Text>
+      )}
+      {!!appointment.health_service && (
+        <Text style={styles.appointmentDetails}>{appointment.health_service}</Text>
+      )}
+    </Pressable>
+  );
+
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content}>
         {!!message && <Text style={styles.body}>{message}</Text>}
-        {appointments?.map((appointment) => (
-          // opens a summary of the appointment, going back returns here
-          <Pressable
-            key={appointment.id}
-            style={styles.appointmentCard}
-            onPress={() =>
-              router.push({
-                pathname: '/carePlanner/appointmentDetails',
-                params: { id: appointment.id },
-              })
-            }
-            accessibilityRole="button"
-          >
-            <Text style={styles.appointmentDate}>{formatDateTime(appointment.scheduled_date)}</Text>
-            {!!appointment.doctor && (
-              <Text style={styles.appointmentDetails}>{appointment.doctor}</Text>
-            )}
-            {!!appointment.health_service && (
-              <Text style={styles.appointmentDetails}>{appointment.health_service}</Text>
-            )}
-          </Pressable>
-        ))}
+        {/* a heading is only shown when it has appointments */}
+        {upcoming.length > 0 && <Text style={styles.headline}>Upcoming</Text>}
+        {upcoming.map(renderAppointmentCard)}
+        {past.length > 0 && (
+          <Text style={[styles.headline, upcoming.length > 0 && styles.laterHeadline]}>Past</Text>
+        )}
+        {past.map(renderAppointmentCard)}
       </ScrollView>
     </View>
   );
@@ -98,6 +115,18 @@ function createStyles(colours: ColourSet) {
       lineHeight: 24,
       letterSpacing: 0.5,
       color: colours.onBackground,
+    },
+
+    headline: {
+      fontSize: 22,
+      lineHeight: 28,
+      fontWeight: 'bold',
+      color: colours.onBackground,
+    },
+
+    // more space above the past heading, separating it from the upcoming appointments
+    laterHeadline: {
+      marginTop: 12,
     },
 
     appointmentCard: {

@@ -2,7 +2,7 @@
  * Patients can choose auto-generated questions to ask their doctor in the appointment
  * or add their own.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
@@ -11,8 +11,16 @@ import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
 import { Checkbox, useTheme as usePaperTheme } from 'react-native-paper';
 import { useAppointment, AppointmentQuestion } from '../../../../context/AppointmentContext';
-import { SUGGESTED_QUESTIONS, suggestedId } from '../../../../constants/suggestedQuestions';
-import { apiErrorMessage, apiSaveQuestions } from '../../../api/care_planner_api_helpers';
+import {
+  fillSuggestedQuestions,
+  NO_PAIN_DATA,
+  PainSummary,
+} from '../../../../constants/suggestedQuestions';
+import {
+  apiErrorMessage,
+  apiPainSummary,
+  apiSaveQuestions,
+} from '../../../api/care_planner_api_helpers';
 
 export default function Screen() {
   const { colours } = useTheme();
@@ -26,6 +34,23 @@ export default function Screen() {
   const savedQuestions = appointmentId
     ? (appointments.find((item) => item.id === appointmentId)?.questions ?? [])
     : draft.questions;
+
+  // the patient's pain values, filled into the suggested questions once loaded. Questions that
+  // need a value are hidden until then
+  const [pain, setPain] = useState<PainSummary>(NO_PAIN_DATA);
+  useEffect(() => {
+    const loadPain = async () => {
+      try {
+        setPain(await apiPainSummary());
+      } catch (error) {
+        console.error('Failed to load pain values', error);
+      }
+    };
+    loadPain();
+  }, []);
+
+  // suggestions under each heading, with the patient's values filled in
+  const suggestions = fillSuggestedQuestions(pain, savedQuestions);
 
   // set of ids of the questions the patient has ticked
   const [checked, setChecked] = useState<Set<string>>(
@@ -89,10 +114,8 @@ export default function Screen() {
     const savedSuggestion = (id: string) =>
       savedQuestions.find((question) => question.suggestedId === id);
 
-    const suggested: AppointmentQuestion[] = SUGGESTED_QUESTIONS.flatMap(({ key, questions }) =>
+    const suggested: AppointmentQuestion[] = suggestions.flatMap(({ questions }) =>
       questions
-        // converts SUGGESTED_QUESTIONS into [{text, suggestedId}]
-        .map((text, index) => ({ text, id: suggestedId(key, index) }))
         // remove non-checked items
         .filter(({ id }) => checked.has(id))
         // map to AppointmentQuestion object
@@ -140,12 +163,11 @@ export default function Screen() {
             we have provided some suggested questions to ask your healthcare professional/s.
             </Text>
       <ScrollView contentContainerStyle={styles.content}>
-        {SUGGESTED_QUESTIONS.map(({ key, heading, questions }) => (
+        {suggestions.map(({ key, heading, questions }) => (
           <View key={key} style={{ gap: 8, marginTop: 8 }}>
             <Text style={styles.heading}>{heading}</Text>
             <View style={[styles.field, styles.checkboxList]}>
-              {questions.map((text, index) => {
-                const id = suggestedId(key, index);
+              {questions.map(({ id, text }, index) => {
                 return (
                   <Checkbox.Item
                     key={id}

@@ -19,6 +19,7 @@ type ApiSupportLink = {
   id: string;
   invited_phone_number: string;
   supporter_name: string | null; // null until the invited phone number has an account
+  can_view_assessments: boolean;
 };
 
 export default function Screen() {
@@ -207,6 +208,14 @@ export default function Screen() {
             style={styles.divider}
           />
         </View>
+        {/* the suggested questions need the patient's assessment data, without it a support
+            person only sees the suggestions that don't */}
+        {!!link?.supporter_name && !link.can_view_assessments && (
+          <Text style={styles.subheading}>
+            {link.supporter_name} does not have access to your assessment data, so the questions they
+            can add are limited. To change this, go to Shared With Me and update their permissions.
+          </Text>
+        )}
       </ScrollView>
 
       <View style={styles.bottomBar}>

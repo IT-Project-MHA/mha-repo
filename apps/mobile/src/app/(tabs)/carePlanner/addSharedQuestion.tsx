@@ -3,7 +3,7 @@
  * their own on an appointment shared with them, opened from the shared appointment page. The
  * patient's questions aren't shown as only the patient can change them.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
@@ -12,7 +12,12 @@ import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
 import { Checkbox, useTheme as usePaperTheme } from 'react-native-paper';
 import { useAppointment, AppointmentQuestion } from '../../../../context/AppointmentContext';
-import { SUGGESTED_QUESTIONS, suggestedId } from '../../../../constants/suggestedQuestions';
+import {
+  fillSuggestedQuestions,
+  NO_PAIN_DATA,
+  PainSummary,
+} from '../../../../constants/suggestedQuestions';
+import { apiPainSummary } from '../../../api/care_planner_api_helpers';
 
 // a question with a written or recorded answer can still be edited, but the backend refuses to
 // delete it
@@ -24,10 +29,29 @@ export default function Screen() {
   const styles = createStyles(colours);
   const router = useRouter();
   const { colors: paperColours } = usePaperTheme();
-  const { findAppointment, updateAppointment } = useAppointment();
+  const { findAppointment, updateAppointment, sharedAppointments } = useAppointment();
 
   const { appointmentId } = useLocalSearchParams<{ appointmentId: string }>();
   const savedQuestions = findAppointment(appointmentId)?.questions ?? [];
+  // the patient the appointment belongs to
+  const patientId = sharedAppointments.find((item) => item.id === appointmentId)?.patientId;
+
+  // the patient's pain values, filled into the suggested questions once loaded. Questions that
+  // need a value are hidden until then
+  const [pain, setPain] = useState<PainSummary>(NO_PAIN_DATA);
+  useEffect(() => {
+    const loadPain = async () => {
+      try {
+        setPain(await apiPainSummary(patientId));
+      } catch (error) {
+        console.error('Failed to load pain values', error);
+      }
+    };
+    loadPain();
+  }, [patientId]);
+
+  // suggestions under each heading, with the patient's values filled in
+  const suggestions = fillSuggestedQuestions(pain, savedQuestions);
   const savedSuggestion = (id: string) =>
     savedQuestions.find((question) => question.suggestedId === id);
   // suggestions the patient ticked are hidden and kept as they are when saving
@@ -94,10 +118,8 @@ export default function Screen() {
   // saves the patient's questions as they are, with the ticked suggestions & own questions (blank
   // ones left out), keeping the answers & recordings already saved for them
   const save = () => {
-    const suggested: AppointmentQuestion[] = SUGGESTED_QUESTIONS.flatMap(({ key, questions }) =>
+    const suggested: AppointmentQuestion[] = suggestions.flatMap(({ questions }) =>
       questions
-        // converts SUGGESTED_QUESTIONS into [{text, suggestedId}]
-        .map((text, index) => ({ text, id: suggestedId(key, index) }))
         // keep the patient's and the ticked ones
         .filter(({ id }) => patientSuggestion(id) || checked.has(id))
         // map to AppointmentQuestion object
@@ -131,13 +153,13 @@ export default function Screen() {
   };
 
   // only headings with a suggestion the patient hasn't ticked are shown
-  const shownSuggestions = SUGGESTED_QUESTIONS.map(({ key, heading, questions }) => ({
-    key,
-    heading,
-    questions: questions
-      .map((text, index) => ({ text, id: suggestedId(key, index) }))
-      .filter(({ id }) => !patientSuggestion(id)),
-  })).filter(({ questions }) => questions.length > 0);
+  const shownSuggestions = suggestions
+    .map(({ key, heading, questions }) => ({
+      key,
+      heading,
+      questions: questions.filter(({ id }) => !patientSuggestion(id)),
+    }))
+    .filter(({ questions }) => questions.length > 0);
 
   return (
     <View style={styles.screen}>
