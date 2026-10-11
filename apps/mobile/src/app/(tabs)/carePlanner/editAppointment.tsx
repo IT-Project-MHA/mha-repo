@@ -8,9 +8,16 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTheme as usePaperTheme } from 'react-native-paper';
 import { DatePickerInput } from 'react-native-paper-dates';
 import Button from '../../../../components/atomicUI/Button';
+import TimeInput from '../../../../components/atomicUI/TimeInput';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
-import { parseDate, toDateString } from '../../../../constants/date';
+import {
+  APPOINTMENT_EARLIEST,
+  APPOINTMENT_LATEST,
+  TimeOfDay,
+  timeOf,
+  withTime,
+} from '../../../../constants/date';
 import { useAppointment } from '../../../../context/AppointmentContext';
 
 const HEALTH_SERVICES: string[] = [];
@@ -33,13 +40,17 @@ export default function Screen() {
 
   // starts with the appointment's saved details
   const [date, setDate] = useState<Date | undefined>(
-    appointment ? parseDate(appointment.scheduled_date) : undefined,
+    appointment ? new Date(appointment.scheduled_date) : undefined,
+  );
+  const [time, setTime] = useState<TimeOfDay | undefined>(
+    appointment ? timeOf(new Date(appointment.scheduled_date)) : undefined,
   );
   const [doctor, setDoctor] = useState(appointment?.doctor ?? '');
   // null when no service is chosen
   const [service, setService] = useState<string | null>(appointment?.health_service || null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [showError, setShowError] = useState(false);
+  // message shown above the save button, null when there is nothing wrong
+  const [error, setError] = useState<string | null>(null);
 
   // choose a health service and close the dropdown, choosing it again clears it
   const handleSelect = (option: string) => {
@@ -49,12 +60,17 @@ export default function Screen() {
 
   // saves the changes to the appointment and goes back to its details, if mandatory fields are filled
   const handleSubmit = () => {
-    if (!date) {
-      setShowError(true);
+    if (!date || !time) {
+      setError('Please fill in all mandatory fields');
+      return;
+    }
+    // the server rejects appointments in the past
+    if (withTime(date, time) < new Date()) {
+      setError('Appointment cannot be in the past');
       return;
     }
     updateAppointment(id, {
-      scheduled_date: toDateString(date),
+      scheduled_date: withTime(date, time).toISOString(),
       doctor: doctor.trim(),
       health_service: service ?? '',
     });
@@ -81,7 +97,7 @@ export default function Screen() {
           value={date}
           onChange={(newDate) => {
             setDate(newDate);
-            if (newDate) setShowError(false);
+            if (newDate && time) setError(null);
           }}
           validRange={{ startDate: startOfToday() }}
           placeholder="Pick appointment date"
@@ -89,6 +105,18 @@ export default function Screen() {
           style={styles.dateInput}
           underlineColor="transparent"
           activeUnderlineColor="transparent"
+        />
+
+        <Text style={styles.heading}>Appointment time</Text>
+        <TimeInput
+          value={time}
+          onChange={(newTime) => {
+            setTime(newTime);
+            if (date) setError(null);
+          }}
+          placeholder="Pick appointment time"
+          earliest={APPOINTMENT_EARLIEST}
+          latest={APPOINTMENT_LATEST}
         />
 
         <View>
@@ -144,9 +172,9 @@ export default function Screen() {
       </ScrollView>
 
       <View style={styles.bottomBar}>
-        {showError && (
+        {!!error && (
           <Text style={[styles.error, { color: paperColours.error }]}>
-            Please fill in all mandatory fields
+            {error}
           </Text>
         )}
         <Button label="Save" onPress={handleSubmit} buttonType="primaryButton" />

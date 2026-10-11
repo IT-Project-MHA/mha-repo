@@ -8,7 +8,7 @@ import { Ionicons } from '@react-native-vector-icons/ionicons';
 import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
-import { formatDate } from '../../../../constants/date';
+import { formatDateTime } from '../../../../constants/date';
 import { useAppointment } from '../../../../context/AppointmentContext';
 
 export default function Screen() {
@@ -36,7 +36,7 @@ export default function Screen() {
         <View style={styles.section}>
           <Text style={styles.heading}>Appointment date</Text>
           <View style={styles.field}>
-            <Text style={styles.input}>{formatDate(appointment.scheduled_date)}</Text>
+            <Text style={styles.input}>{formatDateTime(appointment.scheduled_date)}</Text>
           </View>
         </View>
 

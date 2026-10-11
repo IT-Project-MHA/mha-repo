@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState } from 'react';
-import { toDateString } from '../constants/date';
 
 // Support person details
 export type SupportPerson = {
@@ -32,7 +31,7 @@ export type AppointmentDraft = {
 // Submitted appointment, shown in appointments list
 export type Appointment = {
   id: string;
-  scheduled_date: string;
+  scheduled_date: string; // ISO date and time
   doctor: string;
   health_service: string;
   supportPeople: SupportPerson[];
@@ -115,7 +114,7 @@ export function AppointmentProvider({ children }: { children: React.ReactNode })
     if (!draft.scheduledDate) return;
     const appointment: Appointment = {
       id: Date.now().toString(),
-      scheduled_date: toDateString(draft.scheduledDate),
+      scheduled_date: draft.scheduledDate.toISOString(),
       doctor: draft.doctor,
       health_service: draft.healthService ?? '',
       supportPeople: draft.supportPeople,

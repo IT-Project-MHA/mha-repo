@@ -7,8 +7,16 @@ import { useRouter } from 'expo-router';
 import { useTheme as usePaperTheme } from 'react-native-paper';
 import { DatePickerInput } from 'react-native-paper-dates';
 import Button from '../../../../components/atomicUI/Button';
+import TimeInput from '../../../../components/atomicUI/TimeInput';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
+import {
+  APPOINTMENT_EARLIEST,
+  APPOINTMENT_LATEST,
+  TimeOfDay,
+  timeOf,
+  withTime,
+} from '../../../../constants/date';
 import { useAppointment } from '../../../../context/AppointmentContext';
 
 const HEALTH_SERVICES: string[] = [];
@@ -29,11 +37,15 @@ export default function Screen() {
 
   // starts with the details already entered for this appointment
   const [date, setDate] = useState<Date | undefined>(draft.scheduledDate ?? undefined);
+  const [time, setTime] = useState<TimeOfDay | undefined>(
+    draft.scheduledDate ? timeOf(draft.scheduledDate) : undefined,
+  );
   const [doctor, setDoctor] = useState(draft.doctor);
   // null until a service is chosen
   const [service, setService] = useState<string | null>(draft.healthService);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [showError, setShowError] = useState(false);
+  // message shown above the save button, null when there is nothing wrong
+  const [error, setError] = useState<string | null>(null);
 
   // choose a health service and close the dropdown, choosing it again clears it
   const handleSelect = (option: string) => {
@@ -43,11 +55,20 @@ export default function Screen() {
 
   // opens the add a support person page on top of this one, if mandatory fields are filled
   const handleSubmit = () => {
-    if (!date) {
-      setShowError(true);
+    if (!date || !time) {
+      setError('Please fill in all mandatory fields');
       return;
     }
-    updateDraft({ scheduledDate: date, doctor: doctor.trim(), healthService: service });
+    // the server rejects appointments in the past
+    if (withTime(date, time) < new Date()) {
+      setError('Appointment cannot be in the past');
+      return;
+    }
+    updateDraft({
+      scheduledDate: withTime(date, time),
+      doctor: doctor.trim(),
+      healthService: service,
+    });
     router.push('/carePlanner/addSupportPerson');
   };
 
@@ -61,7 +82,7 @@ export default function Screen() {
           value={date}
           onChange={(newDate) => {
             setDate(newDate);
-            if (newDate) setShowError(false);
+            if (newDate && time) setError(null);
           }}
           validRange={{ startDate: startOfToday() }}
           placeholder="Pick appointment date"
@@ -69,6 +90,18 @@ export default function Screen() {
           style={styles.dateInput}
           underlineColor="transparent"
           activeUnderlineColor="transparent"
+        />
+
+        <Text style={styles.heading}>Appointment time</Text>
+        <TimeInput
+          value={time}
+          onChange={(newTime) => {
+            setTime(newTime);
+            if (date) setError(null);
+          }}
+          placeholder="Pick appointment time"
+          earliest={APPOINTMENT_EARLIEST}
+          latest={APPOINTMENT_LATEST}
         />
 
         <View>
@@ -124,9 +157,9 @@ export default function Screen() {
       </ScrollView>
 
       <View style={styles.bottomBar}>
-        {showError && (
+        {!!error && (
           <Text style={[styles.error, { color: paperColours.error }]}>
-            Please fill in all mandatory fields
+            {error}
           </Text>
         )}
         <Button label="Save" onPress={handleSubmit} buttonType="primaryButton" />

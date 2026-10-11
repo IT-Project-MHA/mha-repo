@@ -6,7 +6,7 @@ import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
-import { formatDate } from '../../../../constants/date';
+import { formatDateTime } from '../../../../constants/date';
 import { useAppointment } from '../../../../context/AppointmentContext';
 
 export default function Screen() {
@@ -34,7 +34,7 @@ export default function Screen() {
             }
             accessibilityRole="button"
           >
-            <Text style={styles.appointmentDate}>{formatDate(appointment.scheduled_date)}</Text>
+            <Text style={styles.appointmentDate}>{formatDateTime(appointment.scheduled_date)}</Text>
             {!!appointment.doctor && (
               <Text style={styles.appointmentDetails}>{appointment.doctor}</Text>
             )}

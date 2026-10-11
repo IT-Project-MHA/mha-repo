@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
+import { formatDateTime } from '../../../../constants/date';
 import { useAppointment } from '../../../../context/AppointmentContext';
 
 export default function Screen() {
@@ -26,15 +27,10 @@ export default function Screen() {
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={[styles.headline, styles.firstHeadline]}>Overview</Text>
         <View style={styles.section}>
-          <Text style={styles.heading}>Appointment date</Text>
+          <Text style={styles.heading}>Appointment date and time</Text>
           <View style={styles.field}>
             <Text style={styles.input}>
-              {draft.scheduledDate?.toLocaleDateString('en-AU', {
-                weekday: 'short',
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric',
-              })}
+              {draft.scheduledDate && formatDateTime(draft.scheduledDate.toISOString())}
             </Text>
           </View>
         </View>

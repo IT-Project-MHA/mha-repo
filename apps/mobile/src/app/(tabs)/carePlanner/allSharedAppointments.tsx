@@ -10,7 +10,7 @@ import { useTheme as usePaperTheme } from 'react-native-paper';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
-import { formatDate } from '../../../../constants/date';
+import { formatDateTime } from '../../../../constants/date';
 import { useAppointment } from '../../../../context/AppointmentContext';
 
 export default function Screen() {
@@ -96,7 +96,7 @@ export default function Screen() {
           >
             <View style={styles.appointmentInfo}>
               <Text style={styles.patientName}>{appointment.patientName}</Text>
-              <Text style={styles.appointmentDate}>{formatDate(appointment.scheduled_date)}</Text>
+              <Text style={styles.appointmentDate}>{formatDateTime(appointment.scheduled_date)}</Text>
               {/* optional fields that are empty are left out */}
               {!!appointment.doctor && (
                 <Text style={styles.appointmentDetails}>{appointment.doctor}</Text>

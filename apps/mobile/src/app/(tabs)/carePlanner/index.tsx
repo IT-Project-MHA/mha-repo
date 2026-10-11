@@ -3,23 +3,60 @@
  */
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
-import { formatDate } from '../../../../constants/date';
-import { useAppointment, Appointment } from '../../../../context/AppointmentContext';
+import { formatDateTime } from '../../../../constants/date';
+import { useAppointment } from '../../../../context/AppointmentContext';
+import { apiPatientAppointments, apiSupportAppointments } from '../../../helpers/care_planner_api_helpers';
+
+// appointment record returned by the API
+type ApiAppointment = {
+  id: string;
+  created_at: string;
+  scheduled_date: string; // ISO date and time
+  doctor: string;
+  health_service: string;
+};
+
+// the 3 most recently added appointments, newest first
+const mostRecent = (list: ApiAppointment[]) =>
+  [...list].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)).slice(0, 3);
 
 export default function Screen() {
   const { colours } = useTheme();
   const styles = createStyles(colours);
   const router = useRouter();
-  const { appointments, sharedAppointments, resetDraft } = useAppointment();
+  const { resetDraft } = useAppointment();
+  const [appointments, setAppointments] = useState<ApiAppointment[]>([]);
+  const [sharedAppointments, setSharedAppointments] = useState<ApiAppointment[]>([]);
+
+  // reloads every appointment where the user is the patient or support person when the screen is
+  // shown, so ones added or changed on other screens appear
+  useFocusEffect(
+    useCallback(() => {
+      const loadAppointments = async () => {
+        try {
+          const [own, shared] = await Promise.all([
+            apiPatientAppointments(),
+            apiSupportAppointments(),
+          ]);
+          setAppointments(own);
+          setSharedAppointments(shared);
+        } catch (error) {
+          console.error('Failed to load appointments', error);
+        }
+      };
+      loadAppointments();
+    }, []),
+  );
 
   // a pressable appointment summary, patientName is shown first on appointments shared with you
   const renderAppointmentCard = (
-    appointment: Appointment,
+    appointment: ApiAppointment,
     onPress: () => void,
     patientName?: string,
   ) => (
@@ -31,7 +68,7 @@ export default function Screen() {
     >
       <View style={styles.appointmentInfo}>
         {!!patientName && <Text style={styles.patientName}>{patientName}</Text>}
-        <Text style={styles.appointmentDate}>{formatDate(appointment.scheduled_date)}</Text>
+        <Text style={styles.appointmentDate}>{formatDateTime(appointment.scheduled_date)}</Text>
         {/* optional fields that are empty are left out */}
         {!!appointment.doctor && (
           <Text style={styles.appointmentDetails}>{appointment.doctor}</Text>
@@ -69,8 +106,7 @@ export default function Screen() {
           <Text style={styles.sectionHeading}>
             {appointments.length > 0 ? 'Recently added appointments' : 'You have no appointments'}
           </Text>
-          {/* newest appointments are first, only the 3 most recently added are shown */}
-          {appointments.slice(0, 3).map((appointment) =>
+          {mostRecent(appointments).map((appointment) =>
             renderAppointmentCard(appointment, () =>
               router.push({
                 pathname: '/carePlanner/appointmentDetails',
@@ -92,8 +128,7 @@ export default function Screen() {
               ? 'Recently added appointments'
               : 'No appointments have been shared with you'}
           </Text>
-          {/* newest shared appointments are first, only the 3 most recently shared are shown */}
-          {sharedAppointments.slice(0, 3).map((appointment) =>
+          {mostRecent(sharedAppointments).map((appointment) =>
             renderAppointmentCard(
               appointment,
               () =>
@@ -101,7 +136,6 @@ export default function Screen() {
                   pathname: '/carePlanner/editSharedAppointment',
                   params: { id: appointment.id },
                 }),
-              appointment.patientName,
             ),
           )}
         </View>
