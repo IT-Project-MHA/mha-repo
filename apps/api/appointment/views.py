@@ -65,7 +65,20 @@ class GrantAccessView(APIView):
     # POST /appointments/{id}/access
     # Patient gives access to appointment or changes access
 
+    # GET /appointments/{id}/access
+    # Who currently has access to appointment
+
     permission_classes = [IsAuthenticated]
+
+    def get(self, request, appointment_pk):
+
+        appointment = get_own_appointment(request.user, appointment_pk)
+        if appointment is None:
+            return Response({"detail": "not_found"}, status = status.HTTP_404_NOT_FOUND)
+
+        live_grants = AppointmentAccess.objects.filter(appointment = appointment, revoked_at__isnull = True).select_related("support_link__supporter_user")
+
+        return Response(AccessGrantSerializer(live_grants, many = True).data, status = status.HTTP_200_OK)
 
     def post(self, request, appointment_pk):
 

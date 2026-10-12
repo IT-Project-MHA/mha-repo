@@ -65,4 +65,4 @@ class AccessGrantSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AppointmentAccess
-        fields = ["id", "support_link", "can_add_questions", "can_record_answers", "granted_at", "revoked_at"]
+        fields = ["id", "support_link", "supporter_name", "can_add_questions", "can_record_answers", "granted_at", "revoked_at"]
