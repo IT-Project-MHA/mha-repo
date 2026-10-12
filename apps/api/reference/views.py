@@ -1,15 +1,23 @@
 from django.shortcuts import render
+from django.http import Http404
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from django.db.models import Q
 from rest_framework import serializers
-from .models import QuestionOption, QuestionOptionOrdered
+
+from .models import QuestionOption, QuestionOptionOrdered, AppSection
+
 from .serializer import *
 from datetime import date
+
+from accounts.models import PatientProfile, SupportLink, TermsAndPrivacy
+from appointment.models import Appointment, AppointmentQuestion
+from health.models import Prescription, Assessment
+from audit.models import AuditEntry
+
 
 # Instructions:
 # All views need the header Authorization: Token <token> without they return 401.
@@ -60,13 +68,6 @@ class QuestionOptionOrderedRetrieve(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
     queryset = QuestionOptionOrdered.objects.all()
     serializer_class = QuestionOptionOrderedSerializer
-
-from django.http import Http404
-from .models import AppSection
-from accounts.models import PatientProfile, SupportLink, TermsAndPrivacy
-from appointment.models import Appointment, AppointmentQuestion
-from health.models import Prescription, Assessment
-from audit.models import AuditEntry
 
 CHOICES = {
     'assignedGender': PatientProfile.AssignedGender,

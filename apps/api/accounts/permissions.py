@@ -90,7 +90,7 @@ def visible_patient_profiles(user):
             Q(user = user) |
             Q(support_links__supporter_user = user,
               support_links__status = SupportLink.Status.ACTIVE)
-        )
+        ).filter(deleted_at__isnull = True)
 
 
 # helper function: returns set of support links that user can access

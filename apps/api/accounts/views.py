@@ -8,16 +8,21 @@ from rest_framework.views import APIView
 
 from mpowered_api.immutable import save_without_immutable_changes
 from mpowered_api.protected import destroy_or_reject_protected
+from mpowered_api.soft_delete import soft_delete
 
 
 from accounts import devices, login, otp, registration, reset_pin
 from accounts.models import PatientProfile, SupportLink, TermsAndPrivacy, TrustedDevice, User, UserSettings
 from accounts.rate_limits import PhoneBurstThrottle, PhoneLoginThrottle, PhoneSustainedThrottle
 from accounts.permissions import visible_support_links, visible_patient_profiles
+from accounts.delete import delete_account
 
 from accounts.serializer import DeviceListSerializer, LoginSerializer, PatientProfileSerializer, RegisterSerializer, \
     RequestCodeSerializer, ResetPinSerializer, SupportLinkSerializer, TermsAndPrivacySerializer, \
     TrustedDeviceSerializer, UserSerializer, UserSettingsSerializer, VerifyCodeSerializer
+
+from audit.models import AuditEntry
+from audit.services import record
 
 LOGIN_ERROR_STATUS = {
     "invalid_credentials": status.HTTP_401_UNAUTHORIZED,
@@ -245,8 +250,9 @@ class UserRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         user = self.request.user
         return User.objects.filter(id = user.id)
 
+    # Soft deletion
     def perform_destroy(self, instance):
-        destroy_or_reject_protected(instance)
+        delete_account(instance)
 
 
 
@@ -267,10 +273,19 @@ class PatientProfileListCreate(generics.ListCreateAPIView):
     # can only create one's own patient profile, and only 1 PatientProfile
     def perform_create(self, serializer):
         user = self.request.user
-        if PatientProfile.objects.filter(user = user).exists():
+        existing = PatientProfile.objects.filter(user = user).first()
+
+        if existing is not None and existing.deleted_at is None:
             raise serializers.ValidationError(
                 {'user':'A patient profile already exists for this user.'})
-        serializer.save(user = user)
+
+        # If existing account grab old profile abd history
+        if existing is not None:
+            serializer.instance = existing
+            serializer.save(deleted_at = None)
+        else:
+            serializer.save(user = user)
+        record(user, AuditEntry.Action.CREATE, serializer.instance)
 
 class PatientProfileRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
@@ -285,8 +300,13 @@ class PatientProfileRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView)
             query_set = query_set.filter(user = user)
         return query_set.distinct()
 
+    def perform_update(self, serializer):
+        serializer.save()
+        record(self.request.user, AuditEntry.Action.UPDATE, serializer.instance)
+
     def perform_destroy(self, instance):
-        destroy_or_reject_protected(instance)
+        soft_delete(instance)
+        record(self.request.user, AuditEntry.Action.DELETE, instance)
 
 
 
@@ -321,7 +341,7 @@ class UserSettingsRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
 # helper function: returns user's own patient profile, or raises 400 error if user doesn't have one
 def own_patient_profile(user):
-    patient_profile = PatientProfile.objects.filter(user = user).first()
+    patient_profile = PatientProfile.objects.filter(user = user, deleted_at__isnull = True).first()
     if not patient_profile:
         raise serializers.ValidationError(
             {'patient_profile':'User does not have a patient profile.'})
