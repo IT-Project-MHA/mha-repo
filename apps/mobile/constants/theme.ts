@@ -44,12 +44,14 @@ const createTheme = (colours: ColourSet) =>
       paddingHorizontal: 80, 
       borderRadius: 8,
       backgroundColor: colours.background,
+      alignItems: 'center' as const,
     },
     option: {
       backgroundColor: colours.surface,
-      padding: 15,
+      paddingVertical: 12, 
+      paddingHorizontal: 80, 
       borderRadius: 8,
-      marginBottom: 15,
+      alignItems: 'center' as const,
     },
     selectedOption: {
       backgroundColor: colours.secondary,

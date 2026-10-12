@@ -2,13 +2,15 @@
  * Index for onboarding, is the sign-on page
  */
 
-import { View, Text, StyleSheet, Modal } from 'react-native';
-import {SignInButton} from '../../../components/onboarding/SignInButton'
+import { Text, StyleSheet, Modal } from 'react-native';
+import {SignInButton} from '../../../components/onboarding/SignInButton';
 import { useTheme } from "../../../context/ThemeContext";
 import { Router, SplashScreen, useRouter } from 'expo-router';
-import {useEffect, useState} from 'react'
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import OnboardingSplashScreen from './splashScreen'
+import {useEffect, useState} from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import OnboardingSplashScreen from './splashScreen';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Button from '../../../components/atomicUI/Button';
 
 
 export default function Page() {
@@ -41,7 +43,7 @@ export default function Page() {
 
 
   return (
-    <View style={theme.container}>
+    <SafeAreaView style={theme.screen}>
       <Text style={theme.text}>SIGN IN / ON</Text>
       <Text style={theme.text}>In this section, we can enter the account creation or sign in pages</Text>
         <Modal
@@ -51,8 +53,14 @@ export default function Page() {
         onRequestClose={() => setShowOnboarding(false)}>
           <OnboardingSplashScreen onClose={onFirstLaunchClosed}/>
         </Modal>
+      <Button
+      label='Create Account'
+      onPress={()=>{router.navigate('/(onboarding)/createAccount')}}
+      buttonType='primaryButton'
+      />
       <SignInButton/>
-    </View>
+      
+    </SafeAreaView>
   );
 }
 

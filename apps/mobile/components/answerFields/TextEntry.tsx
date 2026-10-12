@@ -6,15 +6,14 @@ import { useTheme } from "../../context/ThemeContext";
 
 
 //Input variables
-const MAX_lENGTH_TEXT = 5;
+const MAX_lENGTH_TEXT = 200;
 
 function validateTextInput(text: string) {
   //checking if it's something we should accept, i.e. within range
   //if (text == "") return "enter text"; //what it prints if submitted
-
-  const length = Number(text);
-  if (length > MAX_lENGTH_TEXT) {
-    return "enter no more than 5 characters";
+  if(text.trim()=="") return "Empty entry, please enter some text";
+  if (text.length > MAX_lENGTH_TEXT) {
+    return 'enter no more than ${MAX_LENGTH_TEXT} characters';
   }
   return null;
 }
@@ -50,13 +49,12 @@ function TextEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
           placeholder="textInput"
           keyboardType="default"
           maxLength={MAX_lENGTH_TEXT}
+          onSubmitEditing={handleSubmit}
         />
-        {!!error && <Text>{error}</Text>}
+        {!!error && <Text style={theme.text}>{error}</Text>}
         <Button
           label="submit"
-          onPress={() => {
-            onSubmit;
-          }}
+          onPress={handleSubmit}
           buttonType="primaryButton"
         />
       </View>
