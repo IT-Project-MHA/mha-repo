@@ -10,6 +10,7 @@ import { PhoneField } from '../../../components/onboarding/PhoneField';
 import { useTheme } from "../../../context/ThemeContext";
 import { TextEntry } from '../../../components/answerFields/TextEntry';
 import { useRouter } from 'expo-router';
+import Button from '../../../components/atomicUI/Button';
 
 export default function Page() {
   const router = useRouter();
@@ -19,10 +20,12 @@ export default function Page() {
     <View style={theme.screen}>
       <Text style={theme.text}>Hello {user}</Text>
       <Text style={theme.text}>A few quick questions so we can make things more relevant for you</Text>
-      <Text style={theme.text}>This is a basic implementation though, so just phone verification</Text>
-      <View style={theme.container}>
-        <TextEntry onSubmit={()=>{router.navigate('/(onboarding)/termsOfService')}}/>
-      </View>
+        <Button
+        label='continue'
+        onPress={()=>{router.navigate('/(onboarding)/sexSelect')}}
+        buttonType='primaryButton'
+        />
+      <Text style={theme.text}>By continuing you agree to Mpowered's Terms and Conditions and Privacy Policy</Text>
     </View>
   );
 }

@@ -66,6 +66,13 @@ const createTheme = (colours: ColourSet) =>
       color: colours.onSecondary,
       ...textLayout,
     },
+    /*optionSpacing: {
+      backgroundColor: 'transparent',
+      paddingVertical: 12, 
+      paddingHorizontal: 80, 
+      borderRadius: 8,
+      alignItems: 'center' as const,
+    },*/
     //emoji
     emojiContainer: {
       paddingVertical: 12, 

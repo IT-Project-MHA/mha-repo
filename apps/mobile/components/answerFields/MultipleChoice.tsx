@@ -1,9 +1,9 @@
 //basically straight from here: https://dev.to/davelearns/building-a-basic-quiz-app-with-react-native-and-expo-go-a-complete-guide-11o
 
 import React, { useState } from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Text, TouchableOpacity } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import Button from "../atomicUI/Button";
 
 //MultipleChoice variables
 const NUM_CHOICES = 6;
@@ -16,23 +16,18 @@ function validateMultipleChoice(numText: string) {
   return null;
 }
 
-function MultipleChoice({ onSubmit }: { onSubmit: (v: string) => void }) {
+type MultipleChoiceProps ={
+  questionOptions: string[];
+  onSubmit: (v: string) => void;
+}
+
+function MultipleChoice({ questionOptions, onSubmit }: MultipleChoiceProps) {
   const { theme } = useTheme();
 
-  const questionOptions = [
-    //array of options
-    "London",
-    "Berlin",
-    "123",
-    "9892164932@",
-  ];
 
-  const [currentQuestion, setCurrentQuestion] = useState(0); // Tracks the current question index
   const [score, setScore] = useState(0); // Tracks the user's score
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null); // Tracks the currently selected answer
-  const [userAnswers, setUserAnswers] = useState<
-    { question: string; correct: boolean }[]
-  >([]); // Stores user's answers and correctness
+  const [userAnswer, setUserAnswer] = useState<string | null>(null); // Stores user's answer
 
   const handleSelect = (answer: string) => {
     // Called when a user selects an answer
@@ -40,34 +35,12 @@ function MultipleChoice({ onSubmit }: { onSubmit: (v: string) => void }) {
   };
 
   const handleSubmit = () => {
-    // Checks if the selected answer is correct
-    const isCorrect = selectedAnswer === questionOptions[currentQuestion];
-
     // Save the current answer result
-    setUserAnswers([
-      ...userAnswers,
-      {
-        question: questionOptions[currentQuestion],
-        correct: isCorrect,
-      },
-    ]);
-
-    // Update score if answer is correct
-    if (isCorrect) {
-      setScore(score + 1);
-    }
-
-    // Reset selected answer for the next question
-    setSelectedAnswer(null);
-
-    if (currentQuestion < questionOptions.length - 1) {
-      // Move to the next question
-      setCurrentQuestion(currentQuestion + 1);
-    } else {
-    }
+    if(selectedAnswer!=null)
+      onSubmit(selectedAnswer);
   };
   return (
-    <SafeAreaView style={theme.container}>
+    <View style={theme.container}>
       <Text style={[theme.text, {textAlign: 'center'}]}>"Select the most relevant"</Text>
       {/*render options as buttons*/}
       {questionOptions.map((option, index) => (
@@ -86,7 +59,12 @@ function MultipleChoice({ onSubmit }: { onSubmit: (v: string) => void }) {
           >{option}</Text>
         </TouchableOpacity>
       ))}
-    </SafeAreaView>
+      <Button
+      label= "Continue"
+      onPress={()=>{handleSubmit}}
+      buttonType='primaryButton'
+      />
+    </View>
   );
 }
 

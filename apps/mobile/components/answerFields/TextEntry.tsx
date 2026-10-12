@@ -6,13 +6,13 @@ import { useTheme } from "../../context/ThemeContext";
 
 
 //Input variables
-const MAX_lENGTH_TEXT = 200;
+const MAX_LENGTH_TEXT = 200;
 
 function validateTextInput(text: string) {
   //checking if it's something we should accept, i.e. within range
   //if (text == "") return "enter text"; //what it prints if submitted
   if(text.trim()=="") return "Empty entry, please enter some text";
-  if (text.length > MAX_lENGTH_TEXT) {
+  if (text.length > MAX_LENGTH_TEXT) {
     return 'enter no more than ${MAX_LENGTH_TEXT} characters';
   }
   return null;
@@ -36,11 +36,10 @@ function TextEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
       setError(err);
       return;
     }
-    onSubmit(value);
+    onSubmit(value.trim()); //also gets rid of trailing white space
   };
 
   return (
-    <SafeAreaView>
       <View>
         <TextInput
           style={[theme.text, theme.option]}
@@ -48,7 +47,7 @@ function TextEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
           value={value}
           placeholder="textInput"
           keyboardType="default"
-          maxLength={MAX_lENGTH_TEXT}
+          maxLength={MAX_LENGTH_TEXT}
           onSubmitEditing={handleSubmit}
         />
         {!!error && <Text style={theme.text}>{error}</Text>}
@@ -58,7 +57,6 @@ function TextEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
           buttonType="primaryButton"
         />
       </View>
-    </SafeAreaView>
   );
 }
 
