@@ -25,7 +25,7 @@ export default function Page() {
       <View>
         <MultipleChoice 
         questionOptions={["Female", "Male", "Prefer not to say"]}
-        onSubmit={()=>{router.navigate('/(onboarding)/sexSelect')}}
+        onSubmit={()=>{router.navigate('/(onboarding)/ageEntry')}}
         />
       </View>
     </View>

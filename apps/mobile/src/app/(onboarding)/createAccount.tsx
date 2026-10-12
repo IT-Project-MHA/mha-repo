@@ -20,7 +20,10 @@ export default function Page() {
       <Text style={theme.text}>CREATE ACCOUNT</Text>
       <Text style={theme.text}>Prompts the usder to enter their name</Text>
       <View style={theme.container}>
-        <TextEntry onSubmit={()=>{router.navigate('/(onboarding)/termsOfService')}}/>
+        <TextEntry 
+        onSubmit={()=>{router.navigate('/(onboarding)/termsOfService')}}
+        placeholder='Type your name'
+        />
       </View>
     </View>
   );

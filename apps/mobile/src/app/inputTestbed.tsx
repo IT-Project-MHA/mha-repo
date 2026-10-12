@@ -56,6 +56,7 @@ export default function Index() {
           onSubmit={() => {
             /* enter data function */
           }}
+          questionOptions={["option1", "option2", "option3", "option4"]}
         />
         <MultiSelect
           onSubmit={() => {

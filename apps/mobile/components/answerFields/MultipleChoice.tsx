@@ -6,10 +6,8 @@ import { useTheme } from "../../context/ThemeContext";
 import Button from "../atomicUI/Button";
 
 //MultipleChoice variables
-const NUM_CHOICES = 6;
-const MIN_SELECTIONS = 1;
+
 const MAX_SELECTIONS = 10;
-const MAX_LENGTH_NUM = String(MAX_SELECTIONS).length;
 
 function validateMultipleChoice(numText: string) {
   //checking if it's something we should accept, i.e. within range
@@ -61,7 +59,7 @@ function MultipleChoice({ questionOptions, onSubmit }: MultipleChoiceProps) {
       ))}
       <Button
       label= "Continue"
-      onPress={()=>{handleSubmit}}
+      onPress={handleSubmit}
       buttonType='primaryButton'
       />
     </View>
