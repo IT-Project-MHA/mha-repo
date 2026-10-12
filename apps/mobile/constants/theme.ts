@@ -72,7 +72,7 @@ const createTheme = (colours: ColourSet) =>
       alignSelf: 'center',
 
     },
-    // clear container with pa
+    // clear container with padding
     clearContainer: {
       justifyContent: 'center',
       backgroundColor:'transparent',
