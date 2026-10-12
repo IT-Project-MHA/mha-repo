@@ -10,6 +10,7 @@ import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
 import { useAppointment } from '../../../../context/AppointmentContext';
+import { apiAppointmentAnswerRecording } from '../../../api/django-API';
 
 // formats seconds as minutes:seconds, e.g. 83.6 as '1:23'
 const formatTime = (seconds: number) => {
@@ -24,7 +25,12 @@ export default function Screen() {
   const { findAppointment } = useAppointment();
   const question = findAppointment(id)?.questions[Number(index)];
 
-  const player = useAudioPlayer(question?.recording ?? null);
+  // a saved recording is downloaded from the server, which needs the user's token
+  const player = useAudioPlayer(
+    question?.recording?.startsWith('http') && question.answerId
+      ? apiAppointmentAnswerRecording('select', { id: question.answerId })
+      : (question?.recording ?? null),
+  );
   const { playing, currentTime, duration } = useAudioPlayerStatus(player);
   // played to the end, so the next play starts from the beginning
   const finished = duration > 0 && currentTime >= duration - 0.1;

@@ -7,13 +7,19 @@ const BASE_URL = `${SERVER_URL}/api`;
 // every request
 const DEV_TOKEN = process.env.EXPO_PUBLIC_DEV_TOKEN;
 
+// helper function: returns the headers that tell the server who the user is, as an object of
+// header names & values ({} without a token)
+function authHeaders() {
+    return Object.fromEntries(DEV_TOKEN ? [['Authorization', `Token ${DEV_TOKEN}`]] : []);
+}
+
 /* Instructions:
 Call the function for the relevant table in the format api`TableName`(2) with operation values
 from {'select', 'create', 'update', 'delete'}, followed by an object of attribute values. Each
 function returns the response data (a record or an array of records for 'select' without id),
-or null for 'delete'. The exceptions are reference tables (QuestionOption, QuestionOptionOrdered)
-which can only be selected, AuditEntry which can only be selected & created, and TextChoices 
-(dropdown text fields in UI) (e.g. apiHealthService) which take no parameters and only select.
+or null for 'delete'. The exceptions are reference tables (QuestionOption, QuestionOptionOrdered),
+AuditEntry and TrustedDevice which can only be selected, and TextChoices (dropdown text fields in
+UI) (e.g. apiHealthService) which take no parameters and only select.
 
 - select: pass id to read one record, otherwise the other attributes given are used as filters
           (?attribute_name=value) and an array is returned.
@@ -70,7 +76,7 @@ async function request(method, path, body, baseUrl = BASE_URL) {
         method: method,
         headers: {
             ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
-            ...(DEV_TOKEN ? { Authorization: `Token ${DEV_TOKEN}` } : {}),
+            ...authHeaders(),
             Accept: 'application/json',
         },
         // undefined if the operation is delete
@@ -201,25 +207,13 @@ export async function apiSupportLink(operation, values) {
 - update: N/A
 - delete: N/A NN */
 export async function apiTermsAndPrivacy(operation, values) {
-    return operate('termsAndPrivacy', operation, values,  ['select', 'create']);
-}
-
-/* PhoneVerification:
-- create: phone_number NN
-    - phone_number must be local Australian number with no spaces
-    - code, attempts, used_at, expires_at are auto generated
-- select/update/delete: N/A */
-export async function apiPhoneVerification(operation, values) {
-    return operate('phoneVerification', operation, values, ['create']);
+    return operate('termsAndPrivacy', operation, values);
 }
 
 /* TrustedDevice:
 - select: id, or no filters (only returns own devices)
-- create: device_id NN, label
-    - user is set to the user's own, last_seen_at is auto updated
-- update: id NN, label, revoked_at
-    - user & device_id cannot be changed
-- delete: id NN */
+- create/update/delete: N/A, a device is trusted when the user logs in or registers on it, and
+  revoked through POST /auth/devices/{id}/revoke */
 export async function apiTrustedDevice(operation, values) {
     return operate('trustedDevice', operation, values);
 }
@@ -361,6 +355,8 @@ export async function apiAppointmentQuestion(operation, values) {
       { uri: 'file:///.../answer.m4a', name: 'answer.m4a', type: 'audio/m4a' }
       (audio only, max 20 MB). It is returned as a download URL that needs the user to have
       access to the answer.
+    - a recording can only be saved while the doctor has given permission (see
+      apiAppointmentDoctorPermission), a typed answer doesn't need it
 - update: id NN, text, recording_file, transcript
     - question cannot be changed
     - recording_file: null removes the recording    
@@ -370,6 +366,37 @@ export async function apiAppointmentQuestion(operation, values) {
     - if another answer is created, the old answer is permanently deleted */
 export async function apiAppointmentAnswer(operation, values) {
     return operate('appointmentAnswer', operation, values);
+}
+
+/* AppointmentAnswerRecording:
+- select: id NN (the answer's id)
+    - returns the answer's recording as an audio source for expo-audio's useAudioPlayer,
+      { uri, headers }. The download needs the user's token, which is in headers
+    - not async, as the audio player downloads it
+    - can only get one's own appointment's recordings or patient's appointment's recordings
+- create/update/delete: N/A, use recording_file of AppointmentAnswer */
+export function apiAppointmentAnswerRecording(operation, values) {
+    if (operation != 'select') {
+        throw new Error(`Operation '${operation}' is not allowed for appointmentAnswerRecording`);
+    }
+    return { uri: `${BASE_URL}/appointmentAnswer/${values.id}/recording`, headers: authHeaders() };
+}
+
+/* AppointmentDoctorPermission:
+- select: id NN (the appointment's id)
+    - returns the appointment's doctor_permission & doctor_signature
+    - patient, or supporter with can_record_answers=true in AppointmentAccess
+- update: id NN, doctor_signature NN
+    - the doctor signs to give permission to record their answers, doctor_signature is a PNG
+      data URL. doctor_permission is set to true
+    - same as select
+- delete: id NN
+    - takes the permission back, which deletes the recordings of every answer in the
+      appointment. The appointment itself is kept
+    - same as select
+- create: N/A, use update */
+export async function apiAppointmentDoctorPermission(operation, values) {
+    return operate('appointmentDoctorPermission', operation, values);
 }
 
 /* AppointmentAccess:
@@ -403,25 +430,23 @@ export async function apiAppointmentAccess(operation, values = {}) {
 - select: id, or filter by app_section NN, question_key NN
 - create/update/delete: N/A, edit reference data through Django admin */
 export async function apiQuestionOption(operation, values) {
-    return operate('questionOption', operation, values, ['select']);
+    return operate('questionOption', operation, values);
 }
 
 /* QuestionOptionOrdered:
 - select: id, or filter by app_section NN, question_key NN
 - create/update/delete: N/A, edit reference data through Django admin */
 export async function apiQuestionOptionOrdered(operation, values) {
-    return operate('questionOptionOrdered', operation, values, ['select']);
+    return operate('questionOptionOrdered', operation, values);
 }
 
 /* AuditEntry:
-- select: id, or no filters (only returns own audit entries)
-- create: action NN, target_type NN, target_id, patient_profile, audit_label, occurred_at,
-          context
-    - audit_user is set to the user
-    - patient_profile must be the user's own
-- update/delete: N/A */
+- select: id, or no filters (returns entries the user made & entries about the user's own
+          records)
+- create/update/delete: N/A, the server records audit entries itself, e.g. when appointment
+  access is given */
 export async function apiAuditEntry(operation, values) {
-    return operate('auditEntry', operation, values, ['select', 'create']);
+    return operate('auditEntry', operation, values);
 }
 
 

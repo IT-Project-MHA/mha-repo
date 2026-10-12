@@ -1,6 +1,7 @@
 import {
     apiAppointment,
     apiAppointmentAccess,
+    apiAppointmentAnswer,
     apiAppointmentQuestion,
     apiAssessment,
     apiMyPain,
@@ -66,6 +67,38 @@ export async function apiSharedAppointments() {
         ...appointment,
         patientName: names.get(appointment.patient_profile) ?? '',
     }));
+}
+
+// helper function: returns the audio type of a recording file, from its extension
+function recordingType(uri) {
+    const extension = uri.split('.').pop().toLowerCase();
+    return extension === '3gp' ? 'audio/3gpp' : `audio/${extension === 'm4a' ? 'm4a' : extension}`;
+}
+
+/* Saves the answer of a question:
+- takes the question id, the answer's id if the question already has one (otherwise undefined),
+  and the changes { text, recording }, either can be left out:
+    - text: the typed answer, an empty string removes it
+    - recording: a recording file on the device (its uri) to upload, or null to remove the saved
+      recording. Uploading needs the doctor's permission
+- creates the answer if there is none yet, otherwise changes it. Returns the saved AppointmentAnswer,
+  its recording_file is the recording's download URL */
+export async function apiSaveAnswer(questionId, answerId, { text, recording } = {}) {
+    const values = {};
+    if (text !== undefined) {
+        values.text = text;
+    }
+    if (recording !== undefined) {
+        values.recording_file = recording === null ? null : {
+            uri: recording,
+            name: recording.split('/').pop(),
+            type: recordingType(recording),
+        };
+    }
+    if (answerId) {
+        return apiAppointmentAnswer('update', { id: answerId, ...values });
+    }
+    return apiAppointmentAnswer('create', { question: questionId, ...values });
 }
 
 /* Pain values for the suggested questions (PainSummary in constants/suggestedQuestions.ts):
@@ -135,6 +168,8 @@ export async function apiPainSummary(patientProfileId) {
       (it needs the user's token to download)
     - supportPeople: each person with live access, { name, phone, canAddQuestions,
       canAddAnswers, supportLinkId }. name is empty until they have an account
+    - doctorPermission & doctorSignature: whether the doctor has signed to allow recordings, and
+      their signature as a PNG data URL
     - patientId & patientName: the patient the appointment belongs to
     - canAddQuestions & canAddAnswers: what the user may do as a support person of this
       appointment, false when it's their own appointment */
@@ -182,6 +217,8 @@ export async function apiAppointmentDetails(appointmentId) {
                 supportLinkId: access.support_link,
             };
         }),
+        doctorPermission: appointment.doctor_permission,
+        doctorSignature: appointment.doctor_signature || undefined,
         patientId: appointment.patient_profile,
         patientName: patientLink?.patient_name ?? '',
         canAddQuestions: ownAccess.some((access) => access.can_add_questions),

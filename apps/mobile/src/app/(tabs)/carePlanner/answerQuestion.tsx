@@ -23,6 +23,11 @@ import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
 import { useTheme as usePaperTheme } from 'react-native-paper';
 import { useAppointment, AppointmentQuestion } from '../../../../context/AppointmentContext';
+import {
+  apiAppointmentAnswerRecording,
+  apiAppointmentDoctorPermission,
+} from '../../../api/django-API';
+import { apiErrorMessage, apiSaveAnswer } from '../../../api/care_planner_api_helpers';
 
 // hides the canvas's own clear & confirm buttons, this screen has its own
 const SIGNATURE_STYLE = `
@@ -72,7 +77,13 @@ export default function Screen() {
   const { isRecording, durationMillis } = useAudioRecorderState(recorder);
   // true from pressing record until the recording is submitted, including while it is paused
   const [recordingStarted, setRecordingStarted] = useState(false);
-  const player = useAudioPlayer(question?.recording ?? null);
+  // a saved recording is downloaded from the server, which needs the user's token, a new one is
+  // played from the device
+  const player = useAudioPlayer(
+    question?.recording?.startsWith('http') && question.answerId
+      ? apiAppointmentAnswerRecording('select', { id: question.answerId })
+      : (question?.recording ?? null),
+  );
   const { playing, currentTime, duration } = useAudioPlayerStatus(player);
 
   // played to the end, so the next play starts from the beginning
@@ -84,10 +95,50 @@ export default function Screen() {
   const updateQuestion = (changes: Partial<AppointmentQuestion>) =>
     updateAppointmentQuestion(id, Number(index), changes);
 
+  // message shown when the answer or the doctor's permission can't be saved, null otherwise
+  const [saveError, setSaveError] = useState<string | null>(null);
+  // the answer's id once it is saved. Refs, so saves made as the page closes still see them
+  const answerIdRef = useRef(question?.answerId);
+  // saves run one after another, so a typed answer & a recording saved together don't both try to
+  // create the answer
+  const saveQueue = useRef(Promise.resolve());
+
+  // saves changes to the answer on the server, and keeps the answer's id on the question
+  const saveAnswer = (changes: { text?: string; recording?: string | null }) => {
+    const questionId = question?.id;
+    if (!questionId) return;
+    saveQueue.current = saveQueue.current.then(async () => {
+      try {
+        const saved = await apiSaveAnswer(questionId, answerIdRef.current, changes);
+        answerIdRef.current = saved.id;
+        updateQuestion({ answerId: saved.id });
+        setSaveError(null);
+      } catch (error) {
+        console.error('Failed to save answer', error);
+        setSaveError(apiErrorMessage(error, 'Your answer could not be saved, please try again'));
+      }
+    });
+  };
+
+  // a typed answer is saved once typing stops for a second, or when the page closes
+  const textTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // the typed answer waiting to be saved, null when there is nothing to save
+  const pendingText = useRef<string | null>(null);
+  const saveTypedAnswer = () => {
+    if (textTimer.current) clearTimeout(textTimer.current);
+    textTimer.current = null;
+    if (pendingText.current === null) return;
+    saveAnswer({ text: pendingText.current });
+    pendingText.current = null;
+  };
+
   // the box keeps exactly what is typed, the saved answer is trimmed and a blank one is removed
   const changeAnswer = (text: string) => {
     setAnswer(text);
     updateQuestion({ answer: text.trim() || undefined });
+    pendingText.current = text.trim();
+    if (textTimer.current) clearTimeout(textTimer.current);
+    textTimer.current = setTimeout(saveTypedAnswer, 1000);
   };
 
   // asks for the microphone the first time, then records until submit is pressed or 2 minutes of
@@ -111,12 +162,15 @@ export default function Screen() {
     else recorder.record();
   };
 
-  // stops the recording and saves it to the question
+  // stops the recording, plays it from the device and uploads it to the answer
   const submitRecording = async () => {
     setRecordingStarted(false);
     const uri = recorder.uri;
     await recorder.stop();
-    if (uri) updateQuestion({ recording: uri });
+    if (uri) {
+      updateQuestion({ recording: uri });
+      saveAnswer({ recording: uri });
+    }
     // lets playback use the loudspeaker again on iOS
     setAudioModeAsync({ allowsRecording: false });
   };
@@ -132,6 +186,7 @@ export default function Screen() {
   useEffect(
     () =>
       navigation.addListener('beforeRemove', () => {
+        saveTypedAnswer();
         if (recordingStarted) submitRecording();
       }),
     [navigation, recordingStarted],
@@ -143,6 +198,7 @@ export default function Screen() {
   const deleteRecording = () => {
     player.pause();
     updateQuestion({ recording: undefined });
+    saveAnswer({ recording: null });
   };
 
   // pauses while playing, carries on if paused part way, otherwise plays from the start
@@ -161,23 +217,40 @@ export default function Screen() {
   const startSigning = () => setSigning(true);
 
   // closes the canvas and takes back the doctor's permission if it was given, which also deletes
-  // the recordings of every question in the appointment
-  const cancelSigning = () => {
+  // the recordings of every question in the appointment on the server
+  const cancelSigning = async () => {
     setSigning(false);
-    if (appointment?.doctorPermission) {
+    if (!appointment?.doctorPermission) return;
+    try {
+      await apiAppointmentDoctorPermission('delete', { id });
       updateAppointment(id, {
         doctorPermission: false,
         doctorSignature: undefined,
         questions: appointment.questions.map((item) => ({ ...item, recording: undefined })),
       });
+      setSaveError(null);
+    } catch (error) {
+      console.error("Failed to take back the doctor's permission", error);
+      setSaveError(
+        apiErrorMessage(error, "The doctor's permission could not be taken back, please try again"),
+      );
     }
   };
 
   // called by the canvas with the signature as an image after save is pressed, the canvas calls
   // onEmpty instead when nothing is drawn, so an empty canvas saves nothing
-  const saveSignature = (signature: string) => {
-    updateAppointment(id, { doctorPermission: true, doctorSignature: signature });
-    setSigning(false);
+  const saveSignature = async (signature: string) => {
+    try {
+      await apiAppointmentDoctorPermission('update', { id, doctor_signature: signature });
+      updateAppointment(id, { doctorPermission: true, doctorSignature: signature });
+      setSigning(false);
+      setSaveError(null);
+    } catch (error) {
+      console.error("Failed to save the doctor's signature", error);
+      setSaveError(
+        apiErrorMessage(error, "The doctor's signature could not be saved, please try again"),
+      );
+    }
   };
 
   // which buttons the record answer section shows, recording is only allowed once the doctor has
@@ -308,6 +381,10 @@ export default function Screen() {
 
         <Text style={styles.heading}>Record answer</Text>
         {renderRecordingSection()}
+
+        {!!saveError && (
+          <Text style={[styles.error, { color: paperColours.error }]}>{saveError}</Text>
+        )}
       </ScrollView>
     </View>
   );
@@ -361,6 +438,10 @@ function createStyles(colours: ColourSet) {
       fontSize: 22,
       lineHeight: 28,
       color: colours.onBackground,
+    },
+
+    error: {
+      fontSize: 14,
     },
 
     heading: {

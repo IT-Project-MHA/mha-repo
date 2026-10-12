@@ -10,6 +10,7 @@ access_patterns = [
 api_patterns = [
     path('appointment/', views.AppointmentListCreate.as_view(), name ='read_create_appointment'),
     path('appointment/<str:pk>', views.AppointmentRetrieveUpdateDestroy.as_view(), name ='update_appointment'),
+    path('appointmentDoctorPermission/<str:pk>', views.AppointmentDoctorPermissionRetrieveUpdateDestroy.as_view(), name ='update_appointment_doctor_permission'),
     path('appointmentQuestion/', views.AppointmentQuestionListCreate.as_view(), name ='read_create_appointment_question'),
     path('appointmentQuestion/<str:pk>', views.AppointmentQuestionRetrieveUpdateDestroy.as_view(), name ='update_appointment_question'),
     path('appointmentAnswer/', views.AppointmentAnswerListCreate.as_view(), name ='read_create_appointment_answer'),

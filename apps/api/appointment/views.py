@@ -15,7 +15,8 @@ from appointment import grants
 from appointment.models import Appointment, AppointmentAccess, AppointmentAnswer, AppointmentQuestion
 
 from appointment.serializer import AccessGrantSerializer, AppointmentAccessSerializer, AppointmentAnswerSerializer, \
-    AppointmentQuestionSerializer, AppointmentSerializer, GrantAccessSerializer
+    AppointmentQuestionSerializer, AppointmentSerializer, AppointmentDoctorPermissionSerializer, \
+    GrantAccessSerializer
 
 from mpowered_api.immutable import save_without_immutable_changes
 from mpowered_api.validators import australian_day_range
@@ -293,6 +294,54 @@ class AppointmentQuestionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPI
 
 
 
+# AppointmentDoctorPermission APIs:
+
+# helper function: refuses a recording when the doctor hasn't given permission to record. Removing
+# a recording (recording_file: null) is always allowed
+def check_recording_allowed(serializer, appointment):
+    if serializer.validated_data.get('recording_file') and not appointment.doctor_permission:
+        raise serializers.ValidationError(
+            {'recording_file':'The doctor has not given permission to record their answers.'})
+
+# - select: the appointment's doctor_permission & doctor_signature
+# - update: saving the doctor's signature gives permission to record their answers
+# - delete: takes the permission back, which deletes the recordings of every answer in the
+#   appointment. The appointment itself is kept
+# The patient, or a supporter with can_record_answers, can do all three
+class AppointmentDoctorPermissionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = AppointmentDoctorPermissionSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        query_set = visible_appointments(user).filter(
+            Q(patient_profile__user = user) |
+            Q(access_grants__support_link__supporter_user = user,
+              access_grants__support_link__status = SupportLink.Status.ACTIVE,
+              access_grants__revoked_at__isnull = True,
+              access_grants__can_record_answers = True))
+        return query_set.distinct()
+
+    def perform_update(self, serializer):
+        serializer.save(doctor_permission = True)
+
+    def perform_destroy(self, instance):
+        # every answer of the appointment with a recording, soft deleted ones too
+        answers = AppointmentAnswer.objects.filter(
+            question__appointment = instance).exclude(recording_file = '')
+        recordings = [answer.recording_file for answer in answers if answer.recording_file]
+        now = timezone.now()
+        with transaction.atomic():
+            answers.update(recording_file = None, updated_at = now)
+            Appointment.objects.filter(pk = instance.pk).update(
+                doctor_permission = False, doctor_signature = '', updated_at = now)
+
+        # files are deleted once nothing refers to them
+        for recording in recordings:
+            recording.storage.delete(recording.name)
+
+
+
 # AppointmentAnswer APIs:
 
 # helper function: removes a soft deleted answer & its recording file for good
@@ -326,6 +375,8 @@ class AppointmentAnswerListCreate(generics.ListCreateAPIView):
         if not (is_appointment_patient(user, appointment) or
                 has_appointment_access(user, appointment, 'can_record_answers')):
             raise serializers.ValidationError({'question':'You do not have access.'})
+
+        check_recording_allowed(serializer, appointment)
 
         # a question has one answer. A soft deleted one is removed for good to make room for
         # the new one, with its recording
@@ -362,6 +413,7 @@ class AppointmentAnswerRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIVi
 
     # file needs to be manually deleted from storage
     def perform_update(self, serializer):
+        check_recording_allowed(serializer, serializer.instance.question.appointment)
         old_recording = serializer.instance.recording_file.name
         save_without_immutable_changes(serializer, ['question'])
         if old_recording and old_recording != serializer.instance.recording_file.name:
