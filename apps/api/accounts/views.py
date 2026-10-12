@@ -13,6 +13,7 @@ from mpowered_api.protected import destroy_or_reject_protected
 from accounts import devices, login, otp, registration, reset_pin
 from accounts.models import PatientProfile, SupportLink, TermsAndPrivacy, TrustedDevice, User, UserSettings
 from accounts.rate_limits import PhoneBurstThrottle, PhoneLoginThrottle, PhoneSustainedThrottle
+from accounts.permissions import visible_support_links, visible_patient_profiles
 
 from accounts.serializer import DeviceListSerializer, LoginSerializer, PatientProfileSerializer, RegisterSerializer, \
     RequestCodeSerializer, ResetPinSerializer, SupportLinkSerializer, TermsAndPrivacySerializer, \
@@ -251,15 +252,6 @@ class UserRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
 # PatientProfile APIs:
 
-# helper function: returns set of patient profiles that user can access
-def visible_patient_profiles(user):
-    # filter own profile or profiles of patients that user supports
-    return PatientProfile.objects.filter(
-            Q(user = user) |
-            Q(support_links__supporter_user = user,
-              support_links__status = SupportLink.Status.ACTIVE)
-        )
-
 class PatientProfileListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = PatientProfileSerializer
@@ -326,10 +318,6 @@ class UserSettingsRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
 
 # SupportLink APIs:
-
-# helper function: returns set of support links that user can access
-def visible_support_links(user):
-    return SupportLink.objects.filter(Q(patient_user = user) | Q(supporter_user = user))
 
 # helper function: returns user's own patient profile, or raises 400 error if user doesn't have one
 def own_patient_profile(user):

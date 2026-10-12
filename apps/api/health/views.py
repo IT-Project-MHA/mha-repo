@@ -7,13 +7,13 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 from django.db.models import Q
 from rest_framework import serializers
+
 from .models import Prescription, Assessment, MyPain, MyMovement, MyPersonalCare, \
    MySocialHealth, MyManagement
-from accounts.models import SupportLink
 from accounts.views import own_patient_profile
 from .serializer import *
-from datetime import date
 from mpowered_api.immutable import save_without_immutable_changes
+from accounts.permissions import visible_assessments, visible_prescriptions
 
 # Instructions:
 # All views need the header Authorization: Token <token>, without they return 401.
@@ -31,14 +31,6 @@ from mpowered_api.immutable import save_without_immutable_changes
 
 # Who can insert/update/delete is specified in the comments and records the user can see but is not
 # allowed to update/delete return a 404 error for those requests.
-
-def visible_prescriptions(user):
-    return Prescription.objects.filter(
-            Q(patient_profile__user = user) |
-            Q(patient_profile__support_links__supporter_user = user,
-              patient_profile__support_links__status = SupportLink.Status.ACTIVE,
-              patient_profile__support_links__can_view_prescriptions = True)
-        )
 
 # Prescription APIs: 
 class PrescriptionListCreate(generics.ListCreateAPIView):
@@ -78,14 +70,6 @@ class PrescriptionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
 
 # Assessment APIs: 
-
-# helper function: returns set of assessments that user can access
-def visible_assessments(user):
-    return Assessment.objects.filter(
-            Q(patient_profile__user = user) |
-            Q(patient_profile__support_links__supporter_user = user,
-              patient_profile__support_links__status = SupportLink.Status.ACTIVE,
-              patient_profile__support_links__can_view_assessments = True))
 
 # helper function: returns set of assessments that belong to the user's own patient profile
 def own_assessments(user):

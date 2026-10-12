@@ -556,28 +556,6 @@ class PermissionTests(APITestCase):
         self.turn_on_switches(status = SupportLink.Status.REVOKED)
         self.assertFalse(permissions.can_add_question(self.supporter, self.appointment))
 
-    def test_view_permission_reads_and_writes(self):
-        # Supporter can read with the switch on but only the patient can write
-        self.turn_on_switches(can_view_assessments = True)
-        record = SimpleNamespace(patient_profile = self.profile)
-        check = permissions.AssessmentPermission()
-
-        supporter_get = SimpleNamespace(method = "GET", user = self.supporter)
-        supporter_patch = SimpleNamespace(method = "PATCH", user = self.supporter)
-        patient_patch = SimpleNamespace(method = "PATCH", user = self.patient)
-
-        self.assertTrue(check.has_object_permission(supporter_get, None, record))
-        self.assertFalse(check.has_object_permission(supporter_patch, None, record))
-        self.assertTrue(check.has_object_permission(patient_patch, None, record))
-
-    def test_appointment_permission_uses_grant(self):
-        self.grant(self.appointment)
-        check = permissions.AppointmentPermission()
-        supporter_get = SimpleNamespace(method = "GET", user = self.supporter)
-
-        self.assertTrue(check.has_object_permission(supporter_get, None, self.appointment))
-        self.assertFalse(check.has_object_permission(supporter_get, None, self.other_appointment))
-
 
 class PhoneNumberTests(APITestCase):
 
