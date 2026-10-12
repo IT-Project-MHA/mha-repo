@@ -43,6 +43,9 @@ export default function Index() {
       <SafeAreaView style={{ flexDirection: "row" }}>
         <Assessment properties={assessmentP}/>
         <NumberEntry
+          MAX_lENGTH_NUM={2}
+          LOWER_BOUND={0}
+          UPPER_BOUND={10}
           onSubmit={() => {
             /* enter data function */
           }}
@@ -72,6 +75,7 @@ export default function Index() {
           }}
         />
         <TextEntry
+          placeholder="text entry"
           onSubmit={() => {
             /* enter data function */
           }}
