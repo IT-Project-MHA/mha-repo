@@ -16,10 +16,11 @@ from accounts.models import PatientProfile, SupportLink, TermsAndPrivacy, Truste
 from accounts.rate_limits import PhoneBurstThrottle, PhoneLoginThrottle, PhoneSustainedThrottle
 from accounts.permissions import visible_support_links, visible_patient_profiles
 from accounts.delete import delete_account
+from accounts.invite import *
 
 from accounts.serializer import DeviceListSerializer, LoginSerializer, PatientProfileSerializer, RegisterSerializer, \
     RequestCodeSerializer, ResetPinSerializer, SupportLinkSerializer, TermsAndPrivacySerializer, \
-    TrustedDeviceSerializer, UserSerializer, UserSettingsSerializer, VerifyCodeSerializer
+    TrustedDeviceSerializer, UserSerializer, UserSettingsSerializer, VerifyCodeSerializer, ChangePhoneSerializer
 
 from audit.models import AuditEntry
 from audit.services import record
@@ -308,7 +309,28 @@ class PatientProfileRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView)
         soft_delete(instance)
         record(self.request.user, AuditEntry.Action.DELETE, instance)
 
+class ChangePhoneView(APIView):
+    # POST /auth/change-phone
 
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "register"
+
+    def post(self, request):
+        serializer = ChangePhoneSerializer(data = request.data)
+        serializer.is_valid(raise_exception = True)
+
+        try:
+            registration.change_phone(request.user, **serializer.validated_data)
+        except registration.RegistrationError as error:
+            if error.reason == "phone_taken":
+                code = status.HTTP_409_CONFLICT
+            else:
+                code = status.HTTP_400_BAD_REQUEST
+
+            return Response({"detail": error.reason}, status = code)
+
+        return Response({"phone_number": request.user.phone_number}, status = status.HTTP_200_OK)
 
 # UserSettings APIs:
 class UserSettingsListCreate(generics.ListCreateAPIView):
@@ -365,8 +387,12 @@ class SupportLinkListCreate(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         user = self.request.user
-        serializer.save(patient_profile = own_patient_profile(user), patient_user = user,
-                        status = SupportLink.Status.INVITED)
+        data = serializer.validated_data
+        try:
+            serializer.instance = invite_supporter(user, own_patient_profile(user),
+                                                           data.get('invited_phone_number'), data)
+        except InviteError as error:
+            raise serializers.ValidationError({'invited_phone_number': error.reason})
 
 class SupportLinkRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
@@ -455,3 +481,4 @@ class TrustedDeviceRetrieve(generics.RetrieveAPIView):
 
     def get_queryset(self):
         return TrustedDevice.objects.filter(user = self.request.user)
+
