@@ -66,9 +66,9 @@ export default function Screen() {
         }
       >
         <View style={styles.personInfo}>
-          {/* someone invited without an account yet has no name, their number is shown */}
-          <Text style={styles.personName}>{person.name || person.phone}</Text>
-          {!!person.name && <Text style={styles.personDetails}>{person.phone}</Text>}
+          {/* someone invited without an account yet has no name */}
+          <Text style={styles.personName}>{person.name || 'Pending invite'}</Text>
+          <Text style={styles.personDetails}>{person.phone}</Text>
           <Text style={styles.personDetails}>
             Access: {access.length > 0 ? access.join(', ') : 'None'}
           </Text>

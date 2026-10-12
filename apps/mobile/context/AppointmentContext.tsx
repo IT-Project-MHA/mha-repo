@@ -87,7 +87,6 @@ type AppointmentState = {
   findAppointment: (id: string) => Appointment | undefined;
   updateDraft: (changes: Partial<AppointmentDraft>) => void;
   resetDraft: () => void;
-  submitDraft: () => void;
   pickedSupportLink: PickedSupportLink | null;
   pickSupportLink: (link: PickedSupportLink | null) => void;
   updateAppointment: (id: string, changes: Partial<Appointment>) => void;
@@ -103,7 +102,6 @@ const AppointmentContext = createContext<AppointmentState>({
   findAppointment: () => undefined,
   updateDraft: () => {},
   resetDraft: () => {},
-  submitDraft: () => {},
   pickedSupportLink: null,
   pickSupportLink: () => {},
   updateAppointment: () => {},
@@ -113,9 +111,8 @@ const AppointmentContext = createContext<AppointmentState>({
 });
 
 /**
- * Shares the appointment being created between the care planner pages, and keeps the submitted
- * appointments & the ones loaded from the server, so the pages opened from an appointment can find
- * it.
+ * Shares the appointment being created between the care planner pages, and keeps the appointments
+ * loaded from the server, so the pages opened from an appointment can find it.
  */
 export function AppointmentProvider({ children }: { children: React.ReactNode }) {
   const [draft, setDraft] = useState<AppointmentDraft>(emptyDraft);
@@ -132,22 +129,6 @@ export function AppointmentProvider({ children }: { children: React.ReactNode })
     setDraft((previous) => ({ ...previous, ...changes }));
 
   const resetDraft = () => setDraft(emptyDraft());
-
-  // adds the draft to the top of the appointments with the id the server gave it, then clears it.
-  // Each page of the create appointment flow has already saved its part to the server
-  const submitDraft = () => {
-    if (!draft.appointmentId || !draft.scheduledDate) return;
-    const appointment: Appointment = {
-      id: draft.appointmentId,
-      scheduled_date: draft.scheduledDate.toISOString(),
-      doctor: draft.doctor,
-      health_service: draft.healthService ?? '',
-      supportPeople: draft.supportPeople,
-      questions: draft.questions,
-    };
-    setAppointments((previous) => [appointment, ...previous]);
-    resetDraft();
-  };
 
   // changes the fields of a submitted appointment, e.g. its support persons
   const updateAppointment = (id: string, changes: Partial<Appointment>) => {
@@ -196,7 +177,6 @@ export function AppointmentProvider({ children }: { children: React.ReactNode })
         findAppointment,
         updateDraft,
         resetDraft,
-        submitDraft,
         pickedSupportLink,
         pickSupportLink,
         updateAppointment,

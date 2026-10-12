@@ -68,17 +68,14 @@ export default function Screen() {
               onPress={() => choose(link)}
               accessibilityRole="button"
             >
-              {/* someone invited without an account yet has no name, their number is shown */}
+              {/* someone invited without an account yet has no name */}
               <View style={styles.linkInfo}>
-                <Text style={styles.linkName}>
-                  {link.supporter_name ||
-                    link.invited_phone_number ||
-                    'Support person with no phone number'}
-                </Text>
-                {!!link.supporter_name && !!link.invited_phone_number && (
+                <Text style={styles.linkName}>{link.supporter_name || 'Pending invite'}</Text>
+                {!!link.invited_phone_number && (
                   <Text style={styles.linkDetails}>{link.invited_phone_number}</Text>
                 )}
-                {link.status === 'invited' && (
+                {/* someone with an account who hasn't accepted yet */}
+                {!!link.supporter_name && link.status === 'invited' && (
                   <Text style={styles.linkDetails}>Invite not accepted yet</Text>
                 )}
               </View>

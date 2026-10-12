@@ -14,11 +14,13 @@ export default function Screen() {
   const { colours } = useTheme();
   const styles = createStyles(colours);
   const router = useRouter();
-  const { draft, submitDraft } = useAppointment();
+  const { draft, resetDraft } = useAppointment();
 
-  // adds the appointment to the care planner and goes back to it
+  // each page of the create appointment flow has already saved its part to the server, so this
+  // clears the draft, so the next new appointment doesn't change this one, and goes back to the
+  // care planner, which loads the appointments from the server
   const handleSubmit = () => {
-    submitDraft();
+    resetDraft();
     router.dismissTo('/carePlanner');
   };
 
@@ -57,7 +59,9 @@ export default function Screen() {
                 key={index}
                 style={[styles.input, styles.listItem, index > 0 && styles.divider]}
               >
-                {person.name || person.phone}
+                {/* someone invited without an account yet has no name, their number tells
+                    them apart */}
+                {person.name || `Pending invite (${person.phone})`}
               </Text>
             ))
           ) : (
