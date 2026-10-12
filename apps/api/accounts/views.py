@@ -13,7 +13,7 @@ from mpowered_api.soft_delete import soft_delete
 
 from accounts import devices, login, otp, registration, reset_pin
 from accounts.models import PatientProfile, SupportLink, TermsAndPrivacy, TrustedDevice, User, UserSettings
-from accounts.rate_limits import PhoneBurstThrottle, PhoneLoginThrottle, PhoneSustainedThrottle
+from apps.api.accounts.rateLimits import PhoneBurstThrottle, PhoneLoginThrottle, PhoneSustainedThrottle
 from accounts.permissions import visible_support_links, visible_patient_profiles
 from accounts.delete import delete_account
 from accounts.invite import *

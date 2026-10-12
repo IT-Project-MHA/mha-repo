@@ -8,6 +8,8 @@ from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 from django.db.models import Q
 from rest_framework import serializers
 
+from datetime import timedelta, date
+
 from .models import Prescription, Assessment, MyPain, MyMovement, MyPersonalCare, MySocialHealth, MyManagement
 from accounts.views import own_patient_profile
 from .serializer import *
@@ -212,3 +214,98 @@ class MyManagementListCreate(AssessmentTaskListCreate):
 class MyManagementRetrieveUpdateDestroy(AssessmentTaskRetrieveUpdateDestroy):
     model = MyManagement
     serializer_class = MyManagementSerializer
+
+
+# Pain Insights APIs
+
+# helper function: returns the patient profile
+# user's own
+def get_patient_profile(request):
+    query_patient_profile = request.query_params.get("patient_profile")
+
+    if query_patient_profile:
+        return query_patient_profile
+    
+    return own_patient_profile(request.user).pk
+
+# helper function: one week's pain scores
+def pain_scores(pain):
+    return {"week_starting": pain.assessment.week_starting, "current": pain.current, "worst": pain.worst, "average": pain.average, "mildest": pain.mildest}
+
+
+# GET /api/painTrend/?patient_profile=<id>&days=30
+# - weekly pain scores oldest first
+# - supporters only get scores if the patient has can_view_assessments on
+class PainTrend(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        patient_profile = get_patient_profile(request)
+        days = int(request.query_params.get("days", 30))
+        start_date = date.today() - timedelta(days= days)
+
+        query_set = MyPain.objects.filter(
+            assessment__in = visible_assessments(request.user),
+            assessment__patient_profile = patient_profile,
+            assessment__week_starting = start_date
+        )
+
+        query_set = query_set.select_related("assessment")
+        query_set = query_set.order_by("assessment__week_starting")
+
+        pain_data = []
+
+        for pain in query_set:
+            pain_data.append(pain_scores(pain))
+
+        return Response(pain_data)
+
+
+# GET /api/painProfile/?patient_profile=<id>
+# - Pain profile summary: latest scores, areas ticked in the last 30 days and current medication
+class PainProfile(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        patient_profile = get_patient_profile(request)
+        today = date.today()
+        thirty_days_ago = today - timedelta(days=30)
+
+        # All pain records the user is allowed to see
+        pains = MyPain.objects.filter(
+            assessment__in = visible_assessments(request.user),
+            assessment__patient_profile = patient_profile
+        )
+
+        pains = pains.select_related("assessment")
+
+        # Latest pain record
+        latest = pains.order_by("-assessment__week_starting").first()
+
+        # Recent pain and locations
+        recent_pains = pains.filter(assessment__week_starting__gte = thirty_days_ago)
+        recent_pains = recent_pains.prefetch_related("locations")
+        
+        locations = set()
+        for pain in recent_pains:
+            for location in pain.locations.all():
+                locations.add(location.text)
+        locations = sorted(locations)
+
+        # Current prescriptions
+        prescriptions = visible_prescriptions(request.user)
+        prescriptions = prescriptions.filter(
+            patient_profile=patient_profile
+        )
+
+        prescriptions = prescriptions.filter(Q(stopped_on__isnull = True) | Q(stopped_on__gte = today))
+        prescriptions = prescriptions.distinct()
+
+        response_data = {"latest_pain": None, "recent_locations": locations, 
+                         "current_prescriptions": PrescriptionSerializer(prescriptions, many = True,).data, "last_updated": None,}
+
+        if latest:
+            response_data["latest_pain"] = pain_scores(latest)
+            response_data["last_updated"] = latest.updated_at
+
+        return Response(response_data)
