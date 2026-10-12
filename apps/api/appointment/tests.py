@@ -5,7 +5,7 @@ from rest_framework.test import APITestCase
 
 from accounts import permissions
 from accounts.models import PatientProfile, SupportLink, User
-from appointment.models import Appointment, AppointmentAccess
+from appointment.models import Appointment, AppointmentAccess, AppointmentQuestion
 
 from audit.models import AuditEntry
 
@@ -183,3 +183,32 @@ class AppointmentSwitchTests(APITestCase):
         self.update_link(can_view_appointments = True)
         response = self.client.patch(f"/api/appointment/{self.appointment.pk}", {"doctor": "Dr Who"}, format = "json")
         self.assertEqual(response.status_code, 404)
+
+class AnswerPermissionTests(APITestCase):
+    # POST /api/appointmentAnswer/ 
+
+    def setUp(self):
+        self.patient = User.objects.create_user("+61490813123", "Josh", PIN)
+        self.profile = PatientProfile.objects.create(user = self.patient)
+        self.appointment = Appointment.objects.create(
+            patient_profile = self.profile, scheduled_date = timezone.now(), created_by = self.patient,
+        )
+        self.question = AppointmentQuestion.objects.create(appointment = self.appointment, text = "Is this normal?", created_by = self.patient)
+
+        self.supporter = User.objects.create_user("+61411111111", "Mum", PIN)
+        self.link = SupportLink.objects.create(
+            patient_profile = self.profile, patient_user = self.patient,
+            supporter_user = self.supporter, status = SupportLink.Status.ACTIVE,
+        )
+        self.client.force_authenticate(self.supporter)
+
+    def answer(self):
+        return self.client.post("/api/appointmentAnswer/", {"question": str(self.question.id), "text": "Yes"}, format = "json")
+
+    def test_add_questions_cannot_record_answers(self):
+        AppointmentAccess.objects.create(appointment = self.appointment, support_link = self.link, can_add_questions = True)
+        self.assertEqual(self.answer().status_code, 400)
+
+    def test_record_answers_can_record_answers(self):
+        AppointmentAccess.objects.create(appointment = self.appointment, support_link = self.link, can_record_answers = True)
+        self.assertEqual(self.answer().status_code, 201)

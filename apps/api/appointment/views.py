@@ -10,7 +10,8 @@ from accounts.models import SupportLink
 from accounts.permissions import can_edit_patient_data
 from accounts.views import own_patient_profile
 from appointment import grants
-from appointment.models import Appointment, AppointmentAccess, AppointmentAnswer, AppointmentQuestion
+from appointment.models import Appointment, AppointmentAnswer, AppointmentQuestion
+from accounts.permissions import is_owner, can_add_question, visible_appointment_access, visible_appointments, can_record_answer
 
 from appointment.serializer import AccessGrantSerializer, AppointmentAccessSerializer, AppointmentAnswerSerializer, \
     AppointmentQuestionSerializer, AppointmentSerializer, GrantAccessSerializer
@@ -101,35 +102,8 @@ class RevokeAccessView(APIView):
         return Response(status = status.HTTP_204_NO_CONTENT)
 
 
-# helper function: checks if user has valid (not revoked, active support link) access to
-# appointment with the given permission flag, e.g. 'can_add_questions', 'can_record_answers'
-def has_appointment_access(user, appointment, flag):
-    return AppointmentAccess.objects.filter(
-            appointment = appointment,
-            support_link__supporter_user = user,
-            support_link__status = SupportLink.Status.ACTIVE,
-            revoked_at__isnull = True,
-            **{flag: True}
-        ).exists()
-
-# helper function: checks if user is the patient of the appointment
-def is_appointment_patient(user, appointment):
-    return appointment.patient_profile.user_id == user.id
-
-
 # Appointment APIs:
 
-# helper function: returns set of appointments that user can access (own, or granted access
-# through an active support link that hasn't been revoked)
-def visible_appointments(user):
-    return Appointment.objects.filter(
-            Q(patient_profile__user = user) |
-            Q(patient_profile__support_links__supporter_user = user,
-              patient_profile__support_links__status = SupportLink.Status.ACTIVE,
-              patient_profile__support_links__can_view_appointments = True) |
-            Q(access_grants__support_link__supporter_user = user,
-              access_grants__support_link__status = SupportLink.Status.ACTIVE,
-              access_grants__revoked_at__isnull = True))
 
 # helper function: filters appointments to those scheduled on the given date (YYYY-MM-DD) in
 # Australia
@@ -215,13 +189,13 @@ class AppointmentQuestionListCreate(generics.ListCreateAPIView):
             appointment = appointment).aggregate(Max('order_index'))['order_index__max']
         order_index = (last_index + 1) if last_index is not None else 0
 
-        if is_appointment_patient(user, appointment):
+        if is_owner(user, appointment.patient_profile):
             source = serializer.validated_data.get("source", AppointmentQuestion.Source.PATIENT)
             if source == AppointmentQuestion.Source.SUPPORT:
                 raise serializers.ValidationError(
                     {'source':'Patients cannot create support questions.'})
             serializer.save(created_by = user, source = source, order_index = order_index)
-        elif has_appointment_access(user, appointment, 'can_add_questions'):
+        elif can_add_question(user, appointment):
             source = serializer.validated_data.get("source", AppointmentQuestion.Source.SUPPORT)
             if source == AppointmentQuestion.Source.PATIENT:
                 raise serializers.ValidationError(
@@ -279,8 +253,7 @@ class AppointmentAnswerListCreate(generics.ListCreateAPIView):
         user = self.request.user
         question = serializer.validated_data["question"]
         appointment = question.appointment
-        if not (is_appointment_patient(user, appointment) or
-                has_appointment_access(user, appointment, 'can_record_answers')):
+        if not can_record_answer(user, appointment):
             raise serializers.ValidationError({'question':'You do not have access.'})
 
         serializer.save(recorded_by = user)
@@ -340,13 +313,6 @@ class AppointmentAnswerRecording(generics.RetrieveAPIView):
 
 # AppointmentAccess APIs:
 
-# helper function: returns set of appointment access records that user can access
-def visible_appointment_access(user):
-    return AppointmentAccess.objects.filter(
-            Q(appointment__patient_profile__user = user) |
-            Q(support_link__supporter_user = user)
-        )
-
 class AppointmentAccessListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = AppointmentAccessSerializer
@@ -365,7 +331,7 @@ class AppointmentAccessListCreate(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         user = self.request.user
         appointment = serializer.validated_data["appointment"]
-        if not is_appointment_patient(user, appointment):
+        if not is_owner(user, appointment.patient_profile):
             raise serializers.ValidationError({'appointment':'You do not have access.'})
 
         support_link = serializer.validated_data["support_link"]

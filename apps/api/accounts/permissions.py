@@ -1,7 +1,8 @@
 from rest_framework.permissions import SAFE_METHODS, BasePermission
+from django.db.models import Q
 
 from accounts.models import SupportLink
-from appointment.models import AppointmentAccess
+from appointment.models import AppointmentAccess, Appointment
 
 
 def is_owner(user, patient_profile):
@@ -20,7 +21,7 @@ def supporter_allowed(user, patient_profile, **switches):
 
 
 def has_access(user, appointment, **flags):
-    # True if user has a live access for this appointment through an active support link
+    # True if user has a live access for this appointment through active support link
     return AppointmentAccess.objects.filter(
         appointment = appointment,
         support_link__supporter_user = user,
@@ -87,3 +88,23 @@ class PrescriptionPermission(PatientRecordPermission):
 class AppointmentPermission(PatientRecordPermission):
     def can_view(self, user, record):
         return can_view_appointment(user, record)
+
+
+# Returns set of appointment access records that user can access
+def visible_appointment_access(user):
+    return AppointmentAccess.objects.filter(
+            Q(appointment__patient_profile__user = user) |
+            Q(support_link__supporter_user = user)
+        )
+
+# Returns set of appointments that user can access (own, or granted access
+# through an active support link that hasn't been revoked)
+def visible_appointments(user):
+    return Appointment.objects.filter(
+            Q(patient_profile__user = user) |
+            Q(patient_profile__support_links__supporter_user = user,
+              patient_profile__support_links__status = SupportLink.Status.ACTIVE,
+              patient_profile__support_links__can_view_appointments = True) |
+            Q(access_grants__support_link__supporter_user = user,
+              access_grants__support_link__status = SupportLink.Status.ACTIVE,
+              access_grants__revoked_at__isnull = True))
