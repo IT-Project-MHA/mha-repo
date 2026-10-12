@@ -1,6 +1,8 @@
 from django.db.models import Max, Q
 from django.http import FileResponse, Http404
 from django.utils.dateparse import parse_date
+from django.utils import timezone
+
 from rest_framework import generics, serializers, status
 from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
@@ -10,8 +12,10 @@ from accounts.models import SupportLink
 from accounts.permissions import can_edit_patient_data
 from accounts.views import own_patient_profile
 from appointment import grants
-from appointment.models import Appointment, AppointmentAnswer, AppointmentQuestion
+from appointment.models import Appointment, AppointmentAnswer, AppointmentQuestion, AppointmentAccess
 from accounts.permissions import is_owner, can_add_question, visible_appointment_access, visible_appointments, can_record_answer
+from audit.models import AuditEntry
+from audit.services import record, record_view
 
 from appointment.serializer import AccessGrantSerializer, AppointmentAccessSerializer, AppointmentAnswerSerializer, \
     AppointmentQuestionSerializer, AppointmentSerializer, GrantAccessSerializer
@@ -19,6 +23,7 @@ from appointment.serializer import AccessGrantSerializer, AppointmentAccessSeria
 from mpowered_api.immutable import save_without_immutable_changes
 from mpowered_api.protected import destroy_or_reject_protected
 from mpowered_api.validators import australian_day_range
+from mpowered_api.soft_delete import soft_delete
 
 
 # Instructions:
@@ -41,6 +46,7 @@ from mpowered_api.validators import australian_day_range
 # allowed to update/delete return a 404 error for those requests.
 
 
+
 def get_own_appointment(user, appointment_pk):
 
     appointment = Appointment.objects.filter(pk = appointment_pk, deleted_at__isnull = True).first()
@@ -50,6 +56,10 @@ def get_own_appointment(user, appointment_pk):
 
     return appointment
 
+# helper function: a cancelled appointment is kept as a record
+def reject_if_cancelled(appointment):
+    if appointment.status == Appointment.Status.CANCELLED:
+        raise serializers.ValidationError({'appointment':'This appointment has been cancelled.'})
 
 class GrantAccessView(APIView):
     # POST /appointments/{id}/access
@@ -63,6 +73,8 @@ class GrantAccessView(APIView):
 
         if appointment is None:
             return Response({"detail": "not_found"}, status = status.HTTP_404_NOT_FOUND)
+
+        reject_if_cancelled(appointment)
 
         serializer = GrantAccessSerializer(data = request.data)
         serializer.is_valid(raise_exception = True)
@@ -101,6 +113,25 @@ class RevokeAccessView(APIView):
 
         return Response(status = status.HTTP_204_NO_CONTENT)
 
+class CancelAppointmentView(APIView):
+    # POST /appointments/{id}/cancel
+    # Patient cancels appointment, kept but can't be edited
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, appointment_pk):
+        appointment = get_own_appointment(request.user, appointment_pk)
+
+        if appointment is None:
+            return Response({"detail": "not_found"}, status = status.HTTP_404_NOT_FOUND)
+
+        reject_if_cancelled(appointment)
+
+        appointment.status = Appointment.Status.CANCELLED
+        appointment.save(update_fields = ["status", "updated_at"])
+        record(request.user, AuditEntry.Action.UPDATE, appointment, context = {"status": "cancelled"})
+
+        return Response(AppointmentSerializer(appointment).data, status = status.HTTP_200_OK)
 
 # Appointment APIs:
 
@@ -138,6 +169,7 @@ class AppointmentListCreate(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         user = self.request.user
         serializer.save(patient_profile = own_patient_profile(user), created_by = user)
+        record(user, AuditEntry.Action.CREATE, serializer.instance)
 
 class AppointmentRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
@@ -161,8 +193,14 @@ class AppointmentRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
             query_set = filter_scheduled_date(query_set, scheduled_date)
         return query_set.distinct()
 
+    def perform_update(self, serializer):
+        reject_if_cancelled(serializer.instance)
+        serializer.save()
+        record(self.request.user, AuditEntry.Action.UPDATE, serializer.instance)
+
     def perform_destroy(self, instance):
-        destroy_or_reject_protected(instance)
+        soft_delete(instance)
+        record(self.request.user, AuditEntry.Action.DELETE, instance)
 
 
 
@@ -174,6 +212,7 @@ class AppointmentQuestionListCreate(generics.ListCreateAPIView):
     def get_queryset(self):
         user = self.request.user
         appointment = self.request.query_params.get("appointment")
+        reject_if_cancelled(appointment)
         query_set = AppointmentQuestion.objects.filter(
             appointment__in = visible_appointments(user))
 
@@ -195,12 +234,13 @@ class AppointmentQuestionListCreate(generics.ListCreateAPIView):
                 raise serializers.ValidationError(
                     {'source':'Patients cannot create support questions.'})
             serializer.save(created_by = user, source = source, order_index = order_index)
+            record(user, AuditEntry.Action.CREATE, serializer.instance)
         elif can_add_question(user, appointment):
             source = serializer.validated_data.get("source", AppointmentQuestion.Source.SUPPORT)
             if source == AppointmentQuestion.Source.PATIENT:
                 raise serializers.ValidationError(
                     {'source':'Supporters cannot create patient questions.'})
-            serializer.save(created_by = user, source = source, order_index = order_index)
+            serializer.save(created_by = user, source = source, order_index = order_index, is_selected = False)
         else:
             raise serializers.ValidationError({'appointment':'You do not have access.'})
 
@@ -226,9 +266,14 @@ class AppointmentQuestionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPI
         return query_set.distinct()
 
     def perform_update(self, serializer):
+        instance = serializer.instance
+        reject_if_cancelled(instance.appointment)
         save_without_immutable_changes(serializer, ['appointment', 'source'])
+        record(self.request.user, AuditEntry.Action.UPDATE, serializer.instance)
 
     def perform_destroy(self, instance):
+        reject_if_cancelled(instance.appointment)
+        record(self.request.user, AuditEntry.Action.DELETE, instance)
         destroy_or_reject_protected(instance)
 
 
@@ -258,6 +303,7 @@ class AppointmentAnswerListCreate(generics.ListCreateAPIView):
 
         serializer.save(recorded_by = user)
 
+
 class AppointmentAnswerRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = AppointmentAnswerSerializer
@@ -283,16 +329,16 @@ class AppointmentAnswerRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIVi
 
     # file needs to be manually deleted from storage
     def perform_update(self, serializer):
+        reject_if_cancelled(serializer.instance.question.appointment)
         old_recording = serializer.instance.recording_file.name
         save_without_immutable_changes(serializer, ['question'])
-        if old_recording and old_recording != serializer.instance.recording_file.name:
-            serializer.instance.recording_file.storage.delete(old_recording)
+        record(self.request.user, AuditEntry.Action.UPDATE, serializer.instance)
 
     def perform_destroy(self, instance):
+        reject_if_cancelled(instance.question.appointment)
+        record(self.request.user, AuditEntry.Action.DELETE, instance)
         recording = instance.recording_file
         instance.delete()
-        if recording:
-            recording.storage.delete(recording.name)
 
 # AppointmentAnswer recording download API:
 # - select: returns the answer's audio file, for users who can see the answer

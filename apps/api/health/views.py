@@ -8,12 +8,12 @@ from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 from django.db.models import Q
 from rest_framework import serializers
 
-from .models import Prescription, Assessment, MyPain, MyMovement, MyPersonalCare, \
-   MySocialHealth, MyManagement
+from .models import Prescription, Assessment, MyPain, MyMovement, MyPersonalCare, MySocialHealth, MyManagement
 from accounts.views import own_patient_profile
 from .serializer import *
 from mpowered_api.immutable import save_without_immutable_changes
 from accounts.permissions import visible_assessments, visible_prescriptions
+
 
 # Instructions:
 # All views need the header Authorization: Token <token>, without they return 401.

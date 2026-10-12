@@ -74,13 +74,13 @@ def visible_appointment_access(user):
 # through an active support link that hasn't been revoked)
 def visible_appointments(user):
     return Appointment.objects.filter(
-            Q(patient_profile__user = user) |
+            Q(patient_profile__user = user) | 
             Q(patient_profile__support_links__supporter_user = user,
               patient_profile__support_links__status = SupportLink.Status.ACTIVE,
               patient_profile__support_links__can_view_appointments = True) |
             Q(access_grants__support_link__supporter_user = user,
               access_grants__support_link__status = SupportLink.Status.ACTIVE,
-              access_grants__revoked_at__isnull = True))
+              access_grants__revoked_at__isnull = True)).filter(deleted_at__isnull = True, patient_profile__deleted_at__isnull = True)
 
 
 # helper function: returns set of patient profiles that user can access
@@ -112,7 +112,7 @@ def visible_assessments(user):
             Q(patient_profile__user = user) |
             Q(patient_profile__support_links__supporter_user = user,
               patient_profile__support_links__status = SupportLink.Status.ACTIVE,
-              patient_profile__support_links__can_view_assessments = True))
+              patient_profile__support_links__can_view_assessments = True)).filter(patient_profile__deleted_at__isnull = True)
 
 
 def visible_audit_entries(user):
