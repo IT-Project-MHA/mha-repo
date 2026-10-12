@@ -35,7 +35,7 @@ export default function ScreenLayout() {
           fontSize: theme.h6.fontSize,
         },
         headerBackButtonDisplayMode: 'default',
-        headerBackTitle: 'Settings',
+        headerBackTitle: 'My Health',
       }}
     >
       <Stack.Screen 
