@@ -39,9 +39,10 @@ export default function Page() {
       >
         <MultiSelect
         questionOptions={CONDITIONS}
+        headingText='You can select multiple conditions'
         onSubmit={()=>{router.navigate('/(onboarding)/additionalConditionsTextEntry')}}
         MIN_SELECTIONS={0}
-        MAX_SELECTIONS={CONDITIONS.length}
+        MAX_SELECTIONS={CONDITIONS.length+1}
         />
       </ScrollView>
     </View>

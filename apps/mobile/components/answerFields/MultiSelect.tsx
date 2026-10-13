@@ -8,16 +8,15 @@ import Button from "../atomicUI/Button";
 type MultiSelectProps ={
   questionOptions: string[];
   onSubmit: (v: string[]) => void;
+  headingText: string;
   MIN_SELECTIONS: number;
   MAX_SELECTIONS: number;
 }
 
-function MultiSelect({ questionOptions, onSubmit, MIN_SELECTIONS, MAX_SELECTIONS }: MultiSelectProps) {
+function MultiSelect({ questionOptions, onSubmit, headingText, MIN_SELECTIONS, MAX_SELECTIONS }: MultiSelectProps) {
   const { theme } = useTheme();
 
   const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]); // Tracks the currently selected answers
-  const [userAnswers, setUserAnswers] = useState<{ question: string }[]>([]); // Stores user's answers and correctness
-
 
 
   function validateMultipleChoice(): boolean {
@@ -42,7 +41,7 @@ function MultiSelect({ questionOptions, onSubmit, MIN_SELECTIONS, MAX_SELECTIONS
   };
   return (
     <SafeAreaView style={theme.container}>
-      <Text style={[theme.text, {textAlign: 'center'}]}>"Select the most relevant options, note the s"</Text>
+      <Text style={[theme.text, {textAlign: 'center'}]}>{headingText}</Text>
       {/* render options as buttons */}
       {questionOptions.map((option, index) => (
         <TouchableOpacity
@@ -61,7 +60,7 @@ function MultiSelect({ questionOptions, onSubmit, MIN_SELECTIONS, MAX_SELECTIONS
       ))}
 
       {/* display current selections */}
-      <View style={{ marginTop: 10 }}>
+      <View style={{ marginTop: 10}}>
         <Text style={theme.text}>Selected: {selectedAnswers.join(", ")}</Text>
       </View>
       <Button
@@ -73,4 +72,4 @@ function MultiSelect({ questionOptions, onSubmit, MIN_SELECTIONS, MAX_SELECTIONS
   );
 }
 
-export { MultiSelect }; //add the new component here
+export { MultiSelect };

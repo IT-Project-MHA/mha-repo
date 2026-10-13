@@ -15,9 +15,10 @@ import { View, Text } from 'react-native';
 import { useTheme } from "../../../context/ThemeContext";
 import { NumberEntry } from '../../../components/answerFields/NumberEntry';
 import { useRouter } from 'expo-router';
+import { apiPatientProfile } from '../../api/django-API'
 
 function smsVerifier(code: string){
-
+  //on success, we create the account with all the gathered information
 }
 export default function Page() {
   const router = useRouter();

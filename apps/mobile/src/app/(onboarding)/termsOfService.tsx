@@ -22,7 +22,7 @@ export default function Page() {
       <Text style={theme.text}>A few quick questions so we can make things more relevant for you</Text>
         <Button
         label='continue'
-        onPress={()=>{router.navigate('/(onboarding)/sexSelect')}}
+        onPress={()=>{router.navigate('/(onboarding)/userType')}}
         buttonType='primaryButton'
         />
       <Text style={theme.text}>By continuing you agree to Mpowered's Terms and Conditions and Privacy Policy</Text>

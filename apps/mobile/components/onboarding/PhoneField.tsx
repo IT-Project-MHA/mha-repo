@@ -3,10 +3,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, TextInput, View, StyleSheet } from "react-native";
 import Button from "../atomicUI/Button";
 import { useTheme } from "../../context/ThemeContext";
+import { RelativePathString, useRouter } from "expo-router";
 
-function onSubmit(v: string){
 
-}
 
 
 //Input variables
@@ -27,7 +26,7 @@ function validateTextInput(text: string) {
   const length = text.length;
   if (length > MAX_lENGTH_NUM) {
     return "phone number is too long";
-  }else if(1){
+  }else if(length < MAX_lENGTH_NUM){
     return "phone number is too short"
   }
   return null;
@@ -36,10 +35,15 @@ function validateTextInput(text: string) {
 /**
  * This is a variation of text entry, specifically for phone numbers
  */
+type PhoneFieldProps ={
+  verificationPageDir: string;
+}
+
 function PhoneField() {
   const { theme } = useTheme();
+  const router = useRouter();
 
-  const [value, setValue] = useState<string>("04");
+  const [value, setValue] = useState<string>(AREA_CODE);
   const [error, setError] = useState<string>("");
 
 
@@ -55,7 +59,9 @@ function PhoneField() {
       setError(err);
       return;
     }
-    onSubmit(value);
+    //if it's all good, send the SMS and direct to next page
+    //send SMS
+    router.navigate('/(onboarding)/verifyPhone');
   };
 
   return (
@@ -70,7 +76,7 @@ function PhoneField() {
           textContentType="telephoneNumber"
         />
         <View style={theme.container}>
-        {!!error && <Text>{error}</Text>}
+        {!!error && <Text style={theme.text}>{error}</Text>}
         </View>
         <Button
           label="Submit"

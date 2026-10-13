@@ -2,6 +2,7 @@
  * first page of sign-up sequence
  * asks for name
  * directs to terms and conditions page
+ * FIX: allow skip
  */
 
 
@@ -20,7 +21,7 @@ export default function Page() {
       <Text style={theme.text}>Do you have any other conditions?</Text>
       <View style={theme.container}>
         <TextEntry 
-        onSubmit={()=>{router.navigate('/(onboarding)/termsOfService')}}
+        onSubmit={()=>{router.navigate('/(onboarding)/initialPhoneEntry')}}
         placeholder='Type conditions or symptoms that you know'
         />
       </View>
