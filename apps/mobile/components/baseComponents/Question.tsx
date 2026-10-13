@@ -6,10 +6,11 @@ import { StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ENTRY_COMPONENTS, { ENTRY_TYPE } from "../answerFields/EntryRegistry";
 import { InvalidQuestionTypeError } from "@/customErrors/QuestionErrors";
-class QuestionProps {
-  title?: String;
-  detail?: String;
-  questionType!: ENTRY_TYPE;
+
+type QuestionProps = {
+  title: String;
+  detail: String;
+  questionType: ENTRY_TYPE;
 }
 
 export default function Question({qProperties}: {qProperties: QuestionProps}) {

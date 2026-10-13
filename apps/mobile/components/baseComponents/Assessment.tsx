@@ -6,9 +6,9 @@ import { Question, QuestionProps } from "../../components/baseComponents/Questio
 import {EmptyQuestionArrayError} from "../../src/customErrors/QuestionErrors";
 
 
-class AssessmentProps {
-  title?: String;
-  questions!: QuestionProps[];
+type AssessmentProps = {
+  title: String;
+  questions: QuestionProps[];
 }
 
 export default function Assessment({ properties }: {properties: AssessmentProps}) {
