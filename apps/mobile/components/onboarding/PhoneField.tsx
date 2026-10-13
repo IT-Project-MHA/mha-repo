@@ -73,10 +73,8 @@ function PhoneField() {
         {!!error && <Text>{error}</Text>}
         </View>
         <Button
-          label="submit"
-          onPress={() => {
-            onSubmit;
-          }}
+          label="Submit"
+          onPress={handleSubmit}
           buttonType="primaryButton"
         />
       </View>
