@@ -1,7 +1,7 @@
 name: FrontendTestSuite
 
 on:
-  push:
+  pull_request:
     branches:
       - frontend-branch
 
