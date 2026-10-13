@@ -25,7 +25,7 @@ export default function Page() {
       <View>
         <MultipleChoice 
         questionOptions={["Yes, I have", "No, I haven't"]}
-        onSubmit={()=>{router.navigate('/(onboarding)/additionalConditionsTextEntry')}}
+        onSubmit={()=>{router.navigate('/(onboarding)/dropDownConditions')}}
         />
       </View>
       <Text style={theme.text}> No diagnosis? No problem! You know your body and how you feel so being Health MPowered is for you :)</Text>

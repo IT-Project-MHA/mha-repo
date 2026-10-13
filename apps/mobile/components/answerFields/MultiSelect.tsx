@@ -2,32 +2,31 @@ import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, View, TouchableOpacity } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import Button from "../atomicUI/Button";
 
-//MultipleChoice variables
-const NUM_CHOICES = 6;
-const MIN_SELECTIONS = 1;
-const MAX_SELECTIONS = 10;
-const MAX_LENGTH_NUM = String(MAX_SELECTIONS).length;
 
-function validateMultipleChoice(numText: string) {
-  //checking if it's something we should accept, i.e. within range
-  return null;
+type MultiSelectProps ={
+  questionOptions: string[];
+  onSubmit: (v: string[]) => void;
+  MIN_SELECTIONS: number;
+  MAX_SELECTIONS: number;
 }
 
-function MultiSelect({ onSubmit }: { onSubmit: (v: string) => void }) {
+function MultiSelect({ questionOptions, onSubmit, MIN_SELECTIONS, MAX_SELECTIONS }: MultiSelectProps) {
   const { theme } = useTheme();
-  const questionOptions = [
-    //array of options
-    "London",
-    "Berlin",
-    "123",
-    "9892164932@",
-  ];
 
-  const [currentQuestion, setCurrentQuestion] = useState(0); // Tracks the current question index
-  const [score, setScore] = useState(0); // Tracks the user's score
   const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]); // Tracks the currently selected answers
   const [userAnswers, setUserAnswers] = useState<{ question: string }[]>([]); // Stores user's answers and correctness
+
+
+
+  function validateMultipleChoice(): boolean {
+    //checking if it's something we should accept, i.e. selectedAnswers is between our bounds
+    if(selectedAnswers.length < MIN_SELECTIONS) return false;
+    if(selectedAnswers.length > MAX_SELECTIONS) return false;
+
+    return true;
+  }
 
   const handleSelect = (answer: string) => {
     // Toggle selection of an answer
@@ -38,6 +37,8 @@ function MultiSelect({ onSubmit }: { onSubmit: (v: string) => void }) {
   };
 
   const handleSubmit = () => {
+    if(validateMultipleChoice())
+      onSubmit(selectedAnswers);
   };
   return (
     <SafeAreaView style={theme.container}>
@@ -63,6 +64,11 @@ function MultiSelect({ onSubmit }: { onSubmit: (v: string) => void }) {
       <View style={{ marginTop: 10 }}>
         <Text style={theme.text}>Selected: {selectedAnswers.join(", ")}</Text>
       </View>
+      <Button
+      label= "Continue"
+      onPress={handleSubmit}
+      buttonType='primaryButton'
+      />
     </SafeAreaView>
   );
 }

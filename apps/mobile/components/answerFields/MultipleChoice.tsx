@@ -22,10 +22,7 @@ type MultipleChoiceProps ={
 function MultipleChoice({ questionOptions, onSubmit }: MultipleChoiceProps) {
   const { theme } = useTheme();
 
-
-  const [score, setScore] = useState(0); // Tracks the user's score
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null); // Tracks the currently selected answer
-  const [userAnswer, setUserAnswer] = useState<string | null>(null); // Stores user's answer
 
   const handleSelect = (answer: string) => {
     // Called when a user selects an answer
