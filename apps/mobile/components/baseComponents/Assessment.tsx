@@ -11,21 +11,22 @@ type AssessmentProps = {
   questions: QuestionProps[];
 }
 
-export default function Assessment({ properties }: {properties: AssessmentProps}) {
+export default function Assessment({title, questions}: AssessmentProps) {
   const [currIndex, setNumber] = useState(0);
-  if (properties.questions == null) {
+  if (questions == null) {
     throw new EmptyQuestionArrayError("properties.questions is null");
-  } else if (properties.questions.length < 1) {
-    throw new EmptyQuestionArrayError("properties.questions has length " + properties.questions.length);
+  } else if (questions.length < 1) {
+    throw new EmptyQuestionArrayError("properties.questions has length " + questions.length);
   }
-  let currQuestion: QuestionProps = properties.questions[currIndex];
+  let currQuestion: QuestionProps = questions[currIndex];
   return (
     <SafeAreaView>
       <Button title="<- Back"></Button>
-      <Question qProperties={properties.questions[currIndex]} />
-      <Text>{'Progress: ' + (currIndex+1) + '/' + properties.questions.length}</Text>
+      <Question title={questions[currIndex].title} 
+      detail={questions[currIndex].detail} questionType={questions[currIndex].questionType} />
+      <Text>{'Progress: ' + (currIndex+1) + '/' + questions.length}</Text>
       {<button onClick={() => {
-        if (currIndex >= properties.questions.length-1) {
+        if (currIndex >= questions.length-1) {
             // submit assessment
           } else {
             setNumber(currIndex + 1);

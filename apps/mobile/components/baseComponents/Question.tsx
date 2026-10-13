@@ -13,16 +13,16 @@ type QuestionProps = {
   questionType: ENTRY_TYPE;
 }
 
-export default function Question({qProperties}: {qProperties: QuestionProps}) {
-  const EntryComponent = ENTRY_COMPONENTS[qProperties.questionType];
+export default function Question({title, detail, questionType}:  QuestionProps) {
+  const EntryComponent = ENTRY_COMPONENTS[questionType];
   if (!EntryComponent) {
-    throw new InvalidQuestionTypeError(qProperties.questionType + ' is not a valid question type');
+    throw new InvalidQuestionTypeError(questionType + ' is not a valid question type');
   }
   return (
     <SafeAreaView>
-      <Text style={Styles.title}>{qProperties.title}</Text>
+      <Text style={Styles.title}>{title}</Text>
       {/*divider*/}
-      <Text style={Styles.detail}>{qProperties.detail}</Text>
+      <Text style={Styles.detail}>{detail}</Text>
         <EntryComponent onSubmit={() => {}} />
     </SafeAreaView>
   );
