@@ -21,7 +21,7 @@ export default function Page() {
         <NumberEntry 
         onSubmit={()=>{router.navigate('/(onboarding)/patientOnboarding/diagnosis')}}
         UPPER_BOUND={2025}
-        LOWER_BOUND={1890}
+        LOWER_BOUND={1900}
         MAX_lENGTH_NUM={4}
         />
       </View>

@@ -19,7 +19,7 @@ export default function Page() {
   function setDisplayName(displayName: string){
     setUserOnboaring({displayName});
 
-    router.navigate('/(onboarding)/userType')
+    router.navigate('/(onboarding)/initialPhoneEntry')
   }
 
   return (
