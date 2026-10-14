@@ -1,13 +1,26 @@
 import {
+    apiUser,
     apiPatientProfile,
-    apiAssignedGender,
     apiTrustedDevice,
     apiTermsAndPrivacy,
+    apiSupportLink,
 } from './django-API';
 
 /*Onboarding API helpers, built on the calls in django-API.js. Use them inside a try/catch block, a failed request throws an ApiError */
 
-//returns true if a patient profile with that phone number exists
-async function patientProfileWithPhoneNumberExists(phoneNumber){
+//creates a user
+async function completeUserOnboarding(phone_number, display_name, email){
+    apiUser('create', phone_number, display_name, email);
+}
 
+//creates a patient profile
+async function completePatientOnboarding( has_diagnosis, other_conditions, assigned_gender_at_birth, birth_year, pain_types){
+    apiPatientProfile('create',  has_diagnosis, other_conditions, assigned_gender_at_birth, birth_year, pain_types);
+}
+
+
+//takes the user phone number and connects it to the patient
+async function completeSupportPersonOnboarding(supporter_user, invited_phone_number){
+
+    apiSupportLink('create', supporter_user, invited_phone_number);
 }

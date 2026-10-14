@@ -18,8 +18,6 @@ export default function Page() {
       <Text style={theme.text}>Add your mobile</Text>
 
       <PhoneField/>
-
-      <Text style={theme.text}>By signing up, you agree to MPowered's Terms of Use and Privacy Policy</Text>
       
     </View>
   );

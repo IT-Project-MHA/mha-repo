@@ -20,8 +20,6 @@ export default function Page() {
   const router = useRouter();
 
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [emailAdress, setEmailAddress] = useState('');
-  const [pin, setPin] = useState('');
 
 
   useEffect(()=>{
