@@ -11,12 +11,12 @@
  */
 
 
-import { View, Text } from 'react-native';
-import { useTheme } from "../../../context/ThemeContext";
-import { NumberEntry } from '../../../components/answerFields/NumberEntry';
 import { useRouter } from 'expo-router';
-import { apiPatientProfile } from '../../api/django-API'
+import { Text, View } from 'react-native';
+import { NumberEntry } from '../../../components/answerFields/NumberEntry';
 import Button from '../../../components/atomicUI/Button';
+import { useTheme } from "../../../context/ThemeContext";
+import { completeUserOnboarding } from '../../api/onboarding_api_helpers';
 
 
 export default function Page() {
@@ -27,6 +27,10 @@ export default function Page() {
   function smsVerifier(code: string){
     //on success,we go to the userType selection page
 
+    //and send the API request
+    //fields: phone_number, display_name, email
+    //phone_number = 
+    completeUserOnboarding();
     router.navigate("/(onboarding)/userType");
   }
   return (

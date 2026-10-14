@@ -4,20 +4,30 @@
  * FIX LATER: add modal for terms of use and privacy policy.
  */
 
-import { View, Text } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Text, View } from 'react-native';
 import { PhoneField } from '../../../components/onboarding/PhoneField';
 import { useTheme } from "../../../context/ThemeContext";
-
+import { useOnboardingUserStore } from '../store/onboardingStorage';
 
 
 export default function Page() {
+  const router = useRouter();
   const { theme } = useTheme();
-  
+  const setUserOnboaring = useOnboardingUserStore((s)=> s.set);
+
+  function setPhone(phone: string){
+    setUserOnboaring({phone});
+    router.navigate('/(onboarding)/verifyPhone');
+  }
+
   return (
     <View style={theme.container}>
       <Text style={theme.text}>Add your mobile</Text>
 
-      <PhoneField/>
+      <PhoneField
+      onSubmit={setPhone}
+      />
       
     </View>
   );

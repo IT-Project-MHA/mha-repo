@@ -1,9 +1,9 @@
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
+import { Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Text, TextInput, View, StyleSheet } from "react-native";
-import Button from "../atomicUI/Button";
 import { useTheme } from "../../context/ThemeContext";
-import { RelativePathString, useRouter } from "expo-router";
+import Button from "../atomicUI/Button";
 
 
 
@@ -36,10 +36,10 @@ function validateTextInput(text: string) {
  * This is a variation of text entry, specifically for phone numbers
  */
 type PhoneFieldProps ={
-  verificationPageDir: string;
+  onSubmit: (phone :string)=> void;
 }
 
-function PhoneField() {
+function PhoneField({onSubmit}: PhoneFieldProps) {
   const { theme } = useTheme();
   const router = useRouter();
 
@@ -59,9 +59,7 @@ function PhoneField() {
       setError(err);
       return;
     }
-    //if it's all good, send the SMS and direct to next page
-    //send SMS
-    router.navigate('/(onboarding)/verifyPhone');
+    onsubmit;
   };
 
   return (
@@ -89,3 +87,4 @@ function PhoneField() {
 }
 
 export { PhoneField }; //add the new component here
+
