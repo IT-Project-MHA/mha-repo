@@ -9,7 +9,6 @@ import { View, Text, ScrollView } from 'react-native';
 import { useTheme } from "../../../context/ThemeContext";
 import { useRouter } from 'expo-router';
 import { MultiSelect } from '../../../components/answerFields/MultiSelect';
-import Button from '../../../components/atomicUI/Button';
 
 export default function Page() {
   const router = useRouter();
@@ -21,7 +20,7 @@ export default function Page() {
   function setUserType(selection: string[]){
     //this function sets the user type based on selection, and navigates to the appropriate page
 
-    //I believe the selection is in order of pressed, so check both
+    //the selection is in order of pressed, so check both
     let flag=false;
     for(let i=0; i<selection.length; i++){
       
@@ -43,10 +42,10 @@ export default function Page() {
     if(flag)
     {
       //navigates to sexSelect
-      router.navigate('/(onboarding)/sexSelect');
+      router.navigate('/(onboarding)/patientOnboarding/sexSelect');
     }else{
       //navigate to phone number. Also catches any weird error
-      router.navigate('/(onboarding)/initialPhoneEntry');
+      router.navigate('/(onboarding)/supportPersonOnboarding/supportPersonOnboarding');
     }
     //()=>{router.navigate('/(onboarding)/additionalConditionsTextEntry')}
   }

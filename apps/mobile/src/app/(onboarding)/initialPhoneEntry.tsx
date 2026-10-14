@@ -1,12 +1,7 @@
 /**
- * Last page of patient onboarding
- * 
- * Includes:
- * Phone field
- * Header text
- * descriptive text
- * submit / next button
- * back button
+ * First page of patient onboarding.
+ * asks for phone field
+ * FIX LATER: add modal for terms of use and privacy policy.
  */
 
 import { View, Text } from 'react-native';
@@ -20,10 +15,11 @@ export default function Page() {
   
   return (
     <View style={theme.container}>
-      <Text style={theme.text}>SIGN IN</Text>
-      <Text style={theme.text}>The first sign-in page. Prompts user for their phone number, then asks for verification based on account info</Text>
-      <Text style={theme.text}>This is a basic implementation though, so just phone verification</Text>
+      <Text style={theme.text}>Add your mobile</Text>
+
       <PhoneField/>
+
+      <Text style={theme.text}>By signing up, you agree to MPowered's Terms of Use and Privacy Policy</Text>
       
     </View>
   );

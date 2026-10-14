@@ -6,9 +6,9 @@
 
 
 import { View, Text } from 'react-native';
-import { PhoneField } from '../../../components/onboarding/PhoneField';
-import { useTheme } from "../../../context/ThemeContext";
-import { TextEntry } from '../../../components/answerFields/TextEntry';
+import { PhoneField } from '../../../../components/onboarding/PhoneField';
+import { useTheme } from "../../../../context/ThemeContext";
+import { TextEntry } from '../../../../components/answerFields/TextEntry';
 import { useRouter } from 'expo-router';
 
 export default function Page() {

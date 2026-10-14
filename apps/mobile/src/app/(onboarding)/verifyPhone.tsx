@@ -16,17 +16,22 @@ import { useTheme } from "../../../context/ThemeContext";
 import { NumberEntry } from '../../../components/answerFields/NumberEntry';
 import { useRouter } from 'expo-router';
 import { apiPatientProfile } from '../../api/django-API'
+import Button from '../../../components/atomicUI/Button';
 
-function smsVerifier(code: string){
-  //on success, we create the account with all the gathered information
-}
+
 export default function Page() {
   const router = useRouter();
   const { theme } = useTheme();
-  
+
+
+  function smsVerifier(code: string){
+    //on success,we go to the userType selection page
+
+    router.navigate("/(onboarding)/userType");
+  }
   return (
     <View style={theme.screen}>
-      <Text style={theme.text}> Your year of birth</Text>
+      <Text style={theme.text}>Verify your mobile</Text>
       <View style={theme.container}>
         <NumberEntry 
         onSubmit={smsVerifier}
@@ -35,6 +40,15 @@ export default function Page() {
         MAX_lENGTH_NUM={4}
         />
       </View>
+      <Text style={theme.text}>We've sent a code to FIX: ADD THEIR PHONE NUMBER HERE</Text>
+
+      {/**resend or change phone number code is sent to */}
+      <Button
+      label="I didn't recieve a code"
+      onPress={()=>{/**FIX: implement */}}
+      buttonType='secondaryButton'
+      />
+
     </View>
   );
 }

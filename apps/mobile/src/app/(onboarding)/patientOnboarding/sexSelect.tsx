@@ -7,9 +7,9 @@
 
 
 import { View, Text } from 'react-native';
-import { useTheme } from "../../../context/ThemeContext";
+import { useTheme } from "../../../../context/ThemeContext";
 import { useRouter } from 'expo-router';
-import { MultipleChoice } from '../../../components/answerFields/MultipleChoice';
+import { MultipleChoice } from '../../../../components/answerFields/MultipleChoice';
 
 export default function Page() {
   const router = useRouter();
@@ -25,7 +25,7 @@ export default function Page() {
       <View>
         <MultipleChoice 
         questionOptions={["Female", "Male", "Prefer not to say"]}
-        onSubmit={()=>{router.navigate('/(onboarding)/ageEntry')}}
+        onSubmit={()=>{router.navigate('/(onboarding)/patientOnboarding/ageEntry')}}
         />
       </View>
     </View>

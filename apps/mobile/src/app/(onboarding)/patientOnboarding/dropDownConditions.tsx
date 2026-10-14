@@ -17,10 +17,10 @@
 
 
 import { View, Text, ScrollView } from 'react-native';
-import { useTheme } from "../../../context/ThemeContext";
+import { useTheme } from "../../../../context/ThemeContext";
 import { useRouter } from 'expo-router';
-import { MultiSelect } from '../../../components/answerFields/MultiSelect';
-import Button from '../../../components/atomicUI/Button';
+import { MultiSelect } from '../../../../components/answerFields/MultiSelect';
+import Button from '../../../../components/atomicUI/Button';
 
 export default function Page() {
   const router = useRouter();
@@ -40,7 +40,7 @@ export default function Page() {
         <MultiSelect
         questionOptions={CONDITIONS}
         headingText='You can select multiple conditions'
-        onSubmit={()=>{router.navigate('/(onboarding)/additionalConditionsTextEntry')}}
+        onSubmit={()=>{router.navigate('/(onboarding)/patientOnboarding/additionalConditionsTextEntry')}}
         MIN_SELECTIONS={0}
         MAX_SELECTIONS={CONDITIONS.length+1}
         />

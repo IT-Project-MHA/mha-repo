@@ -5,9 +5,9 @@
 
 
 import { View, Text } from 'react-native';
-import { PhoneField } from '../../../components/onboarding/PhoneField';
-import { useTheme } from "../../../context/ThemeContext";
-import { NumberEntry } from '../../../components/answerFields/NumberEntry';
+import { PhoneField } from '../../../../components/onboarding/PhoneField';
+import { useTheme } from "../../../../context/ThemeContext";
+import { NumberEntry } from '../../../../components/answerFields/NumberEntry';
 import { useRouter } from 'expo-router';
 
 export default function Page() {
@@ -19,7 +19,7 @@ export default function Page() {
       <Text style={theme.text}> Your year of birth</Text>
       <View style={theme.container}>
         <NumberEntry 
-        onSubmit={()=>{router.navigate('/(onboarding)/diagnosis')}}
+        onSubmit={()=>{router.navigate('/(onboarding)/patientOnboarding/diagnosis')}}
         UPPER_BOUND={2025}
         LOWER_BOUND={1890}
         MAX_lENGTH_NUM={4}

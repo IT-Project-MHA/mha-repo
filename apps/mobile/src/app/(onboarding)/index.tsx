@@ -55,7 +55,7 @@ export default function Page() {
         </Modal>
       <Button
       label='Create Account'
-      onPress={()=>{router.navigate('/(onboarding)/createAccount')}}
+      onPress={()=>{router.navigate('/(onboarding)/initialPhoneEntry')}}
       buttonType='primaryButton'
       />
       <SignInButton/>

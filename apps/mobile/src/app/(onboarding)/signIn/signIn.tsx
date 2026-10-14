@@ -10,8 +10,8 @@
  */
 
 import { View, Text } from 'react-native';
-import { PhoneField } from '../../../components/onboarding/PhoneField';
-import { useTheme } from "../../../context/ThemeContext";
+import { PhoneField } from '../../../../components/onboarding/PhoneField';
+import { useTheme } from "../../../../context/ThemeContext";
 
 
 
