@@ -15,6 +15,10 @@ from accounts.views import own_patient_profile
 from .serializer import *
 from mpowered_api.immutable import save_without_immutable_changes
 from accounts.permissions import visible_assessments, visible_prescriptions
+from mpowered_api.soft_delete import soft_delete
+from audit.record_view import RecordView
+from audit.models import AuditEntry
+from audit.services import record
 
 
 # Instructions:
@@ -26,8 +30,8 @@ from accounts.permissions import visible_assessments, visible_prescriptions
 # To filter by attribute, put in the URL ?attribute_name=value. For multiple attributes:
 # ?attribute_name1=value&attribute_name2=value...
 
-# Attributes that are read only are specified in it's serializer. Sending a different value for
-# them in an update request returns a 400 error.
+# Attributes that are read only are specified in it's serializer.
+# If sent in update request they are ignored.
 
 # Records that other records depend on cannot be deleted, deleting them returns a 409 error.
 
@@ -43,7 +47,7 @@ class PrescriptionListCreate(generics.ListCreateAPIView):
         user = self.request.user
         query_patient_profile = self.request.query_params.get("patient_profile")
         
-        query_set = visible_prescriptions(user)
+        query_set = visible_prescriptions(user).filter(deleted_at__isnull = True)
         
         if query_patient_profile:
             query_set = query_set.filter(patient_profile = query_patient_profile)
@@ -52,8 +56,10 @@ class PrescriptionListCreate(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         user_patient_profile = own_patient_profile(self.request.user)
         serializer.save(patient_profile = user_patient_profile)
+        record(self.request.user, AuditEntry.Action.CREATE, serializer.instance)
 
-class PrescriptionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+
+class PrescriptionRetrieveUpdateDestroy(RecordView, generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = PrescriptionSerializer
 
@@ -68,6 +74,16 @@ class PrescriptionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         if self.request.method not in SAFE_METHODS:
             query_set = query_set.filter(patient_profile__user = user)
         return query_set.distinct()
+
+    def perform_update(self, serializer):
+        serializer.save()
+        record(self.request.user, AuditEntry.Action.UPDATE, serializer.instance)
+
+    # soft delete so past assessments with this medication still show it
+    def perform_destroy(self, instance):
+        soft_delete(instance)
+        record(self.request.user, AuditEntry.Action.DELETE, instance)
+
 
 
 
@@ -101,8 +117,10 @@ class AssessmentListCreate(generics.ListCreateAPIView):
             raise serializers.ValidationError(
                 {'week_starting':'An assessment already exists for this week.'})
         serializer.save(patient_profile = user_patient_profile)
+        record(self.request.user, AuditEntry.Action.CREATE, serializer.instance)
 
-class AssessmentRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+
+class AssessmentRetrieveUpdateDestroy(RecordView, generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = AssessmentSerializer
 
@@ -121,7 +139,7 @@ class AssessmentRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_update(self, serializer):
         save_without_immutable_changes(serializer, ['week_starting'])
-
+        record(self.request.user, AuditEntry.Action.UPDATE, serializer.instance)
 
 # Assessment task APIs (MyPain, MyMovement, MyPersonalCare, MySocialHealth, MyManagement):
 # each subclass sets its model & serializer_class.
@@ -153,8 +171,9 @@ class AssessmentTaskListCreate(generics.ListCreateAPIView):
         if not own_assessments(self.request.user).filter(id = assessment.id).exists():
             raise serializers.ValidationError({'assessment':'You do not have access.'})
         serializer.save()
+        record(self.request.user, AuditEntry.Action.UPDATE, assessment)
 
-class AssessmentTaskRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+class AssessmentTaskRetrieveUpdateDestroy(RecordView, generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
     model = None
 
@@ -174,7 +193,13 @@ class AssessmentTaskRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView)
 
     def perform_update(self, serializer):
         save_without_immutable_changes(serializer, ['assessment'])
+        record(self.request.user, AuditEntry.Action.UPDATE, serializer.instance.assessment)
 
+    # Logged against their assessment
+    def audit_target(self, instance):
+        return instance.assessment
+
+    
 class MyPainListCreate(AssessmentTaskListCreate):
     model = MyPain
     serializer_class = MyPainSerializer
@@ -293,7 +318,7 @@ class PainProfile(APIView):
         locations = sorted(locations)
 
         # Current prescriptions
-        prescriptions = visible_prescriptions(request.user)
+        prescriptions = visible_prescriptions(request.user).filter(deleted_at__isnull = True)
         prescriptions = prescriptions.filter(
             patient_profile=patient_profile
         )

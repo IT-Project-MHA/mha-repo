@@ -1,13 +1,13 @@
 import secrets
 from datetime import timedelta
 
-from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
 
 from accounts.models import PhoneVerification
+from accounts.sms import send_sms
 
 OTP_LENGTH = 6
 OTP_TTL = timedelta(minutes = 5)
@@ -26,9 +26,8 @@ def create_otp():
 
 
 def send_otp(phone_number, code):
-    # Send otp to phone number, right now just to console for testing
-    if settings.DEBUG:
-        print(f"[OTP] {phone_number}: {code}")
+    # Send otp to phone number
+    send_sms(phone_number, f"Your one time code is {code}. It expires in 5 minutes.")
 
 
 def issue_otp(phone_number):

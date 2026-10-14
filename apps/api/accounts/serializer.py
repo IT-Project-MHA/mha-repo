@@ -12,11 +12,24 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'phone_number', 'display_name', 'email', 'created_at', 'updated_at', 'deleted_at']
         read_only_fields = ['phone_number', 'deleted_at']
 
+# health details only the patient can see, supporters just get who the profile belongs to
+PATIENT_HEALTH_FIELDS = ['has_diagnosis', 'other_conditions', 'pain_types', 'assigned_gender_at_birth', 'birth_year']
+
 class PatientProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = PatientProfile
         fields = '__all__'
         read_only_fields = ['user']
+
+    # Supporters can see the profile but not health details
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+
+        if instance.user_id != self.context['request'].user.id:
+            for field in PATIENT_HEALTH_FIELDS:
+                del data[field]
+
+        return data
 
     def validate_birth_year(self, birth_year):
         # can't be in the future

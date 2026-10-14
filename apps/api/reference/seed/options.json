@@ -1,0 +1,84 @@
+{
+  "question_options": [
+    {"app_section": "onboarding", "question_key": "pain_type", "options": ["Osteoarthritis", "Chronic back or neck pain", "Nerve pain", "Migraine or headache", "Other"]},
+    {"app_section": "my_pain", "question_key": "pain_location", "options": ["Head", "Neck", "Shoulders", "Upper back", "Lower back", "Wrists", "Hands", "Knees", "Ankles", "Hips", "All over", "Other"]},
+    {"app_section": "my_management", "question_key": "medication_unit", "options": ["mg", "g", "mL", "iu", "µg", "%"]}
+  ],
+
+  "question_options_ordered": [
+    {"app_section": "my_movement", "question_key": "movement_general_impacts", "question_number": 2, "options": [
+      ["I walk more slowly than usual because of my pain", 1],
+      ["I lie down to rest more often because of my pain", 1],
+      ["I only stand up for short periods of time because of my pain", 1],
+      ["I try not to bend or kneel down because of my pain", 1],
+      ["I find it difficult to get out of a chair because of my pain", 1],
+      ["I sit down most of the day because of my pain", 1]]},
+    {"app_section": "my_movement", "question_key": "movement_walking", "question_number": 3, "options": [
+      ["Pain does not prevent me walking any distance", 0],
+      ["Pain prevents me from walking more than 2 kilometres", 1],
+      ["Pain prevents me from walking more than 1 kilometre", 2],
+      ["Pain prevents me from walking more than 500 metres", 3],
+      ["I can only walk using a stick or crutches", 4],
+      ["I am in bed most of the time", 5]]},
+    {"app_section": "my_movement", "question_key": "movement_lifting", "question_number": 4, "options": [
+      ["I can lift heavy weights without extra pain", 0],
+      ["I can lift heavy weights but it gives extra pain", 1],
+      ["I struggle to lift heavy weights off the floor, but I can lift them from a table", 2],
+      ["I struggle to lift heavy weights off the floor, but I can lift medium weights from a table", 3],
+      ["I can lift very light weights", 4],
+      ["I cannot lift or carry anything at all", 5]]},
+    {"app_section": "my_movement", "question_key": "movement_sitting", "question_number": 5, "options": [
+      ["I can sit in any chair as long as I like", 0],
+      ["I can only sit in my favourite chair as long as I like", 1],
+      ["Pain prevents me sitting more than one hour", 2],
+      ["Pain prevents me sitting more than 30 minutes", 3],
+      ["Pain prevents me from sitting more than 10 minutes", 4],
+      ["Pain prevents me from sitting at all", 5]]},
+    {"app_section": "my_movement", "question_key": "movement_standing", "question_number": 6, "options": [
+      ["I can stand as long as I want without increased pain", 0],
+      ["I can stand as long as I want but it increases my pain", 1],
+      ["Pain prevents me standing more than one hour", 2],
+      ["Pain prevents me standing more than 30 minutes", 3],
+      ["Pain prevents me from standing more than 10 minutes", 4],
+      ["Pain prevents me from standing at all", 5]]},
+
+
+    {"app_section": "my_personal_care", "question_key": "care_general_impacts", "question_number": 1, "options": [
+      ["I am not doing any jobs that I usually do around the house because of my pain", 1],
+      ["I get dressed more slowly than usual because of my pain", 1],
+      ["I sleep less well because of my pain", 1]]},
+    {"app_section": "my_personal_care", "question_key": "care_personal_care", "question_number": 2, "options": [
+      ["I can look after myself normally without causing extra pain", 0],
+      ["I can look after myself normally but it causes extra pain", 1],
+      ["It is painful to look after myself and I am slow and careful", 2],
+      ["I need some help but manage most of my personal care", 3],
+      ["I need help every day in most aspects of self-care", 4],
+      ["I do not get dressed, I wash with difficulty and stay in bed", 5]]},
+    {"app_section": "my_personal_care", "question_key": "care_sleeping", "question_number": 3, "options": [
+      ["My sleep is not disturbed by pain", 0],
+      ["My sleep is occasionally disturbed by pain", 1],
+      ["Because of pain I have less than 6 hours of sleep", 2],
+      ["Because of pain I have less than 4 hours of sleep", 3],
+      ["Because of pain I have less than 2 hours of sleep", 4],
+      ["Pain prevents me from sleeping", 5]]},
+
+
+    {"app_section": "my_social_health", "question_key": "social_social_life", "question_number": 1, "options": [
+      ["My social life is normal and gives me no extra pain", 0],
+      ["My social life is normal but increases the degree of pain", 1],
+      ["Pain has no significant effect on my social life apart from limiting my more energetic interests, e.g. gym, sports", 2],
+      ["Pain has restricted my social life and I do not go out as often", 3],
+      ["Pain has restricted my social life to my home", 4],
+      ["I have no social life because of pain", 5]]},
+    {"app_section": "my_social_health", "question_key": "social_travelling", "question_number": 2, "options": [
+      ["I can travel anywhere without pain", 0],
+      ["I can travel anywhere but it gives me extra pain", 1],
+      ["Pain is bad but I manage journeys over two hours", 2],
+      ["Pain restricts me to journeys of less than one hour", 3],
+      ["Pain restricts me to short necessary journeys under 30 minutes", 4],
+      ["Pain prevents me from travelling except to receive treatment", 5]]},
+
+    {"app_section": "my_management", "question_key": "management_exercise", "question_number": 1, "options": [
+      ["Every day", 0], ["5–6 days", 1], ["3–4 days", 2], ["1–2 days", 3], ["Not at all", 4]]}
+  ]
+}

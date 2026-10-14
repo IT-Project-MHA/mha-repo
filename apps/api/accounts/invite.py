@@ -1,8 +1,8 @@
 from django.utils import timezone
-from django.conf import settings
 
 from accounts.models import SupportLink, User
 from accounts.phone_normaliser import normalise_phone_number
+from accounts.sms import send_sms
 
 from audit.models import AuditEntry
 from audit.services import record
@@ -52,9 +52,8 @@ def invite_supporter(patient_user, patient_profile, phone_number, permissions):
     record(patient_user, AuditEntry.Action.SHARE, link)
 
     if supporter is None:
-        if settings.DEBUG:
-                print(f"You've been invited to be a support person for {patient_user}, please sign up in the app with this number to accept.")
-    
+        if supporter is None:
+            send_sms(phone_number, "You've been invited to be a support person on MPOWERED. Sign up in the app with this number to accept.")
     return link
 
 

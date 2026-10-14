@@ -14,7 +14,7 @@ from mpowered_api.soft_delete import soft_delete
 
 from accounts import devices, login, otp, registration, reset_pin
 from accounts.models import PatientProfile, SupportLink, TermsAndPrivacy, TrustedDevice, User, UserSettings
-from accounts.rateLimits import PhoneBurstThrottle, PhoneLoginThrottle, PhoneSustainedThrottle
+from accounts.rate_limits import PhoneBurstThrottle, PhoneLoginThrottle, PhoneSustainedThrottle
 from accounts.permissions import visible_support_links, visible_patient_profiles
 from accounts.delete import delete_account
 from accounts.invite import *
@@ -40,7 +40,8 @@ SUPPORTER_STATUS_CHANGES = {
 
 
 # Instructions:
-# All views need the header Authorization: Token <token> from /auth/register or /auth/login.
+# All views except sign up, log in, request code, verify code and reset pin 
+# need the header Authorization: Token <token> from /auth/register or /auth/login.
 # Without they return 401.
 
 # Can only see records where patient_profile is user's own, or who user supports.

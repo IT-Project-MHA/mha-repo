@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework import serializers
 
 from .models import QuestionOption, QuestionOptionOrdered, AppSection
@@ -20,8 +20,7 @@ from audit.models import AuditEntry
 
 
 # Instructions:
-# All views need the header Authorization: Token <token> without they return 401.
-
+# Open without logging in as onboarding needs the pain types before any account exists.
 # Read only and the same for every user.
 
 # To filter by attribute, put in the URL ?attribute_name=value. For multiple attributes:
@@ -30,7 +29,8 @@ from audit.models import AuditEntry
 
 # QuestionOption APIs:
 class QuestionOptionList(generics.ListAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
+    authentication_classes = []
     serializer_class = QuestionOptionSerializer
 
     def get_queryset(self):
@@ -45,13 +45,15 @@ class QuestionOptionList(generics.ListAPIView):
 
 
 class QuestionOptionRetrieve(generics.RetrieveAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
+    authentication_classes = []
     queryset = QuestionOption.objects.all()
     serializer_class = QuestionOptionSerializer
 
 # QuestionOptionOrdered APIs:
 class QuestionOptionOrderedList(generics.ListAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
+    authentication_classes = []
     serializer_class = QuestionOptionOrderedSerializer
 
     def get_queryset(self):
@@ -65,7 +67,8 @@ class QuestionOptionOrderedList(generics.ListAPIView):
                                              question_key=question_key)
 
 class QuestionOptionOrderedRetrieve(generics.RetrieveAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
+    authentication_classes = []
     queryset = QuestionOptionOrdered.objects.all()
     serializer_class = QuestionOptionOrderedSerializer
 
@@ -86,7 +89,8 @@ CHOICES = {
 }
 
 class ChoicesList(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
+    authentication_classes = []
 
     def get(self, request, name):
         choices = CHOICES.get(name)
