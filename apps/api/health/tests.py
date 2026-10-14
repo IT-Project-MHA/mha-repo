@@ -1,9 +1,12 @@
-from datetime import date
+from datetime import date, timedelta
 
 from rest_framework.test import APITestCase
 
 from accounts.models import PatientProfile, SupportLink, User
-from health.models import Assessment, Prescription
+from health.models import Assessment, Prescription, MyPain
+from mpowered_api.validators import current_week_starting
+from reference.models import QuestionOptionOrdered
+from audit.models import AuditEntry
 
 PIN = "196712"
 class SupporterAccessTests(APITestCase):
@@ -54,3 +57,119 @@ class SupporterAccessTests(APITestCase):
         self.client.force_authenticate(self.patient)
         self.assertEqual(len(self.client.get("/api/prescription/").data), 1)
         self.assertEqual(len(self.client.get("/api/assessment/").data), 1)
+
+
+# Prescriptions, assessments, scores, pain insights and audit tests
+class HealthRecordTests(APITestCase):
+
+    def setUp(self):
+        self.patient = User.objects.create_user("+61490813123", "Josh", PIN)
+        self.profile = PatientProfile.objects.create(user = self.patient)
+        self.prescription = Prescription.objects.create(patient_profile = self.profile, name = "Panadol", dosage = 2,
+                                                        frequency = 4)
+        self.assessment = Assessment.objects.create(patient_profile = self.profile, week_starting = current_week_starting())
+        self.supporter = User.objects.create_user("+61411111111", "Mum", PIN)
+        self.link = SupportLink.objects.create(
+            patient_profile = self.profile, patient_user = self.patient, supporter_user = self.supporter,
+            status = SupportLink.Status.ACTIVE,
+        )
+        self.client.force_authenticate(self.patient)
+
+    def option(self, question_key, score):
+        return QuestionOptionOrdered.objects.create(question_key = question_key, text = "Option", option_number = 1,
+                                                    score = score)
+
+    def test_deleted_prescription_hidden_but_still_opens(self):
+        self.assertEqual(self.client.delete(f"/api/prescription/{self.prescription.pk}").status_code, 204)
+        self.assertEqual(len(self.client.get("/api/prescription/").data), 0)
+        self.assertEqual(self.client.get(f"/api/prescription/{self.prescription.pk}").status_code, 200)
+
+    def test_prescription_create_is_audited(self):
+        response = self.client.post("/api/prescription/", {"name": "Ibuprofen", "dosage": 1, "frequency": 8}, format = "json")
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(AuditEntry.objects.filter(action = AuditEntry.Action.CREATE, target_type = "prescription").exists())
+
+    def test_prescription_update_is_audited(self):
+        self.client.patch(f"/api/prescription/{self.prescription.pk}", {"dosage": 3}, format = "json")
+        self.assertTrue(AuditEntry.objects.filter(action = AuditEntry.Action.UPDATE, target_type = "prescription").exists())
+
+    def test_prescription_stop_before_start(self):
+        response = self.client.post("/api/prescription/", {"name": "Ibuprofen", "dosage": 1, "frequency": 8,
+                                                           "started_on": "2026-10-10", "stopped_on": "2026-10-01"},
+                                    format = "json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_supporter_view_is_audited(self):
+        SupportLink.objects.filter(pk = self.link.pk).update(can_view_prescriptions = True)
+        self.client.force_authenticate(self.supporter)
+        self.client.get(f"/api/prescription/{self.prescription.pk}")
+        self.assertTrue(AuditEntry.objects.filter(action = AuditEntry.Action.VIEW, audit_user = self.supporter).exists())
+
+    def test_own_view_not_audited(self):
+        self.client.get(f"/api/prescription/{self.prescription.pk}")
+        self.assertFalse(AuditEntry.objects.filter(action = AuditEntry.Action.VIEW).exists())
+
+    def test_week_cannot_be_in_the_future(self):
+        response = self.client.post("/api/assessment/", {"week_starting": str(current_week_starting() + timedelta(days = 7))},
+                                    format = "json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_one_assessment_per_week(self):
+        response = self.client.post("/api/assessment/", {"week_starting": str(current_week_starting())}, format = "json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_section_needs_own_assessment(self):
+        self.client.force_authenticate(self.supporter)
+        response = self.client.post("/api/myPain/", {"assessment": str(self.assessment.pk), "worst": 3}, format = "json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_section_list_needs_assessment(self):
+        self.assertEqual(self.client.get("/api/myPain/").status_code, 400)
+
+    def test_movement_score(self):
+        walking = self.option("movement_walking", 2)
+        sitting = self.option("movement_sitting", 3)
+        response = self.client.post("/api/myMovement/", {"assessment": str(self.assessment.pk), "walking": str(walking.pk),
+                                                         "sitting": str(sitting.pk)}, format = "json")
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["score"], 5)
+
+    def test_personal_care_score(self):
+        sleeping = self.option("care_sleeping", 4)
+        response = self.client.post("/api/myPersonalCare/", {"assessment": str(self.assessment.pk),
+                                                             "sleeping": str(sleeping.pk)}, format = "json")
+        self.assertEqual(response.data["score"], 4)
+
+    def test_social_health_score(self):
+        mood = self.option("social_overall_mood", 3)
+        response = self.client.post("/api/mySocialHealth/", {"assessment": str(self.assessment.pk),
+                                                             "overall_mood": str(mood.pk)}, format = "json")
+        self.assertEqual(response.data["score"], 3)
+
+    def test_management_score(self):
+        exercise = self.option("management_exercise", 2)
+        response = self.client.post("/api/myManagement/", {"assessment": str(self.assessment.pk),
+                                                           "exercise": str(exercise.pk)}, format = "json")
+        self.assertEqual(response.data["score"], 2)
+
+    def test_section_update_is_audited(self):
+        pain = MyPain.objects.create(assessment = self.assessment, worst = 7)
+        self.client.patch(f"/api/myPain/{pain.pk}", {"current": 4}, format = "json")
+        self.assertTrue(AuditEntry.objects.filter(action = AuditEntry.Action.UPDATE, target_type = "assessment").exists())
+
+    def test_pain_trend(self):
+        MyPain.objects.create(assessment = self.assessment, current = 4, worst = 7)
+        response = self.client.get("/api/painTrend/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data[0]["worst"], 7)
+
+    def test_pain_profile(self):
+        MyPain.objects.create(assessment = self.assessment, current = 4, worst = 7)
+        response = self.client.get("/api/painProfile/")
+        self.assertEqual(response.status_code, 200)
+
+    def test_supporter_without_switch_gets_no_trend(self):
+        MyPain.objects.create(assessment = self.assessment, current = 4, worst = 7)
+        self.client.force_authenticate(self.supporter)
+        response = self.client.get(f"/api/painTrend/?patient_profile={self.profile.pk}")
+        self.assertEqual(response.data, [])

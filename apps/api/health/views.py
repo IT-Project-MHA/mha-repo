@@ -272,7 +272,7 @@ class PainTrend(APIView):
         query_set = MyPain.objects.filter(
             assessment__in = visible_assessments(request.user),
             assessment__patient_profile = patient_profile,
-            assessment__week_starting = start_date
+            assessment__week_starting__gte = start_date
         )
 
         query_set = query_set.select_related("assessment")

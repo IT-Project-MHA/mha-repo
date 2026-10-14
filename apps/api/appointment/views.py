@@ -37,8 +37,8 @@ from mpowered_api.soft_delete import soft_delete
 # To filter by attribute, put in the URL ?attribute_name=value. For multiple attributes:
 # ?attribute_name1=value&attribute_name2=value...
 
-# Attributes that are read only are specified in it's serializer. Sending a different value for
-# them in an update request returns a 400 error.
+# Attributes that are read only are specified in it's serializer.
+# If sent in update request they are ignored.
 
 # Records that other records depend on cannot be deleted; deleting them returns a 409 error.
 
@@ -237,6 +237,7 @@ class AppointmentQuestionListCreate(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         user = self.request.user
         appointment = serializer.validated_data["appointment"]
+        reject_if_cancelled(appointment)
         last_index = AppointmentQuestion.objects.filter(
             appointment = appointment).aggregate(Max('order_index'))['order_index__max']
         order_index = (last_index + 1) if last_index is not None else 0

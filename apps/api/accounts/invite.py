@@ -39,6 +39,10 @@ def invite_supporter(patient_user, patient_profile, phone_number, permissions):
     if link is not None and link.status != SupportLink.Status.REVOKED:
         raise InviteError("already_invited")
 
+    # Revoked link is reused
+    if link is None:
+        link = SupportLink(patient_profile = patient_profile, patient_user = patient_user, supporter_user = supporter)
+
     link.invited_phone_number = phone_number
     link.status = SupportLink.Status.INVITED
     link.invited_at = timezone.now()
@@ -52,7 +56,6 @@ def invite_supporter(patient_user, patient_profile, phone_number, permissions):
     record(patient_user, AuditEntry.Action.SHARE, link)
 
     if supporter is None:
-        if supporter is None:
             send_sms(phone_number, "You've been invited to be a support person on MPOWERED. Sign up in the app with this number to accept.")
     return link
 

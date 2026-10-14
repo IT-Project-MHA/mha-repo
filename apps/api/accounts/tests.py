@@ -476,7 +476,7 @@ class PermissionTests(APITestCase):
             patient_profile = self.profile, scheduled_date = timezone.now(), created_by = self.patient,
         )
 
-        # Supporter with an active link but switches off
+        # Supporter with an active link but all switches off
         self.supporter = User.objects.create_user("+61411111111", "Mum", PIN)
         self.link = SupportLink.objects.create(
             patient_profile = self.profile,
@@ -594,7 +594,6 @@ class PhoneNumberTests(APITestCase):
         self.assertEqual(response.status_code, 200)
 
 
-
 class MissingFieldTests(APITestCase):
     # Check every endpoint rejects a request missing a field
 
@@ -675,3 +674,160 @@ class AccountApiSecurityTests(APITestCase):
     def test_supporter_cannot_go_back_to_invited(self):
         SupportLink.objects.filter(pk = self.link.pk).update(status = SupportLink.Status.ACTIVE)
         self.assertEqual(self.set_status("invited").status_code, 400)
+
+
+# Deleting the account, stopping tracking, inviting, switches and changing phone number
+class AccountLifecycleTests(APITestCase):
+
+    def setUp(self):
+        cache.clear()
+        self.patient = User.objects.create_user(PHONE, "Josh", PIN)
+        self.profile = PatientProfile.objects.create(user = self.patient, has_diagnosis = True, birth_year = 1990)
+        self.supporter = User.objects.create_user("+61411111111", "Mum", PIN)
+        self.client.force_authenticate(self.patient)
+
+    def invite(self, phone, **switches):
+        return self.client.post("/api/supportLink/", {"invited_phone_number": phone, **switches}, format = "json")
+
+    def verified(self, phone):
+        # Phone that just passed verify-code
+        return PhoneVerification.objects.create(
+            phone_number = phone, code = "hash", expires_at = timezone.now(), used_at = timezone.now())
+
+    def test_delete_account_is_soft(self):
+        Token.objects.create(user = self.patient)
+        self.assertEqual(self.client.delete(f"/api/user/{self.patient.pk}").status_code, 204)
+        self.patient.refresh_from_db()
+        self.profile.refresh_from_db()
+        self.assertIsNotNone(self.patient.deleted_at)
+        self.assertFalse(self.patient.is_active)
+        self.assertFalse(Token.objects.filter(user = self.patient).exists())
+        self.assertIsNotNone(self.profile.deleted_at)
+
+    def test_number_can_sign_up_again_after_delete(self):
+        self.client.delete(f"/api/user/{self.patient.pk}")
+        User.objects.create_user(PHONE, "New Josh", PIN)
+        self.assertEqual(User.objects.filter(phone_number = PHONE).count(), 2)
+
+    def test_stop_and_restart_tracking(self):
+        self.assertEqual(self.client.delete(f"/api/patientProfile/{self.profile.pk}").status_code, 204)
+        self.assertEqual(len(self.client.get("/api/patientProfile/").data), 0)
+
+        # Starting again brings back the same profile
+        response = self.client.post("/api/patientProfile/", {"has_diagnosis": False}, format = "json")
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["id"], str(self.profile.pk))
+
+    def test_invite_existing_account(self):
+        response = self.invite("0411 111 111", can_view_assessments = True)
+        self.assertEqual(response.status_code, 201)
+
+        link = SupportLink.objects.get()
+        self.assertEqual(link.supporter_user, self.supporter)
+        self.assertTrue(link.can_view_assessments)
+        self.assertTrue(AuditEntry.objects.filter(action = AuditEntry.Action.SHARE).exists())
+
+    def test_invite_new_number_links_on_sign_up(self):
+        with mock.patch("accounts.invite.send_sms") as send_sms:
+            self.invite("0422 222 222")
+        send_sms.assert_called_once()
+
+        # Sign up with number
+        self.client.force_authenticate(None)
+        verification = self.verified("+61422222222")
+        self.client.post("/auth/register", {
+            "verification_id": str(verification.id), "phone_number": "0422222222", "display_name": "Dad",
+            "pin": PIN, "accepted_terms": True, "accepted_privacy": True, "device_id": DEVICE,
+        }, format = "json")
+
+        self.assertEqual(SupportLink.objects.get().supporter_user.display_name, "Dad")
+
+    def test_cannot_invite_self(self):
+        self.assertEqual(self.invite(PHONE).status_code, 400)
+
+    def test_cannot_invite_twice(self):
+        self.invite("0411111111")
+        self.assertEqual(self.invite("0411111111").status_code, 400)
+
+    def test_invalid_phone(self):
+        self.assertEqual(self.invite("12345").status_code, 400)
+
+    def test_delete_revokes_and_can_invite_again(self):
+        self.invite("0411111111")
+        link = SupportLink.objects.get()
+        self.assertEqual(self.client.delete(f"/api/supportLink/{link.pk}").status_code, 204)
+        link.refresh_from_db()
+        self.assertEqual(link.status, SupportLink.Status.REVOKED)
+
+        # The revoked row is reused, only one link per patient and supporter
+        self.assertEqual(self.invite("0411111111").status_code, 201)
+        self.assertEqual(SupportLink.objects.count(), 1)
+
+    def test_patient_revokes_by_status(self):
+        self.invite("0411111111")
+        link = SupportLink.objects.get()
+        response = self.client.patch(f"/api/supportLink/{link.pk}", {"status": "revoked"}, format = "json")
+        self.assertEqual(response.status_code, 200)
+        link.refresh_from_db()
+        self.assertIsNotNone(link.revoked_at)
+
+
+    def test_supporter_accepts(self):
+        self.invite("0411111111")
+        link = SupportLink.objects.get()
+        self.client.force_authenticate(self.supporter)
+        response = self.client.patch(f"/api/supportLink/{link.pk}", {"status": "active"}, format = "json")
+        self.assertEqual(response.status_code, 200)
+        link.refresh_from_db()
+        self.assertIsNotNone(link.accepted_at)
+
+    def test_patient_cannot_accept_for_supporter(self):
+        self.invite("0411111111")
+        link = SupportLink.objects.get()
+        response = self.client.patch(f"/api/supportLink/{link.pk}", {"status": "active"}, format = "json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_patient_changes_switches(self):
+        self.invite("0411111111")
+        link = SupportLink.objects.get()
+        response = self.client.patch(f"/api/supportLink/{link.pk}", {"can_view_prescriptions": True}, format = "json")
+        self.assertEqual(response.status_code, 200)
+        link.refresh_from_db()
+        self.assertTrue(link.can_view_prescriptions)
+
+    def test_supporter_cannot_change_switches(self):
+        self.invite("0411111111")
+        link = SupportLink.objects.get()
+        self.client.force_authenticate(self.supporter)
+        response = self.client.patch(f"/api/supportLink/{link.pk}", {"can_view_prescriptions": True}, format = "json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_supporter_sees_profile_without_health_details(self):
+        self.invite("0411111111")
+        SupportLink.objects.update(status = SupportLink.Status.ACTIVE)
+        self.client.force_authenticate(self.supporter)
+
+        response = self.client.get(f"/api/patientProfile/{self.profile.pk}")
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("has_diagnosis", response.data)
+        self.assertNotIn("birth_year", response.data)
+
+
+    def test_change_phone(self):
+        verification = self.verified("+61433333333")
+        response = self.client.post("/auth/change-phone", {"verification_id": str(verification.id),
+                                                           "phone_number": "0433 333 333"}, format = "json")
+        self.assertEqual(response.status_code, 200)
+        self.patient.refresh_from_db()
+        self.assertEqual(self.patient.phone_number, "+61433333333")
+
+    def test_change_phone_needs_otp(self):
+        response = self.client.post("/auth/change-phone", {"verification_id": str(PhoneVerification().id),
+                                                           "phone_number": "0433333333"}, format = "json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_change_phone_taken(self):
+        verification = self.verified("+61411111111")
+        response = self.client.post("/auth/change-phone", {"verification_id": str(verification.id),
+                                                           "phone_number": "0411111111"}, format = "json")
+        self.assertEqual(response.status_code, 409)
