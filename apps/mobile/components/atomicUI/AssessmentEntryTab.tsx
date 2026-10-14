@@ -2,7 +2,7 @@ import React from "react";
 import { Text, View, StyleSheet} from "react-native";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { useTheme } from "../../context/ThemeContext";
-import { Button } from "../atomicUI/Button";
+import Button from "../atomicUI/Button";
 import { AssessmentProps } from "../baseComponents/Assessment";
 
 export default function AssessmentEntryTab() {
