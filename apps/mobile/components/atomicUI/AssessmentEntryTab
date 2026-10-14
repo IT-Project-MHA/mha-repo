@@ -1,7 +1,8 @@
 import React from "react";
-import { Text, View, StyleSheet, Button} from "react-native";
+import { Text, View, StyleSheet} from "react-native";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { useTheme } from "../../context/ThemeContext";
+import { Button } from "../atomicUI/Button";
 import { AssessmentProps } from "../baseComponents/Assessment";
 
 export default function AssessmentEntryTab() {
@@ -13,9 +14,9 @@ export default function AssessmentEntryTab() {
                 <Text>optional - last completed</Text>
             </View>
             <View style={{flex: 3}}>
-                <Button onPress={() => {
+                <Button label="Record->" onPress={() => {
                     //stuffinhere
-                }} title="Record ->"/>
+                }} buttonType="borderedTransparentButton"/> // create an outline button
             </View>
         </SafeAreaView>
     )
