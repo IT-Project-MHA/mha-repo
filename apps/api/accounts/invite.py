@@ -11,7 +11,7 @@ PERMISSIONS = ["can_view_assessments", "can_view_prescriptions", "can_view_appoi
 
 
 class InviteError(Exception):
-    # Invite refused
+    # Invite refused    
     def __init__(self, reason):
         super().__init__(reason)
         self.reason = reason

@@ -1,4 +1,5 @@
 from django.db.models import Q
+from django.utils import timezone
 from rest_framework import generics, serializers, status
 from rest_framework.permissions import AllowAny, IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
@@ -13,7 +14,7 @@ from mpowered_api.soft_delete import soft_delete
 
 from accounts import devices, login, otp, registration, reset_pin
 from accounts.models import PatientProfile, SupportLink, TermsAndPrivacy, TrustedDevice, User, UserSettings
-from apps.api.accounts.rateLimits import PhoneBurstThrottle, PhoneLoginThrottle, PhoneSustainedThrottle
+from accounts.rateLimits import PhoneBurstThrottle, PhoneLoginThrottle, PhoneSustainedThrottle
 from accounts.permissions import visible_support_links, visible_patient_profiles
 from accounts.delete import delete_account
 from accounts.invite import *
@@ -36,6 +37,7 @@ SUPPORTER_STATUS_CHANGES = {
     SupportLink.Status.ACTIVE: [SupportLink.Status.REVOKED],
     SupportLink.Status.REVOKED: []
 }
+
 
 # Instructions:
 # All views need the header Authorization: Token <token> from /auth/register or /auth/login.
@@ -404,7 +406,7 @@ class SupportLinkRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         query_status = self.request.query_params.get("status")
         query_set = visible_support_links(user)
 
-        # user can only delete support link where they are the patient
+        # user can only delete support link if they are the patient
         if self.request.method == 'DELETE':
             query_set = query_set.filter(patient_user = user)
         if query_patient_profile:
@@ -415,25 +417,44 @@ class SupportLinkRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_update(self, serializer):
         user = self.request.user
-        instance = serializer.instance
-        errors = {}
-        if instance.patient_user_id == user.id:
-            raise serializers.ValidationError('Patients cannot update a support link.')
-        else:
-            for field, value in serializer.validated_data.items():
-                if field != 'status' and value != getattr(instance, field):
-                    errors[field] = 'Supporters can only change status.'
-            new_status = serializer.validated_data.get('status', instance.status)
-            if new_status != instance.status and new_status not in SUPPORTER_STATUS_CHANGES[instance.status]:
-                errors['status'] = f'Supporters cannot change status from {instance.status} to {new_status}.'
-            
-        if errors:
-            raise serializers.ValidationError(errors)
-        save_without_immutable_changes(serializer, ['supporter_user', 'invited_phone_number',
-            'invited_at'])
+        link = serializer.instance
+        new_status = serializer.validated_data.get('status', link.status)
 
+        # what this user is allowed to change
+        if link.patient_user_id == user.id:
+            # patient can edit switches or remove supporters
+            allowed_fields = ['status'] + PERMISSIONS
+            allowed_statuses = [link.status, SupportLink.Status.REVOKED]
+        else:
+            # supporter can only accept an invite or leave
+            allowed_fields = ['status']
+            allowed_statuses = [link.status] + SUPPORTER_STATUS_CHANGES[link.status]
+
+        # Decline anything else
+        for field, value in serializer.validated_data.items():
+            if field not in allowed_fields and value != getattr(link, field):
+                raise serializers.ValidationError({field: 'You cannot change this.'})
+
+        if new_status not in allowed_statuses:
+            raise serializers.ValidationError({'status': f'Cannot change status to {new_status}.'})
+
+        # Save with date it was accepted or revoked
+        if new_status == link.status:
+            serializer.save()
+        elif new_status == SupportLink.Status.ACTIVE:
+            serializer.save(accepted_at = timezone.now())
+        else:
+            serializer.save(revoked_at = timezone.now())
+
+        record(user, AuditEntry.Action.UPDATE, serializer.instance)
+
+    # Deleting a link revokes it and the row stays for the audit history
     def perform_destroy(self, instance):
-        destroy_or_reject_protected(instance)
+        if instance.status != SupportLink.Status.REVOKED:
+            instance.status = SupportLink.Status.REVOKED
+            instance.revoked_at = timezone.now()
+            instance.save(update_fields = ['status', 'revoked_at', 'updated_at'])
+            record(self.request.user, AuditEntry.Action.REVOKE, instance)
 
 
 # TermsAndPrivacy APIs:

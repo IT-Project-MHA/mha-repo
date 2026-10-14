@@ -19,8 +19,8 @@ api_patterns = [
     path('appointmentAnswer/<str:pk>', views.AppointmentAnswerRetrieveUpdateDestroy.as_view(), name ='update_appointment_answer'),
     path('appointmentAnswer/<str:pk>/recording', views.AppointmentAnswerRecording.as_view(), name ='read_appointment_answer_recording'),
 
-    path('appointmentAccess/', views.AppointmentAccessListCreate.as_view(), name ='read_create_appointment_access'),
-    path('appointmentAccess/<str:pk>', views.AppointmentAccessRetrieveUpdateDestroy.as_view(), name ='update_appointment_access')
+    path('appointmentAccess/', views.AppointmentAccessList.as_view(), name ='read_appointment_access'),
+    path('appointmentAccess/<str:pk>', views.AppointmentAccessRetrieve.as_view(), name ='retrieve_appointment_access')
 ]
 
 urlpatterns = [

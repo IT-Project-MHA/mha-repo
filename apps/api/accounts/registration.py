@@ -11,7 +11,7 @@ from accounts import devices
 from audit.models import AuditEntry
 from audit.services import record
 
-from invite import link_pending_invites
+from accounts.invite import link_pending_invites
 
 VERIFICATION_WINDOW = timedelta(minutes = 10)
 

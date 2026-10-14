@@ -35,7 +35,8 @@ class SupportLinkSerializer(serializers.ModelSerializer):
     class Meta:
         model = SupportLink
         fields = '__all__'
-        read_only_fields = ['patient_profile', 'patient_user']
+        read_only_fields = ['patient_profile', 'patient_user', 'supporter_user', 
+                            'invited_at', 'accepted_at', 'revoked_at']
 
 
 

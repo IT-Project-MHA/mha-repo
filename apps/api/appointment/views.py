@@ -371,8 +371,10 @@ class AppointmentAnswerRecording(generics.RetrieveAPIView):
 
 
 # AppointmentAccess APIs:
-
-class AppointmentAccessListCreate(generics.ListCreateAPIView):
+# select allows patient to see grants on their appointments and supporter sees their own grants
+# to create/update/delete use /appointments/{id}/access so it's checked and audited
+class AppointmentAccessList(generics.ListAPIView):
+    
     permission_classes = [IsAuthenticated]
     serializer_class = AppointmentAccessSerializer
 
@@ -381,44 +383,17 @@ class AppointmentAccessListCreate(generics.ListCreateAPIView):
         appointment = self.request.query_params.get("appointment")
         support_link = self.request.query_params.get("support_link")
         query_set = visible_appointment_access(user)
+       
         if appointment:
             query_set = query_set.filter(appointment = appointment)
         if support_link:
             query_set = query_set.filter(support_link = support_link)
+
         return query_set.distinct()
 
-    def perform_create(self, serializer):
-        user = self.request.user
-        appointment = serializer.validated_data["appointment"]
-        if not is_owner(user, appointment.patient_profile):
-            raise serializers.ValidationError({'appointment':'You do not have access.'})
-
-        support_link = serializer.validated_data["support_link"]
-        if support_link.patient_profile_id != appointment.patient_profile_id or \
-           support_link.status != SupportLink.Status.ACTIVE:
-            raise serializers.ValidationError(
-                {'support_link':'Support link must be an active link of the appointment\'s '
-                 'patient.'})
-
-        serializer.save()
-
-class AppointmentAccessRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+class AppointmentAccessRetrieve(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = AppointmentAccessSerializer
 
     def get_queryset(self):
-        user = self.request.user
-        appointment = self.request.query_params.get("appointment")
-        support_link = self.request.query_params.get("support_link")
-        query_set = visible_appointment_access(user)
-        if self.request.method not in SAFE_METHODS:
-            query_set = query_set.filter(appointment__patient_profile__user = user)
-        if appointment:
-            query_set = query_set.filter(appointment = appointment)
-        if support_link:
-            query_set = query_set.filter(support_link = support_link)
-        return query_set.distinct()
-
-    def perform_update(self, serializer):
-        save_without_immutable_changes(serializer, ['appointment', 'support_link'])
-
+        return visible_appointment_access(self.request.user)
