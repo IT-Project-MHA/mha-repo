@@ -1,6 +1,6 @@
 import { StyleSheet } from "react-native";
 import { lightColours, darkColours, lightHcColours, darkHcColours, ColourSet } from "./colourScheme";
-import { primaryButtonLayout, buttonLayout, textLayout, squareButtonWithLineLayout, transparentButtonLayout, textButtonLayout } from "./layout";
+import { primaryButtonLayout, buttonLayout, textLayout, squareButtonWithLineLayout, transparentButtonLayout, borderedTransparentButtonLayout, textButtonLayout } from "./layout";
 
 /**
  * Builds a style sheet for each theme, using colour schemes defined in colourScheme.ts
@@ -43,6 +43,11 @@ const createTheme = (colours: ColourSet) =>
     transparentButton:{
       backgroundColor: 'transparent',
       ...transparentButtonLayout,
+    },
+    borderedTransparentButton: {
+      backgroundColor: 'transparent',
+      borderColor: colours.primary,
+      ...borderedTransparentButtonLayout,
     },
     textButton:{
       backgroundColor: 'transparent',
