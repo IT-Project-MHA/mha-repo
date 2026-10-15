@@ -178,3 +178,6 @@ All code should be reviewed by the team before being pushed to main. Merge branc
 - Include an explanation of what it is and why, including what issues it resolves/what tasks are completed.
 
 - Pass tests before submitting a PR. 
+
+# Testing the app
+npm test

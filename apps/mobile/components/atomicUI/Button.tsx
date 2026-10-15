@@ -1,8 +1,12 @@
-import React from "react";
-import { StyleProp, StyleSheet, Text, TextStyle, TouchableOpacity, ViewStyle } from "react-native";
-import { useTheme } from "../../context/ThemeContext";
+/**
+ * button componant styled to theme.ts and themeContext
+ */
+import { Pressable, Text } from 'react-native';
+import { useTheme } from '../../context/ThemeContext';
 
-type ButtonType = "primaryButton" | "secondaryButton";
+
+type ButtonType = "primaryButton" | "secondaryButton" | "transparentButton" | "textButton";
+
 
 /**
  * defines the required input on button creation
@@ -15,38 +19,33 @@ type ButtonType = "primaryButton" | "secondaryButton";
       buttonType="primaryButton"
     />
  */
-
 type ButtonProps = {
   label: string;
   onPress: () => void;
   buttonType: ButtonType;
-  style?: StyleProp<ViewStyle>; // optional, added on top of the button type's style, e.g. for layout
-  textStyle?: StyleProp<TextStyle>; // optional, added on top of the label's style, e.g. to centre lines
 };
 
 /**
  * Themed button that changes style based on current theme, and selected
  * button type, of the button types defined in theme.ts
- *
+ * 
  * @param label string that says what the button should say
  * @param onPress prescribes an action to the button when pressed
  * @param buttonType string that maps to a button type, defined in theme.ts
- * @param style optional extra style, e.g. { flex: 1 } to share a row with another button
- * @param textStyle optional extra label style, e.g. { textAlign: 'center' } for a two line label
  * @returns a styled button component, which performs some funtion when pressed
  */
-const Button = ({ label, onPress, buttonType, style, textStyle }: ButtonProps) => {
+const Button = ({label, onPress, buttonType}: ButtonProps) => {
   const { theme } = useTheme();
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.7}
-      style={[theme[buttonType], style]}
+    <Pressable
+      style={theme[buttonType]}
       onPress={onPress}
     >
-      <Text style={[theme.text, textStyle]}>{label}</Text>
-    </TouchableOpacity>
+    <Text style={[theme.h6, theme.fontOnSurface]}>{label}</Text>
+    </Pressable>
   );
 };
 
 export default Button;
+
