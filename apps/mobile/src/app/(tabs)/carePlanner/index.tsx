@@ -21,7 +21,7 @@ const mostRecent = <T extends ApiAppointment>(list: T[]) =>
   [...list].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)).slice(0, 3);
 
 export default function Screen() {
-  const { colours } = useTheme();
+  const { colours, theme } = useTheme();
   const styles = createStyles(colours);
   const router = useRouter();
   const { resetDraft } = useAppointment();
@@ -56,7 +56,7 @@ export default function Screen() {
   ) => (
     <Pressable
       key={appointment.id}
-      style={styles.appointmentCard}
+      style={[theme.sectionContainer, styles.appointmentCard]}
       onPress={onPress}
       accessibilityRole="button"
     >
@@ -81,7 +81,7 @@ export default function Screen() {
         <Text style={styles.headline}>Your Care Planner</Text>
         <Text style={styles.body}>Prepare for your appointments with confidence.</Text>
 
-        <View style={styles.filledCard}>
+        <View style={[theme.sectionContainer, styles.filledCard]}>
           <Text style={styles.cardTitle}>My Appointments</Text>
           <Button
             label="Create new appointment"
@@ -110,7 +110,7 @@ export default function Screen() {
           )}
         </View>
 
-        <View style={styles.filledCard}>
+        <View style={[theme.sectionContainer, styles.filledCard]}>
           <Text style={styles.cardTitle}>Shared With You</Text>
           <Button
             label="See all shared appointments"
@@ -169,9 +169,6 @@ function createStyles(colours: ColourSet) {
     },
 
     filledCard: {
-      backgroundColor: colours.surface,
-      borderRadius: 8,
-      padding: 16,
       gap: 12,
     },
 
@@ -190,8 +187,6 @@ function createStyles(colours: ColourSet) {
 
     appointmentCard: {
       backgroundColor: colours.background,
-      borderRadius: 8,
-      padding: 12,
       flexDirection: 'row',
       alignItems: 'center',
       gap: 8,

@@ -6,21 +6,44 @@ import { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
+import { useTheme as usePaperTheme } from 'react-native-paper';
 import Button from '../../../../components/atomicUI/Button';
+import ConfirmModal from '../../../../components/atomicUI/ConfirmModal';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
 import { formatDateTime } from '../../../../constants/date';
 import { Appointment, useAppointment } from '../../../../context/AppointmentContext';
-import { apiAppointmentDetails } from '../../../api/care_planner_api_helpers';
+import { apiAppointmentDetails, apiErrorMessage } from '../../../api/care_planner_api_helpers';
+import { apiAppointment } from '../../../api/django-API';
 
 export default function Screen() {
   const { colours } = useTheme();
+  const { colors: paperColours } = usePaperTheme();
   const styles = createStyles(colours);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { appointments, rememberAppointment } = useAppointment();
   const appointment = appointments.find((item) => item.id === id);
   const [loading, setLoading] = useState(true);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
+  // deletes the appointment, then returns to the page it was opened from
+  const deleteAppointment = async () => {
+    setConfirmingDelete(false);
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await apiAppointment('delete', { id });
+      router.back();
+    } catch (error) {
+      setDeleteError(
+        apiErrorMessage(error, 'Your appointment could not be deleted, please try again'),
+      );
+      setDeleting(false);
+    }
+  };
 
   // loads the appointment with its questions & support persons, and keeps it so the pages opened
   // from here can find it. Reloads when the page is shown, so changes saved on those pages appear.
@@ -171,7 +194,26 @@ export default function Screen() {
           }
           buttonType="primaryButton"
         />
+
+        {!!deleteError && (
+          <Text style={[styles.error, { color: paperColours.error }]}>{deleteError}</Text>
+        )}
+        <Button
+          label={deleting ? 'Deleting...' : 'Delete appointment'}
+          onPress={() => setConfirmingDelete(true)}
+          buttonType="secondaryButton"
+        />
       </ScrollView>
+
+      <ConfirmModal
+        visible={confirmingDelete}
+        title="Are you sure you want to delete this appointment?"
+        message="It will be removed from your care planner and from the support persons it is shared with."
+        confirmLabel="Delete"
+        cancelLabel="Go back"
+        onConfirm={deleteAppointment}
+        onCancel={() => setConfirmingDelete(false)}
+      />
     </View>
   );
 }
@@ -186,7 +228,7 @@ function createStyles(colours: ColourSet) {
     content: {
       paddingHorizontal: 16,
       paddingTop: 24,
-      paddingBottom: 60, // keeps the last card above the nav bar
+      paddingBottom: 120, // keeps the last card above the nav bar
       gap: 12,
     },
 
@@ -221,6 +263,11 @@ function createStyles(colours: ColourSet) {
     input: {
       fontSize: 16,
       color: colours.onSurface,
+    },
+
+    error: {
+      fontSize: 14,
+      textAlign: 'center',
     },
 
     field: {

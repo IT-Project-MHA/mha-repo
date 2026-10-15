@@ -143,7 +143,7 @@ function createStyles(colours: ColourSet) {
     content: {
       paddingHorizontal: 16,
       paddingTop: 24,
-      paddingBottom: 60,
+      paddingBottom: 120,
       gap: 12,
     },
 

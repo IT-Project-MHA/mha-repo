@@ -182,7 +182,7 @@ function createStyles(colours: ColourSet) {
 
     bottomBar: {
       paddingHorizontal: 16,
-      marginBottom: 44,
+      marginBottom: 120,
       gap: 8,
     },
     error: {

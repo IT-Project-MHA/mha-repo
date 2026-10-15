@@ -77,16 +77,16 @@ export default function Screen() {
 
         <Text style={styles.heading}>Recorded answer</Text>
         {question.recording ? (
-          // the time left shows once the recording has loaded
+          // the time shows once the recording has loaded, kept short to fit on one line
           <Button
             label={
-              (playing ? 'Pause' : pausedPartWay ? 'Resume recording' : 'Play recording') +
-              (duration > 0 ? `\n${formatTime(timePlayed)}/${formatTime(duration)}` : '')
+              duration > 0
+                ? `${playing ? 'Pause' : pausedPartWay ? 'Resume' : 'Play'}  ` +
+                  `${formatTime(timePlayed)}/${formatTime(duration)}`
+                : 'Play recording'
             }
             onPress={togglePlayback}
             buttonType="primaryButton"
-            style={styles.tallButton}
-            textStyle={styles.centredText}
           />
         ) : (
           <Text style={styles.body}>No recording added</Text>
@@ -106,18 +106,8 @@ function createStyles(colours: ColourSet) {
     content: {
       paddingHorizontal: 16,
       paddingTop: 24,
-      paddingBottom: 60,
+      paddingBottom: 120,
       gap: 12,
-    },
-
-    // twice the height of a one line button
-    tallButton: {
-      minHeight: 2 * 24 + 2 * 12,
-      justifyContent: 'center',
-    },
-
-    centredText: {
-      textAlign: 'center',
     },
 
     question: {

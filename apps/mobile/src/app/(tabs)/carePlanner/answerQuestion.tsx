@@ -285,26 +285,18 @@ export default function Screen() {
                 webStyle={SIGNATURE_STYLE}
               />
             </View>
-            <View style={styles.buttonRow}>
-              <Button
-                label="Cancel"
-                onPress={cancelSigning}
-                buttonType="secondaryButton"
-                style={styles.rowButton}
-              />
-              <Button
-                label="Clear"
-                onPress={() => signatureRef.current?.clearSignature()}
-                buttonType="secondaryButton"
-                style={styles.rowButton}
-              />
-              <Button
-                label="Save"
-                onPress={() => signatureRef.current?.readSignature()}
-                buttonType="primaryButton"
-                style={styles.rowButton}
-              />
-            </View>
+            {/* stacked, the button types' side padding is too wide for three in a row */}
+            <Button label="Cancel" onPress={cancelSigning} buttonType="secondaryButton" />
+            <Button
+              label="Clear"
+              onPress={() => signatureRef.current?.clearSignature()}
+              buttonType="secondaryButton"
+            />
+            <Button
+              label="Save"
+              onPress={() => signatureRef.current?.readSignature()}
+              buttonType="primaryButton"
+            />
           </>
         );
 
@@ -317,12 +309,10 @@ export default function Screen() {
             <Button
               label={
                 (isRecording ? 'Pause' : 'Resume') +
-                `\n${formatTime(durationMillis / 1000)}/${formatTime(MAX_RECORDING_SECONDS)}`
+                `  ${formatTime(durationMillis / 1000)}/${formatTime(MAX_RECORDING_SECONDS)}`
               }
               onPress={togglePauseRecording}
               buttonType="primaryButton"
-              style={styles.tallButton}
-              textStyle={styles.centredText}
             />
             {/* replaces the doctor's signature button while recording */}
             <Button label="Submit" onPress={submitRecording} buttonType="primaryButton" />
@@ -332,16 +322,16 @@ export default function Screen() {
       case 'recorded':
         return (
           <>
-            {/* the time left shows once the recording has loaded */}
+            {/* the time shows once the recording has loaded, kept short to fit on one line */}
             <Button
               label={
-                (playing ? 'Pause' : pausedPartWay ? 'Resume recording' : 'Play recording') +
-                (duration > 0 ? `\n${formatTime(timePlayed)}/${formatTime(duration)}` : '')
+                duration > 0
+                  ? `${playing ? 'Pause' : pausedPartWay ? 'Resume' : 'Play'}  ` +
+                    `${formatTime(timePlayed)}/${formatTime(duration)}`
+                  : 'Play recording'
               }
               onPress={togglePlayback}
               buttonType="primaryButton"
-              style={styles.tallButton}
-              textStyle={styles.centredText}
             />
             <Button label="Delete recording" onPress={deleteRecording} buttonType="secondaryButton" />
             {signatureButton}
@@ -351,12 +341,7 @@ export default function Screen() {
       case 'ready':
         return (
           <>
-            <Button
-              label="Record"
-              onPress={startRecording}
-              buttonType="primaryButton"
-              style={styles.tallButton}
-            />
+            <Button label="Record" onPress={startRecording} buttonType="primaryButton" />
             {signatureButton}
           </>
         );
@@ -400,7 +385,7 @@ function createStyles(colours: ColourSet) {
     content: {
       paddingHorizontal: 16,
       paddingTop: 24,
-      paddingBottom: 60, // keeps the last button above the nav bar
+      paddingBottom: 120, // keeps the last button above the nav bar
       gap: 12,
     },
 
@@ -410,27 +395,6 @@ function createStyles(colours: ColourSet) {
       borderRadius: 8,
       overflow: 'hidden',
       backgroundColor: '#ffffff',
-    },
-
-    buttonRow: {
-      flexDirection: 'row',
-      gap: 8,
-    },
-
-    // shares the row equally, the button types' side padding is too wide for three in a row
-    rowButton: {
-      flex: 1,
-      paddingHorizontal: 0,
-    },
-
-    // twice the height of a one line button
-    tallButton: {
-      minHeight: 2 * 24 + 2 * 12,
-      justifyContent: 'center',
-    },
-
-    centredText: {
-      textAlign: 'center',
     },
 
     question: {

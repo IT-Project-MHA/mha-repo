@@ -19,7 +19,7 @@ const SORT_OPTIONS = [
 type SortBy = (typeof SORT_OPTIONS)[number]['value'];
 
 export default function Screen() {
-  const { colours } = useTheme();
+  const { colours, theme } = useTheme();
   const styles = createStyles(colours);
   const router = useRouter();
   // null while loading
@@ -80,7 +80,7 @@ export default function Screen() {
     // opens a summary of the appointment, going back returns here
     <Pressable
       key={appointment.id}
-      style={styles.appointmentCard}
+      style={[theme.sectionContainer, styles.appointmentCard]}
       onPress={() =>
         router.push({
           pathname: '/carePlanner/appointmentDetails',
@@ -159,7 +159,7 @@ function createStyles(colours: ColourSet) {
     content: {
       paddingHorizontal: 16,
       paddingTop: 24,
-      paddingBottom: 60, // keeps the last card above the nav bar
+      paddingBottom: 120, // keeps the last card above the nav bar
       gap: 12,
     },
 
@@ -235,9 +235,6 @@ function createStyles(colours: ColourSet) {
     },
 
     appointmentCard: {
-      backgroundColor: colours.surface,
-      borderRadius: 8,
-      padding: 12,
       gap: 4,
     },
 

@@ -14,7 +14,7 @@ import { useAppointment, SupportPerson } from '../../../../context/AppointmentCo
 import { apiErrorMessage, apiSaveSupportPeople } from '../../../api/care_planner_api_helpers';
 
 export default function Screen() {
-  const { colours } = useTheme();
+  const { colours, theme } = useTheme();
   const styles = createStyles(colours);
   const router = useRouter();
   const { colors: paperColours } = usePaperTheme();
@@ -60,7 +60,7 @@ export default function Screen() {
 
     return (
       <Pressable
-        style={styles.personCard}
+        style={[theme.sectionContainer, styles.personCard]}
         onPress={() =>
           router.push({ pathname: '/carePlanner/newSupportPerson', params: { index } })
         }
@@ -165,9 +165,6 @@ function createStyles(colours: ColourSet) {
     },
 
     personCard: {
-      backgroundColor: colours.surface,
-      borderRadius: 8,
-      padding: 12,
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
@@ -190,7 +187,7 @@ function createStyles(colours: ColourSet) {
 
     bottomBar: {
       paddingHorizontal: 16,
-      marginBottom: 44, // nav bar: 28 + extra 16 gap
+      marginBottom: 120, // keeps the buttons above the nav bar
       gap: 8,
     },
 

@@ -20,7 +20,7 @@ type ApiSupportLink = {
 };
 
 export default function Screen() {
-  const { colours } = useTheme();
+  const { colours, theme } = useTheme();
   const styles = createStyles(colours);
   const router = useRouter();
   const { pickSupportLink } = useAppointment();
@@ -64,7 +64,7 @@ export default function Screen() {
           links?.map((link) => (
             <Pressable
               key={link.id}
-              style={styles.linkCard}
+              style={[theme.sectionContainer, styles.linkCard]}
               onPress={() => choose(link)}
               accessibilityRole="button"
             >
@@ -98,6 +98,7 @@ function createStyles(colours: ColourSet) {
     content: {
       paddingHorizontal: 16,
       paddingTop: 24,
+      paddingBottom: 120,
       gap: 12,
     },
 
@@ -107,9 +108,6 @@ function createStyles(colours: ColourSet) {
     },
 
     linkCard: {
-      backgroundColor: colours.surface,
-      borderRadius: 8,
-      padding: 12,
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
