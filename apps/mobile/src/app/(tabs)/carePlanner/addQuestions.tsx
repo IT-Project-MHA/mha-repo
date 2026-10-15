@@ -10,7 +10,7 @@ import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
 import { Checkbox, useTheme as usePaperTheme } from 'react-native-paper';
-import { useAppointment, AppointmentQuestion } from '../../../../context/AppointmentContext';
+import { useAppointment } from '../../../../context/AppointmentContext';
 import {
   fillSuggestedQuestions,
   NO_PAIN_DATA,
@@ -19,7 +19,7 @@ import {
 import {
   apiErrorMessage,
   apiPainSummary,
-  apiSaveQuestions,
+  apiSaveOwnQuestions,
 } from '../../../api/care_planner_api_helpers';
 
 export default function Screen() {
@@ -27,7 +27,7 @@ export default function Screen() {
   const styles = createStyles(colours);
   const router = useRouter();
   const { colors: paperColours } = usePaperTheme();
-  const { draft, updateDraft, appointments, updateAppointment } = useAppointment();
+  const { draft, updateDraft, appointments } = useAppointment();
 
   // set when opened from a submitted appointment's details, otherwise the draft is changed
   const { appointmentId } = useLocalSearchParams<{ appointmentId?: string }>();
@@ -73,18 +73,14 @@ export default function Screen() {
       return next;
     });
 
-  // questions the patient has typed themselves, starts with the saved ones and keeps their answers
+  // questions the patient has typed themselves, starts with the saved ones. serverId is the saved
+  // question's id, so saving keeps it & its answer, left out for a new one
   const [ownQuestions, setOwnQuestions] = useState<
-    { id: number; text: string; answer?: string; recording?: string }[]
+    { id: number; serverId?: string; text: string }[]
   >(() =>
     savedQuestions
       .filter((question) => question.source === 'patient')
-      .map((question, index) => ({
-        id: index,
-        text: question.text,
-        answer: question.answer,
-        recording: question.recording,
-      })),
+      .map((question, index) => ({ id: index, serverId: question.id, text: question.text })),
   );
   const [nextId, setNextId] = useState(ownQuestions.length);
   // message shown above the save button, null when there is nothing wrong
@@ -111,49 +107,50 @@ export default function Screen() {
   const save = async () => {
     // stops a second press saving twice
     if (saving) return;
+    // the appointment being changed, or the one being created
+    const saveTo = appointmentId ?? draft.appointmentId;
+    if (!saveTo) return;
     const savedSuggestion = (id: string) =>
       savedQuestions.find((question) => question.suggestedId === id);
 
-    const suggested: AppointmentQuestion[] = suggestions.flatMap(({ questions }) =>
+    const suggested = suggestions.flatMap(({ questions }) =>
       questions
-        // remove non-checked items
-        .filter(({ id }) => checked.has(id))
-        // map to AppointmentQuestion object
-        .map(({ text, id }) => ({
+        // the ticked ones, a suggestion a support person ticked stays theirs and isn't sent
+        .filter(({ id }) => checked.has(id) && savedSuggestion(id)?.addedBy !== 'support')
+        .map(({ id, text }) => ({
+          id: savedSuggestion(id)?.id,
           text,
           source: 'suggested' as const,
-          // a suggestion a support person ticked stays theirs
-          addedBy: savedSuggestion(id)?.addedBy,
           suggestedId: id,
-          answer: savedSuggestion(id)?.answer,
-          recording: savedSuggestion(id)?.recording,
         })),
     );
-    const own: AppointmentQuestion[] = ownQuestions
-      // copy each question attribute but trim text
-      .map((question) => ({ ...question, text: question.text.trim() }))
-      .filter(({ text }) => text !== '')
-      .map(({ text, answer, recording }) => ({ text, source: 'patient', answer, recording }));
-    if (appointmentId) {
-      // keeps the questions support persons typed, they aren't shown on this page
-      const supportQuestions = savedQuestions.filter((question) => question.source === 'support');
-      updateAppointment(appointmentId, { questions: [...suggested, ...own, ...supportQuestions] });
-      router.back();
-    } else if (draft.appointmentId) {
-      // replaces the new appointment's questions on the server, then opens the review page
-      const questions = [...suggested, ...own];
-      setSaving(true);
-      setError(null);
-      try {
-        await apiSaveQuestions(draft.appointmentId, questions);
+    const own = ownQuestions
+      // trim text, blank ones are left out
+      .map((question) => ({
+        id: question.serverId,
+        text: question.text.trim(),
+        source: 'patient' as const,
+      }))
+      .filter(({ text }) => text !== '');
+    const questions = [...suggested, ...own];
+
+    // saves the patient's questions on the server, support persons' questions aren't changed
+    setSaving(true);
+    setError(null);
+    try {
+      await apiSaveOwnQuestions(saveTo, questions);
+      if (appointmentId) {
+        // the appointment's page reloads it from the server
+        router.back();
+      } else {
         updateDraft({ questions });
         router.push('/carePlanner/reviewAppointment');
-      } catch (saveError) {
-        console.error('Failed to save questions', saveError);
-        setError(apiErrorMessage(saveError, 'Your questions could not be saved, please try again'));
-      } finally {
-        setSaving(false);
       }
+    } catch (saveError) {
+      console.error('Failed to save questions', saveError);
+      setError(apiErrorMessage(saveError, 'Your questions could not be saved, please try again'));
+    } finally {
+      setSaving(false);
     }
   };
 

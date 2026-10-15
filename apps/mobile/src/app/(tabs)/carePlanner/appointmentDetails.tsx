@@ -2,9 +2,9 @@
  * Shows a summary of the details of an appointment, opened by pressing an appointment on the
  * care planner.
  */
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
@@ -23,21 +23,24 @@ export default function Screen() {
   const [loading, setLoading] = useState(true);
 
   // loads the appointment with its questions & support persons, and keeps it so the pages opened
-  // from here can find it. A copy kept from before is shown while it loads
-  useEffect(() => {
-    const loadAppointment = async () => {
-      try {
-        const loaded = (await apiAppointmentDetails(id)) as Appointment;
-        rememberAppointment(loaded);
-      } catch (error) {
-        console.error('Failed to load appointment', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadAppointment();
-    // loads again only for a different appointment, rememberAppointment changes every render
-  }, [id]);
+  // from here can find it. Reloads when the page is shown, so changes saved on those pages appear.
+  // A copy kept from before is shown while it loads
+  useFocusEffect(
+    useCallback(() => {
+      const loadAppointment = async () => {
+        try {
+          const loaded = (await apiAppointmentDetails(id)) as Appointment;
+          rememberAppointment(loaded);
+        } catch (error) {
+          console.error('Failed to load appointment', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      loadAppointment();
+      // loads again only for a different appointment, rememberAppointment changes every render
+    }, [id]),
+  );
 
   if (!appointment) {
     return (

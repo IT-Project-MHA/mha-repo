@@ -3,9 +3,9 @@
  * on the care planner or the all shared appointments page. Questions can only be added or edited,
  * and answers added or edited, if the patient has given this user permission.
  */
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
@@ -24,21 +24,25 @@ export default function Screen() {
   const [loading, setLoading] = useState(true);
 
   // loads the appointment with its questions & what the patient allows this user to do, and keeps
-  // it so the pages opened from here can find it. A copy kept from before is shown while it loads
-  useEffect(() => {
-    const loadAppointment = async () => {
-      try {
-        const loaded = (await apiAppointmentDetails(id)) as SharedAppointment;
-        rememberSharedAppointment(loaded);
-      } catch (error) {
-        console.error('Failed to load shared appointment', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadAppointment();
-    // loads again only for a different appointment, rememberSharedAppointment changes every render
-  }, [id]);
+  // it so the pages opened from here can find it. Reloads when the page is shown, so changes saved
+  // on those pages appear. A copy kept from before is shown while it loads
+  useFocusEffect(
+    useCallback(() => {
+      const loadAppointment = async () => {
+        try {
+          const loaded = (await apiAppointmentDetails(id)) as SharedAppointment;
+          rememberSharedAppointment(loaded);
+        } catch (error) {
+          console.error('Failed to load shared appointment', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      loadAppointment();
+      // loads again only for a different appointment, rememberSharedAppointment changes every
+      // render
+    }, [id]),
+  );
 
   if (!appointment) {
     return (

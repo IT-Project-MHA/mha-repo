@@ -12,7 +12,12 @@ import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
 import { Checkbox, useTheme as usePaperTheme } from 'react-native-paper';
 import { useAppointment } from '../../../../context/AppointmentContext';
-import { apiMySupportLinks, normalisePhoneNumber } from '../../../api/care_planner_api_helpers';
+import {
+  apiErrorMessage,
+  apiMySupportLinks,
+  apiSaveSupportPeople,
+  normalisePhoneNumber,
+} from '../../../api/care_planner_api_helpers';
 
 // support link record returned by the API
 type ApiSupportLink = {
@@ -31,7 +36,6 @@ export default function Screen() {
     draft,
     updateDraft,
     appointments,
-    updateAppointment,
     pickedSupportLink,
     pickSupportLink,
   } = useAppointment();
@@ -50,6 +54,9 @@ export default function Screen() {
   // set when the person was chosen from My Support Links
   const [supportLinkId, setSupportLinkId] = useState(saved?.supportLinkId);
   const [showError, setShowError] = useState(false);
+  // message shown when saving to an appointment fails, null otherwise
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   // the user's support links, to tell whether the number entered is one of them
   const [links, setLinks] = useState<ApiSupportLink[]>([]);
 
@@ -130,7 +137,9 @@ export default function Screen() {
   const phoneInvalid = !link && !serverPhone && phone.trim() !== '';
 
   // a support link or a valid phone number is mandatory
-  const save = () => {
+  const save = async () => {
+    // stops a second press saving twice
+    if (saving) return;
     if (!link && !serverPhone) {
       setShowError(true);
       return;
@@ -148,9 +157,29 @@ export default function Screen() {
       index !== undefined
         ? savedPeople.map((item, itemIndex) => (itemIndex === Number(index) ? person : item))
         : [...savedPeople, person];
-    if (appointmentId) updateAppointment(appointmentId, { supportPeople });
-    else updateDraft({ supportPeople });
-    router.back();
+    // the create appointment flow saves its support persons together on the add support person
+    // page
+    if (!appointmentId) {
+      updateDraft({ supportPeople });
+      router.back();
+      return;
+    }
+
+    // an existing appointment's support persons are saved to the server straight away, the
+    // appointment's page then reloads them
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await apiSaveSupportPeople(appointmentId, supportPeople);
+      router.back();
+    } catch (error) {
+      console.error('Failed to save support person', error);
+      setSaveError(
+        apiErrorMessage(error, 'Your support person could not be saved, please try again'),
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -224,7 +253,10 @@ export default function Screen() {
             Please fill in all mandatory fields
           </Text>
         )}
-        <Button label="Save" onPress={save} buttonType="primaryButton" />
+        {!!saveError && (
+          <Text style={[styles.error, { color: paperColours.error }]}>{saveError}</Text>
+        )}
+        <Button label={saving ? 'Saving...' : 'Save'} onPress={save} buttonType="primaryButton" />
       </View>
     </View>
   );

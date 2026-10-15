@@ -11,13 +11,17 @@ import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
 import { Checkbox, useTheme as usePaperTheme } from 'react-native-paper';
-import { useAppointment, AppointmentQuestion } from '../../../../context/AppointmentContext';
+import { useAppointment } from '../../../../context/AppointmentContext';
 import {
   fillSuggestedQuestions,
   NO_PAIN_DATA,
   PainSummary,
 } from '../../../../constants/suggestedQuestions';
-import { apiPainSummary } from '../../../api/care_planner_api_helpers';
+import {
+  apiErrorMessage,
+  apiPainSummary,
+  apiSaveOwnQuestions,
+} from '../../../api/care_planner_api_helpers';
 
 // a question with a written or recorded answer can still be edited, but the backend refuses to
 // delete it
@@ -29,7 +33,7 @@ export default function Screen() {
   const styles = createStyles(colours);
   const router = useRouter();
   const { colors: paperColours } = usePaperTheme();
-  const { findAppointment, updateAppointment, sharedAppointments } = useAppointment();
+  const { findAppointment, sharedAppointments } = useAppointment();
 
   const { appointmentId } = useLocalSearchParams<{ appointmentId: string }>();
   const savedQuestions = findAppointment(appointmentId)?.questions ?? [];
@@ -57,10 +61,6 @@ export default function Screen() {
   // suggestions the patient ticked are hidden and kept as they are when saving
   const patientSuggestion = (id: string) =>
     !!savedSuggestion(id) && savedSuggestion(id)?.addedBy !== 'support';
-  // questions the patient typed are hidden and kept as they are when saving
-  const patientTyped = savedQuestions.filter(
-    (question) => question.source === 'patient',
-  );
 
   // set of ids of the suggested questions support persons have ticked
   const [checked, setChecked] = useState<Set<string>>(
@@ -84,14 +84,23 @@ export default function Screen() {
       return next;
     });
 
-  // questions support persons have typed, starts with the saved ones and keeps their answers
+  // questions support persons have typed, starts with the saved ones and keeps their answers.
+  // serverId is the saved question's id, left out for a new one
   const [ownQuestions, setOwnQuestions] = useState<
-    { id: number; text: string; savedText?: string; answer?: string; recording?: string }[]
+    {
+      id: number;
+      serverId?: string;
+      text: string;
+      savedText?: string;
+      answer?: string;
+      recording?: string;
+    }[]
   >(() =>
     savedQuestions
       .filter((question) => question.source === 'support')
       .map((question, index) => ({
         id: index,
+        serverId: question.id,
         text: question.text,
         savedText: question.text,
         answer: question.answer,
@@ -115,41 +124,46 @@ export default function Screen() {
   const removeOwnQuestion = (id: number) =>
     setOwnQuestions((previous) => previous.filter((question) => question.id !== id));
 
-  // saves the patient's questions as they are, with the ticked suggestions & own questions (blank
-  // ones left out), keeping the answers & recordings already saved for them
-  const save = () => {
-    const suggested: AppointmentQuestion[] = suggestions.flatMap(({ questions }) =>
+  // message shown above the save button, null when there is nothing wrong
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // saves the ticked suggestions & own questions (blank ones left out) to the server, keeping the
+  // saved ones by their id so their answers & recordings stay. The patient's questions aren't
+  // changed. The shared appointment page then reloads it from the server
+  const save = async () => {
+    // stops a second press saving twice
+    if (saving) return;
+    const suggested = suggestions.flatMap(({ questions }) =>
       questions
-        // keep the patient's and the ticked ones
-        .filter(({ id }) => patientSuggestion(id) || checked.has(id))
-        // map to AppointmentQuestion object
+        // the ones this support person ticked, the patient's are kept as they are
+        .filter(({ id }) => !patientSuggestion(id) && checked.has(id))
         .map(({ text, id }) => ({
+          id: savedSuggestion(id)?.id,
           text,
           source: 'suggested' as const,
-          // a suggestion the patient ticked stays theirs
-          addedBy: patientSuggestion(id) ? undefined : ('support' as const),
-          suggestedId: id,
-          answer: savedSuggestion(id)?.answer,
-          recording: savedSuggestion(id)?.recording,
         })),
     );
-    const own: AppointmentQuestion[] = ownQuestions
-      // copy each question attribute but trim text, an answered question left blank keeps its
-      // saved text so it isn't removed
+    const own = ownQuestions
+      // trim text, an answered question left blank keeps its saved text so it isn't removed
       .map((question) => ({
-        ...question,
+        id: question.serverId,
         text: question.text.trim() || (isAnswered(question) ? question.savedText ?? '' : ''),
+        source: 'support' as const,
       }))
-      .filter(({ text }) => text !== '')
-      .map(({ text, answer, recording }) => ({
-        text,
-        source: 'support',
-        addedBy: 'support',
-        answer,
-        recording,
-      }));
-    updateAppointment(appointmentId, { questions: [...suggested, ...patientTyped, ...own] });
-    router.back();
+      .filter(({ text }) => text !== '');
+
+    setSaving(true);
+    setError(null);
+    try {
+      await apiSaveOwnQuestions(appointmentId, [...suggested, ...own]);
+      router.back();
+    } catch (saveError) {
+      console.error('Failed to save questions', saveError);
+      setError(apiErrorMessage(saveError, 'Your questions could not be saved, please try again'));
+    } finally {
+      setSaving(false);
+    }
   };
 
   // only headings with a suggestion the patient hasn't ticked are shown
@@ -218,7 +232,10 @@ export default function Screen() {
       </ScrollView>
 
       <View style={styles.bottomBar}>
-        <Button label="Save" onPress={save} buttonType="primaryButton" />
+        {!!error && (
+          <Text style={[styles.error, { color: paperColours.error }]}>{error}</Text>
+        )}
+        <Button label={saving ? 'Saving...' : 'Save'} onPress={save} buttonType="primaryButton" />
       </View>
     </View>
   );
@@ -252,6 +269,11 @@ function createStyles(colours: ColourSet) {
     bottomBar: {
       paddingHorizontal: 16,
       marginBottom: 44,
+      gap: 8,
+    },
+
+    error: {
+      fontSize: 14,
     },
 
     body: {

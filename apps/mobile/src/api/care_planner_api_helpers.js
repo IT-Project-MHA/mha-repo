@@ -101,6 +101,47 @@ export async function apiSaveAnswer(questionId, answerId, { text, recording } = 
     return apiAppointmentAnswer('create', { question: questionId, ...values });
 }
 
+/* Saves the user's own questions of an appointment, from the add questions pages of patients and
+support persons:
+- takes the appointment id and the user's questions in order, each { id, text, source }: id is
+  the saved question's id (left out for a new one), source is 'suggested', 'patient' or 'support'
+- creates the new questions, changes the text of saved ones that changed, and deletes the user's
+  saved questions that aren't listed (with their answers). Questions other people added aren't
+  changed, the server only lets a support person change their own
+- a support person needs can_add_questions in AppointmentAccess */
+export async function apiSaveOwnQuestions(appointmentId, questions) {
+    const [[user], saved] = await Promise.all([
+        apiUser('select'),
+        apiAppointmentQuestion('select', { appointment: appointmentId }),
+    ]);
+    const own = saved.filter((question) => question.created_by === user.id);
+
+    const kept = new Set(questions.map((question) => question.id).filter(Boolean));
+    for (const question of own) {
+        if (!kept.has(question.id)) {
+            await apiAppointmentQuestion('delete', { id: question.id });
+        }
+    }
+
+    // one at a time, so the server numbers new questions in the order they were added
+    for (const question of questions) {
+        const savedQuestion = own.find((item) => item.id === question.id);
+        if (question.id && !savedQuestion) {
+            // someone else's question, left as it is
+            continue;
+        }
+        if (!savedQuestion) {
+            await apiAppointmentQuestion('create', {
+                appointment: appointmentId,
+                text: question.text,
+                source: question.source,
+            });
+        } else if (savedQuestion.text !== question.text) {
+            await apiAppointmentQuestion('update', { id: question.id, text: question.text });
+        }
+    }
+}
+
 /* Pain values for the suggested questions (PainSummary in constants/suggestedQuestions.ts):
 - takes a patient_profile id, or nothing for the user's own, returns { locations, average, worst,
   mildest, current }
@@ -270,15 +311,17 @@ export function apiErrorMessage(error, fallback) {
     return message ?? fallback;
 }
 
-/* Saves the details of the appointment being created, from the create appointment page:
+/* Saves the details of an appointment, from the create & edit appointment pages:
 - takes the id of the appointment if it has already been saved (null the first time) and the
   details ({ scheduledDate, doctor, healthService }), returns the saved Appointment
-- creates the Appointment the first time, then updates the same one when the page is saved again
+- creates the Appointment the first time, then updates the same one
+- scheduledDate can be left out when updating, to keep the saved one: the server refuses a
+  scheduled_date in the past, so a past appointment can only be changed without it
 - healthService is left out when not chosen: the server uses its default when creating, and keeps
   the saved one when updating */
 export async function apiSaveAppointment(appointmentId, { scheduledDate, doctor, healthService }) {
     const details = {
-        scheduled_date: scheduledDate.toISOString(),
+        scheduled_date: scheduledDate ? scheduledDate.toISOString() : undefined,
         doctor: doctor,
         health_service: healthService ?? undefined,
     };
@@ -350,24 +393,4 @@ export async function apiSaveSupportPeople(appointmentId, supportPeople) {
     }
 
     return supportLinkIds;
-}
-
-/* Saves the questions of the appointment being created, from the add questions page:
-- takes the appointment id and the questions ({ text, source }), returns nothing
-- replaces the appointment's questions with the given ones, in the given order
-- safe to call again after a failure or after the page is saved again */
-export async function apiSaveQuestions(appointmentId, questions) {
-    const saved = await apiAppointmentQuestion('select', { appointment: appointmentId });
-    for (const question of saved) {
-        await apiAppointmentQuestion('delete', { id: question.id });
-    }
-
-    // one at a time, so the server numbers them in the order they were added
-    for (const question of questions) {
-        await apiAppointmentQuestion('create', {
-            appointment: appointmentId,
-            text: question.text,
-            source: question.source,
-        });
-    }
 }

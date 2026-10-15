@@ -8,9 +8,13 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { textLayout } from '../../../../constants/layout';
-import { Checkbox } from 'react-native-paper';
+import { Checkbox, useTheme as usePaperTheme } from 'react-native-paper';
 import { useAppointment } from '../../../../context/AppointmentContext';
-import { apiMySupportLinks } from '../../../api/care_planner_api_helpers';
+import {
+  apiErrorMessage,
+  apiMySupportLinks,
+  apiSaveSupportPeople,
+} from '../../../api/care_planner_api_helpers';
 
 // support link record returned by the API
 type ApiSupportLink = {
@@ -24,9 +28,10 @@ export default function Screen() {
   const { colours } = useTheme();
   const styles = createStyles(colours);
   const router = useRouter();
+  const { colors: paperColours } = usePaperTheme();
   // index is the person's position in the appointment's support people
   const { id, index } = useLocalSearchParams<{ id: string; index: string }>();
-  const { appointments, updateAppointment } = useAppointment();
+  const { appointments } = useAppointment();
   const supportPeople = appointments.find((item) => item.id === id)?.supportPeople ?? [];
   const person = supportPeople[Number(index)];
 
@@ -35,6 +40,9 @@ export default function Screen() {
   const [canAddAnswers, setCanAddAnswers] = useState(person?.canAddAnswers ?? false);
   // the user's support links, for this person's name & what they can see
   const [links, setLinks] = useState<ApiSupportLink[]>([]);
+  // message shown when saving fails, null otherwise
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const loadLinks = async () => {
@@ -65,21 +73,35 @@ export default function Screen() {
   // they have one
   const name = link?.supporter_name || person.name;
 
-  const save = () => {
-    updateAppointment(id, {
-      supportPeople: supportPeople.map((item, itemIndex) =>
-        itemIndex === Number(index) ? { ...person, canAddQuestions, canAddAnswers } : item,
-      ),
-    });
-    router.back();
+  // saves the appointment's support persons to the server, the appointment's page then reloads them
+  const saveSupportPeople = async (changed: typeof supportPeople) => {
+    // stops a second press saving twice
+    if (saving) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await apiSaveSupportPeople(id, changed);
+      router.back();
+    } catch (error) {
+      console.error('Failed to save support person', error);
+      setSaveError(
+        apiErrorMessage(error, 'Your support person could not be saved, please try again'),
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const remove = () => {
-    updateAppointment(id, {
-      supportPeople: supportPeople.filter((_, itemIndex) => itemIndex !== Number(index)),
-    });
-    router.back();
-  };
+  const save = () =>
+    saveSupportPeople(
+      supportPeople.map((item, itemIndex) =>
+        itemIndex === Number(index) ? { ...person, canAddQuestions, canAddAnswers } : item,
+      ),
+    );
+
+  // the removed person loses their access to the appointment
+  const remove = () =>
+    saveSupportPeople(supportPeople.filter((_, itemIndex) => itemIndex !== Number(index)));
 
   return (
     <View style={styles.screen}>
@@ -134,8 +156,11 @@ export default function Screen() {
       </ScrollView>
 
       <View style={styles.bottomBar}>
+        {!!saveError && (
+          <Text style={[styles.error, { color: paperColours.error }]}>{saveError}</Text>
+        )}
         <Button label="Delete support person" onPress={remove} buttonType="secondaryButton" />
-        <Button label="Save" onPress={save} buttonType="primaryButton" />
+        <Button label={saving ? 'Saving...' : 'Save'} onPress={save} buttonType="primaryButton" />
       </View>
     </View>
   );
@@ -159,6 +184,10 @@ function createStyles(colours: ColourSet) {
       paddingHorizontal: 16,
       marginBottom: 44,
       gap: 8,
+    },
+    error: {
+      fontSize: 14,
+      textAlign: 'center',
     },
 
     heading: {

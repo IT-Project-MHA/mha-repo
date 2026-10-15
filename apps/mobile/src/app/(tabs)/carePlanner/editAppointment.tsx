@@ -20,6 +20,7 @@ import {
 } from '../../../../constants/date';
 import { useAppointment } from '../../../../context/AppointmentContext';
 import { DEFAULT_HEALTH_SERVICE, useHealthServices } from '../../../../constants/dropdownOptions';
+import { apiErrorMessage, apiSaveAppointment } from '../../../api/care_planner_api_helpers';
 
 // start of today, appointments cannot be scheduled in the past
 const startOfToday = () => {
@@ -34,7 +35,7 @@ export default function Screen() {
   const router = useRouter();
   const { colors: paperColours } = usePaperTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { appointments, updateAppointment } = useAppointment();
+  const { appointments } = useAppointment();
   const appointment = appointments.find((item) => item.id === id);
 
   // starts with the appointment's saved details
@@ -62,22 +63,41 @@ export default function Screen() {
   };
 
   // saves the changes to the appointment and goes back to its details, if mandatory fields are filled
-  const handleSubmit = () => {
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async () => {
+    // stops a second press saving twice
+    if (saving) return;
     if (!date || !time) {
       setError('Please fill in all mandatory fields');
       return;
     }
-    // the server rejects appointments in the past
-    if (withTime(date, time) < new Date()) {
+    // the date & time are only saved when they changed, so a past appointment can still have its
+    // other details changed. The server rejects a new time in the past
+    const scheduledDate = withTime(date, time);
+    const dateChanged =
+      !appointment || scheduledDate.getTime() !== Date.parse(appointment.scheduled_date);
+    if (dateChanged && scheduledDate < new Date()) {
       setError('Appointment cannot be in the past');
       return;
     }
-    updateAppointment(id, {
-      scheduled_date: withTime(date, time).toISOString(),
-      doctor: doctor.trim(),
-      health_service: service,
-    });
-    router.back();
+
+    setSaving(true);
+    setError(null);
+    try {
+      await apiSaveAppointment(id, {
+        scheduledDate: dateChanged ? scheduledDate : undefined,
+        doctor: doctor.trim(),
+        healthService: service,
+      });
+      // the appointment's page reloads it from the server
+      router.back();
+    } catch (saveError) {
+      console.error('Failed to save appointment', saveError);
+      setError(apiErrorMessage(saveError, 'Your appointment could not be saved, please try again'));
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (!appointment) {
@@ -169,7 +189,11 @@ export default function Screen() {
             {error}
           </Text>
         )}
-        <Button label="Save" onPress={handleSubmit} buttonType="primaryButton" />
+        <Button
+          label={saving ? 'Saving...' : 'Save'}
+          onPress={handleSubmit}
+          buttonType="primaryButton"
+        />
       </View>
     </View>
   );
