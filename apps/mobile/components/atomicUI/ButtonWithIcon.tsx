@@ -5,7 +5,7 @@ import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import {Ionicons, IoniconsIconName} from '@react-native-vector-icons/ionicons'
 
-type ButtonType = "primaryButton" | "secondaryButton" | "squareButtonWithLine" | "transparentButton";
+type ButtonType = "primaryButton" | "secondaryButton" | "transparentButton" | "textButton" | "roundButton";
 
 /**
  * defines the required input on button creation
@@ -24,6 +24,7 @@ type ButtonProps = {
   onPress: () => void;
   buttonType: ButtonType;
   name: IoniconsIconName;
+  fontColour: string;
 };
 
 /**
@@ -35,23 +36,22 @@ type ButtonProps = {
  * @param buttonType string that maps to a button type, defined in theme.ts
  * @returns a styled button component, which performs some funtion when pressed, with an icon
  */
-const Button = ({label, onPress, buttonType, name}: ButtonProps) => {
+const Button = ({label, onPress, buttonType, name, fontColour}: ButtonProps) => {
   const { theme, colours} = useTheme();
 
   return (
     
     <TouchableOpacity
-  
       activeOpacity={0.7}
       style={theme[buttonType]}
       onPress={onPress}
     >
     <View style={styles.row}>
-      <Text style={[theme.h6, theme.fontOnSurface]}>{label}</Text>
+      <Text style={[theme.h6,{color: fontColour}]}>{label}</Text>
         <Ionicons
             name={name}
             size={16}
-            color={colours.onSurface}  
+            color={fontColour}  
             style={styles.icon}
         />
    

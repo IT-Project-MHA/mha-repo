@@ -12,7 +12,7 @@ import MyConditionsModal from '../../../../components/atomicUI/MyConditionsModal
 import { useUser } from '../../../../context/AuthorisationContext';
 
 export default function Screen() {
-  const {theme} = useTheme();
+  const {theme, colours} = useTheme();
   const {setUserType} = useUser();
   const [pending, setPending] = useState< 'logout' | 'delete' | 'editAboutMe' | 'editMyConditions' | null>(null); // modal visibility triggered by pending state
 
@@ -81,6 +81,7 @@ export default function Screen() {
         <TextButton
 	        label="Edit Details"
 	        onPress={() => setPending('editAboutMe')}
+          fontColour={colours.onSurface}
           />
       </View>
       </View>
@@ -112,6 +113,7 @@ export default function Screen() {
         <TextButton
 	        label="Edit Details"
 	        onPress={() => setPending('editMyConditions')}
+          fontColour={colours.onSurface}
           />
         </View> 
       </View>
@@ -125,6 +127,7 @@ export default function Screen() {
 	        onPress={() => setPending('logout')}
           buttonType="transparentButton"
           name="person-outline"
+          fontColour={colours.onSurface}
         />
       </View>
   
@@ -136,6 +139,7 @@ export default function Screen() {
 	        onPress={() => setPending('delete')}
           buttonType="transparentButton"
           name="trash-bin-outline"
+          fontColour={colours.onSurface}
         />
         <View style={theme.line}></View>
 

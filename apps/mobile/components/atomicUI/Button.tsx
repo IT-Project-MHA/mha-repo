@@ -5,7 +5,7 @@ import { Pressable, Text } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 
 
-type ButtonType = "primaryButton" | "secondaryButton" | "transparentButton" | "textButton";
+type ButtonType = "primaryButton" | "secondaryButton" | "transparentButton" | "textButton" ;
 
 
 /**
@@ -23,6 +23,7 @@ type ButtonProps = {
   label: string;
   onPress: () => void;
   buttonType: ButtonType;
+  fontColour: string;
 };
 
 /**
@@ -34,15 +35,15 @@ type ButtonProps = {
  * @param buttonType string that maps to a button type, defined in theme.ts
  * @returns a styled button component, which performs some funtion when pressed
  */
-const Button = ({label, onPress, buttonType}: ButtonProps) => {
-  const { theme } = useTheme();
+const Button = ({label, onPress, buttonType, fontColour}: ButtonProps) => {
+  const { theme, colours } = useTheme();
 
   return (
     <Pressable
       style={theme[buttonType]}
       onPress={onPress}
     >
-    <Text style={[theme.h6, theme.fontOnSurface]}>{label}</Text>
+    <Text style={[theme.h6,{color: fontColour}]}>{label}</Text>
     </Pressable>
   );
 };
