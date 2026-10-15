@@ -33,6 +33,7 @@ export async function apiPatientAppointments() {
     return apiAppointment('select', { patient_profile: profileId });
 }
 
+
 /* Appointments where the user is the support person:
 - takes no parameters and returns an array of all appointments of other patients that the user
   can see, either through can_view_appointments on their SupportLink or an AppointmentAccess
