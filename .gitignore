@@ -10,6 +10,10 @@ __pycache__/
 # Secrets and Environment Variables
 .env
 *.local
+.vscode/settings.json
+package-lock.json
+apps/mobile/package.json
+
 # SQL lite
 db.sqlite3
 *.sqlite3

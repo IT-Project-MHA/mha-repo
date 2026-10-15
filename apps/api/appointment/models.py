@@ -26,6 +26,8 @@ class Appointment(BaseModel, SoftDeleteModel):
 
     created_by = models.ForeignKey("accounts.User", on_delete = models.PROTECT, related_name = "+")
     notes = models.TextField(blank = True)
+    doctor_permission = models.BooleanField(default = False)
+    doctor_signature = models.TextField(blank = True) # PNG data URL of the signature
 
     class Meta:
         db_table = "appointment"

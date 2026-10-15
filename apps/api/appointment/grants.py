@@ -17,7 +17,8 @@ class GrantError(Exception):
 def grant_access(appointment, support_link_id, can_add_questions, can_record_answers, actor):
 
     # Give a supporter access to appointment or update their flags if they already have it
-    # The supporter must have accepted the support link first
+    # An invited link can be given access, it starts working once the invite is linked to an
+    # account and the link is active
 
     with transaction.atomic():
         # Lock appointment so multiple grants at once can't both squeeze past the limit
@@ -28,8 +29,8 @@ def grant_access(appointment, support_link_id, can_add_questions, can_record_ans
         if link is None:
             raise GrantError("link_not_found")
         
-        if link.status != SupportLink.Status.ACTIVE:
-            raise GrantError("link_not_active")
+        if link.status == SupportLink.Status.REVOKED:
+            raise GrantError("link_revoked")
 
         live_grants = AppointmentAccess.objects.filter(appointment = appointment, revoked_at__isnull = True)
         grant = live_grants.filter(support_link = link).first()
