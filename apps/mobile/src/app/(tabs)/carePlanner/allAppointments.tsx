@@ -2,11 +2,13 @@
  * Lists all of the patient's appointments, newest added first, opened from the see all
  * appointments button on the care planner.
  */
-import { useCallback, useState } from 'react';
+import { Fragment, useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, TouchableOpacity } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
-import { textLayout } from '../../../../constants/layout';
+import { Typography } from '../../../../constants/textSize';
+import { lineThickness } from '../../../../constants/layout';
 import { formatDateTime } from '../../../../constants/date';
 import { ApiAppointment } from '../../../../context/AppointmentContext';
 import { apiPatientAppointments } from '../../../api/care_planner_api_helpers';
@@ -20,7 +22,7 @@ type SortBy = (typeof SORT_OPTIONS)[number]['value'];
 
 export default function Screen() {
   const { colours, theme } = useTheme();
-  const styles = createStyles(colours);
+  const styles = createStyles(colours, theme);
   const router = useRouter();
   // null while loading
   const [appointments, setAppointments] = useState<ApiAppointment[] | null>(null);
@@ -76,80 +78,95 @@ export default function Screen() {
   const upcoming = sorted.filter((appointment) => Date.parse(appointment.scheduled_date) >= now);
   const past = sorted.filter((appointment) => Date.parse(appointment.scheduled_date) < now);
 
-  const renderAppointmentCard = (appointment: ApiAppointment) => (
-    // opens a summary of the appointment, going back returns here
-    <Pressable
-      key={appointment.id}
-      style={[theme.sectionContainer, styles.appointmentCard]}
-      onPress={() =>
-        router.push({
-          pathname: '/carePlanner/appointmentDetails',
-          params: { id: appointment.id },
-        })
-      }
-      accessibilityRole="button"
-    >
-      <Text style={styles.appointmentDate}>{formatDateTime(appointment.scheduled_date)}</Text>
-      {!!appointment.doctor && (
-        <Text style={styles.appointmentDetails}>{appointment.doctor}</Text>
-      )}
-      {!!appointment.health_service && (
-        <Text style={styles.appointmentDetails}>{appointment.health_service}</Text>
-      )}
-    </Pressable>
+  const renderAppointmentRow = (appointment: ApiAppointment, index: number) => (
+    <Fragment key={appointment.id}>
+      {index > 0 && <View style={theme.line} />}
+      {/* opens a summary of the appointment, going back returns here */}
+      <Pressable
+        style={styles.appointmentRow}
+        onPress={() =>
+          router.push({
+            pathname: '/carePlanner/appointmentDetails',
+            params: { id: appointment.id },
+          })
+        }
+        accessibilityRole="button"
+      >
+        <View style={styles.appointmentInfo}>
+          <Text style={styles.appointmentDate}>{formatDateTime(appointment.scheduled_date)}</Text>
+          {!!appointment.doctor && (
+            <Text style={styles.appointmentDetails}>{appointment.doctor}</Text>
+          )}
+          {!!appointment.health_service && (
+            <Text style={styles.appointmentDetails}>{appointment.health_service}</Text>
+          )}
+        </View>
+        <Ionicons name="chevron-forward-outline" size={16} color={colours.onSurface} />
+      </Pressable>
+    </Fragment>
   );
 
   return (
     <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content}>
-        {!!message && <Text style={styles.body}>{message}</Text>}
-        {sorted.length > 0 && (
-          // extra space separates the sort from the appointments
-          <View style={styles.sort}>
-            <Text style={styles.sortHeading}>Sort by</Text>
-            <TouchableOpacity
-              style={[styles.field, styles.dropdown]}
-              onPress={() => setDropdownOpen(!dropdownOpen)}
-            >
-              <Text style={styles.input}>
-                {SORT_OPTIONS.find((option) => option.value === sortBy)?.label}
-              </Text>
-              <Text style={styles.input}>{dropdownOpen ? '▲' : '▼'}</Text>
-            </TouchableOpacity>
-            {dropdownOpen && (
-              <View style={styles.optionList}>
-                {SORT_OPTIONS.map((option, index) => (
-                  <TouchableOpacity
-                    key={option.value}
-                    style={[
-                      styles.optionRow,
-                      index > 0 && styles.divider,
-                      sortBy === option.value && styles.selectedRow, // highlights selected option
-                    ]}
-                    onPress={() => handleSelect(option.value)}
-                  >
-                    <Text style={[styles.input, sortBy === option.value && styles.selectedText]}>
-                      {option.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
+      <ScrollView stickyHeaderIndices={[0]} contentContainerStyle={styles.content}>
+        <View style={[theme.header, styles.title]}>
+          <Text style={[theme.h4, theme.leftText, theme.fontOnSurface, styles.titleText]}>
+            All Appointments
+          </Text>
+          {sorted.length > 0 && (
+            <View style={[styles.sort, theme.leftText]}>
+              <Text style={styles.sortHeading}>Sort by</Text>
+              <TouchableOpacity
+                style={[styles.field, styles.dropdown]}
+                onPress={() => setDropdownOpen(!dropdownOpen)}
+              >
+                <Text style={styles.input}>
+                  {SORT_OPTIONS.find((option) => option.value === sortBy)?.label}
+                </Text>
+                <Text style={styles.input}>{dropdownOpen ? '▲' : '▼'}</Text>
+              </TouchableOpacity>
+              {dropdownOpen && (
+                <View style={styles.optionList}>
+                  {SORT_OPTIONS.map((option, index) => (
+                    <TouchableOpacity
+                      key={option.value}
+                      style={[
+                        styles.optionRow,
+                        index > 0 && styles.divider,
+                        sortBy === option.value && styles.selectedRow, // highlights selected option
+                      ]}
+                      onPress={() => handleSelect(option.value)}
+                    >
+                      <Text style={[styles.input, sortBy === option.value && styles.selectedText]}>
+                        {option.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+          )}
+        </View>
+        {!!message && <Text style={[styles.body, theme.leftText]}>{message}</Text>}
+        {/* a card is only shown when it has appointments */}
+        {upcoming.length > 0 && (
+          <View style={[theme.sectionContainer, styles.sectionCard]}>
+            <Text style={styles.headline}>Upcoming</Text>
+            <View>{upcoming.map(renderAppointmentRow)}</View>
           </View>
         )}
-        {/* a heading is only shown when it has appointments */}
-        {upcoming.length > 0 && <Text style={styles.headline}>Upcoming</Text>}
-        {upcoming.map(renderAppointmentCard)}
         {past.length > 0 && (
-          <Text style={[styles.headline, upcoming.length > 0 && styles.laterHeadline]}>Past</Text>
+          <View style={[theme.sectionContainer, styles.sectionCard]}>
+            <Text style={styles.headline}>Past</Text>
+            <View>{past.map(renderAppointmentRow)}</View>
+          </View>
         )}
-        {past.map(renderAppointmentCard)}
       </ScrollView>
     </View>
   );
 }
 
-function createStyles(colours: ColourSet) {
+function createStyles(colours: ColourSet, text: Typography) {
   return StyleSheet.create({
     screen: {
       flex: 1,
@@ -157,37 +174,43 @@ function createStyles(colours: ColourSet) {
     },
 
     content: {
-      paddingHorizontal: 16,
-      paddingTop: 24,
-      paddingBottom: 120, // keeps the last card above the nav bar
-      gap: 12,
+      paddingBottom: 120,
+      gap: 38,
+    },
+
+    title: {
+      marginBottom: -19,
+    },
+
+    titleText: {
+      marginBottom: 8,
     },
 
     body: {
-      fontSize: 16,
-      lineHeight: 24,
-      letterSpacing: 0.5,
+      ...text.body,
       color: colours.onBackground,
     },
 
     sort: {
       gap: 8,
-      marginBottom: 12,
+      marginTop: 12,
     },
 
     sortHeading: {
-      fontSize: 14,
+      ...text.small,
       color: colours.onBackground,
     },
 
     field: {
-      backgroundColor: colours.surface,
-      borderRadius: 8,
-      padding: 12,
+      height: 40,
+      paddingVertical: 5,
+      paddingHorizontal: 10,
+      borderWidth: 1,
+      borderColor: colours.onSurface,
     },
 
     input: {
-      fontSize: 16,
+      ...text.body,
       color: colours.onSurface,
     },
 
@@ -198,8 +221,8 @@ function createStyles(colours: ColourSet) {
     },
 
     optionList: {
-      backgroundColor: colours.surface,
-      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colours.onSurface,
       overflow: 'hidden',
     },
 
@@ -209,7 +232,7 @@ function createStyles(colours: ColourSet) {
     },
 
     divider: {
-      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopWidth: lineThickness,
       borderTopColor: colours.ex3,
     },
 
@@ -219,32 +242,40 @@ function createStyles(colours: ColourSet) {
 
     selectedText: {
       color: colours.onSecondary,
-      fontWeight: 'bold',
     },
 
     headline: {
-      fontSize: 22,
-      lineHeight: 28,
-      fontWeight: 'bold',
+      ...text.h5,
       color: colours.onBackground,
+      width: '85%',
+      alignSelf: 'center',
     },
 
-    // more space above the past heading, separating it from the upcoming appointments
-    laterHeadline: {
-      marginTop: 12,
+    sectionCard: {
+      gap: 4,
     },
 
-    appointmentCard: {
+    appointmentRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      paddingBlock: 24,
+      width: '85%',
+      alignSelf: 'center',
+    },
+
+    appointmentInfo: {
+      flex: 1,
       gap: 4,
     },
 
     appointmentDate: {
-      ...textLayout,
+      ...text.body,
       color: colours.onSurface,
     },
 
     appointmentDetails: {
-      fontSize: 14,
+      ...text.small,
       color: colours.onSurface,
     },
   });

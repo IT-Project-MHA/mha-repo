@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import { useTheme as usePaperTheme } from 'react-native-paper';
 import { TimePickerModal } from 'react-native-paper-dates';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useTheme, ColourSet } from '../../context/ThemeContext';
+import { Typography } from '../../constants/textSize';
 import { formatTime, isTimeBetween, TimeOfDay } from '../../constants/date';
 
 type TimeInputProps = {
@@ -29,8 +31,8 @@ type TimeInputProps = {
  * />
  */
 const TimeInput = ({ value, onChange, placeholder, earliest, latest }: TimeInputProps) => {
-  const { colours } = useTheme();
-  const styles = createStyles(colours);
+  const { colours, theme } = useTheme();
+  const styles = createStyles(colours, theme);
   const { colors: paperColours } = usePaperTheme();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [outOfRange, setOutOfRange] = useState(false);
@@ -47,6 +49,7 @@ const TimeInput = ({ value, onChange, placeholder, earliest, latest }: TimeInput
         <Text style={[styles.input, !label && { color: paperColours.onSurfaceVariant }]}>
           {label ?? placeholder}
         </Text>
+        <Ionicons name="time-outline" size={20} color={colours.onSurface} />
       </Pressable>
       <TimePickerModal
         visible={pickerOpen}
@@ -74,21 +77,29 @@ const TimeInput = ({ value, onChange, placeholder, earliest, latest }: TimeInput
 
 export default TimeInput;
 
-function createStyles(colours: ColourSet) {
+function createStyles(colours: ColourSet, text: Typography) {
   return StyleSheet.create({
     field: {
-      backgroundColor: colours.surface,
-      borderRadius: 8,
-      padding: 12,
+      height: 40,
+      paddingVertical: 5,
+      paddingHorizontal: 10,
+      marginHorizontal: 8,
+      borderWidth: 1,
+      borderColor: colours.onSurface,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
     },
 
     input: {
-      fontSize: 16,
+      ...text.body,
       color: colours.onSurface,
     },
 
     error: {
-      fontSize: 14,
+      ...text.small,
+      marginTop: 4,
+      marginHorizontal: 8,
     },
   });
 }

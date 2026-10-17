@@ -2,20 +2,20 @@
  * Patients can add a support person to an appointment from this screen, opened after saving a new
  * appointment.
  */
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme as usePaperTheme } from 'react-native-paper';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
-import { textLayout } from '../../../../constants/layout';
+import { Typography } from '../../../../constants/textSize';
 import { useAppointment, SupportPerson } from '../../../../context/AppointmentContext';
 import { apiErrorMessage, apiSaveSupportPeople } from '../../../api/care_planner_api_helpers';
 
 export default function Screen() {
   const { colours, theme } = useTheme();
-  const styles = createStyles(colours);
+  const styles = createStyles(colours, theme);
   const router = useRouter();
   const { colors: paperColours } = usePaperTheme();
   const { draft, updateDraft } = useAppointment();
@@ -24,7 +24,7 @@ export default function Screen() {
   const [saving, setSaving] = useState(false);
 
   // invites the support persons & gives them access to the appointment on the server, then opens
-  // the add questions page. Persons removed from this page lose their access
+  // the add questions page
   const handleSave = async () => {
     // stops a second press saving twice
     if (saving || !draft.appointmentId) return;
@@ -32,7 +32,6 @@ export default function Screen() {
     setError(null);
     try {
       const supportLinkIds = await apiSaveSupportPeople(draft.appointmentId, draft.supportPeople);
-      // keeps each person's link, so saving again doesn't invite them twice
       updateDraft({
         supportPeople: draft.supportPeople.map((person, index) => ({
           ...person,
@@ -59,63 +58,71 @@ export default function Screen() {
     ].filter(Boolean);
 
     return (
-      <Pressable
-        style={[theme.sectionContainer, styles.personCard]}
-        onPress={() =>
-          router.push({ pathname: '/carePlanner/newSupportPerson', params: { index } })
-        }
-      >
-        <View style={styles.personInfo}>
-          {/* someone invited without an account yet has no name */}
-          <Text style={styles.personName}>{person.name || 'Pending invite'}</Text>
-          <Text style={styles.personDetails}>{person.phone}</Text>
-          <Text style={styles.personDetails}>
-            Access: {access.length > 0 ? access.join(', ') : 'None'}
-          </Text>
-        </View>
+      <Fragment key={index}>
+        {index > 0 && <View style={theme.line} />}
         <Pressable
+          style={styles.personRow}
           onPress={() =>
-            updateDraft({
-              supportPeople: draft.supportPeople.filter((_, itemIndex) => itemIndex !== index),
-            })
+            router.push({ pathname: '/carePlanner/newSupportPerson', params: { index } })
           }
-          accessibilityRole="button"
-          accessibilityLabel={`Remove support person ${index + 1}`}
-          hitSlop={8}
         >
-          <Ionicons name="trash-outline" size={24} color={colours.onSurface} />
+          <View style={styles.personInfo}>
+            <Text style={styles.personName}>{person.name || 'Pending invite'}</Text>
+            <Text style={styles.personDetails}>{person.phone}</Text>
+            <Text style={styles.personDetails}>
+              Access: {access.length > 0 ? access.join(', ') : 'None'}
+            </Text>
+          </View>
+          <Pressable
+            onPress={() =>
+              updateDraft({
+                supportPeople: draft.supportPeople.filter((_, itemIndex) => itemIndex !== index),
+              })
+            }
+            accessibilityRole="button"
+            accessibilityLabel={`Remove support person ${person.name || person.phone}`}
+            hitSlop={8}
+          >
+            <Ionicons name="trash-outline" size={20} color={colours.onSurface} />
+          </Pressable>
         </Pressable>
-      </Pressable>
+      </Fragment>
     );
   };
 
   return (
     <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.body}>You can nominate someone to help you prepare for your appointment 
-        or you can skip below.</Text>
+      <ScrollView stickyHeaderIndices={[0]} contentContainerStyle={styles.content}>
+        <View style={[theme.header, styles.title]}>
+          <Text style={[theme.h4, theme.leftText, theme.fontOnSurface, styles.titleText]}>
+            Add a Support Person
+          </Text>
+          <Text style={[styles.body, styles.intro, theme.leftText]}>
+            You can nominate someone to help you prepare for your appointment or you can skip below.
+          </Text>
+        </View>
+        <View style={[theme.sectionContainer, styles.card]}>
+          <View style={styles.cardContent}>
+            {draft.supportPeople.length > 0 && <View>{draft.supportPeople.map(renderPerson)}</View>}
 
-        {draft.supportPeople.map((person, index) => (
-          <View key={index} style={styles.section}>
-            <Text style={styles.heading}>Support Person {index + 1}</Text>
-            {renderPerson(person, index)}
+            <View style={styles.cardItem}>
+              <Button
+                label="Add support person"
+                onPress={() => router.push('/carePlanner/newSupportPerson')}
+                buttonType="primaryButton"
+              />
+            </View>
+            <Text style={[styles.body, styles.cardItem]}>
+              We recommend to assign a maximum of 2 support people to ensure the conduciveness of the
+              appointment.
+            </Text>
           </View>
-        ))}
-
-        <Text style={styles.body}>
-          We recommend to assign a maximum of 2 support people to ensure the conduciveness of the
-          appointment.
-        </Text>
-        <Button
-          label="Add support person"
-          onPress={() => router.push('/carePlanner/newSupportPerson')}
-          buttonType="primaryButton"
-        />
+        </View>
       </ScrollView>
 
       <View style={styles.bottomBar}>
         {!!error && (
-          <Text style={[styles.error, { color: paperColours.error }]}>{error}</Text>
+          <Text style={[styles.error, { color: paperColours.error, borderColor: paperColours.error }]}>{error}</Text>
         )}
         <Button
           label={saving ? 'Saving...' : 'Save'}
@@ -127,7 +134,7 @@ export default function Screen() {
   );
 }
 
-function createStyles(colours: ColourSet) {
+function createStyles(colours: ColourSet, text: Typography) {
   return StyleSheet.create({
     screen: {
       flex: 1,
@@ -135,39 +142,53 @@ function createStyles(colours: ColourSet) {
     },
 
     content: {
-      paddingHorizontal: 16,
-      paddingTop: 24,
+      paddingBottom: 200,
+      gap: 38,
+    },
+
+    title: {
+      marginBottom: -19,
+    },
+
+    titleText: {
+      marginBottom: 8,
+    },
+
+    intro: {
+      marginTop: 8,
+    },
+
+    card: {
       gap: 12,
     },
 
+    cardContent: {
+      paddingBottom: 5,
+      gap: 12,
+    },
+
+    cardItem: {
+      width: '85%',
+      alignSelf: 'center',
+    },
+
     headline: {
-      fontSize: 28,
-      lineHeight: 36,
-      fontWeight: '400',
+      ...text.h4,
       color: colours.onBackground,
     },
 
     body: {
-      fontSize: 16,
-      lineHeight: 24,
-      letterSpacing: 0.5,
+      ...text.body,
       color: colours.onBackground,
     },
 
-    section: {
-      gap: 8,
-      marginTop: 8,
-    },
-
-    heading: {
-      ...textLayout,
-      color: colours.onBackground,
-    },
-
-    personCard: {
+    personRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 12,
+      gap: 8,
+      paddingBlock: 24,
+      width: '85%',
+      alignSelf: 'center',
     },
 
     personInfo: {
@@ -176,23 +197,31 @@ function createStyles(colours: ColourSet) {
     },
 
     personName: {
-      ...textLayout,
+      ...text.h6,
       color: colours.onSurface,
     },
 
     personDetails: {
-      fontSize: 14,
+      ...text.small,
       color: colours.onSurface,
     },
 
     bottomBar: {
-      paddingHorizontal: 16,
-      marginBottom: 120, // keeps the buttons above the nav bar
+      position: 'absolute',
+      left: '7.5%',
+      width: '85%',
+      bottom: 120,
       gap: 8,
     },
 
     error: {
-      fontSize: 14,
+      ...text.small,
+      borderWidth: 1,
+      borderRadius: 8,
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+      backgroundColor: colours.background,
+      overflow: 'hidden',
     },
   });
 }

@@ -9,7 +9,8 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Contact, requestPermissionsAsync } from 'expo-contacts';
 import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
-import { textLayout } from '../../../../constants/layout';
+import { Typography } from '../../../../constants/textSize';
+import { lineThickness } from '../../../../constants/layout';
 import { Checkbox, useTheme as usePaperTheme } from 'react-native-paper';
 import { useAppointment } from '../../../../context/AppointmentContext';
 import {
@@ -28,8 +29,8 @@ type ApiSupportLink = {
 };
 
 export default function Screen() {
-  const { colours } = useTheme();
-  const styles = createStyles(colours);
+  const { colours, theme } = useTheme();
+  const styles = createStyles(colours, theme);
   const { colors: paperColours } = usePaperTheme();
   const router = useRouter();
   const {
@@ -77,6 +78,8 @@ export default function Screen() {
       if (!pickedSupportLink) return;
       setPhone(pickedSupportLink.phone);
       setSupportLinkId(pickedSupportLink.id);
+      setShowError(false);
+      setSaveError(null);
       pickSupportLink(null);
     }, [pickedSupportLink, pickSupportLink]),
   );
@@ -86,6 +89,7 @@ export default function Screen() {
     setPhone(text);
     setSupportLinkId(undefined);
     setShowError(false);
+    setSaveError(null);
   };
 
   // shown under the contacts button when a contact's number can't be used, null otherwise
@@ -144,6 +148,17 @@ export default function Screen() {
       setShowError(true);
       return;
     }
+    // someone already added to the appointment can't be added again, they are edited instead
+    const alreadyAdded = savedPeople.some(
+      (item, itemIndex) =>
+        itemIndex !== Number(index) &&
+        ((!!link && item.supportLinkId === link.id) ||
+          item.phone === (link?.invited_phone_number || serverPhone)),
+    );
+    if (alreadyAdded) {
+      setSaveError('This support person has already been added to the appointment.');
+      return;
+    }
     const person = {
       // the server only knows the name of someone with an account
       name: link?.supporter_name ?? '',
@@ -184,77 +199,87 @@ export default function Screen() {
 
   return (
     <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.subheading}>
-          Choose from My Support Links or invite someone with their phone number (you can choose from My Contacts or enter it manually). 
-        </Text>
-        <Button
-          label="Choose from My Support Links"
-          onPress={() => router.push('/carePlanner/mySupportLinks')}
-          buttonType="primaryButton"
-        />
-        <Button
-          label="Choose from My Contacts"
-          onPress={chooseContact}
-          buttonType="primaryButton"
-        />
-        {!!contactMessage && <Text style={styles.subheading}>{contactMessage}</Text>}
-
-        <View>
-          <Text style={styles.heading}>phone number</Text>
-        </View>
-        <TextInput
-          style={[styles.field, styles.input]}
-          value={phone}
-          onChangeText={changePhone}
-          placeholder="phone number"
-          keyboardType="phone-pad"
-          placeholderTextColor={paperColours.onSurfaceVariant}
-        />
-        {phoneInvalid ? (
-          <Text style={[styles.subheading, { color: paperColours.error }]}>
-            Please enter a valid phone number.
+      <ScrollView stickyHeaderIndices={[0]} contentContainerStyle={styles.content}>
+        <View style={[theme.header, styles.title]}>
+          <Text style={[theme.h4, theme.leftText, theme.fontOnSurface, styles.titleText]}>
+            Add Support Person
           </Text>
-        ) : (
-          !!phoneHint && <Text style={styles.subheading}>{phoneHint}</Text>
-        )}
-
-        <View>
-          <Text style={styles.heading}>Access Type</Text>
-        </View>
-        <View style={[styles.field, styles.checkboxList]}>
-          <Checkbox.Item
-            label="Add questions"
-            status={canAddQuestions ? 'checked' : 'unchecked'}
-            onPress={() => setCanAddQuestions(!canAddQuestions)}
-            labelStyle={styles.input}
-          />
-          <Checkbox.Item
-            label="Add doctor's answer"
-            status={canAddAnswers ? 'checked' : 'unchecked'}
-            onPress={() => setCanAddAnswers(!canAddAnswers)}
-            labelStyle={styles.input}
-            style={styles.divider}
-          />
-        </View>
-        {/* the suggested questions need the patient's assessment data, without it a support
-            person only sees the suggestions that don't */}
-        {!!link?.supporter_name && !link.can_view_assessments && (
-          <Text style={styles.subheading}>
-            {link.supporter_name} does not have access to your assessment data, so the questions they
-            can add are limited. To change this, go to Shared With Me and update their permissions.
+          <Text style={[styles.body, styles.intro, theme.leftText]}>
+            Choose from My Support Links or invite someone with their phone number (you can choose
+            from My Contacts or enter it manually).
           </Text>
-        )}
+        </View>
+        <View style={[theme.sectionContainer, styles.card]}>
+          <View style={styles.cardContent}>
+            <View style={styles.buttons}>
+              <Button
+                label="Choose from My Support Links"
+                onPress={() => router.push('/carePlanner/mySupportLinks')}
+                buttonType="primaryButton"
+              />
+              <Button
+                label="Choose from My Contacts"
+                onPress={chooseContact}
+                buttonType="primaryButton"
+              />
+            </View>
+            {!!contactMessage && <Text style={styles.note}>{contactMessage}</Text>}
+
+            <Text style={[styles.heading, styles.label]}>Phone number</Text>
+            <TextInput
+              style={[styles.field, styles.input]}
+              value={phone}
+              onChangeText={changePhone}
+              placeholder="phone number"
+              keyboardType="phone-pad"
+              placeholderTextColor={colours.onSurface}
+            />
+            {phoneInvalid ? (
+              <Text style={[styles.note, { color: paperColours.error }]}>
+                Please enter a valid phone number.
+              </Text>
+            ) : (
+              !!phoneHint && <Text style={styles.note}>{phoneHint}</Text>
+            )}
+
+            <Text style={[styles.heading, styles.label]}>Access Type</Text>
+            <View style={styles.checkboxList}>
+              <Checkbox.Item
+                label="Add questions"
+                status={canAddQuestions ? 'checked' : 'unchecked'}
+                onPress={() => setCanAddQuestions(!canAddQuestions)}
+                labelStyle={styles.input}
+                style={styles.checkboxItem}
+              />
+              <Checkbox.Item
+                label="Add doctor's answer"
+                status={canAddAnswers ? 'checked' : 'unchecked'}
+                onPress={() => setCanAddAnswers(!canAddAnswers)}
+                labelStyle={styles.input}
+                style={[styles.checkboxItem, styles.divider]}
+              />
+            </View>
+            {/* the suggested questions need the patient's assessment data, without it a support
+                person only sees the suggestions that don't */}
+            {!!link?.supporter_name && !link.can_view_assessments && (
+              <Text style={styles.note}>
+                {link.supporter_name} does not have access to your assessment data, so the questions
+                they can add are limited. To change this, go to Shared With Me and update their
+                permissions.
+              </Text>
+            )}
+          </View>
+        </View>
       </ScrollView>
 
       <View style={styles.bottomBar}>
         {showError && (
-          <Text style={[styles.error, { color: paperColours.error }]}>
+          <Text style={[styles.error, { color: paperColours.error, borderColor: paperColours.error }]}>
             Please fill in all mandatory fields
           </Text>
         )}
         {!!saveError && (
-          <Text style={[styles.error, { color: paperColours.error }]}>{saveError}</Text>
+          <Text style={[styles.error, { color: paperColours.error, borderColor: paperColours.error }]}>{saveError}</Text>
         )}
         <Button label={saving ? 'Saving...' : 'Save'} onPress={save} buttonType="primaryButton" />
       </View>
@@ -262,7 +287,7 @@ export default function Screen() {
   );
 }
 
-function createStyles(colours: ColourSet) {
+function createStyles(colours: ColourSet, text: Typography) {
   return StyleSheet.create({
     screen: {
       flex: 1,
@@ -270,66 +295,113 @@ function createStyles(colours: ColourSet) {
     },
 
     content: {
-      paddingHorizontal: 16,
-      paddingTop: 24,
-      paddingBottom: 16,
+      paddingBottom: 200,
+      gap: 38,
+    },
+
+    title: {
+      marginBottom: -19,
+    },
+
+    titleText: {
+      marginBottom: 8,
+    },
+
+    intro: {
+      marginTop: 8,
+    },
+
+    card: {
       gap: 12,
     },
 
+    cardContent: {
+      paddingHorizontal: '5%',
+      paddingBottom: 5,
+    },
+
+    buttons: {
+      gap: 12,
+      marginHorizontal: 8,
+    },
+
     bottomBar: {
-      paddingHorizontal: 16,
-      marginBottom: 120,
+      position: 'absolute',
+      left: '7.5%',
+      width: '85%',
+      bottom: 120,
       gap: 8,
     },
 
     error: {
-      fontSize: 14,
+      ...text.small,
       textAlign: 'center',
+      borderWidth: 1,
+      borderRadius: 8,
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+      backgroundColor: colours.background,
+      overflow: 'hidden',
     },
 
     body: {
-      ...textLayout,
+      ...text.body,
       color: colours.onBackground,
     },
 
     headline: {
-      fontSize: 28,
-      lineHeight: 36,
-      fontWeight: '400',
+      ...text.h4,
       color: colours.onBackground,
       marginTop: 8,
     },
 
     heading: {
-      ...textLayout,
-      color: colours.onBackground,
-      marginTop: 8,
+      ...text.h6,
+      color: colours.onSurface,
+      paddingHorizontal: '5%',
     },
 
-    subheading: {
-      fontSize: 14,
-      color: colours.onBackground,
+    label: {
+      marginTop: 29,
+      marginBottom: 19,
+    },
+
+    note: {
+      ...text.small,
+      color: colours.onSurface,
+      marginTop: 4,
+      marginHorizontal: 8,
     },
 
     input: {
-      fontSize: 16,
+      ...text.body,
       color: colours.onSurface,
     },
 
     field: {
-      backgroundColor: colours.surface,
-      borderRadius: 8,
-      padding: 12,
+      height: 40,
+      paddingVertical: 5,
+      paddingHorizontal: 10,
+      marginHorizontal: 8,
+      borderWidth: 1,
+      borderColor: colours.onSurface,
     },
 
     checkboxList: {
-      padding: 0,
+      marginHorizontal: 8,
+      borderWidth: 1,
+      borderColor: colours.onSurface,
       overflow: 'hidden',
     },
 
     divider: {
-      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopWidth: lineThickness,
       borderTopColor: colours.ex3,
+    },
+
+    checkboxItem: {
+      paddingLeft: 10,
+      paddingRight: 4,
     },
 
   });

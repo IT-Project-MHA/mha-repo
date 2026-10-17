@@ -10,7 +10,6 @@ import {
     apiSupportLink,
     apiUser,
 } from './django-API';
-import { suggestedIdOfText } from '../../constants/suggestedQuestions';
 
 /* Care planner API helpers, built on the calls in django-API.js. Use them inside a try/catch block,
 a failed request throws an ApiError. */
@@ -148,10 +147,7 @@ export async function apiSaveOwnQuestions(appointmentId, questions) {
   mildest, current }
 - goes through the patient's weekly assessments from the newest week back, until each value is
   found: locations, worst, mildest & current come from the most recent week that has them, average
-  is the average of the 2 most recent weeks that have it (or the 1 week if there's only 1), rounded
-- a value no assessment has is left out (locations is empty), so its questions aren't shown. A
-  support person only sees the patient's assessments if the patient allows it
-  (can_view_assessments), otherwise every value is left out */
+  is the average of the 2 most recent weeks that have it (or the 1 week if there's only 1), rounded */
 export async function apiPainSummary(patientProfileId) {
     const summary = { locations: [] };
     const profileId = patientProfileId ?? (await ownPatientProfileId());
@@ -204,7 +200,7 @@ export async function apiPainSummary(patientProfileId) {
 
 /* One appointment with everything the appointment pages show:
 - takes the appointment id, returns the Appointment with:
-    - questions: in order, each { id, text, source, addedBy, suggestedId, answerId, answer,
+    - questions: in order, each { id, text, source, addedBy, answerId, answer,
       recording }. addedBy is 'support' when someone other than the patient added it, answerId is
       the answer's id (left out when there is no answer), recording is the answer's recording URL
       (it needs the user's token to download)
@@ -242,8 +238,6 @@ export async function apiAppointmentDetails(appointmentId) {
                 text: question.text,
                 source: question.source,
                 addedBy: question.created_by !== appointment.created_by ? 'support' : undefined,
-                suggestedId:
-                    question.source === 'suggested' ? suggestedIdOfText(question.text) : undefined,
                 answerId: answer?.id,
                 answer: answer?.text || undefined,
                 recording: answer?.recording_file || undefined,

@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, Alert } from 'react-native';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import Button from '../../../../components/atomicUI/Button';
+import ConfirmModal from '../../../../components/atomicUI/ConfirmModal';
 import SignatureCanvas, { SignatureViewRef } from 'react-native-signature-canvas';
 import {
   useAudioPlayer,
@@ -20,7 +21,7 @@ import {
   setAudioModeAsync,
 } from 'expo-audio';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
-import { textLayout } from '../../../../constants/layout';
+import { Typography } from '../../../../constants/textSize';
 import { useTheme as usePaperTheme } from 'react-native-paper';
 import { useAppointment, AppointmentQuestion } from '../../../../context/AppointmentContext';
 import {
@@ -55,8 +56,8 @@ const formatTime = (seconds: number) => {
 };
 
 export default function Screen() {
-  const { colours } = useTheme();
-  const styles = createStyles(colours);
+  const { colours, theme } = useTheme();
+  const styles = createStyles(colours, theme);
   const { colors: paperColours } = usePaperTheme();
   const { id, index } = useLocalSearchParams<{ id: string; index: string }>();
   const navigation = useNavigation();
@@ -72,6 +73,12 @@ export default function Screen() {
   const signatureRef = useRef<SignatureViewRef>(null);
   // stops the page scrolling while the doctor draws
   const [drawing, setDrawing] = useState(false);
+  // asks before cancelling signing deletes the appointment's recordings
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
+  // shown under the canvas when save is pressed with nothing drawn, until the doctor draws
+  const [blankSignature, setBlankSignature] = useState(false);
+  // asks before the recording is deleted
+  const [confirmingDeleteRecording, setConfirmingDeleteRecording] = useState(false);
 
   const recorder = useAudioRecorder(MEDIUM_QUALITY);
   const { isRecording, durationMillis } = useAudioRecorderState(recorder);
@@ -196,6 +203,7 @@ export default function Screen() {
   const timePlayed = playing || pausedPartWay ? currentTime : 0;
 
   const deleteRecording = () => {
+    setConfirmingDeleteRecording(false);
     player.pause();
     updateQuestion({ recording: undefined });
     saveAnswer({ recording: null });
@@ -214,11 +222,26 @@ export default function Screen() {
   };
 
   // opens the canvas, the saved signature is shown on it if the doctor has already signed
-  const startSigning = () => setSigning(true);
+  const startSigning = () => {
+    setBlankSignature(false);
+    setSigning(true);
+  };
+
+  // asks first when taking back the doctor's permission would delete recordings, otherwise
+  // cancels straight away
+  const pressCancelSigning = () => {
+    const hasRecordings = appointment?.questions.some((item) => item.recording);
+    if (appointment?.doctorPermission && hasRecordings) {
+      setConfirmingCancel(true);
+    } else {
+      cancelSigning();
+    }
+  };
 
   // closes the canvas and takes back the doctor's permission if it was given, which also deletes
   // the recordings of every question in the appointment on the server
   const cancelSigning = async () => {
+    setConfirmingCancel(false);
     setSigning(false);
     if (!appointment?.doctorPermission) return;
     try {
@@ -238,7 +261,7 @@ export default function Screen() {
   };
 
   // called by the canvas with the signature as an image after save is pressed, the canvas calls
-  // onEmpty instead when nothing is drawn, so an empty canvas saves nothing
+  // onEmpty instead when nothing is drawn, which shows the blank signature message
   const saveSignature = async (signature: string) => {
     try {
       await apiAppointmentDoctorPermission('update', { id, doctor_signature: signature });
@@ -279,14 +302,17 @@ export default function Screen() {
                 ref={signatureRef}
                 dataURL={appointment?.doctorSignature}
                 onOK={saveSignature}
-                onEmpty={() => {}}
-                onBegin={() => setDrawing(true)}
+                onEmpty={() => setBlankSignature(true)}
+                onBegin={() => {
+                  setDrawing(true);
+                  setBlankSignature(false);
+                }}
                 onEnd={() => setDrawing(false)}
                 webStyle={SIGNATURE_STYLE}
               />
             </View>
             {/* stacked, the button types' side padding is too wide for three in a row */}
-            <Button label="Cancel" onPress={cancelSigning} buttonType="secondaryButton" />
+            <Button label="Cancel" onPress={pressCancelSigning} buttonType="secondaryButton" />
             <Button
               label="Clear"
               onPress={() => signatureRef.current?.clearSignature()}
@@ -297,6 +323,11 @@ export default function Screen() {
               onPress={() => signatureRef.current?.readSignature()}
               buttonType="primaryButton"
             />
+            {blankSignature && (
+              <Text style={[styles.error, { color: paperColours.error }]}>
+                You can't save an empty signature.
+              </Text>
+            )}
           </>
         );
 
@@ -333,7 +364,11 @@ export default function Screen() {
               onPress={togglePlayback}
               buttonType="primaryButton"
             />
-            <Button label="Delete recording" onPress={deleteRecording} buttonType="secondaryButton" />
+            <Button
+              label="Delete recording"
+              onPress={() => setConfirmingDeleteRecording(true)}
+              buttonType="secondaryButton"
+            />
             {signatureButton}
           </>
         );
@@ -350,32 +385,61 @@ export default function Screen() {
 
   return (
     <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content} scrollEnabled={!drawing}>
-        {!!question && <Text style={styles.question}>{question.text}</Text>}
+      <ScrollView stickyHeaderIndices={[0]} contentContainerStyle={styles.content} scrollEnabled={!drawing}>
+        <View style={[theme.header, styles.title]}>
+          <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>Answer Question</Text>
+        </View>
+        <View style={[theme.sectionContainer, styles.card]}>
+          <View style={styles.cardContent}>
+            {!!question && <Text style={styles.question}>{question.text}</Text>}
 
-        <Text style={styles.heading}>Type answer</Text>
-        <TextInput
-          style={[styles.field, styles.input, styles.answerInput]}
-          value={answer}
-          onChangeText={changeAnswer}
-          placeholder="answer"
-          placeholderTextColor={paperColours.onSurfaceVariant}
-          multiline
-          numberOfLines={3}
-        />
+            <Text style={styles.heading}>Type answer</Text>
+            <TextInput
+              style={[styles.field, styles.input, styles.answerInput]}
+              value={answer}
+              onChangeText={changeAnswer}
+              placeholder="answer"
+              placeholderTextColor={paperColours.onSurfaceVariant}
+              multiline
+              numberOfLines={3}
+            />
 
-        <Text style={styles.heading}>Record answer</Text>
-        {renderRecordingSection()}
+            <View style={[theme.line, styles.answerDivider]} />
 
-        {!!saveError && (
-          <Text style={[styles.error, { color: paperColours.error }]}>{saveError}</Text>
-        )}
+            <Text style={styles.heading}>Record answer</Text>
+            {renderRecordingSection()}
+
+            {!!saveError && (
+              <Text style={[styles.error, { color: paperColours.error }]}>{saveError}</Text>
+            )}
+          </View>
+        </View>
       </ScrollView>
+
+      <ConfirmModal
+        visible={confirmingCancel}
+        title="Are you sure you want to take back the doctor's permission?"
+        message="Every recorded answer in this appointment will be deleted. Typed answers are kept."
+        confirmLabel="Delete"
+        cancelLabel="Go back"
+        onConfirm={cancelSigning}
+        onCancel={() => setConfirmingCancel(false)}
+      />
+
+      <ConfirmModal
+        visible={confirmingDeleteRecording}
+        title="Are you sure you want to delete the recording?"
+        message="This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Go back"
+        onConfirm={deleteRecording}
+        onCancel={() => setConfirmingDeleteRecording(false)}
+      />
     </View>
   );
 }
 
-function createStyles(colours: ColourSet) {
+function createStyles(colours: ColourSet, text: Typography) {
   return StyleSheet.create({
     screen: {
       flex: 1,
@@ -383,13 +447,24 @@ function createStyles(colours: ColourSet) {
     },
 
     content: {
-      paddingHorizontal: 16,
-      paddingTop: 24,
-      paddingBottom: 120, // keeps the last button above the nav bar
+      paddingBottom: 120,
+      gap: 38,
+    },
+
+    title: {
+      marginBottom: -19,
+    },
+
+    card: {
       gap: 12,
     },
 
-    // the signature is saved as an image, so the canvas stays white like paper in both themes
+    cardContent: {
+      width: '85%',
+      alignSelf: 'center',
+      gap: 12,
+    },
+
     canvas: {
       height: 200,
       borderRadius: 8,
@@ -398,35 +473,36 @@ function createStyles(colours: ColourSet) {
     },
 
     question: {
-      ...textLayout,
-      fontSize: 22,
-      lineHeight: 28,
+      ...text.h5,
       color: colours.onBackground,
     },
 
     error: {
-      fontSize: 14,
+      ...text.small,
+    },
+
+    answerDivider: {
+      width: '100%',
+      marginTop: 12,
     },
 
     heading: {
-      ...textLayout,
-      color: colours.onBackground,
+      ...text.h6,
+      color: colours.onSurface,
       marginTop: 8,
     },
 
     input: {
-      fontSize: 16,
-      lineHeight: 24,
+      ...text.body,
       color: colours.onSurface,
     },
 
     field: {
-      backgroundColor: colours.surface,
+      backgroundColor: colours.background,
       borderRadius: 8,
       padding: 12,
     },
 
-    // three lines of text plus the field's padding, typing starts at the top
     answerInput: {
       minHeight: 3 * 24 + 2 * 12,
       textAlignVertical: 'top',

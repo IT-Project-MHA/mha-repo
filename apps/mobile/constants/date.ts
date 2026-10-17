@@ -12,6 +12,12 @@ export const formatDateTime = (dateTime: string) =>
     minute: '2-digit',
   });
 
+/**
+ * Formats a date without its time into a readable string e.g. '12 Oct 2026'.
+ */
+export const formatDate = (date: Date) =>
+  date.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+
 // time without date
 export type TimeOfDay = { hours: number; minutes: number };
 

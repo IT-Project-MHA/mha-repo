@@ -22,74 +22,11 @@ export default function CarePlannerLayout() {
         screenOptions={{
           headerStyle: { backgroundColor: colours.background },
           headerTintColor: colours.onBackground,
+          headerShadowVisible: false,
+          // each page shows its own title, as in settings
+          title: '',
         }}
-      >
-        <Stack.Screen
-          // the care planner screen has its own heading
-          name="index"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="createAppointment"
-          options={{ title: 'Create Appointment' }}
-        />
-        <Stack.Screen
-          name="addSupportPerson"
-          options={{ title: 'Add a Support Person' }}
-        />
-        <Stack.Screen
-          name="newSupportPerson"
-          options={{ title: 'Add Support Person' }}
-        />
-        <Stack.Screen
-          name="answerQuestion"
-          options={{ title: 'Answer Question' }}
-        />
-        <Stack.Screen
-          name="editAppointment"
-          options={{ title: 'Edit Appointment' }}
-        />
-        <Stack.Screen
-          name="editSupportPerson"
-          options={{ title: 'Edit Support Person' }}
-        />
-        <Stack.Screen
-          name="mySupportLinks"
-          options={{ title: 'My Support Links' }}
-        />
-        <Stack.Screen
-          name="addQuestions"
-          options={{ title: 'Add Questions to Your Appointment' }}
-        />
-        <Stack.Screen
-          name="reviewAppointment"
-          options={{ title: 'Review my Appointment Plan' }}
-        />
-        <Stack.Screen
-          name="allAppointments"
-          options={{ title: 'All Appointments' }}
-        />
-        <Stack.Screen
-          name="allSharedAppointments"
-          options={{ title: 'All shared appointments' }}
-        />
-        <Stack.Screen
-          name="editSharedAppointment"
-          options={{ title: 'Shared Appointment' }}
-        />
-        <Stack.Screen
-          name="addSharedQuestion"
-          options={{ title: 'Add Questions to the Appointment' }}
-        />
-        <Stack.Screen
-          name="viewAnswer"
-          options={{ title: 'View Answer' }}
-        />
-        <Stack.Screen
-          name="appointmentDetails"
-          options={{ title: 'Appointment Details' }}
-        />
-      </Stack>
+      />
     </AppointmentProvider>
   );
 }

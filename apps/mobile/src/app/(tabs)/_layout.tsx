@@ -102,12 +102,10 @@ export default function TabLayout() {
  */
 function createStyles(colours: ColourSet){
     return StyleSheet.create({
-    // the tab buttons
     tabItem: {
       justifyContent: 'center',
   },
 
-  // the nav bar
   floatingTabBar: {
     bottom: '4%',
     position: 'absolute',

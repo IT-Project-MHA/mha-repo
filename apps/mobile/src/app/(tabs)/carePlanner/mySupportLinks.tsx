@@ -2,12 +2,12 @@
  * Patients choose a support person from their saved support links on this screen, opened from the
  * new support person page. Invites the support person hasn't accepted yet are shown too.
  */
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
-import { textLayout } from '../../../../constants/layout';
+import { Typography } from '../../../../constants/textSize';
 import { useAppointment } from '../../../../context/AppointmentContext';
 import { apiMySupportLinks } from '../../../api/care_planner_api_helpers';
 
@@ -21,7 +21,7 @@ type ApiSupportLink = {
 
 export default function Screen() {
   const { colours, theme } = useTheme();
-  const styles = createStyles(colours);
+  const styles = createStyles(colours, theme);
   const router = useRouter();
   const { pickSupportLink } = useAppointment();
   // null while loading
@@ -57,38 +57,48 @@ export default function Screen() {
 
   return (
     <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content}>
-        {message ? (
-          <Text style={styles.body}>{message}</Text>
-        ) : (
-          links?.map((link) => (
-            <Pressable
-              key={link.id}
-              style={[theme.sectionContainer, styles.linkCard]}
-              onPress={() => choose(link)}
-              accessibilityRole="button"
-            >
-              {/* someone invited without an account yet has no name */}
-              <View style={styles.linkInfo}>
-                <Text style={styles.linkName}>{link.supporter_name || 'Pending invite'}</Text>
-                {!!link.invited_phone_number && (
-                  <Text style={styles.linkDetails}>{link.invited_phone_number}</Text>
-                )}
-                {/* someone with an account who hasn't accepted yet */}
-                {!!link.supporter_name && link.status === 'invited' && (
-                  <Text style={styles.linkDetails}>Invite not accepted yet</Text>
-                )}
-              </View>
-              <Ionicons name="add" size={24} color={colours.onSurface} />
-            </Pressable>
-          ))
-        )}
+      <ScrollView stickyHeaderIndices={[0]} contentContainerStyle={styles.content}>
+        <View style={[theme.header, styles.title]}>
+          <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>My Support Links</Text>
+        </View>
+        <View style={[theme.sectionContainer, styles.card]}>
+          {message ? (
+            <Text style={styles.body}>{message}</Text>
+          ) : (
+            // wrapped so the card's gap isn't added between the rows & dividers
+            <View>
+              {links?.map((link, index) => (
+                <Fragment key={link.id}>
+                  {index > 0 && <View style={theme.line} />}
+                  <Pressable
+                    style={styles.linkRow}
+                    onPress={() => choose(link)}
+                    accessibilityRole="button"
+                  >
+                    {/* someone invited without an account yet has no name */}
+                    <View style={styles.linkInfo}>
+                      <Text style={styles.linkName}>{link.supporter_name || 'Pending invite'}</Text>
+                      {!!link.invited_phone_number && (
+                        <Text style={styles.linkDetails}>{link.invited_phone_number}</Text>
+                      )}
+                      {/* someone with an account who hasn't accepted yet */}
+                      {!!link.supporter_name && link.status === 'invited' && (
+                        <Text style={styles.linkDetails}>Invite not accepted yet</Text>
+                      )}
+                    </View>
+                    <Ionicons name="add-outline" size={16} color={colours.onSurface} />
+                  </Pressable>
+                </Fragment>
+              ))}
+            </View>
+          )}
+        </View>
       </ScrollView>
     </View>
   );
 }
 
-function createStyles(colours: ColourSet) {
+function createStyles(colours: ColourSet, text: Typography) {
   return StyleSheet.create({
     screen: {
       flex: 1,
@@ -96,36 +106,44 @@ function createStyles(colours: ColourSet) {
     },
 
     content: {
-      paddingHorizontal: 16,
-      paddingTop: 24,
       paddingBottom: 120,
-      gap: 12,
+      gap: 38,
+    },
+
+    title: {
+      marginBottom: -19,
+    },
+
+    card: {
+      gap: 4,
     },
 
     body: {
-      ...textLayout,
+      ...text.body,
       color: colours.onBackground,
     },
 
-    linkCard: {
+    linkRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 12,
+      gap: 8,
+      paddingBlock: 24,
+      width: '85%',
+      alignSelf: 'center',
     },
 
-    // takes the card's width apart from the chevron
     linkInfo: {
       flex: 1,
       gap: 4,
     },
 
     linkName: {
-      ...textLayout,
+      ...text.body,
       color: colours.onSurface,
     },
 
     linkDetails: {
-      fontSize: 14,
+      ...text.small,
       color: colours.onSurface,
     },
   });
