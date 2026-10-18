@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Text, TextInput, View, StyleSheet } from "react-native";
+import { Text, TextInput, View, StyleSheet, KeyboardTypeOptions } from "react-native";
 import Button from "../atomicUI/Button";
 import { useTheme } from "../../context/ThemeContext";
 
@@ -11,6 +11,55 @@ const MAX_LENGTH_TEXT = 200;
 type TextProps ={
   onSubmit: (v: string) => void;
   placeholder: string;
+  keyboardType: KeyboardTypeOptions
+  textContentType?:
+    | 'none'
+    | 'URL'
+    | 'addressCity'
+    | 'addressCityAndState'
+    | 'addressState'
+    | 'countryName'
+    | 'creditCardNumber'
+    | 'creditCardExpiration'
+    | 'creditCardExpirationMonth'
+    | 'creditCardExpirationYear'
+    | 'creditCardSecurityCode'
+    | 'creditCardType'
+    | 'creditCardName'
+    | 'creditCardGivenName'
+    | 'creditCardMiddleName'
+    | 'creditCardFamilyName'
+    | 'emailAddress'
+    | 'familyName'
+    | 'fullStreetAddress'
+    | 'givenName'
+    | 'jobTitle'
+    | 'location'
+    | 'middleName'
+    | 'name'
+    | 'namePrefix'
+    | 'nameSuffix'
+    | 'nickname'
+    | 'organizationName'
+    | 'postalCode'
+    | 'streetAddressLine1'
+    | 'streetAddressLine2'
+    | 'sublocality'
+    | 'telephoneNumber'
+    | 'username'
+    | 'password'
+    | 'newPassword'
+    | 'oneTimeCode'
+    | 'birthdate'
+    | 'birthdateDay'
+    | 'birthdateMonth'
+    | 'birthdateYear'
+    | 'cellularEID'
+    | 'cellularIMEI'
+    | 'dateTime'
+    | 'flightNumber'
+    | 'shipmentTrackingNumber'
+    | undefined;
   //height: number;
 }
 
@@ -25,7 +74,7 @@ function validateTextInput(text: string) {
   return null;
 }
 
-function TextEntry({ onSubmit, placeholder }: TextProps) {
+function TextEntry({ onSubmit, placeholder, keyboardType, textContentType }: TextProps) {
   const { theme } = useTheme();
 
   const [value, setValue] = useState<string>("");
@@ -53,7 +102,8 @@ function TextEntry({ onSubmit, placeholder }: TextProps) {
           onChangeText={handleChange}
           value={value}
           placeholder={placeholder}
-          keyboardType="default"
+          keyboardType= {keyboardType}
+          textContentType = {textContentType}
           maxLength={MAX_LENGTH_TEXT}
           onSubmitEditing={handleSubmit}
         />

@@ -1,0 +1,41 @@
+/**
+ * page for email entry
+ * asks for email
+ * directs to phone entry
+ */
+
+
+import { View, Text } from 'react-native';
+import { useTheme } from "../../../../context/ThemeContext";
+import { TextEntry } from '../../../../components/answerFields/TextEntry';
+import { useRouter } from 'expo-router';
+import { useOnboardingUserStore } from '../../store/onboardingStorage';
+
+export default function Page() {
+  const router = useRouter();
+  const { theme } = useTheme();
+  const setUserOnboaring = useOnboardingUserStore((s)=> s.set);
+
+  function setDisplayName(display_name: string){
+    setUserOnboaring({display_name});
+
+    router.navigate('/(onboarding)/userOnboarding/email')
+  }
+
+  return (
+    <View style={theme.screen}>
+      <Text style={theme.text}>EMAIL ADRESS SCREEN</Text>
+      <Text style={theme.text}>Prompts the user to enter their email</Text>
+      <View style={theme.container}>
+        <TextEntry 
+        onSubmit={setDisplayName}
+        placeholder='email'
+        keyboardType='email-address'
+        textContentType='emailAddress'
+        />
+      </View>
+      
+    </View>
+  );
+}
+

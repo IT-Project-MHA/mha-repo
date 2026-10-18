@@ -59,7 +59,7 @@ function PhoneField({onSubmit}: PhoneFieldProps) {
       setError(err);
       return;
     }
-    onsubmit;
+    onSubmit(value);
   };
 
   return (

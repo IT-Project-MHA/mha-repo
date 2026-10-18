@@ -4,20 +4,21 @@ import { create } from 'zustand';
 type OnboardingUserState = {
   isPatient: boolean;
   isSupportPerson: boolean;
-  displayName: string;
-  phone?: string;
+  display_name: string;
+  phone_number?: string;
+  email?: string;
 
   set: (patch: Partial<Omit<OnboardingUserState, 'set' | 'reset'>>)=>void;
   reset: ()=>void;
 }
 
-const initialUser = {isPatient: false, isSupportPerson: false, displayName: ''}
+const initialUser = {isPatient: false, isSupportPerson: false, display_name: ''}
 
 
 export const useOnboardingUserStore = create<OnboardingUserState>((set) => ({
   ...initialUser,
   set: (patch) =>set(patch),
-  reset: () => set({...initialUser, phone: undefined}),
+  reset: () => set({...initialUser, phone_number: undefined, email: undefined}),
 }))
 
 

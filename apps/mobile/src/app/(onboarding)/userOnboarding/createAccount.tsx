@@ -6,20 +6,20 @@
 
 
 import { View, Text } from 'react-native';
-import { useTheme } from "../../../context/ThemeContext";
-import { TextEntry } from '../../../components/answerFields/TextEntry';
+import { useTheme } from "../../../../context/ThemeContext";
+import { TextEntry } from '../../../../components/answerFields/TextEntry';
 import { useRouter } from 'expo-router';
-import { useOnboardingUserStore } from '../store/onboardingStorage';
+import { useOnboardingUserStore } from '../../store/onboardingStorage';
 
 export default function Page() {
   const router = useRouter();
   const { theme } = useTheme();
   const setUserOnboaring = useOnboardingUserStore((s)=> s.set);
 
-  function setDisplayName(displayName: string){
-    setUserOnboaring({displayName});
+  function setDisplayName(display_name: string){
+    setUserOnboaring({display_name});
 
-    router.navigate('/(onboarding)/initialPhoneEntry')
+    router.navigate('/(onboarding)/userOnboarding/email')
   }
 
   return (
@@ -30,6 +30,7 @@ export default function Page() {
         <TextEntry 
         onSubmit={setDisplayName}
         placeholder='Type your name'
+        keyboardType='default'
         />
       </View>
       {/**FIX: link to terms of use and privacy policy */}

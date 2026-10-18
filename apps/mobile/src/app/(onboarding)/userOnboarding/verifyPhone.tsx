@@ -10,28 +10,38 @@
  * Assuming four digit code
  */
 
-
+import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Text, View } from 'react-native';
-import { NumberEntry } from '../../../components/answerFields/NumberEntry';
-import Button from '../../../components/atomicUI/Button';
-import { useTheme } from "../../../context/ThemeContext";
-import { completeUserOnboarding } from '../../api/onboarding_api_helpers';
-
+import { NumberEntry } from '../../../../components/answerFields/NumberEntry';
+import Button from '../../../../components/atomicUI/Button';
+import { useTheme } from "../../../../context/ThemeContext";
+import { completeUserOnboarding } from '../../../api/onboarding_api_helpers';
+import { useOnboardingUserStore } from '../../store/onboardingStorage';
 
 export default function Page() {
   const router = useRouter();
   const { theme } = useTheme();
 
 
-  function smsVerifier(code: string){
+  async function smsVerifier(code: string){
     //on success,we go to the userType selection page
 
     //and send the API request
     //fields: phone_number, display_name, email
-    //phone_number = 
-    completeUserOnboarding();
-    router.navigate("/(onboarding)/userType");
+    const {set, reset, ...answers} = useOnboardingUserStore.getState();
+    try{
+      //await completeUserOnboarding(answers); FIX: UNCOMMENT
+      reset();
+      router.navigate("/(onboarding)/userType");
+    }catch(error){
+      console.error('Failed to create user account', error);
+    }
+    
+    
+
+    
+    
   }
   return (
     <View style={theme.screen}>
