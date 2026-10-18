@@ -4,6 +4,7 @@
  * be read and the recording can only be played.
  */
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import Button from '../../../../components/atomicUI/Button';
@@ -20,7 +21,8 @@ const formatTime = (seconds: number) => {
 
 export default function Screen() {
   const { colours, theme } = useTheme();
-  const styles = createStyles(colours, theme);
+  const insets = useSafeAreaInsets();
+  const styles = createStyles(colours, theme, insets.bottom);
   const { id, index } = useLocalSearchParams<{ id: string; index: string }>();
   const { findAppointment } = useAppointment();
   const question = findAppointment(id)?.questions[Number(index)];
@@ -93,7 +95,7 @@ export default function Screen() {
                     : 'Play recording'
                 }
                 onPress={togglePlayback}
-                buttonType="primaryButton"
+                buttonType="roundButton"
               />
             ) : (
               <Text style={styles.body}>No recording added</Text>
@@ -105,7 +107,7 @@ export default function Screen() {
   );
 }
 
-function createStyles(colours: ColourSet, text: Typography) {
+function createStyles(colours: ColourSet, text: Typography, bottomInset: number) {
   return StyleSheet.create({
     screen: {
       flex: 1,
@@ -113,7 +115,7 @@ function createStyles(colours: ColourSet, text: Typography) {
     },
 
     content: {
-      paddingBottom: 120,
+      paddingBottom: 120 + bottomInset,
       gap: 38,
     },
 

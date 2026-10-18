@@ -4,6 +4,7 @@
  */
 import { Fragment } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
@@ -13,7 +14,8 @@ import { useAppointment } from '../../../../context/AppointmentContext';
 
 export default function Screen() {
   const { colours, theme } = useTheme();
-  const styles = createStyles(colours, theme);
+  const insets = useSafeAreaInsets();
+  const styles = createStyles(colours, theme, insets.bottom);
   const router = useRouter();
   const { draft, resetDraft } = useAppointment();
 
@@ -107,14 +109,14 @@ export default function Screen() {
         <Button
           label="Finish"
           onPress={handleSubmit}
-          buttonType="primaryButton"
+          buttonType="roundButton"
         />
       </View>
     </View>
   );
 }
 
-function createStyles(colours: ColourSet, text: Typography) {
+function createStyles(colours: ColourSet, text: Typography, bottomInset: number) {
   return StyleSheet.create({
     screen: {
       flex: 1,
@@ -122,7 +124,7 @@ function createStyles(colours: ColourSet, text: Typography) {
     },
 
     content: {
-      paddingBottom: 200,
+      paddingBottom: 200 + bottomInset,
       gap: 38,
     },
 
@@ -138,7 +140,7 @@ function createStyles(colours: ColourSet, text: Typography) {
       position: 'absolute',
       left: '7.5%',
       width: '85%',
-      bottom: 120,
+      bottom: 120 + bottomInset,
     },
 
     cardContent: {

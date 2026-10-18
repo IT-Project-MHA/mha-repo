@@ -66,3 +66,18 @@ export const textButtonLayout = {
   justifyContent: 'center' as const,
   paddingBlock: 0,
 }
+
+export const roundButtonLayout = {
+  alignItems: 'center' as const,
+  justifyContent: 'center' as const,
+  alignSelf: 'center' as const,
+
+  width: '85%' as const,
+
+  paddingBlock: 15,
+  paddingHorizontal: 16,
+
+  borderRadius: 70,
+  borderTopWidth: 0,
+  borderBottomWidth: 0,
+}

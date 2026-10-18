@@ -4,6 +4,7 @@
  */
 import { Fragment, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
@@ -21,7 +22,8 @@ type ApiSupportLink = {
 
 export default function Screen() {
   const { colours, theme } = useTheme();
-  const styles = createStyles(colours, theme);
+  const insets = useSafeAreaInsets();
+  const styles = createStyles(colours, theme, insets.bottom);
   const router = useRouter();
   const { pickSupportLink } = useAppointment();
   // null while loading
@@ -98,7 +100,7 @@ export default function Screen() {
   );
 }
 
-function createStyles(colours: ColourSet, text: Typography) {
+function createStyles(colours: ColourSet, text: Typography, bottomInset: number) {
   return StyleSheet.create({
     screen: {
       flex: 1,
@@ -106,7 +108,7 @@ function createStyles(colours: ColourSet, text: Typography) {
     },
 
     content: {
-      paddingBottom: 120,
+      paddingBottom: 120 + bottomInset,
       gap: 38,
     },
 

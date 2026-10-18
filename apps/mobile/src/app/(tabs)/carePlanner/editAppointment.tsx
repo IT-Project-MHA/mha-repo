@@ -4,6 +4,7 @@
  */
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTheme as usePaperTheme } from 'react-native-paper';
 import Button from '../../../../components/atomicUI/Button';
@@ -32,7 +33,8 @@ const startOfToday = () => {
 
 export default function Screen() {
   const { colours, theme } = useTheme();
-  const styles = createStyles(colours, theme);
+  const insets = useSafeAreaInsets();
+  const styles = createStyles(colours, theme, insets.bottom);
   const router = useRouter();
   const { colors: paperColours } = usePaperTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -194,14 +196,14 @@ export default function Screen() {
         <Button
           label={saving ? 'Saving...' : 'Save'}
           onPress={handleSubmit}
-          buttonType="primaryButton"
+          buttonType="roundButton"
         />
       </View>
     </View>
   );
 }
 
-function createStyles(colours: ColourSet, text: Typography) {
+function createStyles(colours: ColourSet, text: Typography, bottomInset: number) {
   return StyleSheet.create({
     screen: {
       flex: 1,
@@ -209,7 +211,7 @@ function createStyles(colours: ColourSet, text: Typography) {
     },
 
     content: {
-      paddingBottom: 200,
+      paddingBottom: 200 + bottomInset,
       gap: 38,
     },
 
@@ -230,7 +232,7 @@ function createStyles(colours: ColourSet, text: Typography) {
       position: 'absolute',
       left: '7.5%',
       width: '85%',
-      bottom: 120,
+      bottom: 120 + bottomInset,
       gap: 8,
     },
 

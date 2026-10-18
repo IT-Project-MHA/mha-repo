@@ -4,6 +4,7 @@
  */
 import { Fragment, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTheme as usePaperTheme } from 'react-native-paper';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
@@ -15,7 +16,8 @@ import { apiErrorMessage, apiSaveSupportPeople } from '../../../api/care_planner
 
 export default function Screen() {
   const { colours, theme } = useTheme();
-  const styles = createStyles(colours, theme);
+  const insets = useSafeAreaInsets();
+  const styles = createStyles(colours, theme, insets.bottom);
   const router = useRouter();
   const { colors: paperColours } = usePaperTheme();
   const { draft, updateDraft } = useAppointment();
@@ -109,7 +111,7 @@ export default function Screen() {
               <Button
                 label="Add support person"
                 onPress={() => router.push('/carePlanner/newSupportPerson')}
-                buttonType="primaryButton"
+                buttonType="roundButton"
               />
             </View>
             <Text style={[styles.body, styles.cardItem]}>
@@ -127,14 +129,14 @@ export default function Screen() {
         <Button
           label={saving ? 'Saving...' : 'Save'}
           onPress={handleSave}
-          buttonType="primaryButton"
+          buttonType="roundButton"
         />
       </View>
     </View>
   );
 }
 
-function createStyles(colours: ColourSet, text: Typography) {
+function createStyles(colours: ColourSet, text: Typography, bottomInset: number) {
   return StyleSheet.create({
     screen: {
       flex: 1,
@@ -142,7 +144,7 @@ function createStyles(colours: ColourSet, text: Typography) {
     },
 
     content: {
-      paddingBottom: 200,
+      paddingBottom: 200 + bottomInset,
       gap: 38,
     },
 
@@ -210,7 +212,7 @@ function createStyles(colours: ColourSet, text: Typography) {
       position: 'absolute',
       left: '7.5%',
       width: '85%',
-      bottom: 120,
+      bottom: 120 + bottomInset,
       gap: 8,
     },
 

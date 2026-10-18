@@ -5,6 +5,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Contact, requestPermissionsAsync } from 'expo-contacts';
 import Button from '../../../../components/atomicUI/Button';
@@ -30,7 +31,8 @@ type ApiSupportLink = {
 
 export default function Screen() {
   const { colours, theme } = useTheme();
-  const styles = createStyles(colours, theme);
+  const insets = useSafeAreaInsets();
+  const styles = createStyles(colours, theme, insets.bottom);
   const { colors: paperColours } = usePaperTheme();
   const router = useRouter();
   const {
@@ -215,12 +217,12 @@ export default function Screen() {
               <Button
                 label="Choose from My Support Links"
                 onPress={() => router.push('/carePlanner/mySupportLinks')}
-                buttonType="primaryButton"
+                buttonType="roundButton"
               />
               <Button
                 label="Choose from My Contacts"
                 onPress={chooseContact}
-                buttonType="primaryButton"
+                buttonType="roundButton"
               />
             </View>
             {!!contactMessage && <Text style={styles.note}>{contactMessage}</Text>}
@@ -281,13 +283,13 @@ export default function Screen() {
         {!!saveError && (
           <Text style={[styles.error, { color: paperColours.error, borderColor: paperColours.error }]}>{saveError}</Text>
         )}
-        <Button label={saving ? 'Saving...' : 'Save'} onPress={save} buttonType="primaryButton" />
+        <Button label={saving ? 'Saving...' : 'Save'} onPress={save} buttonType="roundButton" />
       </View>
     </View>
   );
 }
 
-function createStyles(colours: ColourSet, text: Typography) {
+function createStyles(colours: ColourSet, text: Typography, bottomInset: number) {
   return StyleSheet.create({
     screen: {
       flex: 1,
@@ -295,7 +297,7 @@ function createStyles(colours: ColourSet, text: Typography) {
     },
 
     content: {
-      paddingBottom: 200,
+      paddingBottom: 200 + bottomInset,
       gap: 38,
     },
 
@@ -329,7 +331,7 @@ function createStyles(colours: ColourSet, text: Typography) {
       position: 'absolute',
       left: '7.5%',
       width: '85%',
-      bottom: 120,
+      bottom: 120 + bottomInset,
       gap: 8,
     },
 

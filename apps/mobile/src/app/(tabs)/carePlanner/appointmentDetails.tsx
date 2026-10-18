@@ -4,6 +4,7 @@
  */
 import { Fragment, useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useTheme as usePaperTheme } from 'react-native-paper';
@@ -20,7 +21,8 @@ import { apiAppointment } from '../../../api/django-API';
 export default function Screen() {
   const { colours, theme } = useTheme();
   const { colors: paperColours } = usePaperTheme();
-  const styles = createStyles(colours, theme);
+  const insets = useSafeAreaInsets();
+  const styles = createStyles(colours, theme, insets.bottom);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { appointments, rememberAppointment } = useAppointment();
@@ -176,7 +178,7 @@ export default function Screen() {
                   params: { appointmentId: appointment.id },
                 })
               }
-              buttonType="primaryButton"
+              buttonType="roundButton"
             />
           </View>
         </View>
@@ -228,7 +230,7 @@ export default function Screen() {
           <Button
             label={deleting ? 'Deleting...' : 'Delete appointment'}
             onPress={() => setConfirmingDelete(true)}
-            buttonType="secondaryButton"
+            buttonType="roundSecondaryButton"
           />
         </View>
       </ScrollView>
@@ -246,7 +248,7 @@ export default function Screen() {
   );
 }
 
-function createStyles(colours: ColourSet, text: Typography) {
+function createStyles(colours: ColourSet, text: Typography, bottomInset: number) {
   return StyleSheet.create({
     screen: {
       flex: 1,
@@ -254,7 +256,7 @@ function createStyles(colours: ColourSet, text: Typography) {
     },
 
     content: {
-      paddingBottom: 120,
+      paddingBottom: 120 + bottomInset,
       gap: 38,
     },
 

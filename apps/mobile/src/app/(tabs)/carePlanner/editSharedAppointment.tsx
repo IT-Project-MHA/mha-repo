@@ -5,6 +5,7 @@
  */
 import { Fragment, useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import TextButton from '../../../../components/atomicUI/TextButton';
@@ -16,7 +17,8 @@ import { apiAppointmentDetails } from '../../../api/care_planner_api_helpers';
 
 export default function Screen() {
   const { colours, theme } = useTheme();
-  const styles = createStyles(colours, theme);
+  const insets = useSafeAreaInsets();
+  const styles = createStyles(colours, theme, insets.bottom);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { sharedAppointments, rememberSharedAppointment } = useAppointment();
@@ -135,7 +137,7 @@ export default function Screen() {
   );
 }
 
-function createStyles(colours: ColourSet, text: Typography) {
+function createStyles(colours: ColourSet, text: Typography, bottomInset: number) {
   return StyleSheet.create({
     screen: {
       flex: 1,
@@ -143,7 +145,7 @@ function createStyles(colours: ColourSet, text: Typography) {
     },
 
     content: {
-      paddingBottom: 120,
+      paddingBottom: 120 + bottomInset,
       gap: 38,
     },
 

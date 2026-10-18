@@ -5,6 +5,7 @@
  */
 import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, Pressable } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import Button from '../../../../components/atomicUI/Button';
@@ -28,7 +29,8 @@ import {
 
 export default function Screen() {
   const { colours, theme } = useTheme();
-  const styles = createStyles(colours, theme);
+  const insets = useSafeAreaInsets();
+  const styles = createStyles(colours, theme, insets.bottom);
   const router = useRouter();
   const { colors: paperColours } = usePaperTheme();
   const { findAppointment, sharedAppointments } = useAppointment();
@@ -251,7 +253,7 @@ export default function Screen() {
                   <Button
                     label="Add new question"
                     onPress={addOwnQuestion}
-                    buttonType="primaryButton"
+                    buttonType="roundButton"
                   />
                 </View>
               )}
@@ -264,7 +266,7 @@ export default function Screen() {
         {!!error && (
           <Text style={[styles.error, { color: paperColours.error, borderColor: paperColours.error }]}>{error}</Text>
         )}
-        <Button label={saving ? 'Saving...' : 'Save'} onPress={save} buttonType="primaryButton" />
+        <Button label={saving ? 'Saving...' : 'Save'} onPress={save} buttonType="roundButton" />
       </View>
 
       <ConfirmModal
@@ -280,7 +282,7 @@ export default function Screen() {
   );
 }
 
-function createStyles(colours: ColourSet, text: Typography) {
+function createStyles(colours: ColourSet, text: Typography, bottomInset: number) {
   return StyleSheet.create({
     screen: {
       flex: 1,
@@ -288,7 +290,7 @@ function createStyles(colours: ColourSet, text: Typography) {
     },
 
     content: {
-      paddingBottom: 200,
+      paddingBottom: 200 + bottomInset,
       gap: 38,
     },
 
@@ -312,7 +314,7 @@ function createStyles(colours: ColourSet, text: Typography) {
       position: 'absolute',
       left: '7.5%',
       width: '85%',
-      bottom: 120,
+      bottom: 120 + bottomInset,
       gap: 8,
     },
 

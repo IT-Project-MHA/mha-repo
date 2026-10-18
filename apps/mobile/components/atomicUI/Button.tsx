@@ -5,7 +5,7 @@ import { Pressable, Text } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 
 
-type ButtonType = "primaryButton" | "secondaryButton" | "transparentButton" | "textButton";
+type ButtonType = "primaryButton" | "secondaryButton" | "roundButton" | "roundSecondaryButton" | "transparentButton" | "textButton";
 
 
 /**
@@ -16,7 +16,7 @@ type ButtonType = "primaryButton" | "secondaryButton" | "transparentButton" | "t
  * <Button
 	    label="light mode"
 	    onPress={() => setMode('light')}
-      buttonType="primaryButton"
+      buttonType="roundButton"
     />
  */
 type ButtonProps = {
@@ -42,7 +42,7 @@ const Button = ({label, onPress, buttonType}: ButtonProps) => {
       style={theme[buttonType]}
       onPress={onPress}
     >
-    <Text style={[theme.h6, theme.fontOnSurface]}>{label}</Text>
+    <Text style={[theme.h6, theme.fontOnSurface, theme.centerText]}>{label}</Text>
     </Pressable>
   );
 };

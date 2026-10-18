@@ -5,6 +5,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import Button from '../../../../components/atomicUI/Button';
 import ConfirmModal from '../../../../components/atomicUI/ConfirmModal';
@@ -57,7 +58,8 @@ const formatTime = (seconds: number) => {
 
 export default function Screen() {
   const { colours, theme } = useTheme();
-  const styles = createStyles(colours, theme);
+  const insets = useSafeAreaInsets();
+  const styles = createStyles(colours, theme, insets.bottom);
   const { colors: paperColours } = usePaperTheme();
   const { id, index } = useLocalSearchParams<{ id: string; index: string }>();
   const navigation = useNavigation();
@@ -288,7 +290,7 @@ export default function Screen() {
     <Button
       label={appointment?.doctorPermission ? "View doctor's signature" : "Get doctor's permission"}
       onPress={startSigning}
-      buttonType="primaryButton"
+      buttonType="roundButton"
     />
   );
 
@@ -312,16 +314,16 @@ export default function Screen() {
               />
             </View>
             {/* stacked, the button types' side padding is too wide for three in a row */}
-            <Button label="Cancel" onPress={pressCancelSigning} buttonType="secondaryButton" />
+            <Button label="Cancel" onPress={pressCancelSigning} buttonType="roundSecondaryButton" />
             <Button
               label="Clear"
               onPress={() => signatureRef.current?.clearSignature()}
-              buttonType="secondaryButton"
+              buttonType="roundSecondaryButton"
             />
             <Button
               label="Save"
               onPress={() => signatureRef.current?.readSignature()}
-              buttonType="primaryButton"
+              buttonType="roundButton"
             />
             {blankSignature && (
               <Text style={[styles.error, { color: paperColours.error }]}>
@@ -343,10 +345,10 @@ export default function Screen() {
                 `  ${formatTime(durationMillis / 1000)}/${formatTime(MAX_RECORDING_SECONDS)}`
               }
               onPress={togglePauseRecording}
-              buttonType="primaryButton"
+              buttonType="roundButton"
             />
             {/* replaces the doctor's signature button while recording */}
-            <Button label="Submit" onPress={submitRecording} buttonType="primaryButton" />
+            <Button label="Submit" onPress={submitRecording} buttonType="roundButton" />
           </>
         );
 
@@ -362,12 +364,12 @@ export default function Screen() {
                   : 'Play recording'
               }
               onPress={togglePlayback}
-              buttonType="primaryButton"
+              buttonType="roundButton"
             />
             <Button
               label="Delete recording"
               onPress={() => setConfirmingDeleteRecording(true)}
-              buttonType="secondaryButton"
+              buttonType="roundSecondaryButton"
             />
             {signatureButton}
           </>
@@ -376,7 +378,7 @@ export default function Screen() {
       case 'ready':
         return (
           <>
-            <Button label="Record" onPress={startRecording} buttonType="primaryButton" />
+            <Button label="Record" onPress={startRecording} buttonType="roundButton" />
             {signatureButton}
           </>
         );
@@ -439,7 +441,7 @@ export default function Screen() {
   );
 }
 
-function createStyles(colours: ColourSet, text: Typography) {
+function createStyles(colours: ColourSet, text: Typography, bottomInset: number) {
   return StyleSheet.create({
     screen: {
       flex: 1,
@@ -447,7 +449,7 @@ function createStyles(colours: ColourSet, text: Typography) {
     },
 
     content: {
-      paddingBottom: 120,
+      paddingBottom: 120 + bottomInset,
       gap: 38,
     },
 

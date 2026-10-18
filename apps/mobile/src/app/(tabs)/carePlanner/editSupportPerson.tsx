@@ -4,6 +4,7 @@
  */
 import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Button from '../../../../components/atomicUI/Button';
 import ConfirmModal from '../../../../components/atomicUI/ConfirmModal';
@@ -28,7 +29,8 @@ type ApiSupportLink = {
 
 export default function Screen() {
   const { colours, theme } = useTheme();
-  const styles = createStyles(colours, theme);
+  const insets = useSafeAreaInsets();
+  const styles = createStyles(colours, theme, insets.bottom);
   const router = useRouter();
   const { colors: paperColours } = usePaperTheme();
   // index is the person's position in the appointment's support people
@@ -168,9 +170,9 @@ export default function Screen() {
         <Button
           label="Delete support person"
           onPress={() => setConfirmingDelete(true)}
-          buttonType="secondaryButton"
+          buttonType="roundSecondaryButton"
         />
-        <Button label={saving ? 'Saving...' : 'Save'} onPress={save} buttonType="primaryButton" />
+        <Button label={saving ? 'Saving...' : 'Save'} onPress={save} buttonType="roundButton" />
       </View>
 
       <ConfirmModal
@@ -189,7 +191,7 @@ export default function Screen() {
   );
 }
 
-function createStyles(colours: ColourSet, text: Typography) {
+function createStyles(colours: ColourSet, text: Typography, bottomInset: number) {
   return StyleSheet.create({
     screen: {
       flex: 1,
@@ -197,7 +199,7 @@ function createStyles(colours: ColourSet, text: Typography) {
     },
 
     content: {
-      paddingBottom: 260,
+      paddingBottom: 260 + bottomInset,
       gap: 38,
     },
 
@@ -213,7 +215,7 @@ function createStyles(colours: ColourSet, text: Typography) {
       position: 'absolute',
       left: '7.5%',
       width: '85%',
-      bottom: 120,
+      bottom: 120 + bottomInset,
       gap: 8,
     },
     error: {
