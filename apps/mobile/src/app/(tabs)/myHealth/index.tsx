@@ -13,10 +13,11 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import ButtonWithIcon from '../../../../components/atomicUI/ButtonWithIcon';
 import { useRouter } from 'expo-router';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
+import AveragePainChart from '../../../../components/graphics/averagePainChart';
 
 export default function Screen() {
   const router = useRouter();
-  const { theme } = useTheme();
+  const { theme, colours } = useTheme();
 
   return (
     <ScrollView stickyHeaderIndices={[0]}>
@@ -24,37 +25,77 @@ export default function Screen() {
         <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>My Health</Text>
       </View>
 
-      <View style={[theme.sectionContainer, theme.centerItems]}>
-      <ButtonWithIcon
-	        label="My Assessment Records"
-	        onPress={() => router.navigate('/myHealth/healthTracking')}
-          buttonType="transparentButton"
-          name="chevron-forward-outline"
-        />
+      <Text> </Text>
+
+      <View style={theme.leftItems}>
+
+      <Text style={[theme.h5, theme.fontOnBackground]}>My Pain Summary </Text>
+      <Text> </Text>
+      <AveragePainChart/>
+
+      <View style={[theme.layoutContainer, theme.centerItems]}>
+      <Text style={[theme.xSmall, theme.fontOnBackground]}>See more and print as PDF in My Pain Profile </Text>
+      <Text style={[theme.small, theme.fontOnBackground]}> </Text>
       
-      <View style={theme.line}/>
-    
       <ButtonWithIcon
 	        label="My Pain Profile"
 	        onPress={() => router.navigate('/myHealth/painProfile')}
-          buttonType="transparentButton"
+          buttonType="roundButton"
           name="chevron-forward-outline"
+          fontColour={colours.onTertiary}
         />
+      </View>
+      </View>
 
-      <View style={theme.line}/>
-      
-      <ButtonWithIcon
+      <Text> </Text>
+      <Text> </Text>
+      <Text> </Text>
+
+      <View style={[theme.layoutContainer, theme.leftItems]}>
+        <Text style={[theme.h5, theme.fontOnBackground]}>My Health Tracking History </Text>
+        <Text style={[theme.small, theme.fontOnBackground]}>View your assessment history and generate a graph of your pain over time.</Text>
+        <Text> </Text>
+        <Text> </Text>
+        <Text> </Text>
+
+      <View style={[theme.layoutContainer, theme.centerItems]}>
+        <ButtonWithIcon
+	        label="My Assessment Records"
+	        onPress={() => router.navigate('/myHealth/healthTracking')}
+          buttonType="roundButton"
+          name="chevron-forward-outline"
+          fontColour={colours.onTertiary}
+        />
+      </View>
+      </View>
+    
+      <Text> </Text>
+      <Text> </Text>
+      <Text> </Text>
+
+      <View style={[theme.layoutContainer, theme.leftItems]}>
+        <Text style={[theme.h5, theme.fontOnBackground]}>My Prescriptions </Text>
+        <Text style={[theme.small, theme.fontOnBackground]}>View your active prescriptions and recommended dosages.</Text>
+        <Text> </Text>
+        <Text> </Text>
+        <Text> </Text>
+
+      <View style={[theme.layoutContainer, theme.centerItems]}>
+        <ButtonWithIcon
 	        label="My Prescriptions"
 	        onPress={() => router.navigate('/myHealth/prescriptions')}
-          buttonType="transparentButton"
+          buttonType="roundButton"
           name="chevron-forward-outline"
+          fontColour={colours.onTertiary}
         />
-
+      </View>
       </View>
       {/**
        * This page should have a summary chart of pain over months
        */}
 
+      <View style={theme.bottomGap}/>
+      <View style={theme.bottomGap}/>
 
     </ScrollView>
 
