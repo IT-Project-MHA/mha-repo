@@ -4,7 +4,7 @@ import { useTheme } from "../../context/ThemeContext";
 import {apiPainHistory} from "../../src/app/api/my_health_api_helpers.js";
 import { useEffect, useState } from "react";
 
-//typeing 
+//types
 type PainPoints = {value: number; label: string};
 type PainHistoryPoint = {completedAt: string; score: number};
 
@@ -44,7 +44,7 @@ const AveragePainChart = ({patientProfileId}:{patientProfileId ?: number|null })
 
     return (
         <View style={[theme.clearContainer, theme.centerItems]}>
-            <Text> Your Pain over time</Text>
+            <Text>Your Pain over time</Text>
             <LineChart 
                 data = {noData? EMPTY_DATA : data} 
                 maxValue={10}
@@ -67,7 +67,6 @@ const AveragePainChart = ({patientProfileId}:{patientProfileId ?: number|null })
                 <View>
                     <Text style={[theme.small, theme.fontOnBackground]}>Complete assessments to see your pain over time</Text>
                 </View>
-
             )}
         </View>
     );

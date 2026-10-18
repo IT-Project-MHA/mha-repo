@@ -93,7 +93,6 @@ export default function Screen() {
       {/**
        * This page should have a summary chart of pain over months
        */}
-
       <View style={theme.bottomGap}/>
       <View style={theme.bottomGap}/>
 
