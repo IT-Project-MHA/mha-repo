@@ -26,7 +26,9 @@ export type ColourSet = {
   ex1: string;
   ex2: string;
   ex3: string;
-
+  onEx1: string;
+  onEx2: string; 
+  onEx3: string; 
 };
 
 /**
@@ -43,10 +45,12 @@ export const lightColours: ColourSet = {
   onPrimary: '#1d1b20',
   onSecondary: '#1d1b20',
   onTertiary: '#1d1b20',
-  ex1: '#b8483f', // deeper coral
-  ex2: '#417387', // deeper teal
-  ex3: '#866826', // deeper yellow
-  
+  ex1: '#b8483f',
+  ex2: '#866826',
+  ex3: '#417387',
+  onEx1: '#FFB7B1',
+  onEx2: '#F7CD77',
+  onEx3: '#A8D3E4',  
 };
 
 /**
@@ -63,9 +67,12 @@ export const darkColours: ColourSet = {
   onPrimary: '#1d1b20',
   onSecondary: '#1d1b20',
   onTertiary: '#1d1b20',
-  ex1: '#ff7f74', // brighter coral
-  ex2: '#6fa9c0', // lighter teal
-  ex3: '#d0ab59', // brighter yellow
+  ex1: '#b8483f', // deeper coral
+  ex2: '#866826', // deeper yellow
+  ex3: '#417387', // deeper teal'
+  onEx1: '#FFB7B1',
+  onEx2: '#F7CD77',
+  onEx3: '#A8D3E4',
 };
 
 /**
@@ -83,8 +90,11 @@ export const lightHcColours: ColourSet = {
   onSecondary: '#080808',
   onTertiary: '#080808',
   ex1: '#9c2b22', // deep red coral
-  ex2: '#005b7f', // a deep teal
-  ex3: '#5e4a1f', // deep yellow
+  ex2: '#5e4a1f', // deep yellow 
+  ex3: '#005b7f', // a deep teal
+  onEx1: '#FFF9F9',
+  onEx2: '#FFF9F9',
+  onEx3: '#FFF9F9',
 };
 
 /**
@@ -94,14 +104,17 @@ export const darkHcColours: ColourSet = {
   background: '#121114',
   surface: '#262429',
   primary: '#ff7466',
-  secondary: '#00fbff',
-  tertiary: '#f4ff1f',
+  secondary: '#ffd23f',
+  tertiary: '#48cbff',
   onBackground: '#fff9f9',
   onSurface: '#fff3f3',
   onPrimary: '#080808',
   onSecondary: '#080808',
   onTertiary: '#080808',
-  ex1: '#ff968c', // a brighter coral
-  ex2: '#9bcbdc', // a deeper teal
-  ex3: '#e0bb68', // brighter yellow
+  ex1: '#ff968c',
+  ex2: '#e0bb68',
+  ex3: '#9bcbdc', 
+  onEx1: '#FFF9F9',
+  onEx2: '#FFF9F9',
+  onEx3: '#FFF9F9',
 };

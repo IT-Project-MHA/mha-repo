@@ -31,20 +31,6 @@ export const primaryButtonLayout = {
   alignItems: 'center' as const,
 };
 
-export const squareButtonWithLineLayout = {
-  alignItems: 'center' as const,
-  justifyContent: 'center' as const,
-
-  width: '90%' as const,
-  height: 64,
-
-  borderRadius: 20,
-  borderTopWidth: 0,     
-  borderBottomWidth: 4, 
-  borderWidth: 1,
-  elevation: 4,
-}
-
 export const transparentButtonLayout = {
   alignItems: 'center' as const,
   justifyContent: 'center' as const,
@@ -56,4 +42,18 @@ export const textButtonLayout = {
   alignItems: 'center' as const,
   justifyContent: 'center' as const,
   paddingBlock: 0,
+}
+
+export const roundButtonLayout = {
+  alignItems: 'center' as const,
+  justifyContent: 'center' as const,
+
+  width: '85%' as const,
+  
+  paddingBlock: 15,
+  paddingHorizontal: 40,
+
+  borderRadius: 70,
+  borderTopWidth: 0,     
+  borderBottomWidth: 0, 
 }
