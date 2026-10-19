@@ -16,6 +16,9 @@ class UserSerializer(serializers.ModelSerializer):
 PATIENT_HEALTH_FIELDS = ['has_diagnosis', 'other_conditions', 'pain_types', 'assigned_gender_at_birth', 'birth_year']
 
 class PatientProfileSerializer(serializers.ModelSerializer):
+
+    display_name = serializers.CharField(source = "user.display_name", read_only = True)
+
     class Meta:
         model = PatientProfile
         fields = '__all__'
@@ -45,6 +48,9 @@ class UserSettingsSerializer(serializers.ModelSerializer):
         read_only_fields = ['user']
 
 class SupportLinkSerializer(serializers.ModelSerializer):
+    patient_name = serializers.CharField(source = "patient_user.display_name", read_only = True)
+    supporter_name = serializers.CharField(source = "supporter_user.display_name", read_only = True, default = None)
+
     class Meta:
         model = SupportLink
         fields = '__all__'

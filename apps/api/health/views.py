@@ -266,7 +266,14 @@ class PainTrend(APIView):
 
     def get(self, request):
         patient_profile = get_patient_profile(request)
-        days = int(request.query_params.get("days", 30))
+        try:
+            days = int(request.query_params.get("days", 30))
+        except ValueError:
+            raise serializers.ValidationError({'days':'Must be a whole number.'})
+
+        if days < 1:
+            raise serializers.ValidationError({'days':'Must be at least 1.'})
+
         start_date = date.today() - timedelta(days= days)
 
         query_set = MyPain.objects.filter(

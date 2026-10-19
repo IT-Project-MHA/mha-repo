@@ -140,6 +140,9 @@ class CancelAppointmentView(APIView):
 
         reject_if_cancelled(appointment)
 
+        if appointment.scheduled_date < timezone.now() or appointment.status == Appointment.Status.COMPLETED:
+            return Response({"detail": "appointment_in_past"}, status = status.HTTP_400_BAD_REQUEST)
+
         appointment.status = Appointment.Status.CANCELLED
         appointment.save(update_fields = ["status", "updated_at"])
         record(request.user, AuditEntry.Action.UPDATE, appointment, context = {"status": "cancelled"})
@@ -225,7 +228,6 @@ class AppointmentQuestionListCreate(generics.ListCreateAPIView):
     def get_queryset(self):
         user = self.request.user
         appointment = self.request.query_params.get("appointment")
-        reject_if_cancelled(appointment)
         query_set = AppointmentQuestion.objects.filter(
             appointment__in = visible_appointments(user))
 

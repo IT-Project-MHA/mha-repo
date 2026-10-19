@@ -16,7 +16,8 @@ class UserManager(BaseUserManager):
         user.save(using = self._db)
         return user
 
-    def create_superuser(self, phone_number, display_name, pin=None, **extra):
+    def create_superuser(self, phone_number, display_name, pin = None, password = None, **extra):
+        extra.setdefault("is_staff", True)
         extra.setdefault("is_superuser", True)
         extra.setdefault("is_active", True)
 
@@ -26,8 +27,7 @@ class UserManager(BaseUserManager):
         if extra.get("is_superuser") is not True:
             raise ValueError("A superuser must have is_superuser = True.")
 
-        return self.create_user(phone_number, display_name, pin, **extra)
-
+        return self.create_user(phone_number, display_name, pin or password, **extra)
 
 
 class User(AbstractBaseUser, PermissionsMixin, BaseModel, SoftDeleteModel):
