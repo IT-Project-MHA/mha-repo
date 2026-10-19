@@ -6,6 +6,7 @@ apps/mobile/.expo/
 .venv/
 __pycache__/
 *.pyc
+staticfiles/
 
 # Secrets and Environment Variables
 .env
