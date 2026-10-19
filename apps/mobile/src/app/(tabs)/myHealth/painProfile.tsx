@@ -7,7 +7,8 @@ import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 
 export default function Screen() {
   const router = useRouter();
-  const { theme } = useTheme();
+  const { theme, colours } = useTheme();
+  const styles = createStyles(colours);
 
   return (
     <ScrollView stickyHeaderIndices={[0]}>
@@ -16,8 +17,44 @@ export default function Screen() {
       </View>
 
       {/**
-       * 
+       *
        */}
+      <Text> </Text>
+      <View style={[theme.sectionContainer, styles.card]}>
+        <View style={styles.cardItem}>
+          <Text style={[theme.h4, theme.fontOnSurface]}>My Pain</Text>
+          <Text style={[theme.body, theme.fontOnSurface]}>Severity of my pain, pattern and location</Text>
+        </View>
+
+        <View style={theme.line}/>
+
+        <View style={styles.cardItem}>
+          <Text style={[theme.h6, theme.fontOnSurface]}>My Pain location</Text>
+          <Text style={[theme.body, theme.fontOnSurface]}>Placeholder</Text>
+        </View>
+        <View style={styles.cardItem}>
+          <Text style={[theme.h6, theme.fontOnSurface]}>My Current pain:</Text>
+          <Text style={[theme.body, theme.fontOnSurface]}>Placeholder</Text>
+        </View>
+        <View style={styles.cardItem}>
+          <Text style={[theme.h6, theme.fontOnSurface]}>Average pain (2 weeks):</Text>
+          <Text style={[theme.body, theme.fontOnSurface]}>Placeholder</Text>
+        </View>
+        <View style={styles.cardItem}>
+          <Text style={[theme.h6, theme.fontOnSurface]}>Worst pain:</Text>
+          <Text style={[theme.body, theme.fontOnSurface]}>Placeholder</Text>
+        </View>
+        <View style={styles.cardItem}>
+          <Text style={[theme.h6, theme.fontOnSurface]}>Mildest pain:</Text>
+          <Text style={[theme.body, theme.fontOnSurface]}>Placeholder</Text>
+        </View>
+        <View style={styles.cardItem}>
+          <Text style={[theme.h6, theme.fontOnSurface]}>Pain characteristics</Text>
+          <Text style={[theme.body, theme.fontOnSurface]}>Placeholder</Text>
+        </View>
+      </View>
+
+      <View style={theme.bottomGap}/>
 
     </ScrollView>
 
@@ -26,5 +63,13 @@ export default function Screen() {
 
 function createStyles(colours: ColourSet){
     return StyleSheet.create({
+      card: {
+        gap: 12,
+      },
+
+      cardItem: {
+        width: '85%',
+        alignSelf: 'center',
+      },
 })
 };
