@@ -10,6 +10,7 @@ auth_patterns = [
 
     path("login", views.LoginView.as_view(), name = "login"),
     path("logout", views.LogoutView.as_view(), name = "logout"),
+    path("logout-everywhere", views.LogoutEverywhereView.as_view(), name = "logout-everywhere"),
 
     path("devices", views.DeviceListView.as_view(), name = "devices"),
     path("devices/<uuid:device_pk>/revoke", views.RevokeDeviceView.as_view(), name = "revoke-device"),

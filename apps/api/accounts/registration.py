@@ -80,7 +80,7 @@ def register_user(verification_id, device_id, phone_number, display_name, pin, t
             # Invites sent to this number before it had an account
             link_pending_invites(user)
 
-            token = Token.objects.create(user = user)
+            token = devices.sign_in(user, device_id)
 
     except IntegrityError:
         # If multiple registrations for same number the database stops the second

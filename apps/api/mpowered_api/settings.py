@@ -139,7 +139,7 @@ AUTH_USER_MODEL = 'accounts.User'
 SILENCED_SYSTEM_CHECKS = ["auth.E003"]
 
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.TokenAuthentication"],
+    "DEFAULT_AUTHENTICATION_CLASSES": ["accounts.authentication.DeviceTokenAuthentication"],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     "DEFAULT_THROTTLE_RATES": {
         

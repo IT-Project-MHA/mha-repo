@@ -6,7 +6,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
 from accounts import permissions
-from accounts.models import PatientProfile, SupportLink, User
+from accounts.models import PatientProfile, SupportLink, User, DeviceToken, TrustedDevice
 from appointment.models import Appointment, AppointmentAccess, AppointmentQuestion
 
 from audit.models import AuditEntry
@@ -30,7 +30,8 @@ class GrantAccessTests(APITestCase):
         self.supporter, self.link = self.add_supporter("+61411111111", SupportLink.Status.ACTIVE)
 
     def sign_in(self, user):
-        token, _ = Token.objects.get_or_create(user = user)
+        device, _ = TrustedDevice.objects.get_or_create(user = user, device_id = "test-phone")
+        token, _ = DeviceToken.objects.get_or_create(user = user, device = device)
         self.client.credentials(HTTP_AUTHORIZATION = f"Token {token.key}")
 
     def add_supporter(self, phone, status):

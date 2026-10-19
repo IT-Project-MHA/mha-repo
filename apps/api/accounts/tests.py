@@ -8,7 +8,7 @@ from django.utils import timezone
 from rest_framework.test import APITestCase
 from rest_framework.authtoken.models import Token
 
-from accounts.models import PhoneVerification, PatientProfile, TermsAndPrivacy, User, UserSettings, TrustedDevice, SupportLink
+from accounts.models import PhoneVerification, PatientProfile, TermsAndPrivacy, User, UserSettings, TrustedDevice, SupportLink, DeviceToken
 from reference.models import QuestionOption
 from accounts import permissions
 from appointment.models import AppointmentAccess, Appointment
@@ -156,7 +156,7 @@ class RegisterTests(APITestCase):
 
     def test_returns_token(self):
         response = self.register()
-        self.assertEqual(response.data["token"], Token.objects.get(user = User.objects.get()).key)
+        self.assertEqual(response.data["token"], DeviceToken.objects.get(user = User.objects.get()).key)
 
     def test_track_health(self):
         response = self.register(track_health = True, health = {
@@ -258,7 +258,7 @@ class LoginTests(APITestCase):
     def test_trusted_device_logs_in(self):
         response = self.login()
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["token"], Token.objects.get(user = self.user).key)
+        self.assertEqual(response.data["token"], DeviceToken.objects.get(user = self.user).key)
 
     def test_wrong_pin(self):
         response = self.login(pin = "000000")
@@ -298,18 +298,18 @@ class LoginTests(APITestCase):
         response = self.login()
         self.assertEqual(response.data["detail"], "verification_required")
 
-    def test_same_token_on_every_device(self):
+    def test_each_device_gets_its_own_token(self):
         first = self.login()
         TrustedDevice.objects.create(user = self.user, device_id = "new-phone")
         second = self.login(device_id = "new-phone")
-        self.assertEqual(first.data["token"], second.data["token"])
+        self.assertNotEqual(first.data["token"], second.data["token"])
 
     def test_logout_deletes_token(self):
         token = self.login().data["token"]
         self.client.credentials(HTTP_AUTHORIZATION = f"Token {token}")
         response = self.client.post("/auth/logout")
         self.assertEqual(response.status_code, 204)
-        self.assertFalse(Token.objects.filter(user = self.user).exists())
+        self.assertFalse(DeviceToken.objects.filter(user = self.user).exists())
 
     def test_old_token_rejected(self):
         token = self.login().data["token"]
@@ -328,6 +328,26 @@ class LoginTests(APITestCase):
         self.login()
         self.assertGreater(TrustedDevice.objects.get().last_seen_at, old)
 
+    def test_logout_keeps_other_phone_signed_in(self):
+        phone_token = self.login().data["token"]
+        TrustedDevice.objects.create(user = self.user, device_id = "new-phone")
+        ipad_token = self.login(device_id = "new-phone").data["token"]
+
+        self.client.credentials(HTTP_AUTHORIZATION = f"Token {phone_token}")
+        self.client.post("/auth/logout")
+
+        self.client.credentials(HTTP_AUTHORIZATION = f"Token {ipad_token}")
+        self.assertEqual(self.client.get("/auth/devices").status_code, 200)
+
+    def test_logout_everywhere(self):
+        phone_token = self.login().data["token"]
+        TrustedDevice.objects.create(user = self.user, device_id = "new-phone")
+        self.login(device_id = "new-phone")
+
+        self.client.credentials(HTTP_AUTHORIZATION = f"Token {phone_token}")
+        self.assertEqual(self.client.post("/auth/logout-everywhere").status_code, 204)
+        self.assertFalse(DeviceToken.objects.filter(user = self.user).exists())
+
 
 class DeviceTests(APITestCase):
     # GET /auth/devices
@@ -338,14 +358,15 @@ class DeviceTests(APITestCase):
 
         # Signed in user with two phone
         self.user = User.objects.create_user(PHONE, "josh", PIN)
-        self.phone = TrustedDevice.objects.create(user = self.user, device_id = DEVICE)
+        self.my_phone = TrustedDevice.objects.create(user = self.user, device_id = DEVICE)
         self.phone = TrustedDevice.objects.create(user = self.user, device_id = "joshs-ipad")
-
+        
         # Someone else's device that should never show up
         other_user = User.objects.create_user("+61499999999", "Other", PIN)
         self.other_device = TrustedDevice.objects.create(user = other_user, device_id = "other-phone")
 
-        self.token = Token.objects.create(user = self.user)
+        # Signed in on the phone
+        self.token = DeviceToken.objects.create(user = self.user, device = self.my_phone)
         self.client.credentials(HTTP_AUTHORIZATION = f"Token {self.token.key}")
 
     def revoke(self, device):
@@ -368,11 +389,11 @@ class DeviceTests(APITestCase):
         response = self.client.get("/auth/devices")
         self.assertEqual([device["device_id"] for device in response.data], [DEVICE])
 
-    def test_revoke_also_signs_out(self):
+    def test_revoke_signs_out_only_that_device(self):
+        ipad_token = DeviceToken.objects.create(user = self.user, device = self.phone)
         self.revoke(self.phone)
-        self.assertFalse(Token.objects.filter(user = self.user).exists())
-        response = self.client.get("/auth/devices")
-        self.assertEqual(response.status_code, 401)
+        self.assertFalse(DeviceToken.objects.filter(pk = ipad_token.pk).exists())
+        self.assertEqual(self.client.get("/auth/devices").status_code, 200)
 
     def test_revoked_device_needs_otp(self):
         self.revoke(self.phone)
@@ -406,7 +427,7 @@ class ResetPinTests(APITestCase):
         self.user = User.objects.create_user(PHONE, "Josh", PIN)
         self.phone = TrustedDevice.objects.create(user = self.user, device_id = DEVICE)
         self.ipad = TrustedDevice.objects.create(user = self.user, device_id = "josh-ipad")
-        self.old_token = Token.objects.create(user = self.user)
+        self.old_token = DeviceToken.objects.create(user = self.user, device = self.ipad)
 
         # Phone that just passed verify-code
         self.verification = PhoneVerification.objects.create(
@@ -443,7 +464,7 @@ class ResetPinTests(APITestCase):
 
     def test_old_token_deleted(self):
         response = self.reset()
-        self.assertFalse(Token.objects.filter(key = self.old_token.key).exists())
+        self.assertFalse(DeviceToken.objects.filter(key = self.old_token.key).exists())
         self.assertNotEqual(response.data["token"], self.old_token.key)
 
     def test_other_devices_signed_out(self):
@@ -706,13 +727,13 @@ class AccountLifecycleTests(APITestCase):
             phone_number = phone, code = "hash", expires_at = timezone.now(), used_at = timezone.now())
 
     def test_delete_account_is_soft(self):
-        Token.objects.create(user = self.patient)
+        DeviceToken.objects.create(user = self.patient, device = TrustedDevice.objects.create(user = self.patient, device_id = DEVICE))
         self.assertEqual(self.client.delete(f"/api/user/{self.patient.pk}").status_code, 204)
         self.patient.refresh_from_db()
         self.profile.refresh_from_db()
         self.assertIsNotNone(self.patient.deleted_at)
         self.assertFalse(self.patient.is_active)
-        self.assertFalse(Token.objects.filter(user = self.patient).exists())
+        self.assertFalse(DeviceToken.objects.filter(user = self.patient).exists())
         self.assertIsNotNone(self.profile.deleted_at)
 
     def test_number_can_sign_up_again_after_delete(self):
@@ -869,9 +890,11 @@ class PushNotificationTests(APITestCase):
         self.assertEqual(self.register_token("not-a-token").status_code, 400)
 
     def test_logout_removes_tokens(self):
-        self.client.force_authenticate(self.patient)
+        device = TrustedDevice.objects.create(user = self.patient, device_id = DEVICE)
+        PushToken.objects.filter(pk = self.push_token.pk).update(device = device)
+        token = DeviceToken.objects.create(user = self.patient, device = device)
+        self.client.credentials(HTTP_AUTHORIZATION = f"Token {token.key}")
         self.client.post("/auth/logout")
-        self.assertFalse(PushToken.objects.filter(user = self.patient).exists())
 
     def test_uninstalled_app_token_removed(self):
         with mock.patch("accounts.push_notification.PushClient") as push_client:

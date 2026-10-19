@@ -1,3 +1,4 @@
+import secrets
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -170,10 +171,22 @@ class TrustedDevice(BaseModel):
         db_table = "trusted_device"
         constraints = [models.UniqueConstraint(fields = ["user", "device_id"], name = "one_row_per_device")]
 
+# One login token per phone so logging out of one leaves the others signed in
+class DeviceToken(BaseModel):
+    key = models.CharField(max_length = 40, unique = True)
+    user = models.ForeignKey(User, on_delete = models.CASCADE, related_name = "device_tokens")
+    device = models.OneToOneField(TrustedDevice, on_delete = models.CASCADE, related_name = "token")
+
+    class Meta:
+        db_table = "device_token"
+
+    def save(self, *args, **kwargs):
+        if not self.key:
+            self.key = secrets.token_hex(20)
+        super().save(*args, **kwargs)
+
 # Expo push token for phone notifications
 class PushToken(BaseModel):
     user = models.ForeignKey(User, on_delete = models.CASCADE, related_name = "push_tokens")
     token = models.CharField(max_length = 200, unique = True)
-
-    class Meta:
-        db_table = "push_token"
+    device = models.ForeignKey(TrustedDevice, null = True, blank = True, on_delete = models.CASCADE, related_name = "push_tokens")

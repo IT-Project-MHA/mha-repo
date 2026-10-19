@@ -3,7 +3,7 @@ from django.db.models import Q
 from django.utils import timezone
 from rest_framework.authtoken.models import Token
 
-from accounts.models import PatientProfile, SupportLink, TrustedDevice
+from accounts.models import PatientProfile, SupportLink, TrustedDevice, DeviceToken
 
 
 def delete_account(user):
@@ -22,7 +22,7 @@ def delete_account(user):
 
         # Sign out all devices
         TrustedDevice.objects.filter(user = user, revoked_at__isnull = True).update(revoked_at = now)
-        Token.objects.filter(user = user).delete()
+        DeviceToken.objects.filter(user = user).delete()
 
         user.deleted_at = now
         user.is_active = False

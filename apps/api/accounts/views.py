@@ -184,7 +184,18 @@ class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        login.logout_user(request.user)
+        login.logout_device(request.auth)
+
+        return Response(status = status.HTTP_204_NO_CONTENT)
+    
+class LogoutEverywhereView(APIView):
+    # POST /auth/logout-everywhere
+    # Signs out every phone
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        devices.sign_out_everywhere(request.user)
 
         return Response(status = status.HTTP_204_NO_CONTENT)
 
@@ -517,7 +528,7 @@ class PushTokenView(APIView):
 
         # A phone that signs into a different account moves its token to that account
         PushToken.objects.update_or_create(token = serializer.validated_data["token"],
-                                           defaults = {"user": request.user})
+                                           defaults = {"user": request.user, "device": getattr(request.auth, "device", None)})
 
         return Response(status = status.HTTP_204_NO_CONTENT)
 
