@@ -76,6 +76,8 @@ class UserSettings(BaseModel):
     offline_backup = models.BooleanField(default = True)
     microphone_access = models.BooleanField(default = False)
     notifications_enabled = models.BooleanField(default = True)
+    assessment_reminders = models.BooleanField(default = True)
+    appointment_reminders = models.BooleanField(default = True)
     text_size_percent = models.PositiveSmallIntegerField(default=100, validators=[MinValueValidator(100), MaxValueValidator(400)],)
 
     class Meta:
@@ -190,3 +192,5 @@ class PushToken(BaseModel):
     user = models.ForeignKey(User, on_delete = models.CASCADE, related_name = "push_tokens")
     token = models.CharField(max_length = 200, unique = True)
     device = models.ForeignKey(TrustedDevice, null = True, blank = True, on_delete = models.CASCADE, related_name = "push_tokens")
+    class Meta:
+        db_table = "push_token"

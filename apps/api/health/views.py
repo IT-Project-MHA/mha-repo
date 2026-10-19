@@ -102,11 +102,31 @@ class AssessmentListCreate(generics.ListCreateAPIView):
         user = self.request.user
         week_starting = self.request.query_params.get("week_starting")
         query_patient_profile = self.request.query_params.get("patient_profile")
+        search = self.request.query_params.get("search")
+        date_from = self.request.query_params.get("from")
+        date_to = self.request.query_params.get("to")
         query_set = visible_assessments(user)
         if week_starting:
             query_set = query_set.filter(week_starting = week_starting)
         if query_patient_profile:
             query_set = query_set.filter(patient_profile = query_patient_profile)
+
+        if search:
+            query_set = query_set.filter(
+                Q(reflection__icontains = search) |
+                Q(my_pain__locations__text__icontains = search) |
+                Q(my_pain__other_location__icontains = search) |
+                Q(my_movement__reflection__icontains = search) |
+                Q(my_personal_care__reflection__icontains = search) |
+                Q(my_social_health__reflection__icontains = search) |
+                Q(my_management__emotion__icontains = search) |
+                Q(my_management__otc_medication__icontains = search))
+
+        if date_from:
+            query_set = query_set.filter(week_starting__gte = date_from)
+        if date_to:
+            query_set = query_set.filter(week_starting__lte = date_to)
+
         return query_set.distinct()
 
     def perform_create(self, serializer):
@@ -270,8 +290,8 @@ def get_patient_profile(request):
 
 # helper function: one week's pain scores
 def pain_scores(pain):
-    return {"week_starting": pain.assessment.week_starting, "current": pain.current, "worst": pain.worst, "average": pain.average, "mildest": pain.mildest}
-
+    return {"week_starting": pain.assessment.week_starting, "current": pain.current, "worst": pain.worst, "average": pain.average, "mildest": pain.mildest,
+            "locations": [location.text for location in pain.locations.all()]}
 
 # GET /api/painTrend/?patient_profile=<id>&days=30
 # - weekly pain scores oldest first
@@ -297,7 +317,12 @@ class PainTrend(APIView):
             assessment__week_starting__gte = start_date
         )
 
-        query_set = query_set.select_related("assessment")
+        location = request.query_params.get("location")
+        if location:
+            query_set = query_set.filter(locations = location)
+
+        query_set = query_set.select_related("assessment").prefetch_related("locations")
+
         query_set = query_set.order_by("assessment__week_starting")
 
         pain_data = []

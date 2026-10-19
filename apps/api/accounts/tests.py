@@ -929,3 +929,24 @@ class PushNotificationTests(APITestCase):
     def test_no_reminder_when_notifications_off(self):
         UserSettings.objects.create(user = self.patient, notifications_enabled = False)
         self.assertEqual(self.run_reminders("--assessments"), [])
+
+    def test_assessment_reminders_off(self):
+        UserSettings.objects.create(user = self.patient, assessment_reminders = False)
+        self.assertEqual(self.run_reminders("--assessments"), [])
+
+    def test_appointment_reminders_off_keeps_assessment_reminders(self):
+        UserSettings.objects.create(user = self.patient, appointment_reminders = False)
+        Appointment.objects.create(patient_profile = self.profile, scheduled_date = timezone.now() + timedelta(days = 1),
+                                   created_by = self.patient)
+
+        self.assertEqual(self.run_reminders("--appointments"), [])
+        self.assertEqual(len(self.run_reminders("--assessments")), 1)
+
+    def test_change_reminders_in_settings(self):
+        user_settings = UserSettings.objects.create(user = self.patient)
+        self.client.force_authenticate(self.patient)
+
+        response = self.client.patch(f"/api/userSettings/{user_settings.pk}", {"assessment_reminders": False}, format = "json")
+        self.assertEqual(response.status_code, 200)
+        user_settings.refresh_from_db()
+        self.assertFalse(user_settings.assessment_reminders)

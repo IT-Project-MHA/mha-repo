@@ -42,8 +42,8 @@ def wants_notifications():
 def assessment_due_users():
     submitted = Assessment.objects.filter(week_starting = current_week_starting(), status = Assessment.Status.SUBMITTED)
     return wants_notifications().filter(patient_profile__deleted_at__isnull = True) \
+        .exclude(settings__assessment_reminders = False) \
         .exclude(patient_profile__assessment_assessments__in = submitted)
-
 
 # helper function: patients with appointments tomorrow
 def appointment_tomorrow_users():
@@ -54,4 +54,5 @@ def appointment_tomorrow_users():
         status = Appointment.Status.PLANNED,
         deleted_at__isnull = True,
     )
-    return wants_notifications().filter(patient_profile__appointment_patient__in = appointments).distinct()
+    return wants_notifications().exclude(settings__appointment_reminders = False) \
+        .filter(patient_profile__appointment_patient__in = appointments).distinct()

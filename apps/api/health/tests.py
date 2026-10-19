@@ -5,7 +5,7 @@ from rest_framework.test import APITestCase
 from accounts.models import PatientProfile, SupportLink, User
 from health.models import Assessment, Prescription, MyPain
 from mpowered_api.validators import current_week_starting
-from reference.models import QuestionOptionOrdered
+from reference.models import QuestionOptionOrdered, QuestionOption
 from audit.models import AuditEntry
 
 PIN = "196712"
@@ -173,3 +173,70 @@ class HealthRecordTests(APITestCase):
         self.client.force_authenticate(self.supporter)
         response = self.client.get(f"/api/painTrend/?patient_profile={self.profile.pk}")
         self.assertEqual(response.data, [])
+
+
+# Pain Trend Tests 
+class PainTrendTests(APITestCase):
+    # GET /api/painTrend/
+
+    def setUp(self):
+        self.patient = User.objects.create_user("+61490813123", "Josh", PIN)
+        self.profile = PatientProfile.objects.create(user = self.patient)
+        self.client.force_authenticate(self.patient)
+
+        self.back = QuestionOption.objects.create(app_section = "my_pain", question_key = "pain_location", text = "Lower back")
+        self.neck = QuestionOption.objects.create(app_section = "my_pain", question_key = "pain_location", text = "Neck")
+
+        # Neck two weeks ago, back last week
+        self.add_week(2, self.neck)
+        self.add_week(1, self.back)
+
+    def add_week(self, weeks_ago, location):
+        assessment = Assessment.objects.create(patient_profile = self.profile,
+                                               week_starting = current_week_starting() - timedelta(weeks = weeks_ago))
+        pain = MyPain.objects.create(assessment = assessment, current = weeks_ago)
+        pain.locations.add(location)
+
+    def test_trend_includes_locations(self):
+        response = self.client.get("/api/painTrend/")
+        self.assertEqual([week["locations"] for week in response.data], [["Neck"], ["Lower back"]])
+
+    def test_filter_by_location(self):
+        response = self.client.get(f"/api/painTrend/?location={self.back.id}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["locations"], ["Lower back"])
+
+    def test_location_with_no_weeks(self):
+        hip = QuestionOption.objects.create(app_section = "my_pain", question_key = "pain_location", text = "Hip")
+        self.assertEqual(self.client.get(f"/api/painTrend/?location={hip.id}").data, [])
+
+
+# Assessment Search Tests
+class AssessmentSearchTests(APITestCase):
+    # GET /api/assessment/?search=&from=&to=
+
+    def setUp(self):
+        self.patient = User.objects.create_user("+61490813123", "Josh", PIN)
+        self.profile = PatientProfile.objects.create(user = self.patient)
+        self.client.force_authenticate(self.patient)
+
+        self.recent = Assessment.objects.create(patient_profile = self.profile, reflection = "Gardening hurt",
+                                                week_starting = current_week_starting() - timedelta(weeks = 1))
+        MyPain.objects.create(assessment = self.recent, current = 4)
+
+        self.older = Assessment.objects.create(patient_profile = self.profile, reflection = "Good week",
+                                               week_starting = current_week_starting() - timedelta(weeks = 3))
+
+    def test_search_pain_area(self):
+        neck = QuestionOption.objects.create(app_section = "my_pain", question_key = "pain_location", text = "Neck")
+        self.recent.my_pain.locations.add(neck)
+        self.assertEqual(len(self.client.get("/api/assessment/?search=neck").data), 1)
+
+    def test_search_no_match(self):
+        self.assertEqual(self.client.get("/api/assessment/?search=swimming").data, [])
+
+    def test_date_range(self):
+        two_weeks_ago = current_week_starting() - timedelta(weeks = 2)
+        self.assertEqual(len(self.client.get(f"/api/assessment/?from={two_weeks_ago}").data), 1)
+        self.assertEqual(len(self.client.get(f"/api/assessment/?to={two_weeks_ago}").data), 1)
