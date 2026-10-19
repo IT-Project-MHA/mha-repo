@@ -141,6 +141,13 @@ class AssessmentRetrieveUpdateDestroy(RecordView, generics.RetrieveUpdateDestroy
         save_without_immutable_changes(serializer, ['week_starting'])
         record(self.request.user, AuditEntry.Action.UPDATE, serializer.instance)
 
+    # Only unsubmitted drafts can be deleeted a submitted week is part of the patient's history
+    def perform_destroy(self, instance):
+        if instance.status != Assessment.Status.DRAFT:
+            raise serializers.ValidationError({'status':'Only a draft assessment can be deleted'})
+        record(self.request.user, AuditEntry.Action.DELETE, instance)
+        instance.delete()
+
 # Assessment task APIs (MyPain, MyMovement, MyPersonalCare, MySocialHealth, MyManagement):
 # each subclass sets its model & serializer_class.
 
@@ -194,6 +201,14 @@ class AssessmentTaskRetrieveUpdateDestroy(RecordView, generics.RetrieveUpdateDes
     def perform_update(self, serializer):
         save_without_immutable_changes(serializer, ['assessment'])
         record(self.request.user, AuditEntry.Action.UPDATE, serializer.instance.assessment)
+
+    # Sections of a submitted assessment can't be deleted either
+    def perform_destroy(self, instance):
+        if instance.assessment.status != Assessment.Status.DRAFT:
+            raise serializers.ValidationError({'assessment':'Only sections of a draft assessment can be deleted'})
+
+        record(self.request.user, AuditEntry.Action.UPDATE, instance.assessment)
+        instance.delete()
 
     # Logged against their assessment
     def audit_target(self, instance):
