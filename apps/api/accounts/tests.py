@@ -973,7 +973,7 @@ class SmsTests(APITestCase):
     def test_prints_code_on_laptop(self):
         with mock.patch("builtins.print") as printed:
             sms.send_sms("+61490813123", "Your code is 123456")
-        printed.assert_called_once_with("+61490813123: Your code is 123456")
+        printed.assert_called_once_with("[SMS] +61490813123: Your code is 123456")
 
     @override_settings(SMS_PROVIDER = "unknown_provider")
     def test_unknown_provider(self):
