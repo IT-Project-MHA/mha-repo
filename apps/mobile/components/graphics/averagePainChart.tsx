@@ -1,7 +1,7 @@
 import { BarChart, LineChart } from "react-native-gifted-charts";
 import { View, ActivityIndicator, Text} from "react-native";
 import { useTheme } from "../../context/ThemeContext";
-import {apiPainHistory} from "../../src/app/api/my_health_api_helpers.js";
+import {apiPainHistory} from "../../src/api/my_health_api_helpers.js";
 import { useEffect, useState } from "react";
 
 //types
