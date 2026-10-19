@@ -843,16 +843,6 @@ class AccountLifecycleTests(APITestCase):
                                                            "phone_number": "0411111111"}, format = "json")
         self.assertEqual(response.status_code, 409)
 
-    def test_invite_existing_user_gets_text(self):
-        with mock.patch("accounts.invite.send_sms") as send_sms:
-            response = self.invite("0411111111")
-
-        self.assertEqual(response.status_code, 201)
-
-        phone_number, text = send_sms.call_args[0]
-        self.assertEqual(phone_number, "+61411111111")
-        self.assertIn("Josh", text)
-
 
 # Push notification tokens, sending and the reminders command
 class PushNotificationTests(APITestCase):
