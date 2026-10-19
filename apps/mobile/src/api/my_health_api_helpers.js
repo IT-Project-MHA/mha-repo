@@ -3,9 +3,12 @@ import {
     apiAssessment,
     apiMyPain,
     apiQuestionOption,
+    apiPrescription,
 } from './django-API';
 
+import {ownPatientProfileId} from './care_planner_api_helpers'
 
+// victorias
 /* Pain values for the suggested questions (PainSummary in constants/suggestedQuestions.ts):
 - takes a patient_profile id, or nothing for the user's own, returns { locations, average, worst,
   mildest, current }
@@ -65,6 +68,7 @@ export async function apiPainSummary(patientProfileId) {
     return summary;
 }
 
+// retrieve pain history
 export async function apiPainHistory(patientProfileId){
     const profileId = patientProfileId ?? (await ownPatientProfileId());
     if (!profileId){
@@ -84,3 +88,4 @@ export async function apiPainHistory(patientProfileId){
         .filter((point) => point.score !== null)
         .sort((a,b) => a.completedAt.localeCompare(b.completedAt));
 }
+

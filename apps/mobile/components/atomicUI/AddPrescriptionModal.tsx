@@ -1,18 +1,107 @@
-import React from "react";
-import {Modal, View, Text, Pressable, StyleSheet} from 'react-native'
+import {useEffect, useState} from "react";
+import {Modal, View, Text, Pressable, StyleSheet, TextInput} from 'react-native'
 import { useTheme, ColourSet } from "../../context/ThemeContext";
 
-type ConfirmModalProps = {
-    visible: boolean;
+/**
+ * props for the modal
+ */
+type Props = {
+    visible: boolean; 
     title: string;
-    message: string;
-    onConfirm: () => void;
+    onConfirm: (values: PrescriptionDetails) => void;
     onCancel: () => void;
 }
 
-const ConfirmModal = ({visible, title, message, onConfirm, onCancel} : ConfirmModalProps) => {
+/**
+ * form fields with keys matching API attribute names from apiPrescription
+ * name, dosage and frequency are required by API
+ */
+export type PrescriptionDetails = {
+    name: string;
+    dosage: string;
+    frequency: string;
+    strength: string;
+    started_on: string;
+    notes: string;
+}
+
+/**
+ * blank form used as initial state and to reset form when modal is closed
+ * will be replaced with initialValues when editing prescriptions
+ */
+const emptyDraft : PrescriptionDetails = {
+    name: '',
+    dosage: '',
+    frequency: '',
+    strength: '',
+    started_on: '',
+    notes: '',
+}
+
+/**
+ * modal which renders the form for adding a prscription (to be extending to editing as well)
+ * collects input and reports it through onConfirm for parent screen (prescriptions.tsx)
+ * to make API call and close modal.
+ */
+const addPrescriptionModal = ({visible, title, onConfirm, onCancel} : Props) => {
     const { theme, colours } = useTheme();
     const styles = createStyles(colours);
+    const [draft, setDraft] = useState<PrescriptionDetails>(emptyDraft); // whats been types into the input fields
+
+    /**
+     * clears form to emptyDraft whenever 'visible' changes (modal is closed)
+     */
+    useEffect(()=>{
+      if (!visible)
+        setDraft(emptyDraft);
+    }, [visible]);
+
+    /**
+     * add button can only be pressed when the three required fields are filled
+     */
+    const canSubmit = draft.name.trim() !== ''&& draft.frequency.trim() !=='' && draft.dosage.trim() !=='';
+
+    /**
+     *handler to update the field when the user types into it
+     */
+    const updateHandler = (field: keyof PrescriptionDetails) => (text: string) => setDraft((prev) => ({...prev, [field]: text}))
+  
+    /**
+     * runs on 'add prescription' button press
+     * breaks input into key value pairs, trims spaces from every value and doesnt include empty fields
+     * passed back to prescriptions.tsx as PrescriptionDetails
+     */
+    const handleConfirmation = () => {
+      const clean = Object.fromEntries(
+        Object.entries(draft)
+        .map(([k,v])=> [k,v.trim()] as [string,string])
+        .filter(([,v])=>v.trim()!=='')
+      ) as PrescriptionDetails
+      onConfirm(clean);
+    };
+
+    const handleCancel = () => {
+      onCancel();
+    };
+  
+    /**
+   * Function to render a text input section (split into sections)
+   */
+    const renderField = (label: string, field: keyof PrescriptionDetails, keyboardType: 'default' | 'numeric' = 'default') => (
+      
+        <View style={styles.field}>
+          <Text style={[theme.h6, theme.leftItems, theme.fontOnSurface]}>{label}</Text>
+          <Text> </Text>
+          <TextInput
+            value={draft[field]}
+            onChangeText={updateHandler(field)}
+            keyboardType={keyboardType}
+            placeholder={label}
+            placeholderTextColor={colours.onSurface}
+            style={[styles.textInput, { color: colours.onSurface, borderColor: colours.onSurface }]}
+          />
+        </View>
+    );
 
   return (
     <Modal
@@ -34,24 +123,25 @@ const ConfirmModal = ({visible, title, message, onConfirm, onCancel} : ConfirmMo
           <Text style={[theme.h4, { color: colours.onSurface }]}>{title}</Text>
           <Text> </Text>
           <Text style={[theme.body, { color: colours.onSurface}]}>
-            {message}
+
           </Text>
 
-          
+          {renderField('Name','name')}
+          {renderField('Dosage','dosage', 'numeric')}
+          {renderField('Frequency','frequency', 'numeric')}
 
           <View style={[styles.buttons, theme.centerItems, theme.row]}>
             <Pressable
               style={[styles.button, { borderColor: colours.onSurface, borderWidth: 1 }]}
-              onPress={onCancel}
-              accessibilityRole="button"
+              onPress={handleCancel}
             >
               <Text style={[theme.body, { color: colours.onSurface }]}>Go Back</Text>
             </Pressable>
 
             <Pressable
-              style={[styles.button, { backgroundColor: colours.primary }]}
-              onPress={onConfirm}
-              accessibilityRole="button"
+              style={[styles.button, { backgroundColor: colours.primary, opacity: canSubmit ? 1:0.4 }]}
+              onPress={handleConfirmation}
+              disabled={!canSubmit}
             >
               <Text style={[theme.body, { color: colours.onPrimary}]}>Add Prescription</Text>
             </Pressable>
@@ -62,7 +152,7 @@ const ConfirmModal = ({visible, title, message, onConfirm, onCancel} : ConfirmMo
   );
 }
 
-export default ConfirmModal;
+export default addPrescriptionModal;
 
 
 
@@ -103,5 +193,16 @@ function createStyles(colours: ColourSet){
           right: 0,
           bottom: 0,
           backgroundColor: 'rgba(0,0,0,0.6)'
-        }
+        },
+        field : {
+          width: '100%',
+          borderRadius: 28,
+          padding: 5,
+        },
+        textInput : {
+          height: 40,
+            padding: 5,
+            marginHorizontal: 8,
+            borderWidth: 1,
+        },
     })};
