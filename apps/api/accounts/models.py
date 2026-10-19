@@ -169,3 +169,11 @@ class TrustedDevice(BaseModel):
     class Meta:
         db_table = "trusted_device"
         constraints = [models.UniqueConstraint(fields = ["user", "device_id"], name = "one_row_per_device")]
+
+# Expo push token for phone notifications
+class PushToken(BaseModel):
+    user = models.ForeignKey(User, on_delete = models.CASCADE, related_name = "push_tokens")
+    token = models.CharField(max_length = 200, unique = True)
+
+    class Meta:
+        db_table = "push_token"

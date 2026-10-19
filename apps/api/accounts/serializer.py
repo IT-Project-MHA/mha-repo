@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, PatientProfile, UserSettings, SupportLink, TermsAndPrivacy, TrustedDevice
+from .models import User, PatientProfile, UserSettings, SupportLink, TermsAndPrivacy, TrustedDevice, PushToken
 from mpowered_api.validators import current_date
 
 from accounts.otp import OTP_LENGTH
@@ -164,3 +164,8 @@ class ResetPinSerializer(serializers.Serializer):
 class ChangePhoneSerializer(serializers.Serializer):
     verification_id = serializers.UUIDField()
     phone_number = PhoneNumberField()
+
+
+class PushTokenSerializer(serializers.Serializer):
+    # The token exp -notifications gives the app
+    token = serializers.RegexField(r"^Expo(nent)?PushToken\[.+\]$", max_length = 200)

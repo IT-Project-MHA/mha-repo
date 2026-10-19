@@ -15,7 +15,9 @@ auth_patterns = [
     path("devices/<uuid:device_pk>/revoke", views.RevokeDeviceView.as_view(), name = "revoke-device"),
 
     path("reset-pin", views.ResetPinView.as_view(), name = "reset-pin"),
-    path("change-phone", views.ChangePhoneView.as_view(), name = "change-phone")
+    path("change-phone", views.ChangePhoneView.as_view(), name = "change-phone"),
+
+    path("push-token", views.PushTokenView.as_view(), name = "push-token")
 ]
 
 # Account data

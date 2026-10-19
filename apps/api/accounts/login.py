@@ -1,7 +1,7 @@
 from rest_framework.authtoken.models import Token
 
 from accounts import devices
-from accounts.models import User
+from accounts.models import User, PushToken
 from accounts.registration import check_verification
 
 
@@ -42,6 +42,7 @@ def login_user(phone_number, pin, device_id, verification_id = None):
 
     # One token per user
     token, _ = Token.objects.get_or_create(user = user)
+    
 
     return user, token
 
@@ -49,3 +50,4 @@ def login_user(phone_number, pin, device_id, verification_id = None):
 def logout_user(user):
     # Delete the token and sign out on every device
     Token.objects.filter(user = user).delete()
+    PushToken.objects.filter(user = user).delete()

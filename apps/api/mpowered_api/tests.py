@@ -11,7 +11,7 @@ from reference.models import QuestionOption
 PIN = "196712"
 
 
-# End to end test - the whole journey through the real endpoints,
+# End to end test, sign up, share assessments to support person
 class PatientAndSupporterFlowTests(APITestCase):
 
     def setUp(self):

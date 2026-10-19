@@ -13,7 +13,7 @@ from mpowered_api.soft_delete import soft_delete
 
 
 from accounts import devices, login, otp, registration, reset_pin
-from accounts.models import PatientProfile, SupportLink, TermsAndPrivacy, TrustedDevice, User, UserSettings
+from accounts.models import PatientProfile, SupportLink, TermsAndPrivacy, TrustedDevice, User, UserSettings, PushToken
 from accounts.rate_limits import PhoneBurstThrottle, PhoneLoginThrottle, PhoneSustainedThrottle
 from accounts.permissions import visible_support_links, visible_patient_profiles
 from accounts.delete import delete_account
@@ -21,7 +21,7 @@ from accounts.invite import *
 
 from accounts.serializer import DeviceListSerializer, LoginSerializer, PatientProfileSerializer, RegisterSerializer, \
     RequestCodeSerializer, ResetPinSerializer, SupportLinkSerializer, TermsAndPrivacySerializer, \
-    TrustedDeviceSerializer, UserSerializer, UserSettingsSerializer, VerifyCodeSerializer, ChangePhoneSerializer
+    TrustedDeviceSerializer, UserSerializer, UserSettingsSerializer, VerifyCodeSerializer, ChangePhoneSerializer, PushTokenSerializer
 
 from audit.models import AuditEntry
 from audit.services import record
@@ -503,4 +503,21 @@ class TrustedDeviceRetrieve(generics.RetrieveAPIView):
 
     def get_queryset(self):
         return TrustedDevice.objects.filter(user = self.request.user)
+
+
+class PushTokenView(APIView):
+    # POST /auth/push-token
+    # Save expo token
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = PushTokenSerializer(data = request.data)
+        serializer.is_valid(raise_exception = True)
+
+        # A phone that signs into a different account moves its token to that account
+        PushToken.objects.update_or_create(token = serializer.validated_data["token"],
+                                           defaults = {"user": request.user})
+
+        return Response(status = status.HTTP_204_NO_CONTENT)
 

@@ -1,6 +1,6 @@
 from django.utils import timezone
 from rest_framework.authtoken.models import Token
-from accounts.models import TrustedDevice
+from accounts.models import TrustedDevice, PushToken
 
 
 def is_trusted(user, device_id):
@@ -37,5 +37,6 @@ def revoke_device(user, device_pk):
         device.save(update_fields = ["revoked_at"])
 
     Token.objects.filter(user = user).delete()
+    PushToken.objects.filter(user = user).delete()
 
     return True

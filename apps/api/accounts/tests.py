@@ -15,6 +15,17 @@ from appointment.models import AppointmentAccess, Appointment
 
 from audit.models import AuditEntry
 
+from io import StringIO
+
+from django.core.management import call_command
+from exponent_server_sdk import DeviceNotRegisteredError
+from requests.exceptions import ConnectionError
+
+from accounts import permissions, push_notification
+from accounts.models import PushToken
+from health.models import Assessment
+from mpowered_api.validators import current_week_starting
+
 PHONE = "+61490813123"
 CODE = "123456"
 WRONG_CODE = "000000"
@@ -340,22 +351,22 @@ class DeviceTests(APITestCase):
     def revoke(self, device):
         return self.client.post(f"/auth/devices/{device.id}/revoke")
 
-    def test_list_my_devices(self):
+    def test_list_devices(self):
         response = self.client.get("/auth/devices")
         self.assertEqual(response.status_code, 200)
         device_ids = {device["device_id"] for device in response.data}
         self.assertEqual(device_ids, {DEVICE, "joshs-ipad"})
-
-    def test_revoked_devices_not_listed(self):
-        TrustedDevice.objects.filter(pk = self.phone.pk).update(revoked_at = timezone.now())
-        response = self.client.get("/auth/devices")
-        self.assertEqual([device["device_id"] for device in response.data], [DEVICE])
 
     def test_revoke_device(self):
         response = self.revoke(self.phone)
         self.assertEqual(response.status_code, 204)
         self.phone.refresh_from_db()
         self.assertIsNotNone(self.phone.revoked_at)
+
+    def test_revoked_devices_not_listed(self):
+        TrustedDevice.objects.filter(pk = self.phone.pk).update(revoked_at = timezone.now())
+        response = self.client.get("/auth/devices")
+        self.assertEqual([device["device_id"] for device in response.data], [DEVICE])
 
     def test_revoke_also_signs_out(self):
         self.revoke(self.phone)
@@ -831,3 +842,67 @@ class AccountLifecycleTests(APITestCase):
         response = self.client.post("/auth/change-phone", {"verification_id": str(verification.id),
                                                            "phone_number": "0411111111"}, format = "json")
         self.assertEqual(response.status_code, 409)
+
+
+# Push notification tokens, sending and the reminders command
+class PushNotificationTests(APITestCase):
+
+    def setUp(self):
+        self.patient = User.objects.create_user(PHONE, "Josh", PIN)
+        self.profile = PatientProfile.objects.create(user = self.patient)
+        self.push_token = PushToken.objects.create(user = self.patient, token = "ExponentPushToken[abc]")
+
+    def register_token(self, token):
+        self.client.force_authenticate(self.patient)
+        return self.client.post("/auth/push-token", {"token": token}, format = "json")
+
+    def run_reminders(self, *flags):
+        with mock.patch("accounts.push_notification.PushClient") as push_client:
+            call_command("send_reminders", *flags, stdout = StringIO())
+        return [call[0][0] for call in push_client.return_value.publish.call_args_list]
+
+    def test_register_token(self):
+        self.assertEqual(self.register_token("ExponentPushToken[new]").status_code, 204)
+        self.assertTrue(PushToken.objects.filter(user = self.patient, token = "ExponentPushToken[new]").exists())
+
+    def test_bad_token(self):
+        self.assertEqual(self.register_token("not-a-token").status_code, 400)
+
+    def test_logout_removes_tokens(self):
+        self.client.force_authenticate(self.patient)
+        self.client.post("/auth/logout")
+        self.assertFalse(PushToken.objects.filter(user = self.patient).exists())
+
+    def test_uninstalled_app_token_removed(self):
+        with mock.patch("accounts.push_notification.PushClient") as push_client:
+            push_client.return_value.publish.return_value.validate_response.side_effect = \
+                DeviceNotRegisteredError(mock.Mock())
+            push_notification.send_push(User.objects.all(), "Title", "Body")
+        self.assertFalse(PushToken.objects.exists())
+
+    def test_assessment_reminder(self):
+        messages = self.run_reminders("--assessments")
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(messages[0].to, "ExponentPushToken[abc]")
+
+    def test_no_reminder_once_submitted(self):
+        Assessment.objects.create(patient_profile = self.profile, week_starting = current_week_starting(),
+                                  status = Assessment.Status.SUBMITTED)
+        self.assertEqual(self.run_reminders("--assessments"), [])
+
+
+    def test_appointment_reminder(self):
+        tomorrow = timezone.now() + timedelta(days = 1)
+        Appointment.objects.create(patient_profile = self.profile, scheduled_date = tomorrow, created_by = self.patient)
+        messages = self.run_reminders("--appointments")
+        self.assertEqual(len(messages), 1)
+        self.assertNotIn("Dr", messages[0].body)
+
+    def test_no_appointment_reminder_next_week(self):
+        Appointment.objects.create(patient_profile = self.profile, scheduled_date = timezone.now() + timedelta(days = 7),
+                                   created_by = self.patient)
+        self.assertEqual(self.run_reminders("--appointments"), [])
+
+    def test_no_reminder_when_notifications_off(self):
+        UserSettings.objects.create(user = self.patient, notifications_enabled = False)
+        self.assertEqual(self.run_reminders("--assessments"), [])
