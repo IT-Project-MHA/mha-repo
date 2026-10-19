@@ -56,7 +56,10 @@ def invite_supporter(patient_user, patient_profile, phone_number, permissions):
     record(patient_user, AuditEntry.Action.SHARE, link)
 
     if supporter is None:
-            send_sms(phone_number, "You've been invited to be a support person on MPOWERED. Sign up in the app with this number to accept.")
+        send_sms(phone_number, "You've been invited to be a support person on MPOWERED. Sign up in the app with this number to accept.")
+    else:
+        send_sms(phone_number, f"{patient_user.display_name} has asked you to be their support person on MPOWERED. Open the app to accept.")
+
     return link
 
 
