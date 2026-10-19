@@ -17,7 +17,7 @@ export default function Page() {
   const { theme } = useTheme();
   function handleSubmit(){
     //FIX: if statement for support onboarding
-    router.navigate("/(tabs)/myHealth")
+    router.navigate("/(tabs)")
   }
   return (
     <View style={theme.screen}>
@@ -26,6 +26,7 @@ export default function Page() {
         <TextEntry 
         onSubmit={handleSubmit}
         placeholder='Type conditions or symptoms that you know'
+        keyboardType='default'
         />
       </View>
     </View>

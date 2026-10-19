@@ -16,10 +16,10 @@ export default function Page() {
   const { theme } = useTheme();
   const setUserOnboaring = useOnboardingUserStore((s)=> s.set);
 
-  function setDisplayName(display_name: string){
-    setUserOnboaring({display_name});
+  function setEmail(email: string){
+    setUserOnboaring({email});
 
-    router.navigate('/(onboarding)/userOnboarding/email')
+    router.navigate('/(onboarding)/userOnboarding/initialPhoneEntry');
   }
 
   return (
@@ -28,13 +28,12 @@ export default function Page() {
       <Text style={theme.text}>Prompts the user to enter their email</Text>
       <View style={theme.container}>
         <TextEntry 
-        onSubmit={setDisplayName}
+        onSubmit={setEmail}
         placeholder='email'
         keyboardType='email-address'
         textContentType='emailAddress'
         />
       </View>
-      
     </View>
   );
 }
