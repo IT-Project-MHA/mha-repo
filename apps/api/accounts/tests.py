@@ -2,6 +2,9 @@ from datetime import timedelta, date
 from unittest import mock
 from types import SimpleNamespace
 
+from django.test import override_settings
+import requests
+
 from django.contrib.auth.hashers import check_password
 from django.core.cache import cache
 from django.utils import timezone
@@ -10,7 +13,7 @@ from rest_framework.authtoken.models import Token
 
 from accounts.models import PhoneVerification, PatientProfile, TermsAndPrivacy, User, UserSettings, TrustedDevice, SupportLink, DeviceToken
 from reference.models import QuestionOption
-from accounts import permissions
+from accounts import permissions, push_notification, sms
 from appointment.models import AppointmentAccess, Appointment
 
 from audit.models import AuditEntry
@@ -950,3 +953,37 @@ class PushNotificationTests(APITestCase):
         self.assertEqual(response.status_code, 200)
         user_settings.refresh_from_db()
         self.assertFalse(user_settings.assessment_reminders)
+
+
+# SMS Tests
+TWILIO_KEYS = {"TWILIO_ACCOUNT_SID": "TEST", "TWILIO_AUTH_TOKEN": "secret", "TWILIO_FROM_NUMBER": "+61400000000"}
+
+class SmsTests(APITestCase):
+
+    @override_settings(SMS_PROVIDER = "twilio", **TWILIO_KEYS)
+    def test_sends_through_twilio(self):
+        with mock.patch("accounts.sms.requests.post") as post:
+            sms.send_sms("+61490813123", "Your code is 123456")
+
+        self.assertIn("TEST", post.call_args[0][0])
+        self.assertEqual(post.call_args[1]["auth"], ("TEST", "secret"))
+        self.assertEqual(post.call_args[1]["data"], {"To": "+61490813123", "From": "+61400000000", "Body": "Your code is 123456"})
+
+    @override_settings(SMS_PROVIDER = "console", DEBUG = True)
+    def test_prints_code_on_laptop(self):
+        with mock.patch("builtins.print") as printed:
+            sms.send_sms("+61490813123", "Your code is 123456")
+        printed.assert_called_once_with("+61490813123: Your code is 123456")
+
+    @override_settings(SMS_PROVIDER = "unknown_provider")
+    def test_unknown_provider(self):
+        with self.assertLogs("accounts.sms", level = "ERROR"):
+            sms.send_sms("+61490813123", "Your code is 123456")
+
+    @override_settings(SMS_PROVIDER = "random_provider")
+    def test_new_provider_can_be_added(self):
+        random_provider = mock.Mock()
+        with mock.patch.dict(sms.PROVIDERS, {"random_provider": random_provider}):
+            sms.send_sms("+61490813123", "Hello")
+
+        random_provider.assert_called_once_with("+61490813123", "Hello")
