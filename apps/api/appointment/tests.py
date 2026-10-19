@@ -7,7 +7,7 @@ from rest_framework.test import APITestCase
 
 from accounts import permissions
 from accounts.models import PatientProfile, SupportLink, User, DeviceToken, TrustedDevice
-from appointment.models import Appointment, AppointmentAccess, AppointmentQuestion
+from appointment.models import Appointment, AppointmentAccess, AppointmentAnswer, AppointmentQuestion
 
 from audit.models import AuditEntry
 
@@ -67,10 +67,20 @@ class GrantAccessTests(APITestCase):
         self.assertEqual(AppointmentAccess.objects.count(), 1)
         self.assertTrue(AppointmentAccess.objects.get().can_record_answers)
 
-    def test_supporter_must_accept_invite_first(self):
-        _, invited_link = self.add_supporter("+61422222222", SupportLink.Status.INVITED)
+    def test_invited_link_can_be_granted_but_has_no_access_yet(self):
+        invited, invited_link = self.add_supporter("+61422222222", SupportLink.Status.INVITED)
         response = self.grant(invited_link, can_add_questions = True)
-        self.assertEqual(response.data["detail"], "link_not_active")
+        self.assertEqual(response.status_code, 201)
+        self.assertFalse(permissions.can_add_question(invited, self.appointment))
+
+        # starts working once the link is active
+        SupportLink.objects.filter(pk = invited_link.pk).update(status = SupportLink.Status.ACTIVE)
+        self.assertTrue(permissions.can_add_question(invited, self.appointment))
+
+    def test_revoked_link_cannot_be_granted(self):
+        _, revoked_link = self.add_supporter("+61422222222", SupportLink.Status.REVOKED)
+        response = self.grant(revoked_link, can_add_questions = True)
+        self.assertEqual(response.data["detail"], "link_revoked")
         self.assertFalse(AppointmentAccess.objects.exists())
 
     def test_support_link_for_another_patient(self):
@@ -140,8 +150,8 @@ class GrantAccessTests(APITestCase):
         self.assertTrue(AuditEntry.objects.filter(action = AuditEntry.Action.REVOKE).exists())
 
     def test_refused_grant_not_audited(self):
-        _, invited_link = self.add_supporter("+61422222222", SupportLink.Status.INVITED)
-        self.grant(invited_link)
+        _, revoked_link = self.add_supporter("+61422222222", SupportLink.Status.REVOKED)
+        self.grant(revoked_link)
         self.assertFalse(AuditEntry.objects.exists())
 
 
@@ -186,6 +196,161 @@ class AppointmentSwitchTests(APITestCase):
         self.update_link(can_view_appointments = True)
         response = self.client.patch(f"/api/appointment/{self.appointment.pk}", {"doctor": "Dr Who"}, format = "json")
         self.assertEqual(response.status_code, 404)
+
+# Soft delete tests
+class SoftDeleteTests(APITestCase):
+    # DELETE /api/appointment/{id}, /api/appointmentQuestion/{id}, /api/appointmentAnswer/{id}
+
+    def setUp(self):
+        # Patient with an answered question and a supporter given access
+        self.patient = User.objects.create_user("+61490813123", "Josh", PIN)
+        self.profile = PatientProfile.objects.create(user = self.patient)
+        self.appointment = Appointment.objects.create(
+            patient_profile = self.profile, scheduled_date = timezone.now(), created_by = self.patient,
+        )
+        self.question = AppointmentQuestion.objects.create(
+            appointment = self.appointment, text = "Why?", created_by = self.patient,
+        )
+        self.answer = AppointmentAnswer.objects.create(
+            question = self.question, text = "Because", recorded_by = self.patient,
+        )
+        self.supporter = User.objects.create_user("+61411111111", "Mum", PIN)
+        self.link = SupportLink.objects.create(
+            patient_profile = self.profile, patient_user = self.patient,
+            supporter_user = self.supporter, status = SupportLink.Status.ACTIVE,
+        )
+        self.access = AppointmentAccess.objects.create(appointment = self.appointment, support_link = self.link)
+        self.client.force_authenticate(self.patient)
+
+    def refresh(self):
+        for record in (self.appointment, self.question, self.answer):
+            record.refresh_from_db()
+
+    def test_delete_appointment_soft_deletes_questions_and_answers(self):
+        response = self.client.delete(f"/api/appointment/{self.appointment.pk}")
+        self.assertEqual(response.status_code, 204)
+        self.refresh()
+        self.assertTrue(self.appointment.is_deleted())
+        self.assertTrue(self.question.is_deleted())
+        self.assertTrue(self.answer.is_deleted())
+
+    def test_appointment_with_access_can_be_deleted(self):
+        # access is kept as a record, it used to stop the appointment being deleted
+        self.client.delete(f"/api/appointment/{self.appointment.pk}")
+        self.assertTrue(AppointmentAccess.objects.filter(pk = self.access.pk).exists())
+
+    def test_deleted_appointment_hidden(self):
+        self.client.delete(f"/api/appointment/{self.appointment.pk}")
+        self.assertEqual(len(self.client.get("/api/appointment/").data), 0)
+        self.assertEqual(self.client.get(f"/api/appointment/{self.appointment.pk}").status_code, 404)
+        self.assertEqual(len(self.client.get(f"/api/appointmentQuestion/?appointment={self.appointment.pk}").data), 0)
+        self.assertEqual(len(self.client.get(f"/api/appointmentAnswer/?question={self.question.pk}").data), 0)
+        self.assertEqual(len(self.client.get("/api/appointmentAccess/").data), 0)
+
+    def test_deleted_appointment_hidden_from_supporter(self):
+        self.client.delete(f"/api/appointment/{self.appointment.pk}")
+        self.client.force_authenticate(self.supporter)
+        self.assertEqual(len(self.client.get("/api/appointment/").data), 0)
+
+    def test_deleted_appointment_cannot_be_changed(self):
+        self.client.delete(f"/api/appointment/{self.appointment.pk}")
+        response = self.client.patch(f"/api/appointment/{self.appointment.pk}", {"doctor": "Dr Who"}, format = "json")
+        self.assertEqual(response.status_code, 404)
+
+    def test_cannot_add_question_to_deleted_appointment(self):
+        self.client.delete(f"/api/appointment/{self.appointment.pk}")
+        response = self.client.post("/api/appointmentQuestion/", {
+            "appointment": str(self.appointment.pk), "text": "Another?",
+        }, format = "json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_delete_question_soft_deletes_answer(self):
+        response = self.client.delete(f"/api/appointmentQuestion/{self.question.pk}")
+        self.assertEqual(response.status_code, 204)
+        self.refresh()
+        self.assertFalse(self.appointment.is_deleted())
+        self.assertTrue(self.question.is_deleted())
+        self.assertTrue(self.answer.is_deleted())
+
+    def test_question_order_restarts_after_deleting_all(self):
+        self.client.delete(f"/api/appointmentQuestion/{self.question.pk}")
+        response = self.client.post("/api/appointmentQuestion/", {
+            "appointment": str(self.appointment.pk), "text": "New first?",
+        }, format = "json")
+        self.assertEqual(response.data["order_index"], 0)
+
+    def test_new_answer_after_deleting_answer(self):
+        self.assertEqual(self.client.delete(f"/api/appointmentAnswer/{self.answer.pk}").status_code, 204)
+        response = self.client.post("/api/appointmentAnswer/", {
+            "question": str(self.question.pk), "text": "Changed my mind",
+        }, format = "json")
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(AppointmentAnswer.objects.get().text, "Changed my mind")
+
+    def test_question_still_has_one_answer(self):
+        response = self.client.post("/api/appointmentAnswer/", {
+            "question": str(self.question.pk), "text": "Second answer",
+        }, format = "json")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(AppointmentAnswer.objects.count(), 1)
+
+    def test_deleted_at_cannot_be_set_directly(self):
+        self.client.patch(f"/api/appointment/{self.appointment.pk}",
+                          {"deleted_at": timezone.now().isoformat()}, format = "json")
+        self.refresh()
+        self.assertFalse(self.appointment.is_deleted())
+
+
+# Questions with answers tests
+class QuestionsWithAnswersTests(APITestCase):
+    # GET /api/appointmentQuestion/?appointment={id} includes each question's answer
+
+    def setUp(self):
+        self.patient = User.objects.create_user("+61490813123", "Josh", PIN)
+        self.profile = PatientProfile.objects.create(user = self.patient)
+        self.appointment = Appointment.objects.create(
+            patient_profile = self.profile, scheduled_date = timezone.now(), created_by = self.patient,
+        )
+        self.answered = AppointmentQuestion.objects.create(
+            appointment = self.appointment, text = "Why?", created_by = self.patient, order_index = 0,
+        )
+        self.unanswered = AppointmentQuestion.objects.create(
+            appointment = self.appointment, text = "How?", created_by = self.patient, order_index = 1,
+        )
+        self.answer = AppointmentAnswer.objects.create(
+            question = self.answered, text = "Because", recorded_by = self.patient,
+        )
+        self.client.force_authenticate(self.patient)
+
+    def list_questions(self):
+        return self.client.get(f"/api/appointmentQuestion/?appointment={self.appointment.pk}").data
+
+    def test_answer_included(self):
+        answered, unanswered = self.list_questions()
+        self.assertEqual(answered["answer"]["id"], str(self.answer.pk))
+        self.assertEqual(answered["answer"]["text"], "Because")
+        self.assertIsNone(unanswered["answer"])
+
+    def test_deleted_answer_not_included(self):
+        self.client.delete(f"/api/appointmentAnswer/{self.answer.pk}")
+        self.assertIsNone(self.list_questions()[0]["answer"])
+
+    def test_single_question_includes_answer(self):
+        response = self.client.get(f"/api/appointmentQuestion/{self.answered.pk}")
+        self.assertEqual(response.data["answer"]["text"], "Because")
+
+    def test_one_query_however_many_questions(self):
+        # answers are loaded with the questions, not one query per question
+        with self.assertNumQueries(1):
+            self.list_questions()
+        for number in range(5):
+            question = AppointmentQuestion.objects.create(
+                appointment = self.appointment, text = f"Q{number}", created_by = self.patient,
+            )
+            AppointmentAnswer.objects.create(question = question, text = "A", recorded_by = self.patient)
+        with self.assertNumQueries(1):
+            self.list_questions()
+
 
 class AnswerPermissionTests(APITestCase):
     # POST /api/appointmentAnswer/ 

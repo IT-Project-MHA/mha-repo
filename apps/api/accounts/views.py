@@ -399,6 +399,8 @@ class SupportLinkListCreate(generics.ListCreateAPIView):
             query_set = query_set.filter(status = query_status)
         return query_set.distinct()
 
+    # an invited phone number that already has an account is linked to it straight away, otherwise
+    # it is linked when that number registers. Either way the supporter has to accept the invite
     def perform_create(self, serializer):
         user = self.request.user
         data = serializer.validated_data

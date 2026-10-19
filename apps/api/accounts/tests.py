@@ -629,6 +629,126 @@ class PhoneNumberTests(APITestCase):
         self.assertEqual(response.status_code, 200)
 
 
+
+class InviteTests(APITestCase):
+    # POST /api/supportLink/ with invited_phone_number
+    # POST /auth/register links invites sent to the new account's phone number
+
+    INVITED = "+61433333333"
+
+    def setUp(self):
+        cache.clear()
+        self.patient = User.objects.create_user(PHONE, "Josh", PIN)
+        self.profile = PatientProfile.objects.create(user = self.patient)
+        self.appointment = Appointment.objects.create(
+            patient_profile = self.profile, scheduled_date = timezone.now(), created_by = self.patient,
+        )
+        self.client.force_authenticate(self.patient)
+
+    def invite(self, phone_number):
+        return self.client.post("/api/supportLink/", {"invited_phone_number": phone_number}, format = "json")
+
+    def register(self, phone_number):
+        # Sign up as a new user with a verified phone number
+        self.client.force_authenticate(None)
+        verification = PhoneVerification.objects.create(
+            phone_number = phone_number, code = "hash", expires_at = timezone.now(), used_at = timezone.now(),
+        )
+        return self.client.post("/auth/register", {
+            "verification_id": str(verification.id),
+            "phone_number": phone_number,
+            "display_name": "Mum",
+            "pin": PIN,
+            "accepted_terms": True,
+            "accepted_privacy": True,
+            "device_id": DEVICE,
+        }, format = "json")
+
+    def test_invite_saved_in_account_format(self):
+        response = self.invite("0433 333 333")
+        self.assertEqual(response.status_code, 201)
+        link = SupportLink.objects.get()
+        self.assertEqual(link.invited_phone_number, self.INVITED)
+        self.assertEqual(link.status, SupportLink.Status.INVITED)
+        self.assertIsNone(link.supporter_user)
+
+    def test_invite_not_a_phone_number(self):
+        self.assertEqual(self.invite("12345").status_code, 400)
+        self.assertFalse(SupportLink.objects.exists())
+
+    def test_invite_existing_account_links_but_waits_for_accept(self):
+        supporter = User.objects.create_user(self.INVITED, "Mum", PIN)
+        response = self.invite("0433333333")
+        self.assertEqual(response.status_code, 201)
+        link = SupportLink.objects.get()
+        self.assertEqual(link.supporter_user, supporter)
+        self.assertEqual(link.status, SupportLink.Status.INVITED)
+        self.assertIsNone(link.accepted_at)
+
+    def test_cannot_invite_own_number(self):
+        self.assertEqual(self.invite(PHONE).status_code, 400)
+        self.assertFalse(SupportLink.objects.exists())
+
+    def test_cannot_invite_same_number_twice(self):
+        self.invite(self.INVITED)
+        self.assertEqual(self.invite("0433333333").status_code, 400)
+        self.assertEqual(SupportLink.objects.count(), 1)
+
+    def test_cannot_invite_existing_supporter_again(self):
+        User.objects.create_user(self.INVITED, "Mum", PIN)
+        self.invite(self.INVITED)
+        self.assertEqual(self.invite(self.INVITED).status_code, 400)
+        self.assertEqual(SupportLink.objects.count(), 1)
+
+    def test_register_links_invite(self):
+        self.invite(self.INVITED)
+        self.assertEqual(self.register(self.INVITED).status_code, 201)
+        link = SupportLink.objects.get()
+        self.assertEqual(link.supporter_user, User.objects.get(phone_number = self.INVITED))
+        self.assertEqual(link.status, SupportLink.Status.INVITED)
+        self.assertIsNone(link.accepted_at)
+
+    def test_registered_supporter_can_see_and_accept_invite(self):
+        self.invite(self.INVITED)
+        self.register(self.INVITED)
+        link = SupportLink.objects.get()
+        self.client.force_authenticate(User.objects.get(phone_number = self.INVITED))
+        self.assertEqual(len(self.client.get("/api/supportLink/").data), 1)
+        response = self.client.patch(f"/api/supportLink/{link.pk}", {"status": "active"}, format = "json")
+        self.assertEqual(response.status_code, 200)
+
+    def test_appointment_access_starts_after_accept(self):
+        self.invite(self.INVITED)
+        link = SupportLink.objects.get()
+        AppointmentAccess.objects.create(appointment = self.appointment, support_link = link, can_add_questions = True)
+        self.register(self.INVITED)
+        supporter = User.objects.get(phone_number = self.INVITED)
+        self.assertFalse(permissions.can_view_appointment(supporter, self.appointment))
+
+        SupportLink.objects.filter(pk = link.pk).update(status = SupportLink.Status.ACTIVE)
+        self.assertTrue(permissions.can_view_appointment(supporter, self.appointment))
+        self.assertTrue(permissions.can_add_question(supporter, self.appointment))
+        self.assertFalse(permissions.can_record_answer(supporter, self.appointment))
+
+    def test_register_ignores_other_numbers(self):
+        self.invite(self.INVITED)
+        self.register("+61444444444")
+        link = SupportLink.objects.get()
+        self.assertIsNone(link.supporter_user)
+        self.assertEqual(link.status, SupportLink.Status.INVITED)
+
+    def test_link_shows_both_names(self):
+        User.objects.create_user(self.INVITED, "Mum", PIN)
+        self.invite(self.INVITED)
+        link = self.client.get("/api/supportLink/").data[0]
+        self.assertEqual(link["patient_name"], self.patient.display_name)
+        self.assertEqual(link["supporter_name"], "Mum")
+
+    def test_invite_without_account_has_no_supporter_name(self):
+        self.invite(self.INVITED)
+        self.assertIsNone(self.client.get("/api/supportLink/").data[0]["supporter_name"])
+
+
 class MissingFieldTests(APITestCase):
     # Check every endpoint rejects a request missing a field
 

@@ -141,6 +141,29 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_ROOT = BASE_DIR / 'media'
 
+
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
+
+if os.environ.get("STORAGE_BUCKET"):
+    STORAGES["default"] = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "bucket_name": os.environ["STORAGE_BUCKET"],
+            "endpoint_url": os.environ.get("STORAGE_ENDPOINT_URL"),
+            "access_key": os.environ.get("STORAGE_ACCESS_KEY_ID"),
+            "secret_key": os.environ.get("STORAGE_SECRET_ACCESS_KEY"),
+            "region_name": os.environ.get("STORAGE_REGION", "auto"),
+            # private bucket, files are only reached through the app
+            "default_acl": "private",
+            "querystring_auth": True,
+            # never replace an existing recording that has the same name
+            "file_overwrite": False,
+        },
+    }
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 

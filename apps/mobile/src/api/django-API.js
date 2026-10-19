@@ -1,13 +1,25 @@
-// replace with active base URL before deployment
-const BASE_URL = "http://localhost:8000/api";
+// replace with active server URL before deployment. EXPO_PUBLIC_SERVER_URL in apps/mobile/.env
+// overrides it for local testing
+const SERVER_URL = process.env.EXPO_PUBLIC_SERVER_URL ?? "http://localhost:8000";
+const BASE_URL = `${SERVER_URL}/api`;
+
+// DEV ONLY until login is built: token of a local test user from apps/mobile/.env, sent with
+// every request
+const DEV_TOKEN = process.env.EXPO_PUBLIC_DEV_TOKEN;
+
+// helper function: returns the headers that tell the server who the user is, as an object of
+// header names & values ({} without a token)
+function authHeaders() {
+    return Object.fromEntries(DEV_TOKEN ? [['Authorization', `Token ${DEV_TOKEN}`]] : []);
+}
 
 /* Instructions:
 Call the function for the relevant table in the format api`TableName`(2) with operation values
 from {'select', 'create', 'update', 'delete'}, followed by an object of attribute values. Each
 function returns the response data (a record or an array of records for 'select' without id),
-or null for 'delete'. The exceptions are reference tables (QuestionOption, QuestionOptionOrdered)
-which can only be selected, AuditEntry which can only be selected & created, and TextChoices 
-(dropdown text fields in UI) (e.g. apiHealthService) which take no parameters and only select.
+or null for 'delete'. The exceptions are reference tables (QuestionOption, QuestionOptionOrdered),
+AuditEntry and TrustedDevice which can only be selected, and TextChoices (dropdown text fields in
+UI) (e.g. apiHealthService) which take no parameters and only select.
 
 - select: pass id to read one record, otherwise the other attributes given are used as filters
           (?attribute_name=value) and an array is returned.
@@ -56,13 +68,15 @@ export class ApiError extends Error {
     }
 }
 
-async function request(method, path, body) {
+// baseUrl is BASE_URL for the /api endpoints, or SERVER_URL for endpoints outside /api
+async function request(method, path, body, baseUrl = BASE_URL) {
     // FormData bodies (file uploads) set their own multipart Content-Type
     const isFormData = body instanceof FormData;
-    const response = await fetch(`${BASE_URL}/${path}`, {
+    const response = await fetch(`${baseUrl}/${path}`, {
         method: method,
         headers: {
             ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+            ...authHeaders(),
             Accept: 'application/json',
         },
         // undefined if the operation is delete
@@ -193,25 +207,13 @@ export async function apiSupportLink(operation, values) {
 - update: N/A
 - delete: N/A NN */
 export async function apiTermsAndPrivacy(operation, values) {
-    return operate('termsAndPrivacy', operation, values,  ['select', 'create']);
-}
-
-/* PhoneVerification:
-- create: phone_number NN
-    - phone_number must be local Australian number with no spaces
-    - code, attempts, used_at, expires_at are auto generated
-- select/update/delete: N/A */
-export async function apiPhoneVerification(operation, values) {
-    return operate('phoneVerification', operation, values, ['create']);
+    return operate('termsAndPrivacy', operation, values);
 }
 
 /* TrustedDevice:
 - select: id, or no filters (only returns own devices)
-- create: device_id NN, label
-    - user is set to the user's own, last_seen_at is auto updated
-- update: id NN, label, revoked_at
-    - user & device_id cannot be changed
-- delete: id NN */
+- create/update/delete: N/A, a device is trusted when the user logs in or registers on it, and
+  revoked through POST /auth/devices/{id}/revoke */
 export async function apiTrustedDevice(operation, values) {
     return operate('trustedDevice', operation, values);
 }
@@ -319,7 +321,7 @@ export async function apiMyManagement(operation, values) {
 - update: id NN, scheduled_date, doctor, status, health_service, notes
     - patient_profile & created_by cannot be changed
     - user can only update their own appointments where they are a patient
-- delete: id NN */
+- soft delete: id NN */
 export async function apiAppointment(operation, values) {
     return operate('appointment', operation, values);
 }
@@ -327,6 +329,7 @@ export async function apiAppointment(operation, values) {
 /* AppointmentQuestion:
 - select: id, or filter by appointment NN
     - can only see one's own appointment questions or patient's appointment questions
+    - each question includes its answer (an AppointmentAnswer, see below), or answer: null
 - create: appointment NN, text NN, source, is_selected
     - created_by is set to the user, order_index is auto generated
     - patient, or supporter with can_add_questions=true in AppointmentAccess can create
@@ -336,7 +339,7 @@ export async function apiAppointment(operation, values) {
     - appointment, source, created_by cannot be changed
     - if user is supporter: source can be SUPPORT (default) or SUGGESTED, can only create if 
       can_add_questions=True in AppointmentAccess
-- delete: id NN
+- soft delete: id NN
     - same as update */
 export async function apiAppointmentQuestion(operation, values) {
     return operate('appointmentQuestion', operation, values);
@@ -352,26 +355,74 @@ export async function apiAppointmentQuestion(operation, values) {
       { uri: 'file:///.../answer.m4a', name: 'answer.m4a', type: 'audio/m4a' }
       (audio only, max 20 MB). It is returned as a download URL that needs the user to have
       access to the answer.
+    - a recording can only be saved while the doctor has given permission (see
+      apiAppointmentDoctorPermission), a typed answer doesn't need it
 - update: id NN, text, recording_file, transcript
     - question cannot be changed
     - recording_file: null removes the recording    
     - patient, or supporter with can_record_answers=true in AppointmentAccess can create
-- delete: id NN
-    - patient only */
+- soft delete: id NN
+    - patient only
+    - if another answer is created, the old answer is permanently deleted */
 export async function apiAppointmentAnswer(operation, values) {
     return operate('appointmentAnswer', operation, values);
 }
 
+/* AppointmentAnswerRecording:
+- select: id NN (the answer's id)
+    - returns the answer's recording as an audio source for expo-audio's useAudioPlayer,
+      { uri, headers }. The download needs the user's token, which is in headers
+    - not async, as the audio player downloads it
+    - can only get one's own appointment's recordings or patient's appointment's recordings
+- create/update/delete: N/A, use recording_file of AppointmentAnswer */
+export function apiAppointmentAnswerRecording(operation, values) {
+    if (operation != 'select') {
+        throw new Error(`Operation '${operation}' is not allowed for appointmentAnswerRecording`);
+    }
+    return { uri: `${BASE_URL}/appointmentAnswer/${values.id}/recording`, headers: authHeaders() };
+}
+
+/* AppointmentDoctorPermission:
+- select: id NN (the appointment's id)
+    - returns the appointment's doctor_permission & doctor_signature
+    - patient, or supporter with can_record_answers=true in AppointmentAccess
+- update: id NN, doctor_signature NN
+    - the doctor signs to give permission to record their answers, doctor_signature is a PNG
+      data URL. doctor_permission is set to true
+    - same as select
+- delete: id NN
+    - takes the permission back, which deletes the recordings of every answer in the
+      appointment. The appointment itself is kept
+    - same as select
+- create: N/A, use update */
+export async function apiAppointmentDoctorPermission(operation, values) {
+    return operate('appointmentDoctorPermission', operation, values);
+}
+
 /* AppointmentAccess:
 - select: id, or filter by appointment, support_link (returns access for own appointments &
-          access given to user)
-- create: appointment NN, support_link NN, can_add_questions NN, can_record_answers NN
-    - appointment must be the user's own, support_link must be an active link of the same patient
+          access given to user, including revoked ones with revoked_at set)
+- create: appointment NN, support_link NN, can_add_questions, can_record_answers
+    - grants access, or if the support_link already has access to the appointment, replaces
+      its can_add_questions & can_record_answers (a flag left out is set to false)
+    - appointment must be the user's own, support_link must be an active or invited link of the
+      same patient. An invited link's access starts working once the invite is accepted
     - granted_at is auto generated
-- update: id NN, can_add_questions, can_record_answers, revoked_at
-    - appointment, support_link & granted_at cannot be changed
-- delete: id NN */
-export async function apiAppointmentAccess(operation, values) {
+- update: N/A, use create to change the access flags
+- delete: appointment NN, id NN
+    - revokes the access (revoked_at is set, the record is kept) */
+export async function apiAppointmentAccess(operation, values = {}) {
+    const { id, appointment, support_link, ...flags } = values;
+
+    if (operation == 'create') {
+        return request('POST', `appointments/${appointment}/access`,
+                       { support_link_id: support_link, ...flags }, SERVER_URL);
+    } else if (operation == 'delete') {
+        return request('POST', `appointments/${appointment}/access/${id}/revoke`, undefined,
+                       SERVER_URL);
+    } else if (operation == 'update') {
+        throw new Error("Operation 'update' is not allowed for appointmentAccess, use 'create'");
+    }
     return operate('appointmentAccess', operation, values);
 }
 
@@ -379,25 +430,23 @@ export async function apiAppointmentAccess(operation, values) {
 - select: id, or filter by app_section NN, question_key NN
 - create/update/delete: N/A, edit reference data through Django admin */
 export async function apiQuestionOption(operation, values) {
-    return operate('questionOption', operation, values, ['select']);
+    return operate('questionOption', operation, values);
 }
 
 /* QuestionOptionOrdered:
 - select: id, or filter by app_section NN, question_key NN
 - create/update/delete: N/A, edit reference data through Django admin */
 export async function apiQuestionOptionOrdered(operation, values) {
-    return operate('questionOptionOrdered', operation, values, ['select']);
+    return operate('questionOptionOrdered', operation, values);
 }
 
 /* AuditEntry:
-- select: id, or no filters (only returns own audit entries)
-- create: action NN, target_type NN, target_id, patient_profile, audit_label, occurred_at,
-          context
-    - audit_user is set to the user
-    - patient_profile must be the user's own
-- update/delete: N/A */
+- select: id, or no filters (returns entries the user made & entries about the user's own
+          records)
+- create/update/delete: N/A, the server records audit entries itself, e.g. when appointment
+  access is given */
 export async function apiAuditEntry(operation, values) {
-    return operate('auditEntry', operation, values, ['select', 'create']);
+    return operate('auditEntry', operation, values);
 }
 
 

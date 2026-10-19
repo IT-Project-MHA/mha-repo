@@ -10,22 +10,38 @@ class AppointmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Appointment
         fields = '__all__'
-        read_only_fields = ['patient_profile', 'created_by']
+        # deleted_at is only set by deleting the appointment, the doctor's permission only through
+        # AppointmentDoctorPermissionRetrieveUpdateDestroy
+        read_only_fields = ['patient_profile', 'created_by', 'deleted_at', 'doctor_permission',
+                            'doctor_signature']
 
     def validate_scheduled_date(self, scheduled_date):
         return validate_not_past(scheduled_date)
 
 class AppointmentQuestionSerializer(serializers.ModelSerializer):
+    # the question's answer, so a page gets the questions & their answers in one request
+    answer = serializers.SerializerMethodField()
+
     class Meta:
         model = AppointmentQuestion
         fields = '__all__'
-        read_only_fields = ['created_by']
+        read_only_fields = ['created_by', 'deleted_at']
+
+    # null when the question has no answer, or its answer was deleted
+    def get_answer(self, question):
+        answer = getattr(question, 'question_answer', None)
+        if answer is None or answer.is_deleted():
+            return None
+        return AppointmentAnswerSerializer(answer, context = self.context).data
 
 class AppointmentAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = AppointmentAnswer
         fields = '__all__'
-        read_only_fields = ['recorded_by']
+        read_only_fields = ['recorded_by', 'deleted_at']
+        # one answer per question is checked by the view instead, so a soft deleted answer doesn't
+        # stop a new one being recorded
+        extra_kwargs = {'question': {'validators': []}}
 
     def validate_recording_file(self, recording_file):
         if recording_file is None:
@@ -55,6 +71,29 @@ class AppointmentAccessSerializer(serializers.ModelSerializer):
     def validate_revoked_at(self, revoked_at):
         return validate_not_future(revoked_at)
     
+MAX_SIGNATURE_LENGTH = 2 * 1024 * 1024 # 2 MB of text
+
+class AppointmentDoctorPermissionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Appointment
+        fields = ['id', 'doctor_permission', 'doctor_signature']
+        # doctor_permission is given by saving a signature & taken back by deleting
+        read_only_fields = ['id', 'doctor_permission']
+
+    # the doctor's signature as a PNG data URL, as the app's signature canvas gives it
+    def validate_doctor_signature(self, doctor_signature):
+        if not doctor_signature.startswith('data:image/png;base64,'):
+            raise serializers.ValidationError('Signature must be a PNG image.')
+        if len(doctor_signature) > MAX_SIGNATURE_LENGTH:
+            raise serializers.ValidationError('Signature must be 2 MB or smaller.')
+        return doctor_signature
+
+    # a signature is required, also for partial updates
+    def validate(self, data):
+        if 'doctor_signature' not in data:
+            raise serializers.ValidationError({'doctor_signature':'This field is required.'})
+        return data
+
 class GrantAccessSerializer(serializers.Serializer):
     support_link_id = serializers.UUIDField()
     can_add_questions = serializers.BooleanField(default = False)
