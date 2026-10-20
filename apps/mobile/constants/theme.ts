@@ -77,6 +77,16 @@ const createTheme = (colours: ColourSet) =>
       alignSelf: 'center',
 
     },
+
+    lineWithMargin: {
+      height: 1,
+      backgroundColor: colours.onSurface,
+      width: '90%',
+      borderRadius: 300,
+      alignSelf: 'center',
+      margin: 10
+
+    },
     // clear container with pa
     clearContainer: {
       justifyContent: 'center',
@@ -125,6 +135,16 @@ const createTheme = (colours: ColourSet) =>
     rightText: {
       textAlign: 'right',
       paddingHorizontal: '5%',
+    },
+    // for use within a container
+    topText: {
+      textAlignVertical: 'top',
+      paddingVertical: '5%',
+    },
+    // for use within a container
+    bottomText: {
+      textAlignVertical: 'bottom',
+      paddingVertical: '5%',
     },
     // for use within a container
     centerItems: {
