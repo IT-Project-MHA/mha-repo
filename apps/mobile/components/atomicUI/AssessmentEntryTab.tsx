@@ -5,18 +5,22 @@ import { useTheme } from "../../context/ThemeContext";
 import Button from "../atomicUI/Button";
 import { AssessmentProps } from "../baseComponents/Assessment";
 
-export default function AssessmentEntryTab() {
+type AssessmentEntryProps = {
+    onButtonPress: () => void;
+    props?: AssessmentProps;
+}
+
+export default function AssessmentEntryTab({onButtonPress, props}: AssessmentEntryProps) {
+    const { theme } = useTheme();
     return(
-        <SafeAreaView style={{flexDirection: "row"}}>
-            <View style={{flex: 5}}>
+        <SafeAreaView style={[theme.clearContainer, {flexDirection: "row"}, {padding: 5}]}>
+            <View style={{justifyContent: "flex-start"}}>
                 {/* build the box in here, around everything else */}
-                <Text>{properties.title}</Text>
-                <Text>optional - last completed</Text>
+                <Text style={theme.fontOnSurface}>title here</Text>
+                <Text style={theme.fontOnSurface}>optional - last completed</Text>
             </View>
-            <View style={{flex: 3}}>
-                <Button label="Record->" onPress={() => {
-                    //stuffinhere
-                }} buttonType="borderedTransparentButton"/> // create an outline button
+            <View style={{justifyContent: "flex-end"}}>
+                <Button label="Record->" onPress={onButtonPress} buttonType="borderedTransparentButton"/>
             </View>
         </SafeAreaView>
     )
