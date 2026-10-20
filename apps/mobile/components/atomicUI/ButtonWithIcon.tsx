@@ -5,7 +5,7 @@ import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import {Ionicons, IoniconsIconName} from '@react-native-vector-icons/ionicons'
 
-type ButtonType = "primaryButton" | "secondaryButton" | "squareButtonWithLine" | "transparentButton";
+type ButtonType = "primaryButton" | "secondaryButton" | "roundButton" | "roundSecondaryButton" | "squareButtonWithLine" | "transparentButton";
 
 /**
  * defines the required input on button creation
@@ -15,7 +15,7 @@ type ButtonType = "primaryButton" | "secondaryButton" | "squareButtonWithLine" |
  * <Button
         label="light mode"
         onPress={() => setMode('light')}
-        buttonType="primaryButton"
+        buttonType="roundButton"
         name="alarm"
     />
  */

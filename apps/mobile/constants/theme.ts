@@ -1,6 +1,6 @@
 import { StyleSheet } from "react-native";
 import { lightColours, darkColours, lightHcColours, darkHcColours, ColourSet } from "./colourScheme";
-import { primaryButtonLayout, buttonLayout, textLayout, squareButtonWithLineLayout, transparentButtonLayout, textButtonLayout } from "./layout";
+import { primaryButtonLayout, buttonLayout, textLayout, squareButtonWithLineLayout, transparentButtonLayout, textButtonLayout, roundButtonLayout, lineThickness } from "./layout";
 
 /**
  * Builds a style sheet for each theme, using colour schemes defined in colourScheme.ts
@@ -30,6 +30,18 @@ const createTheme = (colours: ColourSet) =>
     secondaryButton: {
       backgroundColor: colours.secondary,
       ...buttonLayout,
+    },
+    roundButton: {
+      backgroundColor: colours.tertiary,
+      ...roundButtonLayout,
+    },
+    roundSecondaryButton: {
+      backgroundColor: colours.background,
+      ...roundButtonLayout,
+      borderWidth: 1,
+      borderTopWidth: 1,
+      borderBottomWidth: 1,
+      borderColor: colours.onSurface,
     },
     screen: {
       flex: 1,
@@ -65,7 +77,7 @@ const createTheme = (colours: ColourSet) =>
 
     // divider
     line: {
-      height: 1,
+      height: lineThickness,
       backgroundColor: colours.onSurface,
       width: '90%',
       borderRadius: 300,

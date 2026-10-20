@@ -79,7 +79,7 @@ function NumberEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
           onPress={() => {
             onSubmit;
           }}
-          buttonType="primaryButton"
+          buttonType="roundButton"
         />
       </View>
     </SafeAreaView>

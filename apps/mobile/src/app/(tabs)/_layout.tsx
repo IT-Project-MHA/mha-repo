@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import {Ionicons} from '@react-native-vector-icons/ionicons'
 import { StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, ColourSet } from '../../../context/ThemeContext';
 import { useUser } from '../../../context/AuthorisationContext';
 
@@ -14,13 +15,19 @@ export default function TabLayout() {
     const {colours,theme} = useTheme();
     const styles = createStyles(colours);
     const {isPatient} = useUser();
+    // height of the Android nav bar / iPhone home indicator, 0 when there is none
+    const insets = useSafeAreaInsets();
 
   return (
     <Tabs
       screenOptions={{
         tabBarStyle: {
           ...styles.floatingTabBar,
+          height: 70 + insets.bottom,
+          paddingBottom: insets.bottom,
         },
+        // centres each icon & label between the top of the nav bar and the system nav bar
+        tabBarItemStyle: styles.tabItem,
         tabBarShowLabel: true,
         tabBarLabelStyle: {
           ...theme.xSmall,
@@ -102,21 +109,16 @@ export default function TabLayout() {
  */
 function createStyles(colours: ColourSet){
     return StyleSheet.create({
-    // the tab buttons
     tabItem: {
       justifyContent: 'center',
   },
 
-  // the nav bar
   floatingTabBar: {
-    bottom: '4%',
+    bottom: 0,
     position: 'absolute',
     height: 70,
-  
-    flexDirection: 'row',
-    alignItems: 'center',
 
-    borderRadius: 100,
+    borderRadius: 0,
     borderTopWidth: 0,     
     borderBottomWidth: 0, 
 
