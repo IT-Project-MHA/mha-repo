@@ -53,7 +53,12 @@ export const transparentButtonLayout = {
 }
 
 export const borderedTransparentButtonLayout = {
-  alignItms: 'center' as const,
+  alignItems: 'center' as const,
+  justifyContent: 'center' as const,
+  margin: 5,
+  padding: 5,
+  borderWidth: 1,
+  borderRadius: 50
 }
 export const textButtonLayout = {
   alignItems: 'center' as const,
