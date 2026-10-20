@@ -101,7 +101,7 @@ class GrantAccessSerializer(serializers.Serializer):
 
 
 class AccessGrantSerializer(serializers.ModelSerializer):
-
+    supporter_name = serializers.CharField(source = "support_link.supporter_user.display_name", read_only = True)
     class Meta:
         model = AppointmentAccess
-        fields = ["id", "support_link", "can_add_questions", "can_record_answers", "granted_at", "revoked_at"]
+        fields = ["id", "support_link", "supporter_name", "can_add_questions", "can_record_answers", "granted_at", "revoked_at"]

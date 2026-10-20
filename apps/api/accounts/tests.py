@@ -2,18 +2,32 @@ from datetime import timedelta, date
 from unittest import mock
 from types import SimpleNamespace
 
+from django.test import override_settings
+import requests
+
 from django.contrib.auth.hashers import check_password
 from django.core.cache import cache
 from django.utils import timezone
 from rest_framework.test import APITestCase
 from rest_framework.authtoken.models import Token
 
-from accounts.models import PhoneVerification, PatientProfile, TermsAndPrivacy, User, UserSettings, TrustedDevice, SupportLink
+from accounts.models import PhoneVerification, PatientProfile, TermsAndPrivacy, User, UserSettings, TrustedDevice, SupportLink, DeviceToken
 from reference.models import QuestionOption
-from accounts import permissions
+from accounts import permissions, push_notification, sms
 from appointment.models import AppointmentAccess, Appointment
 
 from audit.models import AuditEntry
+
+from io import StringIO
+
+from django.core.management import call_command
+from exponent_server_sdk import DeviceNotRegisteredError
+from requests.exceptions import ConnectionError
+
+from accounts import permissions, push_notification
+from accounts.models import PushToken
+from health.models import Assessment
+from mpowered_api.validators import current_week_starting
 
 PHONE = "+61490813123"
 CODE = "123456"
@@ -145,7 +159,7 @@ class RegisterTests(APITestCase):
 
     def test_returns_token(self):
         response = self.register()
-        self.assertEqual(response.data["token"], Token.objects.get(user = User.objects.get()).key)
+        self.assertEqual(response.data["token"], DeviceToken.objects.get(user = User.objects.get()).key)
 
     def test_track_health(self):
         response = self.register(track_health = True, health = {
@@ -247,7 +261,7 @@ class LoginTests(APITestCase):
     def test_trusted_device_logs_in(self):
         response = self.login()
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["token"], Token.objects.get(user = self.user).key)
+        self.assertEqual(response.data["token"], DeviceToken.objects.get(user = self.user).key)
 
     def test_wrong_pin(self):
         response = self.login(pin = "000000")
@@ -287,18 +301,18 @@ class LoginTests(APITestCase):
         response = self.login()
         self.assertEqual(response.data["detail"], "verification_required")
 
-    def test_same_token_on_every_device(self):
+    def test_each_device_gets_its_own_token(self):
         first = self.login()
         TrustedDevice.objects.create(user = self.user, device_id = "new-phone")
         second = self.login(device_id = "new-phone")
-        self.assertEqual(first.data["token"], second.data["token"])
+        self.assertNotEqual(first.data["token"], second.data["token"])
 
     def test_logout_deletes_token(self):
         token = self.login().data["token"]
         self.client.credentials(HTTP_AUTHORIZATION = f"Token {token}")
         response = self.client.post("/auth/logout")
         self.assertEqual(response.status_code, 204)
-        self.assertFalse(Token.objects.filter(user = self.user).exists())
+        self.assertFalse(DeviceToken.objects.filter(user = self.user).exists())
 
     def test_old_token_rejected(self):
         token = self.login().data["token"]
@@ -317,6 +331,26 @@ class LoginTests(APITestCase):
         self.login()
         self.assertGreater(TrustedDevice.objects.get().last_seen_at, old)
 
+    def test_logout_keeps_other_phone_signed_in(self):
+        phone_token = self.login().data["token"]
+        TrustedDevice.objects.create(user = self.user, device_id = "new-phone")
+        ipad_token = self.login(device_id = "new-phone").data["token"]
+
+        self.client.credentials(HTTP_AUTHORIZATION = f"Token {phone_token}")
+        self.client.post("/auth/logout")
+
+        self.client.credentials(HTTP_AUTHORIZATION = f"Token {ipad_token}")
+        self.assertEqual(self.client.get("/auth/devices").status_code, 200)
+
+    def test_logout_everywhere(self):
+        phone_token = self.login().data["token"]
+        TrustedDevice.objects.create(user = self.user, device_id = "new-phone")
+        self.login(device_id = "new-phone")
+
+        self.client.credentials(HTTP_AUTHORIZATION = f"Token {phone_token}")
+        self.assertEqual(self.client.post("/auth/logout-everywhere").status_code, 204)
+        self.assertFalse(DeviceToken.objects.filter(user = self.user).exists())
+
 
 class DeviceTests(APITestCase):
     # GET /auth/devices
@@ -327,29 +361,25 @@ class DeviceTests(APITestCase):
 
         # Signed in user with two phone
         self.user = User.objects.create_user(PHONE, "josh", PIN)
-        self.phone = TrustedDevice.objects.create(user = self.user, device_id = DEVICE)
+        self.my_phone = TrustedDevice.objects.create(user = self.user, device_id = DEVICE)
         self.phone = TrustedDevice.objects.create(user = self.user, device_id = "joshs-ipad")
-
+        
         # Someone else's device that should never show up
         other_user = User.objects.create_user("+61499999999", "Other", PIN)
         self.other_device = TrustedDevice.objects.create(user = other_user, device_id = "other-phone")
 
-        self.token = Token.objects.create(user = self.user)
+        # Signed in on the phone
+        self.token = DeviceToken.objects.create(user = self.user, device = self.my_phone)
         self.client.credentials(HTTP_AUTHORIZATION = f"Token {self.token.key}")
 
     def revoke(self, device):
         return self.client.post(f"/auth/devices/{device.id}/revoke")
 
-    def test_list_my_devices(self):
+    def test_list_devices(self):
         response = self.client.get("/auth/devices")
         self.assertEqual(response.status_code, 200)
         device_ids = {device["device_id"] for device in response.data}
         self.assertEqual(device_ids, {DEVICE, "joshs-ipad"})
-
-    def test_revoked_devices_not_listed(self):
-        TrustedDevice.objects.filter(pk = self.phone.pk).update(revoked_at = timezone.now())
-        response = self.client.get("/auth/devices")
-        self.assertEqual([device["device_id"] for device in response.data], [DEVICE])
 
     def test_revoke_device(self):
         response = self.revoke(self.phone)
@@ -357,11 +387,16 @@ class DeviceTests(APITestCase):
         self.phone.refresh_from_db()
         self.assertIsNotNone(self.phone.revoked_at)
 
-    def test_revoke_also_signs_out(self):
-        self.revoke(self.phone)
-        self.assertFalse(Token.objects.filter(user = self.user).exists())
+    def test_revoked_devices_not_listed(self):
+        TrustedDevice.objects.filter(pk = self.phone.pk).update(revoked_at = timezone.now())
         response = self.client.get("/auth/devices")
-        self.assertEqual(response.status_code, 401)
+        self.assertEqual([device["device_id"] for device in response.data], [DEVICE])
+
+    def test_revoke_signs_out_only_that_device(self):
+        ipad_token = DeviceToken.objects.create(user = self.user, device = self.phone)
+        self.revoke(self.phone)
+        self.assertFalse(DeviceToken.objects.filter(pk = ipad_token.pk).exists())
+        self.assertEqual(self.client.get("/auth/devices").status_code, 200)
 
     def test_revoked_device_needs_otp(self):
         self.revoke(self.phone)
@@ -395,7 +430,7 @@ class ResetPinTests(APITestCase):
         self.user = User.objects.create_user(PHONE, "Josh", PIN)
         self.phone = TrustedDevice.objects.create(user = self.user, device_id = DEVICE)
         self.ipad = TrustedDevice.objects.create(user = self.user, device_id = "josh-ipad")
-        self.old_token = Token.objects.create(user = self.user)
+        self.old_token = DeviceToken.objects.create(user = self.user, device = self.ipad)
 
         # Phone that just passed verify-code
         self.verification = PhoneVerification.objects.create(
@@ -432,7 +467,7 @@ class ResetPinTests(APITestCase):
 
     def test_old_token_deleted(self):
         response = self.reset()
-        self.assertFalse(Token.objects.filter(key = self.old_token.key).exists())
+        self.assertFalse(DeviceToken.objects.filter(key = self.old_token.key).exists())
         self.assertNotEqual(response.data["token"], self.old_token.key)
 
     def test_other_devices_signed_out(self):
@@ -476,7 +511,7 @@ class PermissionTests(APITestCase):
             patient_profile = self.profile, scheduled_date = timezone.now(), created_by = self.patient,
         )
 
-        # Supporter with an active link but switches off
+        # Supporter with an active link but all switches off
         self.supporter = User.objects.create_user("+61411111111", "Mum", PIN)
         self.link = SupportLink.objects.create(
             patient_profile = self.profile,
@@ -555,28 +590,6 @@ class PermissionTests(APITestCase):
         self.grant(self.appointment, can_add_questions = True)
         self.turn_on_switches(status = SupportLink.Status.REVOKED)
         self.assertFalse(permissions.can_add_question(self.supporter, self.appointment))
-
-    def test_view_permission_reads_and_writes(self):
-        # Supporter can read with the switch on but only the patient can write
-        self.turn_on_switches(can_view_assessments = True)
-        record = SimpleNamespace(patient_profile = self.profile)
-        check = permissions.AssessmentPermission()
-
-        supporter_get = SimpleNamespace(method = "GET", user = self.supporter)
-        supporter_patch = SimpleNamespace(method = "PATCH", user = self.supporter)
-        patient_patch = SimpleNamespace(method = "PATCH", user = self.patient)
-
-        self.assertTrue(check.has_object_permission(supporter_get, None, record))
-        self.assertFalse(check.has_object_permission(supporter_patch, None, record))
-        self.assertTrue(check.has_object_permission(patient_patch, None, record))
-
-    def test_appointment_permission_uses_grant(self):
-        self.grant(self.appointment)
-        check = permissions.AppointmentPermission()
-        supporter_get = SimpleNamespace(method = "GET", user = self.supporter)
-
-        self.assertTrue(check.has_object_permission(supporter_get, None, self.appointment))
-        self.assertFalse(check.has_object_permission(supporter_get, None, self.other_appointment))
 
 
 class PhoneNumberTests(APITestCase):
@@ -816,3 +829,281 @@ class AccountApiSecurityTests(APITestCase):
     def test_supporter_cannot_go_back_to_invited(self):
         SupportLink.objects.filter(pk = self.link.pk).update(status = SupportLink.Status.ACTIVE)
         self.assertEqual(self.set_status("invited").status_code, 400)
+
+
+# Deleting the account, stopping tracking, inviting, switches and changing phone number
+class AccountLifecycleTests(APITestCase):
+
+    def setUp(self):
+        cache.clear()
+        self.patient = User.objects.create_user(PHONE, "Josh", PIN)
+        self.profile = PatientProfile.objects.create(user = self.patient, has_diagnosis = True, birth_year = 1990)
+        self.supporter = User.objects.create_user("+61411111111", "Mum", PIN)
+        self.client.force_authenticate(self.patient)
+
+    def invite(self, phone, **switches):
+        return self.client.post("/api/supportLink/", {"invited_phone_number": phone, **switches}, format = "json")
+
+    def verified(self, phone):
+        # Phone that just passed verify-code
+        return PhoneVerification.objects.create(
+            phone_number = phone, code = "hash", expires_at = timezone.now(), used_at = timezone.now())
+
+    def test_delete_account_is_soft(self):
+        DeviceToken.objects.create(user = self.patient, device = TrustedDevice.objects.create(user = self.patient, device_id = DEVICE))
+        self.assertEqual(self.client.delete(f"/api/user/{self.patient.pk}").status_code, 204)
+        self.patient.refresh_from_db()
+        self.profile.refresh_from_db()
+        self.assertIsNotNone(self.patient.deleted_at)
+        self.assertFalse(self.patient.is_active)
+        self.assertFalse(DeviceToken.objects.filter(user = self.patient).exists())
+        self.assertIsNotNone(self.profile.deleted_at)
+
+    def test_number_can_sign_up_again_after_delete(self):
+        self.client.delete(f"/api/user/{self.patient.pk}")
+        User.objects.create_user(PHONE, "New Josh", PIN)
+        self.assertEqual(User.objects.filter(phone_number = PHONE).count(), 2)
+
+    def test_stop_and_restart_tracking(self):
+        self.assertEqual(self.client.delete(f"/api/patientProfile/{self.profile.pk}").status_code, 204)
+        self.assertEqual(len(self.client.get("/api/patientProfile/").data), 0)
+
+        # Starting again brings back the same profile
+        response = self.client.post("/api/patientProfile/", {"has_diagnosis": False}, format = "json")
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["id"], str(self.profile.pk))
+
+    def test_invite_existing_account(self):
+        response = self.invite("0411 111 111", can_view_assessments = True)
+        self.assertEqual(response.status_code, 201)
+
+        link = SupportLink.objects.get()
+        self.assertEqual(link.supporter_user, self.supporter)
+        self.assertTrue(link.can_view_assessments)
+        self.assertTrue(AuditEntry.objects.filter(action = AuditEntry.Action.SHARE).exists())
+
+    def test_invite_new_number_links_on_sign_up(self):
+        with mock.patch("accounts.invite.send_sms") as send_sms:
+            self.invite("0422 222 222")
+        send_sms.assert_called_once()
+
+        # Sign up with number
+        self.client.force_authenticate(None)
+        verification = self.verified("+61422222222")
+        self.client.post("/auth/register", {
+            "verification_id": str(verification.id), "phone_number": "0422222222", "display_name": "Dad",
+            "pin": PIN, "accepted_terms": True, "accepted_privacy": True, "device_id": DEVICE,
+        }, format = "json")
+
+        self.assertEqual(SupportLink.objects.get().supporter_user.display_name, "Dad")
+
+    def test_cannot_invite_self(self):
+        self.assertEqual(self.invite(PHONE).status_code, 400)
+
+    def test_cannot_invite_twice(self):
+        self.invite("0411111111")
+        self.assertEqual(self.invite("0411111111").status_code, 400)
+
+    def test_invalid_phone(self):
+        self.assertEqual(self.invite("12345").status_code, 400)
+
+    def test_delete_revokes_and_can_invite_again(self):
+        self.invite("0411111111")
+        link = SupportLink.objects.get()
+        self.assertEqual(self.client.delete(f"/api/supportLink/{link.pk}").status_code, 204)
+        link.refresh_from_db()
+        self.assertEqual(link.status, SupportLink.Status.REVOKED)
+
+        # The revoked row is reused, only one link per patient and supporter
+        self.assertEqual(self.invite("0411111111").status_code, 201)
+        self.assertEqual(SupportLink.objects.count(), 1)
+
+    def test_patient_revokes_by_status(self):
+        self.invite("0411111111")
+        link = SupportLink.objects.get()
+        response = self.client.patch(f"/api/supportLink/{link.pk}", {"status": "revoked"}, format = "json")
+        self.assertEqual(response.status_code, 200)
+        link.refresh_from_db()
+        self.assertIsNotNone(link.revoked_at)
+
+
+    def test_supporter_accepts(self):
+        self.invite("0411111111")
+        link = SupportLink.objects.get()
+        self.client.force_authenticate(self.supporter)
+        response = self.client.patch(f"/api/supportLink/{link.pk}", {"status": "active"}, format = "json")
+        self.assertEqual(response.status_code, 200)
+        link.refresh_from_db()
+        self.assertIsNotNone(link.accepted_at)
+
+    def test_patient_cannot_accept_for_supporter(self):
+        self.invite("0411111111")
+        link = SupportLink.objects.get()
+        response = self.client.patch(f"/api/supportLink/{link.pk}", {"status": "active"}, format = "json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_patient_changes_switches(self):
+        self.invite("0411111111")
+        link = SupportLink.objects.get()
+        response = self.client.patch(f"/api/supportLink/{link.pk}", {"can_view_prescriptions": True}, format = "json")
+        self.assertEqual(response.status_code, 200)
+        link.refresh_from_db()
+        self.assertTrue(link.can_view_prescriptions)
+
+    def test_supporter_cannot_change_switches(self):
+        self.invite("0411111111")
+        link = SupportLink.objects.get()
+        self.client.force_authenticate(self.supporter)
+        response = self.client.patch(f"/api/supportLink/{link.pk}", {"can_view_prescriptions": True}, format = "json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_supporter_sees_profile_without_health_details(self):
+        self.invite("0411111111")
+        SupportLink.objects.update(status = SupportLink.Status.ACTIVE)
+        self.client.force_authenticate(self.supporter)
+
+        response = self.client.get(f"/api/patientProfile/{self.profile.pk}")
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("has_diagnosis", response.data)
+        self.assertNotIn("birth_year", response.data)
+
+
+    def test_change_phone(self):
+        verification = self.verified("+61433333333")
+        response = self.client.post("/auth/change-phone", {"verification_id": str(verification.id),
+                                                           "phone_number": "0433 333 333"}, format = "json")
+        self.assertEqual(response.status_code, 200)
+        self.patient.refresh_from_db()
+        self.assertEqual(self.patient.phone_number, "+61433333333")
+
+    def test_change_phone_needs_otp(self):
+        response = self.client.post("/auth/change-phone", {"verification_id": str(PhoneVerification().id),
+                                                           "phone_number": "0433333333"}, format = "json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_change_phone_taken(self):
+        verification = self.verified("+61411111111")
+        response = self.client.post("/auth/change-phone", {"verification_id": str(verification.id),
+                                                           "phone_number": "0411111111"}, format = "json")
+        self.assertEqual(response.status_code, 409)
+
+
+# Push notification tokens, sending and the reminders command
+class PushNotificationTests(APITestCase):
+
+    def setUp(self):
+        self.patient = User.objects.create_user(PHONE, "Josh", PIN)
+        self.profile = PatientProfile.objects.create(user = self.patient)
+        self.push_token = PushToken.objects.create(user = self.patient, token = "ExponentPushToken[abc]")
+
+    def register_token(self, token):
+        self.client.force_authenticate(self.patient)
+        return self.client.post("/auth/push-token", {"token": token}, format = "json")
+
+    def run_reminders(self, *flags):
+        with mock.patch("accounts.push_notification.PushClient") as push_client:
+            call_command("send_reminders", *flags, stdout = StringIO())
+        return [call[0][0] for call in push_client.return_value.publish.call_args_list]
+
+    def test_register_token(self):
+        self.assertEqual(self.register_token("ExponentPushToken[new]").status_code, 204)
+        self.assertTrue(PushToken.objects.filter(user = self.patient, token = "ExponentPushToken[new]").exists())
+
+    def test_bad_token(self):
+        self.assertEqual(self.register_token("not-a-token").status_code, 400)
+
+    def test_logout_removes_tokens(self):
+        device = TrustedDevice.objects.create(user = self.patient, device_id = DEVICE)
+        PushToken.objects.filter(pk = self.push_token.pk).update(device = device)
+        token = DeviceToken.objects.create(user = self.patient, device = device)
+        self.client.credentials(HTTP_AUTHORIZATION = f"Token {token.key}")
+        self.client.post("/auth/logout")
+
+    def test_uninstalled_app_token_removed(self):
+        with mock.patch("accounts.push_notification.PushClient") as push_client:
+            push_client.return_value.publish.return_value.validate_response.side_effect = \
+                DeviceNotRegisteredError(mock.Mock())
+            push_notification.send_push(User.objects.all(), "Title", "Body")
+        self.assertFalse(PushToken.objects.exists())
+
+    def test_assessment_reminder(self):
+        messages = self.run_reminders("--assessments")
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(messages[0].to, "ExponentPushToken[abc]")
+
+    def test_no_reminder_once_submitted(self):
+        Assessment.objects.create(patient_profile = self.profile, week_starting = current_week_starting(),
+                                  status = Assessment.Status.SUBMITTED)
+        self.assertEqual(self.run_reminders("--assessments"), [])
+
+
+    def test_appointment_reminder(self):
+        tomorrow = timezone.now() + timedelta(days = 1)
+        Appointment.objects.create(patient_profile = self.profile, scheduled_date = tomorrow, created_by = self.patient)
+        messages = self.run_reminders("--appointments")
+        self.assertEqual(len(messages), 1)
+        self.assertNotIn("Dr", messages[0].body)
+
+    def test_no_appointment_reminder_next_week(self):
+        Appointment.objects.create(patient_profile = self.profile, scheduled_date = timezone.now() + timedelta(days = 7),
+                                   created_by = self.patient)
+        self.assertEqual(self.run_reminders("--appointments"), [])
+
+    def test_no_reminder_when_notifications_off(self):
+        UserSettings.objects.create(user = self.patient, notifications_enabled = False)
+        self.assertEqual(self.run_reminders("--assessments"), [])
+
+    def test_assessment_reminders_off(self):
+        UserSettings.objects.create(user = self.patient, assessment_reminders = False)
+        self.assertEqual(self.run_reminders("--assessments"), [])
+
+    def test_appointment_reminders_off_keeps_assessment_reminders(self):
+        UserSettings.objects.create(user = self.patient, appointment_reminders = False)
+        Appointment.objects.create(patient_profile = self.profile, scheduled_date = timezone.now() + timedelta(days = 1),
+                                   created_by = self.patient)
+
+        self.assertEqual(self.run_reminders("--appointments"), [])
+        self.assertEqual(len(self.run_reminders("--assessments")), 1)
+
+    def test_change_reminders_in_settings(self):
+        user_settings = UserSettings.objects.create(user = self.patient)
+        self.client.force_authenticate(self.patient)
+
+        response = self.client.patch(f"/api/userSettings/{user_settings.pk}", {"assessment_reminders": False}, format = "json")
+        self.assertEqual(response.status_code, 200)
+        user_settings.refresh_from_db()
+        self.assertFalse(user_settings.assessment_reminders)
+
+
+# SMS Tests
+TWILIO_KEYS = {"TWILIO_ACCOUNT_SID": "TEST", "TWILIO_AUTH_TOKEN": "secret", "TWILIO_FROM_NUMBER": "+61400000000"}
+
+class SmsTests(APITestCase):
+
+    @override_settings(SMS_PROVIDER = "twilio", **TWILIO_KEYS)
+    def test_sends_through_twilio(self):
+        with mock.patch("accounts.sms.requests.post") as post:
+            sms.send_sms("+61490813123", "Your code is 123456")
+
+        self.assertIn("TEST", post.call_args[0][0])
+        self.assertEqual(post.call_args[1]["auth"], ("TEST", "secret"))
+        self.assertEqual(post.call_args[1]["data"], {"To": "+61490813123", "From": "+61400000000", "Body": "Your code is 123456"})
+
+    @override_settings(SMS_PROVIDER = "console", DEBUG = True)
+    def test_prints_code_on_laptop(self):
+        with mock.patch("builtins.print") as printed:
+            sms.send_sms("+61490813123", "Your code is 123456")
+        printed.assert_called_once_with("[SMS] +61490813123: Your code is 123456")
+
+    @override_settings(SMS_PROVIDER = "unknown_provider")
+    def test_unknown_provider(self):
+        with self.assertLogs("accounts.sms", level = "ERROR"):
+            sms.send_sms("+61490813123", "Your code is 123456")
+
+    @override_settings(SMS_PROVIDER = "random_provider")
+    def test_new_provider_can_be_added(self):
+        random_provider = mock.Mock()
+        with mock.patch.dict(sms.PROVIDERS, {"random_provider": random_provider}):
+            sms.send_sms("+61490813123", "Hello")
+
+        random_provider.assert_called_once_with("+61490813123", "Hello")

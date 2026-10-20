@@ -1,7 +1,10 @@
 from rest_framework.permissions import SAFE_METHODS, BasePermission
+from django.db.models import Q
 
-from accounts.models import SupportLink
-from appointment.models import AppointmentAccess
+from accounts.models import SupportLink, PatientProfile
+from appointment.models import AppointmentAccess, Appointment
+from health.models import Prescription, Assessment
+from audit.models import AuditEntry
 
 
 def is_owner(user, patient_profile):
@@ -20,7 +23,7 @@ def supporter_allowed(user, patient_profile, **switches):
 
 
 def has_access(user, appointment, **flags):
-    # True if user has a live access for this appointment through an active support link
+    # True if user has a live access for this appointment through active support link
     return AppointmentAccess.objects.filter(
         appointment = appointment,
         support_link__supporter_user = user,
@@ -60,30 +63,57 @@ def can_edit_patient_data(user, patient_profile):
     return is_owner(user, patient_profile)
 
 
-class PatientRecordPermission(BasePermission):
-    # Base for views of one patient's records
-    # Reads use can_view and writes are patient only
+# Returns set of appointment access records that user can access
+def visible_appointment_access(user):
+    return AppointmentAccess.objects.filter(
+            Q(appointment__patient_profile__user = user) |
+            Q(support_link__supporter_user = user)
+        )
 
-    def can_view(self, user, record):
-        return False
-
-    def has_object_permission(self, request, view, obj):
-        if request.method in SAFE_METHODS:
-            return self.can_view(request.user, obj)
-
-        return can_edit_patient_data(request.user, obj.patient_profile)
-
-
-class AssessmentPermission(PatientRecordPermission):
-    def can_view(self, user, record):
-        return can_view_assessments(user, record.patient_profile)
-
-
-class PrescriptionPermission(PatientRecordPermission):
-    def can_view(self, user, record):
-        return can_view_prescriptions(user, record.patient_profile)
+# Returns set of appointments that user can access (own, or granted access
+# through an active support link that hasn't been revoked)
+def visible_appointments(user):
+    return Appointment.objects.filter(
+            Q(patient_profile__user = user) | 
+            Q(patient_profile__support_links__supporter_user = user,
+              patient_profile__support_links__status = SupportLink.Status.ACTIVE,
+              patient_profile__support_links__can_view_appointments = True) |
+            Q(access_grants__support_link__supporter_user = user,
+              access_grants__support_link__status = SupportLink.Status.ACTIVE,
+              access_grants__revoked_at__isnull = True)).filter(deleted_at__isnull = True, patient_profile__deleted_at__isnull = True)
 
 
-class AppointmentPermission(PatientRecordPermission):
-    def can_view(self, user, record):
-        return can_view_appointment(user, record)
+# helper function: returns set of patient profiles that user can access
+def visible_patient_profiles(user):
+    # filter own profile or profiles of patients that user supports
+    return PatientProfile.objects.filter(
+            Q(user = user) |
+            Q(support_links__supporter_user = user,
+              support_links__status = SupportLink.Status.ACTIVE)
+        ).filter(deleted_at__isnull = True)
+
+
+# helper function: returns set of support links that user can access
+def visible_support_links(user):
+    return SupportLink.objects.filter(Q(patient_user = user) | Q(supporter_user = user))
+
+def visible_prescriptions(user):
+    return Prescription.objects.filter(
+            Q(patient_profile__user = user) |
+            Q(patient_profile__support_links__supporter_user = user,
+              patient_profile__support_links__status = SupportLink.Status.ACTIVE,
+              patient_profile__support_links__can_view_prescriptions = True)
+        )
+
+
+# helper function: returns set of assessments that user can access
+def visible_assessments(user):
+    return Assessment.objects.filter(
+            Q(patient_profile__user = user) |
+            Q(patient_profile__support_links__supporter_user = user,
+              patient_profile__support_links__status = SupportLink.Status.ACTIVE,
+              patient_profile__support_links__can_view_assessments = True)).filter(patient_profile__deleted_at__isnull = True)
+
+
+def visible_audit_entries(user):
+    return AuditEntry.objects.filter(Q(audit_user = user) | Q(patient_profile__user = user))
