@@ -287,7 +287,7 @@ function createStyles(colours: ColourSet, text: Typography, bottomInset: number)
 
     divider: {
       borderTopWidth: lineThickness,
-      borderTopColor: colours.ex3,
+      borderTopColor: colours.secondary2,
     },
 
     selectedRow: {
