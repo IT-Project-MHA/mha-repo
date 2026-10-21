@@ -48,7 +48,8 @@ export function createTypography(scale: FontScale): Typography {
     scaledText[key] ={
       ...baseFeatures,
       fontSize: baseFeatures.fontSize*scale,
-      lineHeight: baseFeatures.lineHeight*(scale/1.5)
+      // 1.25x the font size leaves room for the tails of letters like g & y
+      lineHeight: baseFeatures.fontSize*scale*1.25
     };
   });
   return scaledText;

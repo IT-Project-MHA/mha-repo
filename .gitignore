@@ -14,3 +14,12 @@ __pycache__/
 package-lock.json
 apps/mobile/package.json
 
+# SQL lite
+db.sqlite3
+*.sqlite3
+
+# Uploaded files (patient recordings)
+apps/api/media/
+
+# Local device DB
+*.db

@@ -1,7 +1,12 @@
 /**
  * Colour schemes across themes light / dark / light HC / dark HC
- * Themes can easily be extended, either by matching the 
- * ColourSet type, or by adjusting it.
+ * 
+ * 'on' colours can be used as text on their counterparts (primary/onPrimary etc.) meeting
+ *  WCAG contrast standards.
+ * 
+ *  '2' colours are alternate versions to their counterparts (primary/primary2)
+ *  and can be used for components, etc. against the background.
+ * 
  */
 export type ColourSet = {
   background: string;
@@ -14,10 +19,12 @@ export type ColourSet = {
   onPrimary: string;
   onSecondary: string;
   onTertiary: string;
-  ex1: string;
-  ex2: string;
-  ex3: string;
-
+  primary2: string;
+  secondary2: string;
+  tertiary2: string;
+  onPrimary2: string;
+  onSecondary2: string;
+  onTertiary2: string;
 };
 
 /**
@@ -31,13 +38,16 @@ export const lightColours: ColourSet = {
   tertiary: '#79b0c6',
   onBackground: '#1d1b20',
   onSurface: '#35313b',
-  onPrimary: '#fff9f9',
-  onSecondary: '#fff9f9',
-  onTertiary: '#fff9f9',
-  ex1: '#ff7f74', // a brighter coral
-  ex2: '#5292ab', // a deeper teal
-  ex3: '#d0ab59', // shaded yellow
-  
+  onPrimary: '#1d1b20', 
+  onSecondary: '#1d1b20',
+  onTertiary: '#1d1b20',
+
+  primary2: '#b8483f',
+  secondary2: '#866826',
+  tertiary2: '#417387', 
+  onPrimary2: '#feeeec', 
+  onSecondary2: '#fdf0d3',
+  onTertiary2: '#dff5fd',
 };
 
 /**
@@ -54,9 +64,13 @@ export const darkColours: ColourSet = {
   onPrimary: '#1d1b20',
   onSecondary: '#1d1b20',
   onTertiary: '#1d1b20',
-  ex1: '#ff7f74', // a brighter coral
-  ex2: '#5292ab', // a deeper teal
-  ex3: '#d0ab59', // shaded yellow
+
+  primary2: '#b8483f',
+  secondary2: '#866826',
+  tertiary2: '#417387', 
+  onPrimary2: '#feeeec', 
+  onSecondary2: '#fdf0d3',
+  onTertiary2: '#dff5fd',
 };
 
 /**
@@ -65,17 +79,21 @@ export const darkColours: ColourSet = {
 export const lightHcColours: ColourSet = {
   background: '#fff9f9',
   surface: '#fff9f9',
-  primary: '#ff6254',
-  secondary: '#b1eb10',
+  primary: '#ff7466',
+  secondary: '#ffd23f',
   tertiary: '#48cbff',
   onBackground: '#080808',
   onSurface: '#080808',
-  onPrimary: '#fff9f9',
-  onSecondary: '#fff9f9',
-  onTertiary: '#fff9f9',
-  ex1: '#ff2b18', 
-  ex2: '#00b7ff', 
-  ex3: '#604c20', 
+  onPrimary: '#080808',
+  onSecondary: '#080808',
+  onTertiary: '#080808',
+  
+  primary2: '#9c2b22',
+  secondary2: '#5e4a1f',
+  tertiary2: '#005b7f', 
+  onPrimary2: '#fff9f9', 
+  onSecondary2: '#fff9f9',
+  onTertiary2: '#fff9f9',
 };
 
 /**
@@ -84,20 +102,19 @@ export const lightHcColours: ColourSet = {
 export const darkHcColours: ColourSet = {
   background: '#121114',
   surface: '#262429',
-  primary: '#ff6254',
-  secondary: '#00fbff',
-  tertiary: '#f4ff1f',
+  primary: '#ff7466',
+  secondary: '#ffd23f',
+  tertiary: '#48cbff',
   onBackground: '#fff9f9',
-  onSurface: '#fff3f3',
-  onPrimary: '#1d1b20',
-  onSecondary: '#1d1b20',
-  onTertiary: '#1d1b20',
-  ex1: '#ff7f74', // a brighter coral
-  ex2: '#5292ab', // a deeper teal
-  ex3: '#d0ab59', // shaded yellow
-};
+  onSurface: '#fff9f9',
+  onPrimary: '#080808',
+  onSecondary: '#080808',
+  onTertiary: '#080808',
 
-/**
- * Extra colours for graphics, etc.
- * Add colours here as you use them.
- */
+  primary2: '#ffc4bd',
+  secondary2: '#e8a317',
+  tertiary2: '#bde9fb',
+  onPrimary2: '#080808',   
+  onSecondary2: '#080808',
+  onTertiary2: '#080808',  
+};

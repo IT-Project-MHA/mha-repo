@@ -35,7 +35,15 @@
       ],
       "expo-font",
       "expo-web-browser",
-      "@react-native-vector-icons/ionicons"
+      "@react-native-vector-icons/ionicons",
+      "@react-native-vector-icons/material-design-icons",
+      "expo-audio",
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Allow $(PRODUCT_NAME) to choose a support person from your contacts."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
