@@ -5,13 +5,18 @@
  */
 
 
-import { View, Text, ScrollView } from 'react-native';
-import { useTheme } from "../../../context/ThemeContext";
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
+
 import { useRouter } from 'expo-router';
 import { MultiSelect } from '../../../components/answerFields/MultiSelect';
 import { useOnboardingUserStore } from '../store/onboardingStorage';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import React from 'react';
+
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { lineThickness } from '../../../constants/layout';
+import { useTheme, ColourSet } from '../../../context/ThemeContext';
+import { Typography } from '../../../constants/textSize';
 
 export default function Page() {
   const router = useRouter();

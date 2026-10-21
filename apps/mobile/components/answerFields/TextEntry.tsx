@@ -118,7 +118,7 @@ function TextEntry({ onSubmit, placeholder, keyboardType, textContentType }: Tex
           <Button
             label="submit"
             onPress={handleSubmit}
-            buttonType="primaryButton"
+            buttonType="roundButton"
           />
         </View>
       </View>

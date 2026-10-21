@@ -19,6 +19,7 @@ import { useTheme } from "../../../../context/ThemeContext";
 import { completeUserOnboarding } from '../../../api/onboarding_api_helpers';
 import { useOnboardingUserStore } from '../../store/onboardingStorage';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import React from 'react';
 
 export default function Page() {
   const router = useRouter();

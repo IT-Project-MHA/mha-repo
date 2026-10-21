@@ -22,7 +22,7 @@ export default function Page() {
 
 
   return (
-    <SafeAreaViewView style={theme.screen}>
+    <SafeAreaView style={theme.screen}>
       <Text style={theme.text}>Hello {'FIX: add displayName'}</Text>
       <Text style={theme.text}>A few quick questions so we can make things more relevant for you</Text>
       <View>

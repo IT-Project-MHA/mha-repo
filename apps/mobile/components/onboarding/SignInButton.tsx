@@ -10,7 +10,7 @@ export function SignInButton() {
   return  (<Button
           label="sign in"
           onPress={() => router.navigate('/(onboarding)/signIn/signIn')}
-          buttonType = "secondaryButton"
+          buttonType = "roundButton"
         />);
 };
 

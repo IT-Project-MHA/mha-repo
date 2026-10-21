@@ -1,19 +1,20 @@
-import React, {useEffect, useRef, useState} from 'react'
-import {OnboardingSplashComp} from './OnboardingSplashComp'
+import React, {useEffect, useRef} from 'react'
 import { useTheme } from "../../context/ThemeContext";
-import { View } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
 import { ResizeMode, Video} from 'expo-av'
 
 interface Props{
   width: number,
   isActive?: boolean
 }
-
+const ASPECT_RATIO = 1
+const MAX_HEIGHT_FRACTION = 0.6
 
 export function OnboardingSplash1({width, isActive}: Props){
   const {theme} = useTheme();
   const video = useRef<Video>(null);
-  //const video = ;
+  const {height: screenHeight} = useWindowDimensions();
+  const size = Math.min(width, screenHeight * MAX_HEIGHT_FRACTION * ASPECT_RATIO);
 
   useEffect(()=>{
     if(isActive){
@@ -24,22 +25,20 @@ export function OnboardingSplash1({width, isActive}: Props){
   }, [isActive])
 
   return(
-    <View>
-      <View style={{flex: 1, width}}>
+      <View style={{width, flexShrink: 0, alignItems: 'center', justifyContent: 'center'}}>
         <Video
           ref={video}
           style={{
-            flex: 1,
-            backgroundColor: 'transparent',
+            width: size,
+            height: size / ASPECT_RATIO,
             borderRadius: 10,
-            overflow: 'hidden'
+            overflow: 'hidden',
           }}
-          source={require('../../assets/onboardingVideos/TestVideo.mp4')}
-          resizeMode={ResizeMode.COVER}
+          source={require('../../assets/onboardingVideos/carePlanner_cropped.mp4')}
+          resizeMode={ResizeMode.CONTAIN}
           isLooping
           isMuted
         />
-      </View>
       </View>
     
   )

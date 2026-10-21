@@ -14,6 +14,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { lineThickness } from '../../../constants/layout';
 import { useTheme, ColourSet } from '../../../context/ThemeContext';
 import { Typography } from '../../../constants/textSize';
+import React from 'react';
 
 export default function Page() {
   const { colours, theme } = useTheme();
@@ -61,7 +62,7 @@ export default function Page() {
         <Button
         label='Create Account'
         onPress={()=>{router.navigate('/(onboarding)/userOnboarding/createAccount')}}
-        buttonType='primaryButton'
+        buttonType='roundButton'
         />
         <SignInButton/>
       </View>

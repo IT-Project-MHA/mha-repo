@@ -20,7 +20,7 @@ export default function Page() {
 
 
   return (
-    <SafeAreaViewiew style={theme.screen}>
+    <SafeAreaView style={theme.screen}>
       
       <Text style={theme.text}>Do you have a musculoskeletal (for example arthritis, back pain, gout) or chronic pain diagnosis from your doctor?</Text>
       <View>

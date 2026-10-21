@@ -15,6 +15,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { lineThickness } from '../../../../constants/layout';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { Typography } from '../../../../constants/textSize';
+import React from 'react';
 
 export default function Page() {
   const { colours, theme } = useTheme();
@@ -38,7 +39,7 @@ export default function Page() {
       <View style={styles.bottomBar}>
         <TextEntry 
         onSubmit={setDisplayName}
-        placeholder='Type your name'
+        placeholder='Type here'
         keyboardType='default'
         />
         {/**FIX: link to terms of use and privacy policy */}

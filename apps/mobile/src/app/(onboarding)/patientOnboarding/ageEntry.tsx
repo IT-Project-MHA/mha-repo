@@ -16,7 +16,7 @@ export default function Page() {
   const { theme } = useTheme();
   
   return (
-    <SafeAreaVieweaView style={theme.screen}>
+    <SafeAreaView style={theme.screen}>
       <Text style={theme.text}> Your year of birth</Text>
       <View style={theme.container}>
         <NumberEntry 
