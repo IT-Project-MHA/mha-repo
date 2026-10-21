@@ -13,6 +13,7 @@ import { View, Text } from 'react-native';
 import { PhoneField } from '../../../../components/onboarding/PhoneField';
 import { useTheme } from "../../../../context/ThemeContext";
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 
@@ -27,14 +28,14 @@ export default function Page() {
   }
 
   return (
-    <View style={theme.container}>
+    <SafeAreaView style={theme.container}>
       <Text style={theme.text}>SIGN IN</Text>
       <Text style={theme.text}>The first sign-in page. Prompts user for their phone number, then asks for verification based on account info</Text>
       <Text style={theme.text}>This is a basic implementation though, so just phone verification</Text>
       <PhoneField
         onSubmit={sendSMS}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 

@@ -9,6 +9,7 @@ import { Text, View } from 'react-native';
 import { PhoneField } from '../../../../components/onboarding/PhoneField';
 import { useTheme } from "../../../../context/ThemeContext";
 import { useOnboardingUserStore } from '../../store/onboardingStorage';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 export default function Page() {
@@ -22,14 +23,14 @@ export default function Page() {
   }
 
   return (
-    <View style={theme.container}>
+    <SafeAreaView style={theme.container}>
       <Text style={theme.text}>Add your mobile</Text>
 
       <PhoneField
       onSubmit={setPhone}
       />
       
-    </View>
+    </SafeAreaView>
   );
 }
 

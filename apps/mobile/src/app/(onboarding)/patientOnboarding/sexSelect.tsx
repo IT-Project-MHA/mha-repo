@@ -11,6 +11,7 @@ import { Text, View } from 'react-native';
 import { MultipleChoice } from '../../../../components/answerFields/MultipleChoice';
 import { useTheme } from "../../../../context/ThemeContext";
 import { useOnboardingPatientStore } from '../../store/onboardingStorage';
+import { SafeAreaView } from 'react-native-safe-area-context';
 export default function Page() {
   const router = useRouter();
   const { theme } = useTheme();
@@ -21,7 +22,7 @@ export default function Page() {
 
 
   return (
-    <View style={theme.screen}>
+    <SafeAreaViewView style={theme.screen}>
       <Text style={theme.text}>Hello {'FIX: add displayName'}</Text>
       <Text style={theme.text}>A few quick questions so we can make things more relevant for you</Text>
       <View>
@@ -30,7 +31,7 @@ export default function Page() {
         onSubmit={()=>{router.navigate('/(onboarding)/patientOnboarding/ageEntry')}}
         />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

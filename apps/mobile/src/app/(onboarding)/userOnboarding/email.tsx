@@ -10,6 +10,7 @@ import { useTheme } from "../../../../context/ThemeContext";
 import { TextEntry } from '../../../../components/answerFields/TextEntry';
 import { useRouter } from 'expo-router';
 import { useOnboardingUserStore } from '../../store/onboardingStorage';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Page() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export default function Page() {
   }
 
   return (
-    <View style={theme.screen}>
+    <SafeAreaView style={theme.screen}>
       <Text style={theme.text}>EMAIL ADRESS SCREEN</Text>
       <Text style={theme.text}>Prompts the user to enter their email</Text>
       <View style={theme.container}>
@@ -34,7 +35,7 @@ export default function Page() {
         textContentType='emailAddress'
         />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

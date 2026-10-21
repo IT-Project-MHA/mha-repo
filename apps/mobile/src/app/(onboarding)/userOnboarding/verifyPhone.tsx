@@ -18,6 +18,7 @@ import Button from '../../../../components/atomicUI/Button';
 import { useTheme } from "../../../../context/ThemeContext";
 import { completeUserOnboarding } from '../../../api/onboarding_api_helpers';
 import { useOnboardingUserStore } from '../../store/onboardingStorage';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Page() {
   const router = useRouter();
@@ -44,7 +45,7 @@ export default function Page() {
     
   }
   return (
-    <View style={theme.screen}>
+    <SafeAreaView style={theme.screen}>
       <Text style={theme.text}>Verify your mobile</Text>
       <View style={theme.container}>
         <NumberEntry 
@@ -63,7 +64,7 @@ export default function Page() {
       buttonType='secondaryButton'
       />
 
-    </View>
+    </SafeAreaView>
   );
 }
 

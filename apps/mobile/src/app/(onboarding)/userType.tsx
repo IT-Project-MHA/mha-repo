@@ -10,6 +10,7 @@ import { useTheme } from "../../../context/ThemeContext";
 import { useRouter } from 'expo-router';
 import { MultiSelect } from '../../../components/answerFields/MultiSelect';
 import { useOnboardingUserStore } from '../store/onboardingStorage';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 export default function Page() {
@@ -38,7 +39,7 @@ export default function Page() {
     }
   }
   return (
-    <View style={theme.screen}>
+    <SafeAreaView style={theme.screen}>
       
       <Text style={theme.text}>How do you plan to use the app?</Text>
       <ScrollView
@@ -52,7 +53,7 @@ export default function Page() {
         MAX_SELECTIONS={USER_TYPES.length+1}
         />
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 

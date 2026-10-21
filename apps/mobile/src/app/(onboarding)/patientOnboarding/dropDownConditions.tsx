@@ -20,32 +20,38 @@ import { View, Text, ScrollView } from 'react-native';
 import { useTheme } from "../../../../context/ThemeContext";
 import { useRouter } from 'expo-router';
 import { MultiSelect } from '../../../../components/answerFields/MultiSelect';
-import Button from '../../../../components/atomicUI/Button';
+import {apiQuestionOption} from '../../../api/django-API';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function Page() {
+export default  function Page() {
   const router = useRouter();
   const { theme } = useTheme();
   const user = "user"
-
-  const CONDITIONS = ["Arthritis", "Ankylosing spondylitis", "Back pain", "Baker's cyst", "Bursitis", "Foot related conditions", "Fibromyalgia", "Gout", "Juvenile idiopathic arthritis", "Hand conditions", "Lupus", "Neck pain", "Osteoarthritis", "Osteoporosis", "Paget's disease", "Perthes' disease", "Polymyalgia rheumatica", "Psoriatic arthritis", "Raynaud's phenomenon", "Reactive arthritis", "Rheumatoid arthritis", "Scleroderma", "Shoulder pain", "Sjogren's disease"];
-
+  let conditions = ["undefined"];
+  async function getConditions(){
+      conditions = await apiQuestionOption('select', {
+      app_section: 'ONBOARDING',
+      question_key: 'pain_type',
+    });
+  }
+  //getConditions();
 
   return (
-    <View style={theme.screen}>
+    <SafeAreaView style={theme.screen}>
       
       <Text style={theme.text}>I think I need to import something for this</Text>
       <ScrollView
       showsVerticalScrollIndicator={false}
       >
         <MultiSelect
-        questionOptions={CONDITIONS}
+        questionOptions={conditions}
         headingText='You can select multiple conditions'
         onSubmit={()=>{router.navigate('/(onboarding)/patientOnboarding/additionalConditionsTextEntry')}}
         MIN_SELECTIONS={0}
-        MAX_SELECTIONS={CONDITIONS.length+1}
+        MAX_SELECTIONS={conditions.length+1}
         />
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 

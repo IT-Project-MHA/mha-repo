@@ -9,13 +9,14 @@ import { PhoneField } from '../../../../components/onboarding/PhoneField';
 import { useTheme } from "../../../../context/ThemeContext";
 import { NumberEntry } from '../../../../components/answerFields/NumberEntry';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Page() {
   const router = useRouter();
   const { theme } = useTheme();
   
   return (
-    <View style={theme.screen}>
+    <SafeAreaVieweaView style={theme.screen}>
       <Text style={theme.text}> Your year of birth</Text>
       <View style={theme.container}>
         <NumberEntry 
@@ -25,7 +26,7 @@ export default function Page() {
         MAX_lENGTH_NUM={4}
         />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

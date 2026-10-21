@@ -11,6 +11,7 @@ import { PhoneField } from '../../../../components/onboarding/PhoneField';
 import { useTheme } from "../../../../context/ThemeContext";
 import { TextEntry } from '../../../../components/answerFields/TextEntry';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Page() {
   const router = useRouter();
@@ -20,7 +21,7 @@ export default function Page() {
     router.navigate("/(tabs)")
   }
   return (
-    <View style={theme.screen}>
+    <SafeAreaView style={theme.screen}>
       <Text style={theme.text}>Do you have any other conditions?</Text>
       <View style={theme.container}>
         <TextEntry 
@@ -29,7 +30,7 @@ export default function Page() {
         keyboardType='default'
         />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
