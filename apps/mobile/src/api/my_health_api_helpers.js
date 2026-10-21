@@ -4,6 +4,7 @@ import {
     apiMyPain,
     apiQuestionOption,
     apiPrescription,
+    apiUser,
 } from './django-API';
 
 import {ownPatientProfileId} from './care_planner_api_helpers'
@@ -89,3 +90,7 @@ export async function apiPainHistory(patientProfileId){
         .sort((a,b) => a.completedAt.localeCompare(b.completedAt));
 }
 
+// create dummy user
+export async function makeUser(phone_number, display_name, email){
+    apiUser('create', phone_number, display_name, email);
+}
