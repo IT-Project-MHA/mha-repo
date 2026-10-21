@@ -4,19 +4,19 @@ import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { useEffect, useState } from 'react';
 import AddPrescriptionModal, {PrescriptionDetails} from '../../../../components/atomicUI/AddPrescriptionModal';
 import { apiPrescription } from '@/api/django-API';
+import {makeUser} from '@/api/my_health_api_helpers';
 
 export default function Screen() {
   const { theme, colours } = useTheme();
   const [prescriptions, setPrescriptions] = useState<any[]>([]);
   const [saving, setSaving] = useState(false); 
   const [pending, setPending] = useState< 'addPrescription' | 'editPrescription' |  null>(null);  // modal visibility triggered by pending state
-
-
   // load prescriptions
   const loadPrescriptions = () => 
     apiPrescription('select')
     .then(setPrescriptions)
     .catch((e) => console.log('failed to load', e?.message, e?.status, e?.data));
+
 
   // loads the data after initial
   useEffect(() => {
@@ -48,6 +48,13 @@ export default function Screen() {
       <View style={theme.header}>
         <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>My Prescriptions</Text>
       </View>
+
+      <Button
+        label="Make User"
+        onPress={() => makeUser('0413975375', 'Hello', 'hello@hotmail.com')}
+        buttonType="roundButton"
+        fontColour={colours.onTertiary}
+        />
       
       {/**
        * 
@@ -73,6 +80,7 @@ export default function Screen() {
                   buttonType="roundButton"
                   fontColour={colours.onTertiary}
                    />
+                  
 
                 <Text style={theme.xSmall}> </Text>
 
