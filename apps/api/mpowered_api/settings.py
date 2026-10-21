@@ -25,7 +25,9 @@ SECRET_KEY = 'django-insecure-%#s-kcihd4y5&e06+_o^l575-4zag=hzwidu)l(9yre=j3p&0r
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# any host while debugging, so a phone on the same Wi-Fi can reach the dev server by the PC's
+# address. Must be set to the real host names before deployment, when DEBUG is off
+ALLOWED_HOSTS = ['*'] if DEBUG else []
 
 
 # Application definition
@@ -37,6 +39,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    "rest_framework",
+    "accounts",
+    "appointment",
+    "audit",
+    "health",
+    "reference",
+    "rest_framework.authtoken"
 ]
 
 MIDDLEWARE = [
@@ -116,7 +125,38 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# Uploaded files (e.g. appointment answer recordings)
+# Temporarily stored on local disk until cloud storage is set up. MEDIA_URL is deliberately not
+# set & media is not served publicly, recordings are downloaded through an authenticated endpoint.
+
+MEDIA_ROOT = BASE_DIR / 'media'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+AUTH_USER_MODEL = 'accounts.User'
+
+SILENCED_SYSTEM_CHECKS = ["auth.E003"]
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.TokenAuthentication"],
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
+    "DEFAULT_THROTTLE_RATES": {
+        
+        "otp_request": "10/hour",
+        "otp_verify": "20/hour",
+        "otp_phone_burst": "1/min",
+        "otp_phone_sustained": "5/hour",
+
+        "register": "10/hour",
+        "login": "20/hour",
+        "login_phone": "10/hour",
+
+        "reset_pin": "10/hour"
+    },
+}
+
+TERMS_VERSION = "1.0"
+PRIVACY_VERSION = "1.0"
