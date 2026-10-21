@@ -22,9 +22,7 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarStyle: {
-          ...styles.floatingTabBar,
-          height: 70 + insets.bottom,
-          paddingBottom: insets.bottom,
+          ...styles.navBar,
         },
         // centres each icon & label between the top of the nav bar and the system nav bar
         tabBarItemStyle: styles.tabItem,
@@ -32,8 +30,8 @@ export default function TabLayout() {
         tabBarLabelStyle: {
           ...theme.xSmall,
         },
-        tabBarActiveTintColor: colours.onPrimary,
-        tabBarInactiveTintColor: colours.ex3,
+        tabBarActiveTintColor: colours.onSecondary2,
+        tabBarInactiveTintColor: colours.secondary,
         headerShown: false,     
       }}
     >
@@ -113,12 +111,14 @@ function createStyles(colours: ColourSet){
       justifyContent: 'center',
   },
 
-  floatingTabBar: {
-    bottom: 0,
+  // the nav bar styling
+  navBar: {
     position: 'absolute',
     height: 70,
+  
+    flexDirection: 'row',
+    alignItems: 'center',
 
-    borderRadius: 0,
     borderTopWidth: 0,     
     borderBottomWidth: 0, 
 
