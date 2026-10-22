@@ -10,6 +10,7 @@ import {
     apiSupportLink,
     apiUser,
 } from './django-API';
+import { suggestedIdOfText } from '../../constants/suggestedQuestions';
 
 /* Care planner API helpers, built on the calls in django-API.js. Use them inside a try/catch block,
 a failed request throws an ApiError. */

@@ -1,0 +1,514 @@
+from django.db import transaction
+from django.db.models import Max, Q
+from django.http import FileResponse, Http404
+from django.utils import timezone
+from django.utils.dateparse import parse_date
+from django.utils import timezone
+
+from rest_framework import generics, serializers, status
+from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from accounts.models import SupportLink
+from accounts.permissions import can_edit_patient_data
+from accounts.views import own_patient_profile
+from appointment import grants
+from appointment.models import Appointment, AppointmentAnswer, AppointmentQuestion, AppointmentAccess
+from accounts.permissions import is_owner, can_add_question, visible_appointment_access, visible_appointments, can_record_answer
+from audit.models import AuditEntry
+from audit.services import record, record_view
+
+from appointment.serializer import AccessGrantSerializer, AppointmentAccessSerializer, AppointmentAnswerSerializer, \
+    AppointmentQuestionSerializer, AppointmentSerializer, AppointmentDoctorPermissionSerializer, \
+    GrantAccessSerializer
+
+from mpowered_api.immutable import save_without_immutable_changes
+from mpowered_api.validators import australian_day_range
+from mpowered_api.soft_delete import soft_delete
+
+
+# Instructions:
+# All views need the header Authorization: Token <token> without they return 401.
+
+# Can only see appointments that are the users, or all of a patients appointments if the patient has
+# turned on can_view_appointments or one appointment the patient has given the user access to.
+
+# Supporters need can_add_questions or can_record_answers to add questions or answers.
+
+# To filter by attribute, put in the URL ?attribute_name=value. For multiple attributes:
+# ?attribute_name1=value&attribute_name2=value...
+
+# Attributes that are read only are specified in it's serializer.
+# If sent in update request they are ignored.
+
+# Records that other records depend on cannot be deleted; deleting them returns a 409 error.
+# Appointments, questions & answers are soft deleted instead: deleted_at is set, the record is
+# kept & hidden from every request, and the records under it are soft deleted too.
+
+# Who can insert/update/delete is specified in the comments. Records the user can see but is not
+# allowed to update/delete return a 404 error for those requests.
+
+
+
+def get_own_appointment(user, appointment_pk):
+
+    appointment = Appointment.objects.filter(pk = appointment_pk, deleted_at__isnull = True).first()
+
+    if appointment is None or not can_edit_patient_data(user, appointment.patient_profile):
+        return None
+
+    return appointment
+
+# helper function: a cancelled appointment is kept as a record
+def reject_if_cancelled(appointment):
+    if appointment.status == Appointment.Status.CANCELLED:
+        raise serializers.ValidationError({'appointment':'This appointment has been cancelled.'})
+
+class GrantAccessView(APIView):
+    # POST /appointments/{id}/access
+    # Patient gives access to appointment or changes access
+
+    # GET /appointments/{id}/access
+    # Who currently has access to appointment
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, appointment_pk):
+
+        appointment = get_own_appointment(request.user, appointment_pk)
+        if appointment is None:
+            return Response({"detail": "not_found"}, status = status.HTTP_404_NOT_FOUND)
+
+        live_grants = AppointmentAccess.objects.filter(appointment = appointment, revoked_at__isnull = True).select_related("support_link__supporter_user")
+
+        return Response(AccessGrantSerializer(live_grants, many = True).data, status = status.HTTP_200_OK)
+
+    def post(self, request, appointment_pk):
+
+        appointment = get_own_appointment(request.user, appointment_pk)
+
+        if appointment is None:
+            return Response({"detail": "not_found"}, status = status.HTTP_404_NOT_FOUND)
+
+        reject_if_cancelled(appointment)
+
+        serializer = GrantAccessSerializer(data = request.data)
+        serializer.is_valid(raise_exception = True)
+        data = serializer.validated_data
+
+        try:
+            grant, created = grants.grant_access(
+                appointment = appointment,
+                support_link_id = data["support_link_id"],
+                can_add_questions = data["can_add_questions"],
+                can_record_answers = data["can_record_answers"],
+                actor = request.user
+            )
+        except grants.GrantError as error:
+            return Response({"detail": error.reason}, status = status.HTTP_400_BAD_REQUEST)
+
+        if created:
+            code = status.HTTP_201_CREATED
+        else:
+            code = status.HTTP_200_OK
+
+        return Response(AccessGrantSerializer(grant).data, status = code)
+
+
+class RevokeAccessView(APIView):
+    # POST /appointments/{id}/access/{grantid}/revoke
+    # Patient takes a supporter's access to this appointment away
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, appointment_pk, grant_pk):
+        appointment = get_own_appointment(request.user, appointment_pk)
+
+        if appointment is None or not grants.revoke_access(appointment, grant_pk, request.user):
+            return Response({"detail": "not_found"}, status = status.HTTP_404_NOT_FOUND)
+
+        return Response(status = status.HTTP_204_NO_CONTENT)
+
+class CancelAppointmentView(APIView):
+    # POST /appointments/{id}/cancel
+    # Patient cancels appointment, kept but can't be edited
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, appointment_pk):
+        appointment = get_own_appointment(request.user, appointment_pk)
+
+        if appointment is None:
+            return Response({"detail": "not_found"}, status = status.HTTP_404_NOT_FOUND)
+
+        reject_if_cancelled(appointment)
+
+        if appointment.scheduled_date < timezone.now() or appointment.status == Appointment.Status.COMPLETED:
+            return Response({"detail": "appointment_in_past"}, status = status.HTTP_400_BAD_REQUEST)
+
+        appointment.status = Appointment.Status.CANCELLED
+        appointment.save(update_fields = ["status", "updated_at"])
+        record(request.user, AuditEntry.Action.UPDATE, appointment, context = {"status": "cancelled"})
+
+        return Response(AppointmentSerializer(appointment).data, status = status.HTTP_200_OK)
+
+# Soft delete helper functions: each sets deleted_at on the record & the records under it in one
+# transaction, so an appointment is never left half deleted. updated_at is set too, as update()
+# skips auto_now
+
+def soft_delete_answers(answers, now):
+    answers.filter(deleted_at__isnull = True).update(deleted_at = now, updated_at = now)
+
+def soft_delete_questions(questions, now):
+    soft_delete_answers(AppointmentAnswer.objects.filter(question__in = questions), now)
+    questions.filter(deleted_at__isnull = True).update(deleted_at = now, updated_at = now)
+
+def soft_delete_appointment(appointment):
+    now = timezone.now()
+    with transaction.atomic():
+        soft_delete_questions(AppointmentQuestion.objects.filter(appointment = appointment), now)
+        Appointment.objects.filter(pk = appointment.pk).update(deleted_at = now, updated_at = now)
+
+def soft_delete_question(question):
+    with transaction.atomic():
+        soft_delete_questions(AppointmentQuestion.objects.filter(pk = question.pk), timezone.now())
+
+
+# Appointment APIs:
+
+
+# helper function: filters appointments to those scheduled on the given date (YYYY-MM-DD) in
+# Australia
+def filter_scheduled_date(query_set, scheduled_date):
+    try:
+        day = parse_date(scheduled_date)
+    except ValueError:
+        day = None
+    if day is None:
+        raise serializers.ValidationError({'scheduled_date':'Date must be in YYYY-MM-DD format.'})
+    start, end = australian_day_range(day)
+    return query_set.filter(scheduled_date__gte = start, scheduled_date__lt = end)
+
+class AppointmentListCreate(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = AppointmentSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        query_patient_profile = self.request.query_params.get("patient_profile")
+        query_status = self.request.query_params.get("status")
+        scheduled_date = self.request.query_params.get("scheduled_date")
+        query_set = visible_appointments(user)
+        if query_patient_profile:
+            query_set = query_set.filter(patient_profile = query_patient_profile)
+        if query_status:
+            query_set = query_set.filter(status = query_status)
+        if scheduled_date:
+            query_set = filter_scheduled_date(query_set, scheduled_date)
+        return query_set.distinct()
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        serializer.save(patient_profile = own_patient_profile(user), created_by = user)
+        record(user, AuditEntry.Action.CREATE, serializer.instance)
+
+class AppointmentRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = AppointmentSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        query_patient_profile = self.request.query_params.get("patient_profile")
+        query_status = self.request.query_params.get("status")
+        scheduled_date = self.request.query_params.get("scheduled_date")
+        query_set = visible_appointments(user)
+
+        # user can only update their own appointments where they are a patient
+        if self.request.method not in SAFE_METHODS:
+            query_set = query_set.filter(patient_profile__user = user)
+        if query_patient_profile:
+            query_set = query_set.filter(patient_profile = query_patient_profile)
+        if query_status:
+            query_set = query_set.filter(status = query_status)
+        if scheduled_date:
+            query_set = filter_scheduled_date(query_set, scheduled_date)
+        return query_set.distinct()
+
+    def perform_update(self, serializer):
+        reject_if_cancelled(serializer.instance)
+        serializer.save()
+        record(self.request.user, AuditEntry.Action.UPDATE, serializer.instance)
+
+    # soft deletes the appointment, its questions & their answers. Access grants are kept
+    def perform_destroy(self, instance):
+        soft_delete_appointment(instance)
+        record(self.request.user, AuditEntry.Action.DELETE, instance)
+
+
+
+# AppointmentQuestion APIs:
+class AppointmentQuestionListCreate(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = AppointmentQuestionSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        appointment = self.request.query_params.get("appointment")
+        # each question's answer is loaded in the same query, it is included in the response
+        query_set = AppointmentQuestion.objects.filter(
+            appointment__in = visible_appointments(user), deleted_at__isnull = True,
+            ).select_related('question_answer')
+
+        if not appointment:
+            raise serializers.ValidationError({'appointment':'This field is required.'})
+        query_set = query_set.filter(appointment = appointment)
+        return query_set.distinct()
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        appointment = serializer.validated_data["appointment"]
+        if appointment.is_deleted():
+            raise serializers.ValidationError({'appointment':'This appointment has been deleted.'})
+        reject_if_cancelled(appointment)
+        last_index = AppointmentQuestion.objects.filter(
+            appointment = appointment, deleted_at__isnull = True,
+            ).aggregate(Max('order_index'))['order_index__max']
+        order_index = (last_index + 1) if last_index is not None else 0
+
+        if is_owner(user, appointment.patient_profile):
+            source = serializer.validated_data.get("source", AppointmentQuestion.Source.PATIENT)
+            if source == AppointmentQuestion.Source.SUPPORT:
+                raise serializers.ValidationError(
+                    {'source':'Patients cannot create support questions.'})
+            serializer.save(created_by = user, source = source, order_index = order_index)
+            record(user, AuditEntry.Action.CREATE, serializer.instance)
+        elif can_add_question(user, appointment):
+            source = serializer.validated_data.get("source", AppointmentQuestion.Source.SUPPORT)
+            if source == AppointmentQuestion.Source.PATIENT:
+                raise serializers.ValidationError(
+                    {'source':'Supporters cannot create patient questions.'})
+            serializer.save(created_by = user, source = source, order_index = order_index, is_selected = False)
+        else:
+            raise serializers.ValidationError({'appointment':'You do not have access.'})
+
+class AppointmentQuestionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = AppointmentQuestionSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        appointment = self.request.query_params.get("appointment")
+        # each question's answer is loaded in the same query, it is included in the response
+        query_set = AppointmentQuestion.objects.filter(
+            appointment__in = visible_appointments(user), deleted_at__isnull = True,
+            ).select_related('question_answer')
+        if self.request.method not in SAFE_METHODS:
+            query_set = query_set.filter(
+                Q(appointment__patient_profile__user = user) |
+                Q(created_by = user,
+                  appointment__access_grants__support_link__supporter_user = user,
+                  appointment__access_grants__support_link__status = SupportLink.Status.ACTIVE,
+                  appointment__access_grants__revoked_at__isnull = True,
+                  appointment__access_grants__can_add_questions = True))
+        if appointment:
+            query_set = query_set.filter(appointment = appointment)
+        return query_set.distinct()
+
+    def perform_update(self, serializer):
+        instance = serializer.instance
+        reject_if_cancelled(instance.appointment)
+        save_without_immutable_changes(serializer, ['appointment', 'source'])
+        record(self.request.user, AuditEntry.Action.UPDATE, serializer.instance)
+
+    # soft deletes the question & its answer
+    def perform_destroy(self, instance):
+        reject_if_cancelled(instance.appointment)
+        soft_delete_question(instance)
+        record(self.request.user, AuditEntry.Action.DELETE, instance)
+
+
+
+# AppointmentDoctorPermission APIs:
+
+# helper function: refuses a recording when the doctor hasn't given permission to record. Removing
+# a recording (recording_file: null) is always allowed
+def check_recording_allowed(serializer, appointment):
+    if serializer.validated_data.get('recording_file') and not appointment.doctor_permission:
+        raise serializers.ValidationError(
+            {'recording_file':'The doctor has not given permission to record their answers.'})
+
+# - select: the appointment's doctor_permission & doctor_signature
+# - update: saving the doctor's signature gives permission to record their answers
+# - delete: takes the permission back, which deletes the recordings of every answer in the
+#   appointment. The appointment itself is kept
+# The patient, or a supporter with can_record_answers, can do all three
+class AppointmentDoctorPermissionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = AppointmentDoctorPermissionSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        query_set = visible_appointments(user).filter(
+            Q(patient_profile__user = user) |
+            Q(access_grants__support_link__supporter_user = user,
+              access_grants__support_link__status = SupportLink.Status.ACTIVE,
+              access_grants__revoked_at__isnull = True,
+              access_grants__can_record_answers = True))
+        return query_set.distinct()
+
+    def perform_update(self, serializer):
+        serializer.save(doctor_permission = True)
+
+    def perform_destroy(self, instance):
+        # every answer of the appointment with a recording, soft deleted ones too
+        answers = AppointmentAnswer.objects.filter(
+            question__appointment = instance).exclude(recording_file = '')
+        recordings = [answer.recording_file for answer in answers if answer.recording_file]
+        now = timezone.now()
+        with transaction.atomic():
+            answers.update(recording_file = None, updated_at = now)
+            Appointment.objects.filter(pk = instance.pk).update(
+                doctor_permission = False, doctor_signature = '', updated_at = now)
+
+        # files are deleted once nothing refers to them
+        for recording in recordings:
+            recording.storage.delete(recording.name)
+
+
+
+# AppointmentAnswer APIs:
+
+# helper function: removes a soft deleted answer & its recording file for good
+def delete_answer_for_good(answer):
+    recording = answer.recording_file
+    answer.delete()
+    if recording:
+        recording.storage.delete(recording.name)
+
+class AppointmentAnswerListCreate(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = AppointmentAnswerSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        question = self.request.query_params.get("question")
+        query_set = AppointmentAnswer.objects.filter(
+            question__appointment__in = visible_appointments(user), deleted_at__isnull = True)
+
+        if not question:
+            raise serializers.ValidationError({'question':'This field is required.'})
+        query_set = query_set.filter(question = question)
+        return query_set.distinct()
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        question = serializer.validated_data["question"]
+        appointment = question.appointment
+        if question.is_deleted() or appointment.is_deleted():
+            raise serializers.ValidationError({'question':'This question has been deleted.'})
+        if not can_record_answer(user, appointment):
+            raise serializers.ValidationError({'question':'You do not have access.'})
+
+        check_recording_allowed(serializer, appointment)
+
+        # a question has one answer. A soft deleted one is removed for good to make room for
+        # the new one, with its recording
+        old_answer = AppointmentAnswer.objects.filter(question = question).first()
+        if old_answer is not None and not old_answer.is_deleted():
+            raise serializers.ValidationError({'question':'This question already has an answer.'})
+        with transaction.atomic():
+            if old_answer is not None:
+                delete_answer_for_good(old_answer)
+            serializer.save(recorded_by = user)
+
+
+class AppointmentAnswerRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = AppointmentAnswerSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        question = self.request.query_params.get("question")
+        query_set = AppointmentAnswer.objects.filter(
+            question__appointment__in = visible_appointments(user), deleted_at__isnull = True)
+        if self.request.method == 'DELETE':
+            query_set = query_set.filter(question__appointment__patient_profile__user = user)
+        elif self.request.method not in SAFE_METHODS:
+            query_set = query_set.filter(
+                Q(question__appointment__patient_profile__user = user) |
+                Q(question__appointment__access_grants__support_link__supporter_user = user,
+                  question__appointment__access_grants__support_link__status =
+                      SupportLink.Status.ACTIVE,
+                  question__appointment__access_grants__revoked_at__isnull = True,
+                  question__appointment__access_grants__can_record_answers = True))
+        if question:
+            query_set = query_set.filter(question = question)
+        return query_set.distinct()
+
+    # file needs to be manually deleted from storage
+    def perform_update(self, serializer):
+        check_recording_allowed(serializer, serializer.instance.question.appointment)
+        reject_if_cancelled(serializer.instance.question.appointment)
+        old_recording = serializer.instance.recording_file.name
+        save_without_immutable_changes(serializer, ['question'])
+        record(self.request.user, AuditEntry.Action.UPDATE, serializer.instance)
+
+    # soft deletes the answer, its recording is kept with it
+    def perform_destroy(self, instance):
+        reject_if_cancelled(instance.question.appointment)
+        soft_delete_answers(AppointmentAnswer.objects.filter(pk = instance.pk), timezone.now())
+        record(self.request.user, AuditEntry.Action.DELETE, instance)
+
+# AppointmentAnswer recording download API:
+# - select: returns the answer's audio file, for users who can see the answer
+class AppointmentAnswerRecording(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        return AppointmentAnswer.objects.filter(
+            question__appointment__in = visible_appointments(user),
+            deleted_at__isnull = True).distinct()
+
+    def retrieve(self, request, *args, **kwargs):
+        answer = self.get_object()
+        if not answer.recording_file:
+            raise Http404('This answer has no recording.')
+        return FileResponse(answer.recording_file.open('rb'))
+
+
+# AppointmentAccess APIs:
+
+# helper function: returns set of appointment access records that user can access
+def visible_appointment_access(user):
+    # access to soft deleted appointments is kept but not shown
+    return AppointmentAccess.objects.filter(appointment__deleted_at__isnull = True).filter(
+            Q(appointment__patient_profile__user = user) |
+            Q(support_link__supporter_user = user)
+        )
+
+# read only, grants are given & revoked through GrantAccessView & RevokeAccessView (grants.py)
+class AppointmentAccessList(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = AppointmentAccessSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        appointment = self.request.query_params.get("appointment")
+        support_link = self.request.query_params.get("support_link")
+        query_set = visible_appointment_access(user)
+
+        if appointment:
+            query_set = query_set.filter(appointment = appointment)
+        if support_link:
+            query_set = query_set.filter(support_link = support_link)
+
+        return query_set.distinct()
+
+class AppointmentAccessRetrieve(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = AppointmentAccessSerializer
+
+    def get_queryset(self):
+        return visible_appointment_access(self.request.user).distinct()

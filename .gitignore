@@ -6,14 +6,19 @@ apps/mobile/.expo/
 .venv/
 __pycache__/
 *.pyc
+staticfiles/
 
 # Secrets and Environment Variables
 .env
 *.local
 .vscode/settings.json
 
+# SQL lite
+db.sqlite3
+*.sqlite3
 
-# Local database & uploaded files
-apps/api/db.sqlite3
-apps/api/db.empty-backup.sqlite3
+# Uploaded files (patient recordings)
 apps/api/media/
+
+# Local device DB
+*.db

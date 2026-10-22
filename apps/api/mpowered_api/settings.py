@@ -9,23 +9,33 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+import os
 from pathlib import Path
+import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+load_dotenv(BASE_DIR / ".env")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-%#s-kcihd4y5&e06+_o^l575-4zag=hzwidu)l(9yre=j3p&0r'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG") == "True"
 
-ALLOWED_HOSTS = []
+SECRET_KEY = os.environ.get("SECRET_KEY")
+if not SECRET_KEY:
+    if not DEBUG:
+        raise ImproperlyConfigured("Set the SECRET_KEY environment variable.")
+    SECRET_KEY = "django-insecure-local-development-only"
+
+if DEBUG:
+    ALLOWED_HOSTS = ["*"]
+else:
+    ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
 
 
 # Application definition
@@ -37,6 +47,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    "rest_framework",
+    "accounts",
+    "appointment",
+    "audit",
+    "health",
+    "reference",
+    "rest_framework.authtoken"
 ]
 
 MIDDLEWARE = [
@@ -47,6 +64,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+     'whitenoise.middleware.WhiteNoiseMiddleware'
 ]
 
 ROOT_URLCONF = 'mpowered_api.urls'
@@ -71,12 +89,11 @@ WSGI_APPLICATION = 'mpowered_api.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default = f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age = 600,
+    )
 }
 
 
@@ -116,7 +133,92 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Uploaded files (e.g. appointment answer recordings)
+# Temporarily stored on local disk until cloud storage is set up. MEDIA_URL is deliberately not
+# set & media is not served publicly, recordings are downloaded through an authenticated endpoint.
+
+MEDIA_ROOT = BASE_DIR / 'media'
+
+
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
+
+if os.environ.get("STORAGE_BUCKET"):
+    STORAGES["default"] = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "bucket_name": os.environ["STORAGE_BUCKET"],
+            "endpoint_url": os.environ.get("STORAGE_ENDPOINT_URL"),
+            "access_key": os.environ.get("STORAGE_ACCESS_KEY_ID"),
+            "secret_key": os.environ.get("STORAGE_SECRET_ACCESS_KEY"),
+            "region_name": os.environ.get("STORAGE_REGION", "auto"),
+            # private bucket, files are only reached through the app
+            "default_acl": "private",
+            "querystring_auth": True,
+            # never replace an existing recording that has the same name
+            "file_overwrite": False,
+        },
+    }
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+AUTH_USER_MODEL = 'accounts.User'
+
+SILENCED_SYSTEM_CHECKS = ["auth.E003"]
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": ["accounts.authentication.DeviceTokenAuthentication"],
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
+    "DEFAULT_THROTTLE_RATES": {
+        
+        "otp_request": "10/hour",
+        "otp_verify": "20/hour",
+        "otp_phone_burst": "1/min",
+        "otp_phone_sustained": "5/hour",
+
+        "register": "10/hour",
+        "login": "20/hour",
+        "login_phone": "10/hour",
+
+        "reset_pin": "10/hour"
+    },
+}
+
+# Which company sends SMS codes, defaults to printing codes in the terminal
+SMS_PROVIDER = os.environ.get("SMS_PROVIDER")
+
+if not SMS_PROVIDER:
+    if DEBUG:
+        SMS_PROVIDER = "console"
+    else:
+        SMS_PROVIDER = ""
+
+TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "")
+TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "")
+TWILIO_FROM_NUMBER = os.environ.get("TWILIO_FROM_NUMBER", "")
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "root": {"handlers": ["console"], "level": "WARNING"}
+}
+
+# HTTPS only once it's deployed, Render handles the certificate
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = True
+    SECURE_HSTS_SECONDS = 60 * 60 * 24 * 365
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
+TERMS_VERSION = "1.0"
+PRIVACY_VERSION = "1.0"
