@@ -44,7 +44,8 @@
         {
           "contactsPermission": "Allow $(PRODUCT_NAME) to choose a support person from your contacts."
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,
