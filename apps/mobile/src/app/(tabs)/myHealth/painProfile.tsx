@@ -4,11 +4,22 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import ButtonWithIcon from '../../../../components/atomicUI/ButtonWithIcon';
 import { useRouter } from 'expo-router';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
+import { useEffect, useState } from 'react';
+import { apiAboutMe } from '@/api/my_health_api_helpers';
 
 export default function Screen() {
   const router = useRouter();
   const { theme, colours } = useTheme();
   const styles = createStyles(colours);
+
+  // About me details ({ name, sex, ageGroup }), loaded from the backend on mount
+  const [aboutMe, setAboutMe] = useState({ name: '', sex: '', ageGroup: '' });
+
+  useEffect(() => {
+    apiAboutMe()
+      .then(setAboutMe)
+      .catch((e) => console.log('failed to load about me', e?.message, e?.status, e?.data));
+  }, []);
 
   return (
     <ScrollView stickyHeaderIndices={[0]}>
@@ -27,15 +38,15 @@ export default function Screen() {
         <View style={theme.line}/>
         <View style={styles.cardItem}>
           <Text style={[theme.h6, theme.fontOnSurface]}>Name</Text>
-          <Text style={[theme.body, theme.fontOnSurface]}>Placeholder</Text>
+          <Text style={[theme.body, theme.fontOnSurface]}>{aboutMe.name || 'Not available'}</Text>
         </View>
         <View style={styles.cardItem}>
           <Text style={[theme.h6, theme.fontOnSurface]}>Sex</Text>
-          <Text style={[theme.body, theme.fontOnSurface]}>Placeholder</Text>
+          <Text style={[theme.body, theme.fontOnSurface]}>{aboutMe.sex || 'Not available'}</Text>
         </View>
         <View style={styles.cardItem}>
           <Text style={[theme.h6, theme.fontOnSurface]}>Age group</Text>
-          <Text style={[theme.body, theme.fontOnSurface]}>Placeholder</Text>
+          <Text style={[theme.body, theme.fontOnSurface]}>{aboutMe.ageGroup || 'Not available'}</Text>
         </View>
       </View>
 

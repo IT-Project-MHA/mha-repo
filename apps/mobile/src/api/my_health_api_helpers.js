@@ -5,6 +5,8 @@ import {
     apiQuestionOption,
     apiPrescription,
     apiUser,
+    apiPatientProfile,
+    apiAssignedGender,
 } from './django-API';
 
 import {ownPatientProfileId} from './care_planner_api_helpers'
@@ -93,4 +95,42 @@ export async function apiPainHistory(patientProfileId){
 // create dummy user
 export async function makeUser(phone_number, display_name, email){
     apiUser('create', phone_number, display_name, email);
+}
+
+/* About me details for the My Pain Profile
+- takes no parameters (the user's own details) and returns { name, sex, ageGroup } as strings,
+  each '' when that detail isn't set */
+export async function apiAboutMe() {
+    const [user] = await apiUser('select');
+    const [[profile], genderOptions] = await Promise.all([
+        apiPatientProfile('select', { user: user.id }),
+        apiAssignedGender(),
+    ]);
+
+    const genderLabels = new Map(genderOptions.map((option) => [option.value, option.label]));
+
+    return {
+        name: user?.display_name ?? '',
+        sex: profile ? (genderLabels.get(profile.assigned_gender_at_birth) ?? '') : '',
+        ageGroup: profile ? ageGroupFromBirthYear(profile.birth_year) : '',
+    };
+}
+
+/* Age band from a birth year, '' when there's no birth year. Age is this year minus the birth
+year.
+Age bands are taken from Australian Bureau of Statistics low-level (broad) population groups:
+https://www.abs.gov.au/statistics/standards/age-standard/latest-release*/
+function ageGroupFromBirthYear(birthYear) {
+    if (!birthYear) {
+        return '';
+    }
+    const age = new Date().getFullYear() - birthYear;
+    const bands = [
+        { max: 14, label: 'Youth (14 years and younger)' },
+        { max: 24, label: 'Young Adult (15-24 years)' },
+        { max: 44, label: 'Middle Adult (25-44 years)' },
+        { max: 64, label: 'Older Adult (45-64 years)' },
+    ];
+    const band = bands.find((b) => age <= b.max);
+    return band ? band.label : 'Retirement (65 years and older)';
 }

@@ -33,7 +33,7 @@ npm install
 ```bash
 cd apps/api
 python3 -m venv .venv
-source .venv/bin/activate #If Windows .venv\Scripts\activate.bat
+source .venv/bin/activate #If Windows .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
 
