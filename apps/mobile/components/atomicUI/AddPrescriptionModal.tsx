@@ -1,13 +1,17 @@
 import {useEffect, useState} from "react";
-import {Modal, View, Text, Pressable, StyleSheet, TextInput} from 'react-native'
-import { useTheme, ColourSet } from "../../context/ThemeContext";
+import {Modal, View, Text, Pressable, TextInput, ScrollView, Platform} from 'react-native'
+import { useTheme } from "../../context/ThemeContext";
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { toApiDate, parseApiDate, formatDate } from '../../constants/date';
 
 /**
  * props for the modal
  */
 type Props = {
-    visible: boolean; 
+    visible: boolean;
     title: string;
+    initialValues?: PrescriptionDetails;   // pre-fills the form when editing
+    submitLabel: string;
     onConfirm: (values: PrescriptionDetails) => void;
     onCancel: () => void;
 }
@@ -22,6 +26,7 @@ export type PrescriptionDetails = {
     frequency: string;
     strength: string;
     started_on: string;
+    stopped_on: string;
     notes: string;
 }
 
@@ -35,6 +40,7 @@ const emptyDraft : PrescriptionDetails = {
     frequency: '',
     strength: '',
     started_on: '',
+    stopped_on: '',
     notes: '',
 }
 
@@ -43,17 +49,18 @@ const emptyDraft : PrescriptionDetails = {
  * collects input and reports it through onConfirm for parent screen (prescriptions.tsx)
  * to make API call and close modal.
  */
-const addPrescriptionModal = ({visible, title, onConfirm, onCancel} : Props) => {
+const AddPrescriptionModal = ({visible, title, initialValues, submitLabel, onConfirm, onCancel} : Props) => {
     const { theme, colours } = useTheme();
-    const styles = createStyles(colours);
     const [draft, setDraft] = useState<PrescriptionDetails>(emptyDraft); // whats been types into the input fields
+    const [pickerField, setPickerField] = useState<'started_on' | 'stopped_on' | null>(null);
 
     /**
      * clears form to emptyDraft whenever 'visible' changes (modal is closed)
      */
-    useEffect(()=>{
-      if (!visible)
-        setDraft(emptyDraft);
+    useEffect(() => {
+      setDraft(visible ? (initialValues ?? emptyDraft) : emptyDraft);
+      setPickerField(null);
+      // only on visibility change, so typing isn't wiped if the parent re-renders
     }, [visible]);
 
     /**
@@ -65,32 +72,86 @@ const addPrescriptionModal = ({visible, title, onConfirm, onCancel} : Props) => 
      *handler to update the field when the user types into it
      */
     const updateHandler = (field: keyof PrescriptionDetails) => (text: string) => setDraft((prev) => ({...prev, [field]: text}))
-  
+    
+    /**
+     * Function to render date input fields (started_on & stopped_on)
+     */
+    const renderDateField = (label: string, field: 'started_on' | 'stopped_on') => (
+    <View style={theme.field}>
+      <Text style={[theme.h6, theme.leftItems, {color : colours.onSurface}]}>{label}</Text>
+      <Text> </Text>
+      <Pressable
+        style={[theme.textInput, { borderColor: colours.onSurface, justifyContent: 'center' }]}
+        onPress={() => setPickerField(pickerField === field ? null : field)}
+        >
+        <Text style={[theme.body, { color: colours.onSurface }]}>
+          {draft[field] ? formatDate(draft[field]) : 'Select date'}
+        </Text>
+      </Pressable>
+
+    {draft[field] !== '' && (
+      <Pressable onPress={() => setDraft((prev) => ({ ...prev, [field]: '' }))}>
+        <Text style={[theme.body, { color: colours.onSurface, marginLeft: 8, marginTop: 4 }]}>Clear</Text>
+      </Pressable>
+    )}
+
+    {pickerField === field && (
+      <>
+        <DateTimePicker
+          value={draft[field] ? parseApiDate(draft[field]) : new Date()}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'inline' : 'default'}
+          minimumDate={
+            field === 'stopped_on' && draft.started_on ? parseApiDate(draft.started_on) : undefined
+          }
+          onValueChange={(_event, date) => {
+            setDraft((prev) => ({ ...prev, [field]: toApiDate(date) }));
+            if (Platform.OS === 'android') setPickerField(null); // Android's dialog closes itself
+            }}
+          onDismiss={() => {
+            if (Platform.OS === 'android') setPickerField(null); // cancelled without picking
+          }}
+        />
+        {Platform.OS === 'ios' && (
+          <Pressable onPress={() => setPickerField(null)}>
+            <Text style={[theme.body, { color: colours.primary, textAlign: 'center' }]}>Done</Text>
+          </Pressable>
+        )}
+      </>
+    )}
+  </View>
+    );
+
     /**
      * runs on 'add prescription' button press
      * breaks input into key value pairs, trims spaces from every value and doesnt include empty fields
      * passed back to prescriptions.tsx as PrescriptionDetails
      */
     const handleConfirmation = () => {
-      const clean = Object.fromEntries(
-        Object.entries(draft)
-        .map(([k,v])=> [k,v.trim()] as [string,string])
-        .filter(([,v])=>v.trim()!=='')
-      ) as PrescriptionDetails
-      onConfirm(clean);
-    };
+      const trimmed = Object.fromEntries(
+      Object.entries(draft).map(([k, v]) => [k, v.trim()])
+      ) as PrescriptionDetails;
+      if (initialValues) {
+        onConfirm(trimmed); // editing: keep empty strings so cleared fields get cleared
+      } else {
+        const clean = Object.fromEntries(
+        Object.entries(trimmed).filter(([, v]) => v !== '')
+        ) as PrescriptionDetails;
+        onConfirm(clean);
+        }
+    };  
 
     const handleCancel = () => {
       onCancel();
     };
   
     /**
-   * Function to render a text input section (split into sections)
-   */
-    const renderField = (label: string, field: keyof PrescriptionDetails, keyboardType: 'default' | 'numeric' = 'default') => (
+    * Function to render a text input section (split into sections)
+    */
+    const renderField = (label: string, field: keyof PrescriptionDetails, keyboardType: 'default' | 'numeric'| 'decimal-pad' = 'default') => (
       
-        <View style={styles.field}>
-          <Text style={[theme.h6, theme.leftItems, theme.fontOnSurface]}>{label}</Text>
+        <View style={theme.field}>
+          <Text style={[theme.h6, theme.leftItems, {color: colours.onSurface}]}>{label}</Text>
           <Text> </Text>
           <TextInput
             value={draft[field]}
@@ -98,7 +159,7 @@ const addPrescriptionModal = ({visible, title, onConfirm, onCancel} : Props) => 
             keyboardType={keyboardType}
             placeholder={label}
             placeholderTextColor={colours.onSurface}
-            style={[styles.textInput, { color: colours.onSurface, borderColor: colours.onSurface }]}
+            style={[theme.textInput, { color: colours.onSurface, borderColor: colours.onSurface }]}
           />
         </View>
     );
@@ -110,40 +171,51 @@ const addPrescriptionModal = ({visible, title, onConfirm, onCancel} : Props) => 
         animationType="fade"
         onRequestClose={onCancel} // considers tapping out of frame a 'cancel' scenario
     > 
-        
-    <View style={styles.backgroundColour}/>             
+    <View style={theme.modalBackgroundColour}/>             
     
-    <Pressable style={styles.modalView} onPress={onCancel}> 
-        
+    
+    <Pressable style={theme.modalView} onPress={onCancel}> 
         <Pressable
-          style={[styles.card, { backgroundColor: colours.surface}]}
+          style={[theme.card, { backgroundColor: colours.surface}]}
           onPress={() => {}}
         >
+
+        <Text style={[theme.h4, { color: colours.onSurface }, {margin: 5}]}>{title}</Text>
+
+        <ScrollView>
           
-          <Text style={[theme.h4, { color: colours.onSurface }]}>{title}</Text>
-          <Text> </Text>
-          <Text style={[theme.body, { color: colours.onSurface}]}>
-
-          </Text>
-
+          {/**
+           * Contents of the Modal
+           * 
+           * !!!!To implement: need strength dropdown for dosage based on api strength input
+           */}
           {renderField('Name','name')}
-          {renderField('Dosage','dosage', 'numeric')}
-          {renderField('Frequency','frequency', 'numeric')}
+          {renderField('Dosage','dosage', 'decimal-pad')}
+          {renderField('Frequency','frequency', 'numeric')} 
+          {renderField('Strength','strength', 'decimal-pad')}
+          {renderDateField('Started on', 'started_on')}
+          {initialValues && renderDateField('Stopped on', 'stopped_on')}
+          {renderField('Notes','notes')}
+        
+          </ScrollView>
 
-          <View style={[styles.buttons, theme.centerItems, theme.row]}>
+          {/**
+           * Buttons outside of scrollview so they're stuck to the bottom of the modal
+           */}
+          <View style={[theme.modalButtons, theme.centerItems, theme.row]}>
             <Pressable
-              style={[styles.button, { borderColor: colours.onSurface, borderWidth: 1 }]}
+              style={[theme.modalButton, { borderColor: colours.onSurface, borderWidth: 1 }]}
               onPress={handleCancel}
             >
               <Text style={[theme.body, { color: colours.onSurface }]}>Go Back</Text>
             </Pressable>
 
             <Pressable
-              style={[styles.button, { backgroundColor: colours.primary, opacity: canSubmit ? 1:0.4 }]}
+              style={[theme.modalButton, { backgroundColor: colours.primary, opacity: canSubmit ? 1:0.4 }]}
               onPress={handleConfirmation}
               disabled={!canSubmit}
             >
-              <Text style={[theme.body, { color: colours.onPrimary}]}>Add Prescription</Text>
+              <Text style={[theme.body, { color: colours.onPrimary}]}>{submitLabel}</Text>
             </Pressable>
           </View>
         </Pressable>
@@ -152,57 +224,4 @@ const addPrescriptionModal = ({visible, title, onConfirm, onCancel} : Props) => 
   );
 }
 
-export default addPrescriptionModal;
-
-
-
-function createStyles(colours: ColourSet){
-    return StyleSheet.create({
-        modalView: {
-            flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: 15,
-        },
-        card: {
-          width: '100%',
-          maxWidth: 500,
-          borderRadius: 28,
-          padding: 24,
-        },
-        buttons: {
-          flexDirection: 'row',
-          justifyContent: 'center',
-          flexWrap: 'wrap',
-          gap: 10,
-          marginTop: 24,
-          paddingHorizontal: 15,
-        },
-        button: {
-          paddingVertical: 12,
-          paddingHorizontal: 20,
-          borderRadius: 50,
-          minHeight: 44,
-          justifyContent: 'center',
-          alignItems: 'center',
-        },
-        backgroundColour: {
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.6)'
-        },
-        field : {
-          width: '100%',
-          borderRadius: 28,
-          padding: 5,
-        },
-        textInput : {
-          height: 40,
-            padding: 5,
-            marginHorizontal: 8,
-            borderWidth: 1,
-        },
-    })};
+export default AddPrescriptionModal;
