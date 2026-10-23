@@ -51,3 +51,34 @@ export const withTime = (date: Date, time: TimeOfDay) => {
   dateTime.setHours(time.hours, time.minutes, 0, 0);
   return dateTime;
 };
+
+/**
+ * Receives JS date object and returns a date in 'YYYY-MM-DD' form which the api expects.
+ */
+export const toApiDate = (date: Date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
+/** 
+ * Receives a date string in the form 'YYYY-MM-DD' and returns a JS Date object at midnight
+ * in the phone's local time.
+*/
+export const parseApiDate = (value: string) => {
+  const [y, m, d] = value.split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
+
+/** 
+ * Receives a date string in the form 'YYYY-MM-DD', parses it o date object and returns date as display text.
+ * 
+ * Goes through parseApiDate so the day is never shifted by the phone's timezone.
+ */
+export const formatDate = (value: string) =>
+  parseApiDate(value).toLocaleDateString('en-AU', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
