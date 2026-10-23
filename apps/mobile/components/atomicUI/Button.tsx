@@ -44,7 +44,7 @@ const Button = ({ label, onPress, buttonType, style, textStyle }: ButtonProps) =
       style={[theme[buttonType], style]}
       onPress={onPress}
     >
-      <Text style={[theme.text, textStyle]}>{label}</Text>
+      <Text style={[textStyle, theme.body]}>{label}</Text>
     </TouchableOpacity>
   );
 };
