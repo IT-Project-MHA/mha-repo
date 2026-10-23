@@ -48,7 +48,7 @@ const Button = ({label, onPress, buttonType, name, style, textStyle}: ButtonProp
     
     <TouchableOpacity
       activeOpacity={0.7}
-      style={theme[buttonType]}
+      style={[theme[buttonType], style]}
       onPress={onPress}
     >
     <View style={styles.row}>
