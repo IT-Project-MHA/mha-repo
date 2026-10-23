@@ -5,7 +5,7 @@ import { Pressable, Text } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 
 
-type ButtonType = "primaryButton" | "secondaryButton" | "roundButton" | "roundSecondaryButton" |"transparentButton" | "borderedTransparentButton" | "textButton";
+type ButtonType = "primaryButton" | "secondaryButton" | "roundButton" | "roundSecondaryButton" |"transparentButton" | "roundedTertiaryButton" | "textButton";
 
 
 /**

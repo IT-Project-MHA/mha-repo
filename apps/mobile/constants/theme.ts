@@ -1,6 +1,6 @@
 import { StyleSheet } from "react-native";
 import { lightColours, darkColours, lightHcColours, darkHcColours, ColourSet } from "./colourScheme";
-import { primaryButtonLayout, buttonLayout, textLayout, squareButtonWithLineLayout, transparentButtonLayout, borderedTransparentButtonLayout, textButtonLayout, roundButtonLayout, lineThickness } from "./layout";
+import { primaryButtonLayout, buttonLayout, textLayout, squareButtonWithLineLayout, transparentButtonLayout, roundedTertiaryButtonLayout, textButtonLayout, roundButtonLayout, lineThickness } from "./layout";
 
 /**
  * Builds a style sheet for each theme, using colour schemes defined in colourScheme.ts
@@ -56,10 +56,9 @@ const createTheme = (colours: ColourSet) =>
       backgroundColor: 'transparent',
       ...transparentButtonLayout,
     },
-    borderedTransparentButton: {
-      backgroundColor: 'transparent',
-      borderColor: colours.primary,
-      ...borderedTransparentButtonLayout,
+    roundedTertiaryButton: {
+      backgroundColor: colours.tertiary,
+      ...roundedTertiaryButtonLayout,
     },
     textButton:{
       backgroundColor: 'transparent',
@@ -77,6 +76,17 @@ const createTheme = (colours: ColourSet) =>
       shadowColor: colours.primary,
       shadowOpacity: 0.15,
       shadowRadius: 7,
+    },
+    outlinedContainer: {
+      justifyContent: 'center',
+      paddingBlock: '6%',
+      margin: 3,
+      alignSelf: 'center',
+      width: '70%',
+      paddingHorizontal: '3%',
+      borderRadius: 10,
+      borderColor: colours.onSurface,
+      borderWidth: 2
     },
 
     // divider
@@ -199,6 +209,9 @@ const createTheme = (colours: ColourSet) =>
      */
     fontOnSurface: {
       color: colours.onSurface,
+    },
+    fontOnSurfaceDull: {
+      color: colours.tertiary2
     },
     fontOnBackground: {
       color: colours.onBackground,

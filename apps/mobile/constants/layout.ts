@@ -61,7 +61,7 @@ export const transparentButtonLayout = {
   width: '85%' as const,
 }
 
-export const borderedTransparentButtonLayout = {
+export const roundedTertiaryButtonLayout = {
   alignItems: 'center' as const,
   justifyContent: 'center' as const,
   margin: 5,
