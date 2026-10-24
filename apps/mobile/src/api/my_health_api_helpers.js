@@ -1,4 +1,3 @@
-// from victorias code
 import {
     apiAssessment,
     apiMyPain,
@@ -15,66 +14,6 @@ import {
 } from './django-API';
 
 import {ownPatientProfileId} from './care_planner_api_helpers'
-
-// victorias
-/* Pain values for the suggested questions (PainSummary in constants/suggestedQuestions.ts):
-- takes a patient_profile id, or nothing for the user's own, returns { locations, average, worst,
-  mildest, current }
-- goes through the patient's weekly assessments from the newest week back, until each value is
-  found: locations, worst, mildest & current come from the most recent week that has them, average
-  is the average of the 2 most recent weeks that have it (or the 1 week if there's only 1), rounded
-- a value no assessment has is left out (locations is empty), so its questions aren't shown. A
-  support person only sees the patient's assessments if the patient allows it
-  (can_view_assessments), otherwise every value is left out */
-export async function apiPainSummary(patientProfileId) {
-    const summary = { locations: [] };
-    const profileId = patientProfileId ?? (await ownPatientProfileId());
-    if (!profileId) {
-        return summary;
-    }
-    const [assessments, locationOptions] = await Promise.all([
-        apiAssessment('select', { patient_profile: profileId }),
-        apiQuestionOption('select', { app_section: 'my_pain', question_key: 'pain_location' }),
-    ]);
-    const locationNames = new Map(locationOptions.map((option) => [option.id, option.text]));
-    // newest week first
-    const weeks = [...assessments].sort((a, b) => b.week_starting.localeCompare(a.week_starting));
-
-    const averages = [];
-    for (const assessment of weeks) {
-        // one MyPain per assessment, none if that section wasn't started
-        const [pain] = await apiMyPain('select', { assessment: assessment.id });
-        if (!pain) {
-            continue;
-        }
-
-        if (summary.locations.length === 0) {
-            summary.locations = [
-                ...pain.locations.map((id) => locationNames.get(id)).filter(Boolean),
-                ...(pain.other_location ? [pain.other_location] : []),
-            ];
-        }
-        if (pain.average !== null && averages.length < 2) {
-            averages.push(pain.average);
-        }
-        for (const field of ['worst', 'mildest', 'current']) {
-            if (summary[field] === undefined && pain[field] !== null) {
-                summary[field] = pain[field];
-            }
-        }
-
-        // stops once every value is found
-        if (summary.locations.length > 0 && averages.length === 2 &&
-            ['worst', 'mildest', 'current'].every((field) => summary[field] !== undefined)) {
-            break;
-        }
-    }
-
-    if (averages.length > 0) {
-        summary.average = Math.round(averages.reduce((total, value) => total + value, 0) / averages.length);
-    }
-    return summary;
-}
 
 // retrieve pain history
 export async function apiPainHistory(patientProfileId){
@@ -101,6 +40,8 @@ export async function apiPainHistory(patientProfileId){
 export async function makeUser(phone_number, display_name, email){
     apiUser('create', phone_number, display_name, email);
 }
+
+// -------------- Pain Profile --------------
 
 /* About me details for the My Pain Profile
 - takes no parameters (the user's own details) and returns { name, sex, ageGroup } as strings,
@@ -201,36 +142,53 @@ async function orderedOptionText(app_section, questionKeys){
 }
 
 /* My Pain for Pain Profile
-- returns {location, current, average, worst, mildest, characteristics} of most recent 
-  assessment
+- returns {location, current, average, worst, mildest, characteristics}
+- average is the mean of the 2 most recent weeks that have one (or the 1 week
+  if there's only 1), rounded, and null if no week has one
 - location & characteristics are each a string concatenated of all the selected options plus
   the user's own text inputs for any extra options */
 export async function apiMyPainSummary(patientProfileId) {
-    const empty = {location: '', current: null, average: null , worst: null, mildest: null, 
+    const empty = {location: '', current: null, average: null , worst: null, mildest: null,
         characteristics: ''};
-        const profileId = patientProfileId ?? (await ownPatientProfileId());
-        if (!profileId) return empty;
-        const [locationOptions, characteristicOptions] = await Promise.all([
-            apiQuestionOption('select', {app_section: 'my_pain', question_key: 'pain_location'}),
-            apiQuestionOption('select', {app_section: 'my_pain', question_key:
-                'pain_characteristic'}),
-        ]);
-        const texts = new Map([...locationOptions, ...characteristicOptions].map((o)=>
-            [o.id,o.text]));
-        const latest = await latestSection(apiMyPain, profileId);
-        if (!latest) return empty;
-        return {
-            location:[...latest.locations.map((id)=>texts.get(id)).filter(Boolean),
-                ...(latest.other_location ? [latest.other_location] : []),
-            ].join(', '),
-            current:latest.current,
-            average:latest.average,
-            worst:latest.worst,
-            mildest:latest.mildest,
-            characteristics:[...latest.characteristics.map((id)=>texts.get(id)).filter(Boolean),
-                ...(latest.other_characteristic ? [latest.other_characteristic] : []),
-            ].join(', '),
-        };
+    const profileId = patientProfileId ?? (await ownPatientProfileId());
+    if (!profileId) return empty;
+    const [locationOptions, characteristicOptions, assessments] = await Promise.all([
+        apiQuestionOption('select', {app_section: 'my_pain', question_key: 'pain_location'}),
+        apiQuestionOption('select', {app_section: 'my_pain', question_key: 'pain_characteristic'}),
+        apiAssessment('select', {patient_profile: profileId}),
+    ]);
+    const texts = new Map([...locationOptions, ...characteristicOptions].map((o)=>[o.id,o.text]));
+
+    // newest week first
+    const weeks = [...assessments].sort((a, b)=>b.week_starting.localeCompare(a.week_starting));
+
+    let latest = null;      // most recent week with a MyPain record (for the non-average fields)
+    const averages = [];    // up to the 2 most recent non-null averages
+    for (const assessment of weeks) {
+        const [pain] = await apiMyPain('select', {assessment: assessment.id});
+        if (!pain) continue;
+        if (!latest) latest = pain;
+        if (pain.average !== null && averages.length < 2) averages.push(pain.average);
+        if (latest && averages.length === 2) break;
+    }
+    if (!latest) return empty;
+
+    const average = averages.length > 0
+        ? Math.round(averages.reduce((total, value)=>total + value, 0) / averages.length)
+        : null;
+
+    return {
+        location:[...latest.locations.map((id)=>texts.get(id)).filter(Boolean),
+            ...(latest.other_location ? [latest.other_location] : []),
+        ].join(', '),
+        current:latest.current,
+        average,
+        worst:latest.worst,
+        mildest:latest.mildest,
+        characteristics:[...latest.characteristics.map((id)=>texts.get(id)).filter(Boolean),
+            ...(latest.other_characteristic ? [latest.other_characteristic] : []),
+        ].join(', '),
+    };
 }
 
 /* Impacts to Movement for Pain Profile 
