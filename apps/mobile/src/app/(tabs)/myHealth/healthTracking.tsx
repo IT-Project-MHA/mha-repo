@@ -36,6 +36,9 @@ export default function Screen() {
         onChange={(event) => setIndex(event.nativeEvent.selectedSegmentIndex)}
         style={styles.segmentedControl}
         tintColor={colours.ex3}
+        backgroundColor={colours.tertiary}
+        fontStyle={{ color: colours.onTertiary, fontSize: 16 }}
+        activeFontStyle={{ color: colours.onEx3, fontSize: 16 }}
        />
 
        {index === 0 ? <ChartPage/> : <RecordPage /> }
@@ -135,10 +138,11 @@ function RecordPage(){
 function createStyles(colours: ColourSet){
     return StyleSheet.create({
       segmentedControl: {
-        backgroundColor: colours.tertiary,
-        borderRadius: 8,
-        width: '95%',
+        borderRadius: 10,
+        width: '75%',
+        height: 40,
         alignSelf: 'center',
+        marginBottom: 10,
       },
       
       weekToggle: {
