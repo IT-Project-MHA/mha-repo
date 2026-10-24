@@ -1,11 +1,9 @@
-/**
- */
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import ButtonWithIcon from '../../../../components/atomicUI/ButtonWithIcon';
 import { useRouter } from 'expo-router';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext'
-import SegmentedControl from '@react-native-segmented-control/segmented-control';
-import {useState, useMemo} from 'react';
+import {useState} from 'react';
+import AssessmentChart from '../../../../components/graphics/AssessmentChart';
+import SegmentedPill from '../../../../components/atomicUI/SegmentedControlPill';
 
 export default function Screen() {
   const router = useRouter();
@@ -19,13 +17,13 @@ export default function Screen() {
         <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>My Assessment Records</Text>
       </View>
 
-      <SegmentedControl
+      <SegmentedPill
         values={['Chart', 'History']}
         selectedIndex={index}
-        onChange={(event) => setIndex(event.nativeEvent.selectedSegmentIndex)}
+        onChange={setIndex}
+        radius={50}
         style={styles.segmentedControl}
-        tintColor={colours.ex3}
-       />
+        />
 
        {index === 0 ? <ChartPage/> : <RecordPage /> }
 
@@ -35,18 +33,13 @@ export default function Screen() {
 }
 
 function ChartPage(){
-  const { theme,colours } = useTheme();
+  const { theme } = useTheme();
 
   return (
     <View>
-      <Text>  </Text>
-    
-      <View style={[theme.sectionContainer]}>
-
-      <Text>  </Text>
-
-      <Text style={[theme.layoutContainer,theme.centerText]}> Chart </Text>
-
+      <View style={[theme.layoutContainer]}>
+        <AssessmentChart/>
+        <View style={theme.bottomGap}/>
       </View>
     </View>
   );
@@ -73,9 +66,7 @@ function RecordPage(){
 function createStyles(colours: ColourSet){
     return StyleSheet.create({
       segmentedControl: {
-        backgroundColor: colours.tertiary,
-        borderRadius: 8,
-        width: '95%',
+        width: '92%',
         alignSelf: 'center',
       }
 })
