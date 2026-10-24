@@ -134,6 +134,40 @@ async function sectionRecord(sectionApi, profileId, weekStarting) {
     return null;
 }
 
+/* section key -> its section API */
+const SECTION_APIS = {
+    my_pain: apiMyPain,
+    my_movement: apiMyMovement,
+    personal_care: apiMyPersonalCare,
+    social_health: apiMySocialHealth,
+    management: apiMyManagement,
+};
+
+/* Which assessment sections were answered for one week.
+- weekStarting: 'YYYY-MM-DD' of the week to check
+- returns an array of section keys (subset of SECTION_APIS keys) that have a record for that
+  week, so callers can hide links to sections that don't exist. Empty if the week (or profile)
+  isn't found or nothing was answered. */
+export async function apiAnsweredSections(patientProfileId, weekStarting) {
+    const profileId = patientProfileId ?? (await ownPatientProfileId());
+    if (!profileId || !weekStarting) return [];
+
+    const assessments = await apiAssessment('select', {patient_profile: profileId});
+    const match = assessments.find((a)=>a.week_starting === weekStarting);
+    if (!match) return [];
+
+    const present = [];
+    await Promise.all(
+        // checks all sections in parallel
+        // turns SECTION_APIS into an array of [key, api] pairs
+        Object.entries(SECTION_APIS).map(async ([key, api])=>{
+            const [row] = await api('select', {assessment: match.id});
+            if (row) present.push(key);
+        }),
+    );
+    return present;
+}
+
 /* Helper function: 
 Given app section and all all question keys of that section in QusetionOptionOrdered, 
 get the list of all id->text for each possible answer. 
