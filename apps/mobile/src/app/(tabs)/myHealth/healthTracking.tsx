@@ -84,10 +84,12 @@ function RecordPage(){
             ):(
               weeks.map((week, i) => {
                 const isOpen = openWeek === week;
+                const showYearHeading = i===0 || week.slice(0,4) !== weeks[i-1].slice(0,4);
                 return (
                   <View key={week}>
-                    {/* divider between rows (not before the first) */}
-                    {i > 0 && <View style={theme.line} />}
+                    {showYearHeading? <Text style={[theme.h4, theme.fontOnSurface, 
+                      styles.yearHeading]}>{week.slice(0,4)}</Text>
+                      : i>0 && <View style={theme.line}/>}
                     <View style={styles.weekToggle}>
                       <Pressable onPress={() => setOpenWeek(isOpen? null:week)}
                         style={styles.weekToggleHeader}>
@@ -144,6 +146,13 @@ function createStyles(colours: ColourSet){
         color: colours.onSurface,
         fontSize: 16,
         fontWeight: 600,
+      },
+
+      yearHeading: {
+        width: '90%',
+        alignSelf: 'center',
+        marginTop: 14,
+        marginBottom: 2,
       }
     
 })
