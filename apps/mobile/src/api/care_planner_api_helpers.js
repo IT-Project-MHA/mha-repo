@@ -16,7 +16,7 @@ import { suggestedIdOfText } from '../../constants/suggestedQuestions';
 a failed request throws an ApiError. */
 
 // returns the id of the user's own patient profile, or null if they don't have one
-async function ownPatientProfileId() {
+export async function ownPatientProfileId() {
     const [user] = await apiUser('select');
     const [profile] = await apiPatientProfile('select', { user: user.id });
     return profile ? profile.id : null;

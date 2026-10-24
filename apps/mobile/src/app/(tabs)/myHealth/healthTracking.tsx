@@ -1,11 +1,13 @@
 /**
  */
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import ButtonWithIcon from '../../../../components/atomicUI/ButtonWithIcon';
 import { useRouter } from 'expo-router';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext'
 import SegmentedControl from '@react-native-segmented-control/segmented-control';
-import {useState, useMemo} from 'react';
+import {useState, useMemo, useEffect} from 'react';
+import {apiAssessment} from '@/api/django-API';
+import {ownPatientProfileId} from '@/api/care_planner_api_helpers';
 
 export default function Screen() {
   const router = useRouter();
@@ -54,17 +56,56 @@ function ChartPage(){
 
 function RecordPage(){
   const { theme,colours } = useTheme();
+  const styles = createStyles(colours);
+
+  // all assessment weeks that the user has made
+  const [weeks, setWeeks] = useState<string[]>([]);
+  // currently expanded week
+  const [openWeek, setOpenWeek] = useState<string | null>(null);
+
+  useEffect(() => { (async() => { 
+    try{
+      const profileId = await ownPatientProfileId();
+      if (!profileId) return;
+      const assessments = await apiAssessment('select', {patient_profile:profileId});
+      const sorted = assessments.map((a: any)=>a.week_starting as string)
+        .sort((a:string, b:string) => b.localeCompare(a)); // newest first
+      setWeeks(sorted);
+    } catch (e: any) {console.log('failed to load assessment weeks', e?.message);}
+  })(); }, []);
 
   return (
-    <View>
-      <Text>  </Text>
-    
+    <View style={{ paddingTop: 20 }}>
       <View style={[theme.sectionContainer]}>
 
-      <Text>  </Text>
+        {weeks.length === 0 ?(
+          <Text style={[theme.small, theme.centerText, theme.fontOnSurface]}>
+            No assessment records yet</Text>
+            ):(
+              weeks.map((week, i) => {
+                const isOpen = openWeek === week;
+                return (
+                  <View key={week}>
+                    {/* divider between rows (not before the first) */}
+                    {i > 0 && <View style={theme.line} />}
+                    <View style={styles.weekToggle}>
+                      <Pressable onPress={() => setOpenWeek(isOpen? null:week)}
+                        style={styles.weekToggleHeader}>
+                        <Text style={[theme.small, styles.weekToggleText]}>{weekRangeLabel(week)}</Text>
+                        <Text style={[theme.small, styles.weekToggleText]}>{isOpen ? '▲' : '▼'}</Text>
+                      </Pressable>
 
-      <Text style={[theme.layoutContainer,theme.centerText]}> History </Text>
-
+                      {isOpen && (
+                        <View style={styles.weekToggleContent}>
+                          <Text style={[theme.small, theme.fontOnSurface]}>open</Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                )}
+              )
+            )
+          }
       </View>
     </View>
   );
@@ -77,6 +118,46 @@ function createStyles(colours: ColourSet){
         borderRadius: 8,
         width: '95%',
         alignSelf: 'center',
+      },
+      
+      weekToggle: {
+        width: '90%',
+        alignSelf: 'center',
+        marginTop: 10,
+        paddingBottom: 5
+      },
+
+      weekToggleHeader: {
+        flexDirection: 'row', 
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        minHeight: 50,
+        paddingHorizontal: 4,
+      },
+
+      weekToggleContent: {
+        paddingVertical: 10,
+        paddingHorizontal: 4,
+      },
+
+      weekToggleText: {
+        color: colours.onSurface,
+        fontSize: 16,
+        fontWeight: 600,
       }
+    
 })
 };
+
+// converts YYYY-MM-DD on a Monday to display text Monday-Sunday (whole week)
+function weekRangeLabel(weekStarting: string): string {
+  const [y, m, d] = weekStarting.split('-').map(Number);
+  const start = new Date(y, m-1, d);
+  const end = new Date(y, m-1, d+6);
+  const monthName = (date: Date) => date.toLocaleDateString('en-AU', {month: 'long'});
+
+  if (start.getMonth() === end.getMonth()){
+    return `${start.getDate()}-${end.getDate()} ${monthName(end)}`;
+  }
+  return `${start.getDate()} ${monthName(start)} - ${end.getDate()} ${monthName(end)}`
+}
