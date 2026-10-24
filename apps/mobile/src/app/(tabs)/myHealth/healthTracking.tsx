@@ -8,6 +8,15 @@ import SegmentedControl from '@react-native-segmented-control/segmented-control'
 import {useState, useMemo, useEffect} from 'react';
 import {apiAssessment} from '@/api/django-API';
 import {ownPatientProfileId} from '@/api/care_planner_api_helpers';
+import {Ionicons} from '@react-native-vector-icons/ionicons';
+
+const SECTIONS = [
+  {key: 'my_pain', label: 'My Pain'},
+  {key: 'my_movement', label: 'My Movement'},
+  {key: 'personal_care', label: 'My Personal Care'},
+  {key: 'social_health', label: 'My Social Health'},
+  {key: 'management', label: 'My Management'},
+] as const;
 
 export default function Screen() {
   const router = useRouter();
@@ -30,7 +39,7 @@ export default function Screen() {
        />
 
        {index === 0 ? <ChartPage/> : <RecordPage /> }
-
+      <View style={theme.bottomGap}/>
     </ScrollView>
 
   );
@@ -57,6 +66,7 @@ function ChartPage(){
 function RecordPage(){
   const { theme,colours } = useTheme();
   const styles = createStyles(colours);
+  const router = useRouter();
 
   // all assessment weeks that the user has made
   const [weeks, setWeeks] = useState<string[]>([]);
@@ -99,7 +109,16 @@ function RecordPage(){
 
                       {isOpen && (
                         <View style={styles.weekToggleContent}>
-                          <Text style={[theme.small, theme.fontOnSurface]}>open</Text>
+                          {SECTIONS.map((section) => (
+                            <Pressable key={section.key} style={styles.sectionRow} onPress={()=>
+                              router.push({pathname: '/myHealth/assessmentSectionSummary',
+                                params: {week, section: section.key},
+                              })
+                            }>
+                              <Text style={[theme.body, theme.fontOnSurface]}>{section.label}</Text>
+                              <Ionicons name="chevron-forward" size={18} color={colours.onSurface}/>
+                            </Pressable>
+                          ))}
                         </View>
                       )}
                     </View>
@@ -153,6 +172,15 @@ function createStyles(colours: ColourSet){
         alignSelf: 'center',
         marginTop: 14,
         marginBottom: 2,
+      },
+
+      sectionRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        minHeight: 44,
+        paddingHorizontal: 4,
+        paddingVertical: 8,
       }
     
 })
