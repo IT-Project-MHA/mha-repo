@@ -107,16 +107,26 @@ export async function apiMyConditions() {
     };
 }
 
-/* Helper function: 
-Gets the record from the patient's most recent assessment section.
-- sectionApi: one of apiMyPain, apiMyMovement, apiMyPersonalCare, apiMySocialHealth, 
-  apiMyManagement */
-async function latestSection(sectionApi, profileId) {
-
-    // all user assessments, sort by week_starting
+/* Helper function:
+Gets the record for one assessment section.
+- sectionApi: one of apiMyPain, apiMyMovement, apiMyPersonalCare, apiMySocialHealth,
+  apiMyManagement
+- weekStarting: that exact week's record ('YYYY-MM-DD')
+  - if blank: the most recent week that has a record */
+async function sectionRecord(sectionApi, profileId, weekStarting) {
+    // all user assessments, sort by week_starting (newest first)
     const assessments = await apiAssessment('select', {patient_profile: profileId});
     const weeks = [...assessments].sort((a, b)=>b.week_starting.localeCompare(a.week_starting));
-    // try fetching record starting from the most recent assessment
+
+    // scoped to one week: only that week's record, no fallback to other weeks
+    if (weekStarting) {
+        const match = weeks.find((a)=>a.week_starting === weekStarting);
+        if (!match) return null;
+        const [row] = await sectionApi('select', {assessment: match.id});
+        return row ?? null;
+    }
+
+    // otherwise, the most recent week that has a record
     for (const assessment of weeks) {
         const [row] = await sectionApi('select', {assessment:assessment.id});
         if (row) return row;
@@ -141,13 +151,15 @@ async function orderedOptionText(app_section, questionKeys){
     return new Map(sets.flat().map((option)=>[option.id, option.text]));
 }
 
-/* My Pain for Pain Profile
+/* My Pain Summary for Pain Profile & Assessment Records
+- weekStarting: that exact week's record ('YYYY-MM-DD')
+  - if blank: the most recent week that has a record
 - returns {location, current, average, worst, mildest, characteristics}
-- average is the mean of the 2 most recent weeks that have one (or the 1 week
-  if there's only 1), rounded, and null if no week has one
+- average is the mean (rounded) of up to the 2 most recent non-null averages at or before the
+  chosen week, or null if none
 - location & characteristics are each a string concatenated of all the selected options plus
   the user's own text inputs for any extra options */
-export async function apiMyPainSummary(patientProfileId) {
+export async function apiMyPainSummary(patientProfileId, weekStarting) {
     const empty = {location: '', current: null, average: null , worst: null, mildest: null,
         characteristics: ''};
     const profileId = patientProfileId ?? (await ownPatientProfileId());
@@ -162,16 +174,42 @@ export async function apiMyPainSummary(patientProfileId) {
     // newest week first
     const weeks = [...assessments].sort((a, b)=>b.week_starting.localeCompare(a.week_starting));
 
-    let latest = null;      // most recent week with a MyPain record (for the non-average fields)
-    const averages = [];    // up to the 2 most recent non-null averages
-    for (const assessment of weeks) {
-        const [pain] = await apiMyPain('select', {assessment: assessment.id});
-        if (!pain) continue;
-        if (!latest) latest = pain;
-        if (pain.average !== null && averages.length < 2) averages.push(pain.average);
-        if (latest && averages.length === 2) break;
+    // store query result to be reused
+    const painCache = new Map();
+    const painFor = async (assessmentId) => {
+        if (!painCache.has(assessmentId)) {
+            const [row] = await apiMyPain('select', {assessment: assessmentId});
+            painCache.set(assessmentId, row ?? null);
+        }
+        return painCache.get(assessmentId);
+    };
+
+    // where to start: the selected week, or the newest week
+    let startIndex = 0;
+    if (weekStarting) {
+        startIndex = weeks.findIndex((a)=>a.week_starting === weekStarting);
+        if (startIndex === -1) return empty;
+    }
+
+    // record for the non-average fields
+    let latest = null;
+    let latestIndex = startIndex;
+    if (weekStarting) {
+        latest = await painFor(weeks[startIndex].id);
+    } else {
+        for (let i = startIndex; i < weeks.length; i++) {
+            const row = await painFor(weeks[i].id);
+            if (row) { latest = row; latestIndex = i; break; }
+        }
     }
     if (!latest) return empty;
+
+    // average: up to the 2 most recent non-null averages at or before the chosen week
+    const averages = [];
+    for (let i = latestIndex; i < weeks.length && averages.length < 2; i++) {
+        const row = await painFor(weeks[i].id);
+        if (row && row.average !== null) averages.push(row.average);
+    }
 
     const average = averages.length > 0
         ? Math.round(averages.reduce((total, value)=>total + value, 0) / averages.length)
@@ -194,15 +232,15 @@ export async function apiMyPainSummary(patientProfileId) {
 /* Impacts to Movement for Pain Profile 
 - returns {activeHours, general, walking, lifting, sitting, standing} as display strings
 */
-export async function apiMovementSummary(patientProfileId) {
+export async function apiMovementSummary(patientProfileId, weekStarting) {
     const empty = {activeHours:null, general:'', walking: '', lifting: '', sitting: '',
         standing: ''};
     const profileId = patientProfileId ?? (await ownPatientProfileId());
     if (!profileId) return empty;
 
-    const texts = await orderedOptionText('my_movement', ['movement_general_impacts', 
+    const texts = await orderedOptionText('my_movement', ['movement_general_impacts',
         'movement_walking', 'movement_sitting', 'movement_lifting', 'movement_standing',]);
-    const latest = await latestSection(apiMyMovement, profileId);
+    const latest = await sectionRecord(apiMyMovement, profileId, weekStarting);
     if (!latest) return empty;
     return {
         activeHours:latest.active_hours == null ? null : latest.active_hours,
@@ -216,7 +254,7 @@ export async function apiMovementSummary(patientProfileId) {
 
 /* Impacts to Personal Care for Pain Profile 
 - returns {general, personalCare, sleeping} */
-export async function apiPersonalCareSummary(patientProfileId) {
+export async function apiPersonalCareSummary(patientProfileId, weekStarting) {
     const empty = {general: '', personalCare: '', sleeping: ''};
     const profileId = patientProfileId ?? (await ownPatientProfileId());
     if (!profileId) return empty;
@@ -224,7 +262,7 @@ export async function apiPersonalCareSummary(patientProfileId) {
     const texts = await orderedOptionText('my_personal_care', [
         'care_general_impacts', 'care_personal_care', 'care_sleeping',
     ]);
-    const latest = await latestSection(apiMyPersonalCare, profileId);
+    const latest = await sectionRecord(apiMyPersonalCare, profileId, weekStarting);
     if (!latest) return empty;
 
     return {
@@ -238,14 +276,14 @@ export async function apiPersonalCareSummary(patientProfileId) {
 /*  Impacts to Social Health for Pain Profile
 - returns {socialLife, travelling, mood, relationships, enjoyment}
 - mood, relationships & enjoyment are 0-10 numbers (or null) */
-export async function apiSocialHealthSummary(patientProfileId) {
+export async function apiSocialHealthSummary(patientProfileId, weekStarting) {
     const empty = {socialLife:'', travelling:'', mood:null, relationships: null, enjoyment:null};
     const profileId = patientProfileId ?? (await ownPatientProfileId());
     if (!profileId) return empty;
 
     const texts = await orderedOptionText('my_social_health', ['social_social_life',
         'social_travelling',]);
-    const latest = await latestSection(apiMySocialHealth, profileId);
+    const latest = await sectionRecord(apiMySocialHealth, profileId, weekStarting);
     if (!latest) return empty;
 
     return {
@@ -261,7 +299,7 @@ export async function apiSocialHealthSummary(patientProfileId) {
 - returns {medication, exercise, emotion} as display strings 
 - medication is a string concatenated of all prescriptions the user has selected from their
   prescription list, plus any extra OTC medication */
-export async function apiManagementSummary(patientProfileId) {
+export async function apiManagementSummary(patientProfileId, weekStarting) {
     const empty = { medication: '', exercise: '', emotion: ''};
     const profileId = patientProfileId ?? (await ownPatientProfileId());
     if (!profileId) return empty;
@@ -273,7 +311,7 @@ export async function apiManagementSummary(patientProfileId) {
     ]);
     const exerciseTexts = new Map(exerciseOptions.map((o)=> [o.id, o.text]));
     const prescriptionNames = new Map(prescriptions.map((p) => [p.id, p.name]));
-    const latest = await latestSection(apiMyManagement, profileId);
+    const latest = await sectionRecord(apiMyManagement, profileId, weekStarting);
     if (!latest) return empty;
 
     return {
