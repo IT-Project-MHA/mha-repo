@@ -72,7 +72,7 @@ export const parseApiDate = (value: string) => {
 };
 
 /** 
- * Receives a date string in the form 'YYYY-MM-DD', parses it o date object and returns date as display text.
+ * Receives a date string in the form 'YYYY-MM-DD', parses it to date object and returns date as display text.
  * 
  * Goes through parseApiDate so the day is never shifted by the phone's timezone.
  */
@@ -82,3 +82,30 @@ export const formatDate = (value: string) =>
     month: 'short',
     year: 'numeric',
   });
+
+
+// milliseconds in one day
+export const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+/**
+ * Receives a 'YYYY-MM-DD' string and returns a short label e.g. '3 Nov', or '3 Nov 26' when
+ * includeYear is true. Used for chart axes as space is tight.
+ */
+export const formatShortDate = (value: string, includeYear = false) =>
+  parseApiDate(value).toLocaleDateString('en-AU', {
+    day: 'numeric',
+    month: 'short',
+    ...(includeYear ? { year: '2-digit' as const } : {}),
+  });
+
+/**
+ * Returns the time in milliseconds of the moment this many days ago. Dates on or after this
+ * value are within the last 'days' days.
+ */
+export const daysAgoCutoff = (days: number) => Date.now() - days * MS_PER_DAY;
+
+/**
+ * Receives two 'YYYY-MM-DD' strings and returns the number of days between them.
+ */
+export const daysBetween = (from: string, to: string) =>
+  Math.round((parseApiDate(to).getTime() - parseApiDate(from).getTime()) / MS_PER_DAY);

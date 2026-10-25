@@ -13,33 +13,8 @@ import {
     apiMyManagement,
 } from './django-API';
 
+import { USE_FAKE_DATA, fakeHistory } from '../dev/fakeHistory';
 import {ownPatientProfileId} from './care_planner_api_helpers'
-
-// retrieve pain history
-export async function apiPainHistory(patientProfileId){
-    const profileId = patientProfileId ?? (await ownPatientProfileId());
-    if (!profileId){
-        return [];
-    }
-    const assessments = await apiAssessment('select', { patient_profile: profileId });
-
-    const pain = await Promise.all(
-        assessments.map((assessment) => apiMyPain('select', {assessment: assessment.id})),
-    );
-
-    return assessments
-        .map((assessment, index) => ({
-            completedAt: assessment.week_starting,
-            score: pain[index][0]?.average ?? null,
-        }))
-        .filter((point) => point.score !== null)
-        .sort((a,b) => a.completedAt.localeCompare(b.completedAt));
-}
-
-// create dummy user
-export async function makeUser(phone_number, display_name, email){
-    apiUser('create', phone_number, display_name, email);
-}
 
 // -------------- Pain Profile --------------
 
@@ -282,4 +257,88 @@ export async function apiManagementSummary(patientProfileId) {
         exercise:exerciseTexts.get(latest.exercise) ?? '',
         emotion:latest.emotion ?? '',
     };
+}
+
+// -------------- My Health Chart --------------
+
+// which API & numeric field to plot for each assessment area
+const HISTORY_FIELDS = {
+    pain: [apiMyPain, 'average'],
+    movement: [apiMyMovement, 'score'],
+    personalCare: [apiMyPersonalCare, 'score'],
+    socialHealth: [apiMySocialHealth, 'score'],
+    management: [apiMyManagement, 'score'],
+};
+
+/* Weekly history of one assessment area for charting
+* - area: a key of HISTORY_FIELDS
+* - returns [{completedAt, score}] oldest first, weeks with no record or no value are left out 
+*/
+export async function apiScoreHistory(area, patientProfileId) {
+    if (USE_FAKE_DATA) return fakeHistory(area);
+
+    const entry = HISTORY_FIELDS[area];
+    if (!entry) {
+        throw new Error(`Unknown assessment area: ${area}`);
+    }
+    const [sectionApi, field] = entry;
+
+    const profileId = patientProfileId ?? (await ownPatientProfileId());
+    if (!profileId) {
+        return [];
+    }
+    const assessments = await apiAssessment('select', { patient_profile: profileId });
+
+    const rows = await Promise.all(
+        assessments.map((assessment) => sectionApi('select', {assessment: assessment.id})),
+    );
+
+    return assessments
+        .map((assessment, index) => ({
+            completedAt: assessment.week_starting,
+            score: rows[index][0]?.[field] ?? null,
+        }))
+        .filter((point) => point.score !== null)
+        .sort((a, b) => a.completedAt.localeCompare(b.completedAt));
+}
+
+// retrieves pain history
+export function apiPainHistory(patientProfileId) {
+    return apiScoreHistory('pain', patientProfileId);
+}
+
+/* Weekly pain history with detail for the chart & summary
+* - returns [{completedAt, score, worst, mildest, locations}] oldest first
+* - score is the weekly average, locations are the option labels
+* */
+export async function apiPainDetailHistory(patientProfileId) {
+    if (USE_FAKE_DATA) return fakeHistory('pain'); 
+
+    const profileId = patientProfileId ?? (await ownPatientProfileId());
+    if (!profileId) {
+        return [];
+    }
+    const [assessments, locationOptions] = await Promise.all([
+        apiAssessment('select', { patient_profile: profileId }),
+        apiQuestionOption('select', {app_section: 'my_pain', question_key: 'pain_location'}),
+    ]);
+    const locationNames = new Map(locationOptions.map((o) => [o.id, o.text]));
+
+    const rows = await Promise.all(
+        assessments.map((assessment) => apiMyPain('select', {assessment: assessment.id})),
+    );
+
+    return assessments
+        .map((assessment, index) => {
+            const row = rows[index][0];
+            return {
+                completedAt: assessment.week_starting,
+                score: row?.average ?? null,
+                worst: row?.worst ?? null,
+                mildest: row?.mildest ?? null,
+                locations: (row?.locations ?? []).map((id) => locationNames.get(id)).filter(Boolean),
+            };
+        })
+        .filter((point) => point.score !== null)
+        .sort((a, b) => a.completedAt.localeCompare(b.completedAt));
 }
