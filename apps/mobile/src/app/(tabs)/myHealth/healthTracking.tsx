@@ -10,6 +10,7 @@ import {apiAssessment} from '@/api/django-API';
 import {ownPatientProfileId} from '@/api/care_planner_api_helpers';
 import {apiAnsweredSections} from '@/api/my_health_api_helpers';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
+import {weekRangeLabel} from '../../../../constants/date';
 
 const SECTIONS = [
   {key: 'my_pain', label: 'My Pain'},
@@ -210,16 +211,3 @@ function createStyles(colours: ColourSet){
     
 })
 };
-
-// converts YYYY-MM-DD on a Monday to display text Monday-Sunday (whole week)
-function weekRangeLabel(weekStarting: string): string {
-  const [y, m, d] = weekStarting.split('-').map(Number);
-  const start = new Date(y, m-1, d);
-  const end = new Date(y, m-1, d+6);
-  const monthName = (date: Date) => date.toLocaleDateString('en-AU', {month: 'long'});
-
-  if (start.getMonth() === end.getMonth()){
-    return `${start.getDate()}-${end.getDate()} ${monthName(end)}`;
-  }
-  return `${start.getDate()} ${monthName(start)} - ${end.getDate()} ${monthName(end)}`
-}

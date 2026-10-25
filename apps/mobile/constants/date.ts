@@ -82,3 +82,15 @@ export const formatDate = (value: string) =>
     month: 'short',
     year: 'numeric',
   });
+
+// converts YYYY-MM-DD on a Monday to display text Monday-Sunday (whole week)
+export const weekRangeLabel = (weekStarting: string) => {
+  const start = parseApiDate(weekStarting);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  const monthName = (date: Date) => date.toLocaleDateString('en-AU', { month: 'long' });
+
+  return start.getMonth() === end.getMonth()
+    ? `${start.getDate()}-${end.getDate()} ${monthName(end)}`
+    : `${start.getDate()} ${monthName(start)} - ${end.getDate()} ${monthName(end)}`;
+};

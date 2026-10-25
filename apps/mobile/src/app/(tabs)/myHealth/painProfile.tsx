@@ -104,6 +104,8 @@ export default function Screen() {
   const na = (v?: string | null) => v || 'Not available';
   const row = (label: string, value?: string | null) =>
     `<tr><td class="label">${label}</td><td class="value">${na(value)}</td></tr>`;
+  // append the raw number to a label for number-input fields, e.g. 'Current pain: 7'
+  const withNum = (label: string, n?: number | null) => n == null ? label : `${label}: ${n}`;
 
   const buildHtml = () => {
     const generated = new Date().toLocaleString('en-AU', {timeZone: 'Australia/Sydney'});
@@ -165,10 +167,10 @@ export default function Screen() {
       <h2>My Pain</h2>
       <table>
         ${row('Pain location', pain.location)}
-        ${row('Current pain', currentPainIntensityText(pain.current))}
-        ${row('Average pain (2 weeks)', averagePainIntensityText(pain.average))}
-        ${row('Worst pain', worstPainIntensityText(pain.worst))}
-        ${row('Mildest pain', mildestPainIntensityText(pain.mildest))}
+        ${row(withNum('Current pain', pain.current), currentPainIntensityText(pain.current))}
+        ${row(withNum('Average pain (2 weeks)', pain.average), averagePainIntensityText(pain.average))}
+        ${row(withNum('Worst pain', pain.worst), worstPainIntensityText(pain.worst))}
+        ${row(withNum('Mildest pain', pain.mildest), mildestPainIntensityText(pain.mildest))}
         ${row('Pain characteristics', pain.characteristics)}
       </table>
     </div>
@@ -320,22 +322,22 @@ export default function Screen() {
           <Text style={[theme.body, theme.fontOnSurface]}>{pain.location || 'Not available'}</Text>
         </View>
         <View style={styles.cardItem}>
-          <Text style={[theme.h6, theme.fontOnSurface]}>My Current pain:</Text>
+          <Text style={[theme.h6, theme.fontOnSurface]}>{withNum('My Current pain', pain.current)}</Text>
           <Text style={[theme.body, theme.fontOnSurface]}>{currentPainIntensityText(
             pain.current)}</Text>
         </View>
         <View style={styles.cardItem}>
-          <Text style={[theme.h6, theme.fontOnSurface]}>Average pain (2 weeks):</Text>
+          <Text style={[theme.h6, theme.fontOnSurface]}>{withNum('Average pain (2 weeks)', pain.average)}</Text>
           <Text style={[theme.body, theme.fontOnSurface]}>{averagePainIntensityText(
             pain.average)}</Text>
         </View>
         <View style={styles.cardItem}>
-          <Text style={[theme.h6, theme.fontOnSurface]}>Worst pain:</Text>
+          <Text style={[theme.h6, theme.fontOnSurface]}>{withNum('Worst pain', pain.worst)}</Text>
           <Text style={[theme.body, theme.fontOnSurface]}>{worstPainIntensityText(
             pain.worst)}</Text>
         </View>
         <View style={styles.cardItem}>
-          <Text style={[theme.h6, theme.fontOnSurface]}>Mildest pain:</Text>
+          <Text style={[theme.h6, theme.fontOnSurface]}>{withNum('Mildest pain', pain.mildest)}</Text>
           <Text style={[theme.body, theme.fontOnSurface]}>{mildestPainIntensityText(
             pain.mildest)}</Text>
         </View>
