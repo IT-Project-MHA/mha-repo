@@ -32,6 +32,7 @@
     "expo-symbols": "~58.0.4",
     "expo-system-ui": "~58.0.6",
     "expo-web-browser": "~58.0.6",
+    "jest-expo": "~58.0.12",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-native": "0.88.0",
@@ -57,6 +58,7 @@
     "@typescript-eslint/parser": "^5.62.0",
     "eslint": "^8.57.1",
     "jest": "~30.5.2",
+    "jest-fixed-jsdom": "^0.0.11",
     "prettier": "^3.9.8",
     "prettier-eslint": "^16.4.2",
     "ts-jest": "^29.4.14",
@@ -72,8 +74,8 @@
     "test": "jest --watchAll"
   },
   "jest": {
-    "preset": "./node_modules/jest-expo/jest-preset.js",
-    "testEnvironment": "jsdom"
+    "preset": "jest-expo",
+    "testEnvironment": "jest-fixed-jsdom"
   },
   "private": true
 }
