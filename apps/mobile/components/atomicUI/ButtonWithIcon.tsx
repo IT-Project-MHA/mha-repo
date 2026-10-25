@@ -26,6 +26,7 @@ type ButtonProps = {
   name: IoniconsIconName;
   style?: StyleProp<ViewStyle>; // optional, added on top of the button type's style, e.g. for layout
   textStyle?: StyleProp<TextStyle>; // optional, added on top of the label's style, e.g. to centre lines
+  disabled?: boolean; // optional, when true the button is dimmed and ignores presses
 };
 
 /**
@@ -37,7 +38,7 @@ type ButtonProps = {
  * @param buttonType string that maps to a button type, defined in theme.ts
  * @returns a styled button component, which performs some funtion when pressed, with an icon
  */
-const Button = ({label, onPress, buttonType, name, style, textStyle}: ButtonProps) => {
+const Button = ({label, onPress, buttonType, name, style, textStyle, disabled}: ButtonProps) => {
   const { theme, colours} = useTheme();
 
   // flatten so we can safely read .color, whatever shape textStyle is
@@ -45,10 +46,11 @@ const Button = ({label, onPress, buttonType, name, style, textStyle}: ButtonProp
   const iconColour = flatTextStyle?.color ?? colours.onSurface;
 
   return (
-    
+
     <TouchableOpacity
       activeOpacity={0.7}
-      style={[theme[buttonType], style]}
+      disabled={disabled}
+      style={[theme[buttonType], style, disabled && styles.disabled]}
       onPress={onPress}
     >
     <View style={styles.row}>
@@ -80,5 +82,9 @@ const styles = StyleSheet.create({
     icon: {
         position: 'absolute', // absolute detaches it from the text
         right: 0,
+    },
+    // dimmed look while the button is disabled
+    disabled: {
+        opacity: 0.5,
     },
 });

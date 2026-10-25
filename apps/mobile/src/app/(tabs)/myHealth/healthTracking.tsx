@@ -39,6 +39,7 @@ export default function Screen() {
         style={styles.segmentedControl}
         tintColor={colours.ex3}
         backgroundColor={colours.tertiary}
+        sliderStyle={{ borderRadius: 20}}
         fontStyle={{ color: colours.onTertiary, fontSize: 16 }}
         activeFontStyle={{ color: colours.onEx3, fontSize: 16 }}
        />
@@ -160,7 +161,7 @@ function RecordPage(){
 function createStyles(colours: ColourSet){
     return StyleSheet.create({
       segmentedControl: {
-        borderRadius: 10,
+        borderRadius: 20,
         width: '75%',
         height: 40,
         alignSelf: 'center',

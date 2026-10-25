@@ -21,19 +21,8 @@ export default function Screen() {
 
   // About me details {name, sex, ageGroup }
   const [aboutMe, setAboutMe] = useState({ name: '', sex: '', ageGroup: '' });
-  useEffect(() => {
-    apiAboutMe().then(setAboutMe)
-      .catch((e) => console.log('failed to load about me', e?.message, e?.status, e?.data));
-  }, []);
-
   // My conditions {primaryCondition, otherConditions}
   const [conditions, setConditions] = useState({primaryCondition: '', otherConditions: ''});
-  useEffect(() => {
-    apiMyConditions()
-      .then(setConditions)
-      .catch((e) => console.log('failed to load conditions', e?.message, e?.status, e?.data));
-  }, []);
-
   // My Pain Summary {location, current, average, worst, mildest, characteristics}
   const [pain, setPain] = useState<{
     location: string;
@@ -45,12 +34,6 @@ export default function Screen() {
   }>({
     location: '', current: null, average: null, worst: null, mildest: null, characteristics: '',
   });
-  useEffect(() => {
-    apiMyPainSummary()
-      .then(setPain)
-      .catch((e) => console.log('failed to load my pain', e?.message, e?.status, e?.data));
-  }, []);
-
   // Movement Summary {activeHours, general, walking, lifting, sitting, standing}
   const [movement, setMovement] = useState<{
     activeHours: number | null;
@@ -62,20 +45,8 @@ export default function Screen() {
   }>({
     activeHours: null, general: '', walking: '', lifting: '', sitting: '', standing: '',
   });
-  useEffect(() => {
-    apiMovementSummary()
-      .then(setMovement)
-      .catch((e) => console.log('failed to load movement', e?.message, e?.status, e?.data));
-  }, []);
-
   // Personal Care Summary {general, personalCare, sleeping}
   const [personalCare, setPersonalCare] = useState({ general: '', personalCare: '', sleeping: '' });
-  useEffect(() => {
-    apiPersonalCareSummary()
-      .then(setPersonalCare)
-      .catch((e) => console.log('failed to load personal care', e?.message, e?.status, e?.data));
-  }, []);
-
   // Social Health summary {socialLife, travelling, mood, relationships, enjoyment}
   const [social, setSocial] = useState<{
     socialLife: string;
@@ -86,18 +57,29 @@ export default function Screen() {
   }>({
     socialLife: '', travelling: '', mood: null, relationships: null, enjoyment: null,
   });
-  useEffect(() => {
-    apiSocialHealthSummary()
-      .then(setSocial)
-      .catch((e) => console.log('failed to load social health', e?.message, e?.status, e?.data));
-  }, []);
-
   // Management summary {medication, exercise, emotion}
   const [management, setManagement] = useState({ medication: '', exercise: '', emotion: '' });
+
+  // true until every summary request above has settled, so the PDF is not
+  // exported from half-loaded state
+  const [loading, setLoading] = useState(true);
+
+  // Load all summaries together in 1 promise
   useEffect(() => {
-    apiManagementSummary()
-      .then(setManagement)
-      .catch((e) => console.log('failed to load management', e?.message, e?.status, e?.data));
+    // for each API call, set the corresponding state
+    const load = <T,>(p: Promise<T>, set: (v: T) => void, label: string) =>
+      p.then(set)
+        .catch((e) => console.log(`failed to load ${label}`, e?.message, e?.status, e?.data));
+
+    Promise.allSettled([
+      load(apiAboutMe(), setAboutMe, 'about me'),
+      load(apiMyConditions(), setConditions, 'conditions'),
+      load(apiMyPainSummary(), setPain, 'my pain'),
+      load(apiMovementSummary(), setMovement, 'movement'),
+      load(apiPersonalCareSummary(), setPersonalCare, 'personal care'),
+      load(apiSocialHealthSummary(), setSocial, 'social health'),
+      load(apiManagementSummary(), setManagement, 'management'),
+    ]).finally(() => setLoading(false));
   }, []);
 
   // pdf export helper
@@ -115,35 +97,46 @@ export default function Screen() {
   <head>
     <meta charset="utf-8" />
     <style>
-      /* A4 page with print margin */
-      @page {size: A4; margin: 18mm 16mm;}
+      /* A4 page with print margin; extra bottom margin for footer */
+      @page {size: A4; margin: 18mm 16mm 10mm;}
       * {box-sizing: border-box;}
       body {
         font-family: -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif;
         color: #1a1a1a;
-        font-size: 24px;
+        font-size: 16px;
         line-height: 1.4;
         margin: 0;
         }
-      h1 {font-size: 44px; margin: 0 0 2px;}
-        .subtitle {color: #666; font-size: 22px; margin-bottom: 16px;}
+      h1 {font-size: 28px; margin: 0;}
+        .title-row {display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px;}
+        .generated {font-size: 14px; color: #666; text-align: right;}
         .card {
           border: 1px solid #e0e0e0;
-          border-radius: 8px;
+          border-radius: 32px;
           padding: 12px 14px;
-          margin-bottom: 14px;
+          margin-bottom: 30px;
           page-break-inside: avoid;
         }
-        .card h2 {font-size: 30px; margin: 0 0 8px;}
+        .card h2 {font-size: 18px; margin: 0 0 8px;}
         table {width: 100%; border-collapse: collapse;}
         td {padding: 4px 0; vertical-align: top;}
         td.label {width: 45%; color: #1a1a1a;}
         td.value {width: 55%; font-weight: 500;}
+        .footer {
+          position: fixed;
+          left: 0; right: 0; bottom: 0;
+          text-align: right;
+          font-size: 14px;
+          color: #666;
+        }
       </style>
     </head>
     <body>
-      <h1>My Pain Profile</h1>
-      <div class="subtitle">Generated ${generated}</div>
+      <div class="footer">Generated from most recent weekly assessment data from the M-Powered Platform</div>
+      <div class="title-row">
+        <h1>My Pain Profile</h1>
+        <span class="generated">Generated ${generated}</span>
+      </div>
 
       <div class="card">
       <h2>About me</h2>
@@ -222,6 +215,7 @@ export default function Screen() {
   };
 
   const handleExportPdf = async () => {
+    if (loading) return;
     try {
       // PDF in binary data
       const {base64} = await Print.printToFileAsync({
@@ -264,11 +258,12 @@ export default function Screen() {
         <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>My Pain Profile</Text>
         <View style={styles.shareButton}>
           <ButtonWithIcon
-            label="Share PDF"
+            label={loading ? 'Loading…' : 'Share PDF'}
             onPress={handleExportPdf}
             buttonType="roundButton"
             name="share-outline"
             textStyle={{ color: colours.onTertiary }}
+            disabled={loading}
           />
         </View>
       </View>
