@@ -66,6 +66,7 @@ const handleEditPrescription = async (values: PrescriptionDetails) => {
       ...values,
       started_on: values.started_on === '' ? null : values.started_on,
       stopped_on: values.stopped_on === '' ? null : values.stopped_on,
+      form: values.form || undefined,
   });
     await loadPrescriptions();
     setPending(null);
@@ -81,7 +82,10 @@ const selectedDetails: PrescriptionDetails | undefined = selected && {
   name: selected.name ?? '',
   dosage: String(selected.dosage ?? ''),
   frequency: String(selected.frequency ?? ''),
+  frequency_unit: selected.frequency_unit ?? '',
   strength: selected.strength != null ? String(selected.strength) : '',
+  strength_unit: selected.strength_unit ?? '',
+  form: selected.form ?? '',
   started_on: selected.started_on ?? '',
   stopped_on: selected.stopped_on ?? '',
   notes: selected.notes ?? '',
@@ -134,7 +138,7 @@ const selectedDetails: PrescriptionDetails | undefined = selected && {
                     label={p.name}
                     onPress={() => openPrescription(p)}
                     buttonType="transparentButton"
-                    name= "alarm"
+                    name= "trash-outline"
                     textStyle={{ color: colours.onTertiary }}
                     style={{ width: '80%' }}
                   />
@@ -168,7 +172,7 @@ const selectedDetails: PrescriptionDetails | undefined = selected && {
                     label={p.name}
                     onPress={() => openPrescription(p)}
                     buttonType="transparentButton"
-                    name= "alarm"
+                    name= "trash-outline"
                     textStyle={{ color: colours.onTertiary }}
                     style={{ width: '80%' }}
                   />
