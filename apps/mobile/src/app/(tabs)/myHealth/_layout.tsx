@@ -63,6 +63,12 @@ export default function ScreenLayout() {
           headerTitle: '',
         }}
       />
+      <Stack.Screen
+        name="assessmentSectionSummary"
+        options={{
+          title: '',
+        }}
+      />
     </Stack>
   );
 }
