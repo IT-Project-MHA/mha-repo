@@ -113,8 +113,8 @@ export default function Screen() {
         .card {
           border: 1px solid #e0e0e0;
           border-radius: 32px;
-          padding: 12px 14px;
-          margin-bottom: 30px;
+          padding: 16px 16px;
+          margin-bottom: 26px;
           page-break-inside: avoid;
         }
         .card h2 {font-size: 18px; margin: 0 0 8px;}
