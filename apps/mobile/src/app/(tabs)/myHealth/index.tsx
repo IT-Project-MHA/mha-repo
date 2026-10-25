@@ -33,16 +33,13 @@ export default function Screen() {
       <Text> </Text>
       <AveragePainChart/>
 
-      <View style={[theme.layoutContainer, theme.centerItems]}>
-      <Text style={[theme.xSmall, theme.fontOnBackground]}>See more and print as PDF in My Pain Profile </Text>
-      <Text style={[theme.small, theme.fontOnBackground]}> </Text>
-      
+      <View style={[theme.layoutContainer, theme.centerItems]}>      
       <ButtonWithIcon
 	        label="My Pain Profile"
 	        onPress={() => router.navigate('/myHealth/painProfile')}
           buttonType="roundButton"
           name="chevron-forward-outline"
-          fontColour={colours.onTertiary}
+          textStyle={{color: colours.onTertiary}}
         />
       </View>
       </View>
@@ -64,7 +61,7 @@ export default function Screen() {
 	        onPress={() => router.navigate('/myHealth/healthTracking')}
           buttonType="roundButton"
           name="chevron-forward-outline"
-          fontColour={colours.onTertiary}
+          textStyle={{color: colours.onTertiary}}
         />
       </View>
       </View>
@@ -86,7 +83,7 @@ export default function Screen() {
 	        onPress={() => router.navigate('/myHealth/prescriptions')}
           buttonType="roundButton"
           name="chevron-forward-outline"
-          fontColour={colours.onTertiary}
+          textStyle={{color: colours.onTertiary}}
         />
       </View>
       </View>
