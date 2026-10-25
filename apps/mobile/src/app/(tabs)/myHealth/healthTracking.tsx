@@ -1,11 +1,9 @@
 /**
  */
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
-import ButtonWithIcon from '../../../../components/atomicUI/ButtonWithIcon';
 import { useRouter } from 'expo-router';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext'
-import SegmentedControl from '@react-native-segmented-control/segmented-control';
-import {useState, useMemo, useEffect} from 'react';
+import {useState, useEffect} from 'react';
 import {apiAssessment} from '@/api/django-API';
 import {ownPatientProfileId} from '@/api/care_planner_api_helpers';
 import {apiAnsweredSections} from '@/api/my_health_api_helpers';
@@ -157,7 +155,7 @@ function createStyles(colours: ColourSet){
     return StyleSheet.create({
       segmentedControl: {
         borderRadius: 20,
-        width: '75%',
+        width: '92%',
         height: 40,
         alignSelf: 'center',
         marginBottom: 10,
