@@ -58,6 +58,9 @@ python manage.py runserver
 ```
 
 
+# Testing the app
+npm test
+
 # Purpose
 
 The goal of this document is to act as a guide on basic notation standards and git practices, to ensure that all code is readable by team members and others.
