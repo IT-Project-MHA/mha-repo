@@ -1,6 +1,10 @@
-import { Modal, View, Text, Pressable } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Modal, View, Text, Pressable, ScrollView } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { formatDate } from '../../constants/date';
+import { apiStrengthUnit, apiFrequencyUnit, apiFormUnit } from '@/api/django-API';
+
+type Option = { value: string; label: string };
 
 type Props = {
   visible: boolean;
@@ -9,36 +13,92 @@ type Props = {
   onClose: () => void;
 };
 
-const ViewPrescriptionModal = ({ visible, prescription, onEdit, onClose }: Props) => {
+/**
+ * Turns an API number like '200.000' or 2.5 into display text ('200', '2.5').
+ * Returns null for null/empty/non-numeric values so the row is hidden.
+ */
+const formatNumber = (value: string | number | null | undefined) => {
+  if (value == null || value === '') return null;
+  const n = Number(value);
+  return Number.isNaN(n) ? null : String(n);
+};
+
+/**
+ * Looks up the display label for an API value (e.g. 'mg' -> 'mg', 'hour' -> 'hour(s)').
+ * Falls back to the raw value if the options haven't loaded or there's no match.
+ */
+const labelFor = (options: Option[], value?: string | null) => {
+  if (!value) return '';
+  return options.find((o) => o.value === value)?.label ?? value;
+};
+
+const ViewPrescriptionModal = ({ visible, prescription: p, onEdit, onClose }: Props) => {
   const { theme, colours } = useTheme();
+  const [units, setUnits] = useState<Option[]>([]); // strength units
+  const [freqUnits, setFreqUnits] = useState<Option[]>([]); // frequency units
+  const [forms, setForms] = useState<Option[]>([]); // medication forms
+
+  useEffect(() => {
+    apiStrengthUnit()
+      .then(setUnits)
+      .catch((e) => console.log('failed to load units', e?.message, e?.status));
+    apiFrequencyUnit()
+      .then(setFreqUnits)
+      .catch((e) => console.log('failed to load frequency units', e?.message, e?.status));
+    apiFormUnit()
+      .then(setForms)
+      .catch((e) => console.log('failed to load forms', e?.message, e?.status));
+  }, []);
+
+  const strength = formatNumber(p?.strength);
+  const dosage = formatNumber(p?.dosage);
+  const frequency = formatNumber(p?.frequency);
+
+  const formLabel = labelFor(forms, p?.form);
+
+  // e.g. '200 mg' (unit only shown alongside a strength)
+  const strengthText = strength
+    ? `${strength} ${labelFor(units, p?.strength_unit)}`.trim()
+    : null;
+
+  // e.g. '2 Tablet(s)' (form is the type of medication)
+  const dosageText = dosage ? `${dosage}${formLabel ? ` ${formLabel}` : ''}` : null;
+
+  // e.g. '6 hour(s)'
+  const frequencyText = frequency
+    ? `${frequency} ${labelFor(freqUnits, p?.frequency_unit)}`.trim()
+    : null;
 
   const rows: [string, string | null | undefined][] = [
-  ['Dosage', prescription?.dosage != null ? String(prescription.dosage) : null],
-  ['Frequency', prescription?.frequency != null ? String(prescription.frequency) : null],
-  ['Strength', prescription?.strength != null ? String(prescription.strength) : null],
-  ['Started on', prescription?.started_on ? formatDate(prescription.started_on) : null],
-  ['Stopped on', prescription?.stopped_on ? formatDate(prescription.stopped_on) : null],
-  ['Notes', prescription?.notes],
-];
+    ['Form', formLabel || null],
+    ['Strength', strengthText],
+    ['Dosage', dosageText],
+    ['Frequency', frequencyText],
+    ['Started on', p?.started_on ? formatDate(p.started_on) : null],
+    ['Stopped on', p?.stopped_on ? formatDate(p.stopped_on) : null],
+    ['Notes', p?.notes],
+  ];
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={theme.modalBackgroundColour} />
       <Pressable style={theme.modalView} onPress={onClose}>
         <Pressable style={[theme.card, { backgroundColor: colours.surface }]} onPress={() => {}}>
-          <Text style={[theme.h4, { color: colours.onSurface }]}>{prescription?.name}</Text>
-          <Text> </Text>
+          <Text style={[theme.h4, { color: colours.onSurface, margin: 5 }]}>{p?.name}</Text>
 
-          {rows.map(([label, value]) =>
-            value ? (
-              <View key={label} style={theme.row}>
-                <Text style={[theme.h6, { color: colours.onSurface }]}>{label}</Text>
-                <Text style={[theme.body, { color: colours.onSurface }]}>{value}</Text>
-              </View>
-            ) : null
-          )}
+          {/* scrolls if there are a lot of notes; buttons stay pinned below */}
+          <ScrollView style={{ flexGrow: 0, flexShrink: 1 }}>
+            {rows.map(([label, value]) =>
+              value ? (
+                <View key={label} style={{ marginTop: 14, marginStart: 7 }}>
+                  <Text style={[theme.small, { color: colours.onSurface, opacity: 0.7 }]}>{label}</Text>
+                  <Text style={[theme.body, { color: colours.onSurface, marginTop: 2 }]}>{value}</Text>
+                </View>
+              ) : null
+            )}
+          </ScrollView>
 
-          <View style={theme.modalButtons}>
+          <View style={[theme.modalButtons, theme.centerItems, theme.row]}>
             <Pressable
               style={[theme.modalButton, { borderColor: colours.onSurface, borderWidth: 1 }]}
               onPress={onClose}
@@ -56,4 +116,3 @@ const ViewPrescriptionModal = ({ visible, prescription, onEdit, onClose }: Props
 };
 
 export default ViewPrescriptionModal;
-
