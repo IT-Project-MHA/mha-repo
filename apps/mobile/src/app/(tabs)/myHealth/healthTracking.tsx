@@ -23,7 +23,7 @@ const SECTIONS = [
 
 
 export default function Screen() {
-  const router = useRouter();
+
   const { theme,colours } = useTheme();
   const styles = createStyles(colours);
   const [index, setIndex]= useState(0);
@@ -32,18 +32,21 @@ export default function Screen() {
     <ScrollView stickyHeaderIndices={[0]}>
       <View style={theme.header}>
         <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>My Assessment Records</Text>
+        <View style={{marginTop: 30}}>
+        <SegmentedPill
+          values={['Chart', 'History']}
+          selectedIndex={index}
+          onChange={setIndex}
+          radius={50}
+          style={styles.segmentedControl}
+        />
+        </View>
       </View>
-
-      <SegmentedPill
-        values={['Chart', 'History']}
-        selectedIndex={index}
-        onChange={setIndex}
-        radius={50}
-        style={styles.segmentedControl}
-       />
-
+      
+      
        {index === 0 ? <ChartPage/> : <RecordPage /> }
       <View style={theme.bottomGap}/>
+
     </ScrollView>
 
   );
