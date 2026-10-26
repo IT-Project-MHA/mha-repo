@@ -1,4 +1,3 @@
- import React, { useState } from 'react';
   import { StyleSheet } from 'react-native';
   import { Dropdown } from 'react-native-element-dropdown';
   import { useTheme, ColourSet } from '../../context/ThemeContext';
@@ -10,8 +9,7 @@
   ];
 
   const DropdownComponent = () => {
-    const [value] = useState(null);
-    const {colours, setFontScale, theme}= useTheme();
+    const {colours, fontScale, setFontScale, theme}= useTheme();
     const styles = createStyles(colours);
 
     return (
@@ -25,7 +23,7 @@
         labelField="label"
         valueField="value"
         placeholder="Select Size"
-        value={value}
+        value={fontScale}
         onChange={item => {setFontScale(item.value);}}
         mode= 'modal'
       />

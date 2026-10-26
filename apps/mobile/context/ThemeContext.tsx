@@ -1,87 +1,125 @@
-import React, { createContext, useContext, useState, useMemo } from 'react';
-import { useColorScheme } from 'react-native';
+import React, { createContext, useContext, useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import { useColorScheme, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { themes, ThemeMode, themeColours } from '../constants/theme';
 import type { ColourSet } from '../constants/colourScheme';
 import { createTypography, FontScale, Typography } from '../constants/textSize';
+import { apiMySettings, apiSaveSettings, apiErrorMessage } from '@/api/settings_api_helpers';
 export type { ColourSet } from '../constants/colourScheme';
-
 
 type ThemeContextType = {
   theme: typeof themes.light & Typography;
   colours: ColourSet;
   mode: ThemeMode;
-  setMode: (mode: ThemeMode) => void;
+  setMode: (mode: ThemeMode) => void; // device only (e.g. dark mode)
   fontScale: FontScale;
-  setFontScale: (scale : FontScale) => void;
+  setFontScale: (scale: FontScale) => void; // applied now, saved to the server
+  setHighContrast: (on: boolean) => void; // applied now, saved to the server
+  reloadSettings: () => Promise<void>; // call after login
   isDark: boolean;
   isHC: boolean;
 };
 
-/**
- * createContext creates a context object, passing in default values
- * 
- * Information, variables etc. can be globally accessed.
- * 
- * Components can access this using useContext.
- * 
- */
 const ThemeContext = createContext<ThemeContextType>({
-  theme: {...themes.light,...createTypography(1)},
+  theme: { ...themes.light, ...createTypography(1) },
   colours: themeColours.light,
   mode: 'light' as ThemeMode,
-  setMode: (mode: ThemeMode) => {},
+  setMode: () => {},
   fontScale: 1,
-  setFontScale: (scale : FontScale) => {},
+  setFontScale: () => {},
+  setHighContrast: () => {},
+  reloadSettings: async () => {},
   isDark: false,
   isHC: false,
 });
 
+const FONT_SCALES: FontScale[] = [1, 1.5, 2];
+// nearest allowed scale to a saved text_size_percent
+const snapScale = (percent: number): FontScale =>
+  FONT_SCALES.reduce((best, s) =>
+    Math.abs(s * 100 - percent) < Math.abs(best * 100 - percent) ? s : best);
+const isDarkMode = (m: ThemeMode) => m === 'dark' || m === 'darkHC';
+const modeFor = (dark: boolean, hc: boolean): ThemeMode =>
+  dark ? (hc ? 'darkHC' : 'dark') : (hc ? 'lightHC' : 'light');
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const systemScheme = useColorScheme(); // phones current settings
-
-  /**
-   * Checks the phones settings using react hook useColourScheme
-   * If the phone is already on dark mode, the app will start in dark mode,
-   * If not, the app starts in light mode.
-   * 
-   * This is checked once, after this, components check useTheme()
-   */
+  const systemScheme = useColorScheme();
   const [mode, setMode] = useState<ThemeMode>(systemScheme === 'dark' ? 'dark' : 'light');
-  const [fontScale, setFontScale] = useState<FontScale>(1) // creates fontScale starting at 1x
-  // height of the Android nav bar / iPhone home indicator, the nav bar sits above it
+  const [fontScale, setFontScaleState] = useState<FontScale>(1);
   const bottomInset = useSafeAreaInsets().bottom;
 
-  /**
-   * Building the context value. UseMemo only re renders when an object in the dependancy array
-   * changes.
-   */
-  const value = useMemo<ThemeContextType>(
-          () => ({
-              theme: {
-                ...themes[mode],
-                ...createTypography(fontScale),
-                // the gap also clears the system nav bar under the nav bar
-                bottomGap: { ...themes[mode].bottomGap, height: themes[mode].bottomGap.height + bottomInset },
-              },
-              colours: themeColours[mode],
-              mode,
-              setMode,
-              fontScale,
-              setFontScale,
-              isDark: mode === 'dark' || mode === 'darkHC',
-              isHC: mode === 'darkHC' || mode === 'lightHC',
-          }),
-          [mode, fontScale, bottomInset] // object is rebuilt when one of these changes
-      );
+  const fontScaleRef = useRef<FontScale>(1);
+  fontScaleRef.current = fontScale;
+  const settingsId = useRef<string | null>(null);
+  // saves run one after another so two quick changes can't create two records
+  const saveQueue = useRef<Promise<unknown>>(Promise.resolve());
 
-  return (
-    // <ThemeContext.Provider> provides values to anything nested inside
-    <ThemeContext.Provider value={value}>
-      {children}
-    </ThemeContext.Provider>
+  const save = useCallback((changes: { high_contrast?: boolean; text_size_percent?: number }) => {
+    const run = saveQueue.current.then(async () => {
+      const saved = await apiSaveSettings(settingsId.current, changes);
+      settingsId.current = saved.id;
+    });
+    saveQueue.current = run.catch(() => {});
+    return run;
+  }, []);
+
+  /** loads the saved settings from the server and applies them */
+  const reloadSettings = useCallback(async () => {
+    try {
+      const settings = await apiMySettings();
+      if (!settings) return;
+      settingsId.current = settings.id;
+      setMode((m) => modeFor(isDarkMode(m), Boolean(settings.high_contrast)));
+      setFontScaleState(snapScale(settings.text_size_percent));
+    } catch {
+      // not logged in yet, or offline: keep the defaults
+    }
+  }, []);
+
+  useEffect(() => { reloadSettings(); }, [reloadSettings]);
+
+  const setHighContrast = useCallback(async (on: boolean) => {
+    setMode((m) => modeFor(isDarkMode(m), on));
+    try {
+      await save({ high_contrast: on });
+    } catch (error) {
+      setMode((m) => modeFor(isDarkMode(m), !on)); // revert
+      Alert.alert('Could not save high contrast', apiErrorMessage(error));
+    }
+  }, [save]);
+
+  const setFontScale = useCallback(async (scale: FontScale) => {
+    const previous = fontScaleRef.current;
+    setFontScaleState(scale);
+    try {
+      await save({ text_size_percent: scale * 100 });
+    } catch (error) {
+      setFontScaleState(previous); // revert
+      Alert.alert('Could not save text size', apiErrorMessage(error));
+    }
+  }, [save]);
+
+  const value = useMemo<ThemeContextType>(
+    () => ({
+      theme: {
+        ...themes[mode],
+        ...createTypography(fontScale),
+        bottomGap: { ...themes[mode].bottomGap, height: themes[mode].bottomGap.height + bottomInset },
+      },
+      colours: themeColours[mode],
+      mode,
+      setMode,
+      fontScale,
+      setFontScale,
+      setHighContrast,
+      reloadSettings,
+      isDark: isDarkMode(mode),
+      isHC: mode === 'darkHC' || mode === 'lightHC',
+    }),
+    [mode, fontScale, bottomInset, setFontScale, setHighContrast, reloadSettings]
   );
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 };
 
 export const useTheme = () => useContext(ThemeContext);
