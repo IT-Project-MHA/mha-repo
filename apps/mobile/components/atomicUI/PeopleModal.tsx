@@ -1,13 +1,14 @@
 /**
  * Modal which presents information of user support people and users the user supports
  * 
- * change logic will be implemented with api:
- *  - user should be able to remove support people / remove themselves as a support person
- *  - user can change support person permissions
+ * user can remove support people / remove themselves as a support person. 
+ * 
+ * Permissions are shown, as the API has no link-level permissions to change (add questions and record
+ * answers are given for each appointment).
+ * 
  */
 import {Modal, View, Text, Pressable, StyleSheet, ScrollView} from 'react-native'
 import { useTheme, ColourSet } from "../../context/ThemeContext";
-import { Checkbox } from 'expo-checkbox';
 import { useState, useEffect, useRef } from "react";
 import ConfirmModal from './ConfirmModal';
 import TextWithIconButton from './TextWithIconButton'
@@ -16,71 +17,34 @@ type Props = {
     visible: boolean;
     name: string;
     role: string;
-    phone: string;
-    permissions: Permissions;
-    onChange: () => void; //manage changing permissions with api
+    phone: string; // blank if not known
+    viewAppointments: boolean; // can_view_appointments of the SupportLink
+    onRemove: () => Promise<void>; // removes the connection with the api, shows its own errors
     onCancel: () => void;
 }
 
-export type Permissions = {
-    viewAppointments: boolean,
-    addQuestions: boolean,
-    addRecords: boolean,
-}
-
-const permissionsLabels: Record<keyof Permissions, string> ={
-    viewAppointments: "View my appointments",
-    addQuestions: "Add questions to my appointments",
-    addRecords: "Add records to my appointments"
-}
-
-const permissionsLabelsImSupporting: Record<keyof Permissions, string> ={
-    viewAppointments: "View their appointments",
-    addQuestions: "Add questions to their appointments",
-    addRecords: "Add records to their appointments"
-
-}
-
-const PeopleModal = ({visible, name, role, phone, permissions, onChange, onCancel} : Props) => {
+const PeopleModal = ({visible, name, role, phone, viewAppointments, onRemove, onCancel} : Props) => {
     const { theme, colours } = useTheme();
     const styles = createStyles(colours);
     const [pending, setPending] = useState< 'removeConnection' | 'removeSupportPerson' | 'addSupportPerson' | null>(null);
-    const [checked, setChecked] = useState<Permissions>(permissions); // monitors check box's for permissions
-    const last = useRef({role, name, phone});
+    const last = useRef({role, name, phone, viewAppointments});
 
     /**
      * prevents glitch where modal rerenders on fadeout and probs become undefined
      * (this is an issue as the rendering is dependant on conditions regarding data)
      * 
      */
-    if (visible) last.current = {name, role, phone};
+    if (visible) last.current = {name, role, phone, viewAppointments};
     const show = last.current;
-
-    // resets to the checked boxes when the modal opens
-    useEffect( () => {
-        if (visible) setChecked(permissions)
-    }, [visible]);
-
-    /**
-     * toggles permission between true and false in the checked state for check box
-     * @param key defines the key of permissions, so key must be one of the permissions defined in Permissions
-     */
-    const toggle = (key: keyof Permissions) => setChecked((prev) => ({...prev, [key]: !prev[key]}))
 
     /**
     * Handles confirmations (when user clicks confirm in a modal) whilst in pending states.
+    * Both confirmations remove the connection, the parent chooses how.
     */
-    const handleConfirmations = () => {
-        if (pending === 'removeConnection'){
-            // API call for removing self as support person
-        } else if (pending === 'removeSupportPerson'){
-            // API call for removing support person
-        } else if (pending === 'addSupportPerson'){
-            // API call for adding support person?
-        }
+    const handleConfirmations = async () => {
         setPending(null);
-        };
-
+        await onRemove();
+    };
 
   return (
     <Modal
@@ -114,12 +78,15 @@ const PeopleModal = ({visible, name, role, phone, permissions, onChange, onCance
                 <Text style={[theme.body, theme.leftItems, theme.fontOnSurface]}>{show.role}</Text>
             </View>
 
-            <Text> </Text>
-
-            <View style={theme.row}>
-                <Text style={[theme.body, theme.leftItems, theme.fontOnSurface]}>Contact:</Text>
-                <Text style={[theme.body, theme.leftItems, theme.fontOnSurface]}>{show.phone}</Text>
-            </View>
+            {show.phone !== '' && (
+                <>
+                <Text> </Text>
+                <View style={theme.row}>
+                    <Text style={[theme.body, theme.leftItems, theme.fontOnSurface]}>Contact:</Text>
+                    <Text style={[theme.body, theme.leftItems, theme.fontOnSurface]}>{show.phone}</Text>
+                </View>
+                </>
+            )}
 
             <Text> </Text>
             <Text style={[theme.h6, theme.leftItems, theme.fontOnSurface]}>Permissions</Text>
@@ -137,23 +104,14 @@ const PeopleModal = ({visible, name, role, phone, permissions, onChange, onCance
                 <View>
                 <Text style={[theme.xSmall, theme.leftItems, theme.fontOnSurface]}>{show.name} can:</Text>
                 <Text style={theme.xSmall}> </Text>
-                
-                {(Object.keys(permissionsLabels) as (keyof Permissions)[]).map((id)=>(
-                <Pressable
-                    key={id}
-                    style={[theme.leftItems, theme.row]}
-                    onPress={onChange}
-                >
-                <Checkbox
-                    style={styles.checkbox}
-                    value={checked[id]}
-                    onValueChange={() => toggle(id)}
-                    color={checked[id] ? colours.primary: undefined}
-                    />
-                <Text style={[theme.small, theme.fontOnSurface]}>{permissionsLabels[id]}</Text>
-                </Pressable>
-            ))}
-            </View>
+                <Text style={[theme.small, theme.leftItems, theme.fontOnSurface]}>
+                    {show.viewAppointments ? '• View my appointments' : '• Only see appointments I share with them'}
+                </Text>
+                <Text style={theme.xSmall}> </Text>
+                <Text style={[theme.xSmall, theme.leftItems, theme.fontOnSurface]}>
+                    Adding questions and recording answers is set for each appointment.
+                </Text>
+                </View>
                 <Text style={theme.body}> </Text>
                 <Text style={theme.body}> </Text>
                 <View style={[theme.leftText, theme.boxContainer]}>
@@ -168,17 +126,13 @@ const PeopleModal = ({visible, name, role, phone, permissions, onChange, onCance
             <View>
                 <Text style={[theme.small, theme.leftItems, theme.fontOnSurface]}>You can:</Text>
                 <Text style={theme.xSmall}> </Text>
-
-                {(Object.keys(permissionsLabels) as (keyof Permissions)[]).filter(id => checked[id]).map((id)=>(
-                    // goes through a list with .map
-                    // only renders if checked[key] === true, due to .filter(id => checked[id])
-                    <View key={id} style={theme.leftItems}>
-                    <View>
-                        <Text style={[theme.small, theme.fontOnSurface]}>• {permissionsLabelsImSupporting[id]}</Text>  
-                        <Text style={[theme.small, theme.fontOnSurface]}> </Text>  
-                        </View>    
-                    </View>
-                ))}
+                <Text style={[theme.small, theme.leftItems, theme.fontOnSurface]}>
+                    {show.viewAppointments ? '• View their appointments' : '• Only see appointments they share with you'}
+                </Text>
+                <Text style={theme.xSmall}> </Text>
+                <Text style={[theme.xSmall, theme.leftItems, theme.fontOnSurface]}>
+                    Adding questions and recording answers is set for each appointment.
+                </Text>
                 <Text style={theme.body}> </Text>
                 <Text style={theme.body}> </Text>
                 <View style={[theme.leftText, theme.boxContainer]}>

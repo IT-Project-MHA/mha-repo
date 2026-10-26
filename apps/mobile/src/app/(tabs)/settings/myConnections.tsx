@@ -3,95 +3,141 @@
  * 
  * in this screen users can view their support people, who theyre supporting, and remove them.
  * 
- * not linked to api yet- for demonstration purposes rn
  */
-import { View, Text, StyleSheet, ScrollView} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert} from 'react-native';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import ButtonWithIcon from '../../../../components/atomicUI/ButtonWithIcon';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import TextButton from '../../../../components/atomicUI/TextButton';
-import PeopleModal, {Permissions} from '../../../../components/atomicUI/PeopleModal';
+import PeopleModal from '../../../../components/atomicUI/PeopleModal';
+import AddSupportPersonModal from '../../../../components/atomicUI/AddSupportPersonModal';
+import {
+  apiMyConnections,
+  apiInviteSupportPerson,
+  apiRemoveSupportPerson,
+  apiRemoveConnection,
+  apiErrorMessage,
+} from "@/api/settings_api_helpers"
 
-type People ={
+// a person on this screen, from apiMyConnections. id is the SupportLink's id
+type Person = {
   id: string;
   name: string;
-  role: string;
   phone: string;
-  relationship: 'supportsMe' | 'imSupporting';
-  permissions: Permissions;
+  invited: boolean; // invite not accepted yet
+  viewAppointments: boolean;
 };
 
-const peoplePermissions: Permissions  = {
-  viewAppointments: true,
-  addQuestions: true,
-  addRecords: true,
-};
+type Relationship = 'supportsMe' | 'imSupporting';
 
-/**
- * examples of how data will be input
- */
-const johnSmithPermissions: Permissions  = {
-  viewAppointments: false,
-  addQuestions: false,
-  addRecords: true,
-};
-const susanPermissions: Permissions  = {
-  viewAppointments: true,
-  addQuestions: false,
-  addRecords: true,
-};
-const underscoresPermissions: Permissions  = {
-  viewAppointments: false,
-  addQuestions: false,
-  addRecords: true,
-};
-
-/**
- * these values will be retreived with API
- */
-const placeholderPeople: People[] =[
-  {id: '1', name: 'John Smith', role: 'Support Person', phone: '+61 254 973 921', relationship: 'supportsMe', permissions: johnSmithPermissions},
-  {id: '2', name: 'Frida Kahlo', role: 'Support Person', phone: '+61 254 973 921', relationship: 'supportsMe', permissions: peoplePermissions},
-  {id: '1', name: 'Susan Sontag', role: 'Im Supporting', phone: '+61 254 973 921', relationship: 'imSupporting', permissions: susanPermissions},
-  {id: '2', name: 'Georgia OKeefe', role: 'Im Supporting', phone: '+61 254 973 921', relationship: 'imSupporting', permissions: peoplePermissions},
-  {id: '3', name: 'Underscores', role: 'Im Supporting', phone: '+61 254 973 921', relationship: 'imSupporting', permissions: underscoresPermissions},
-]
-  
+type Connections = {
+  supportPeople: Person[];
+  supporting: Person[];
+};  
 
 export default function Screen() {
   const {theme} = useTheme();
-  const [people, setPeople] =useState<People[]>(placeholderPeople);
-  const [selected, setselected] = useState<People | null >(null);
-  const [pending, setPending] = useState< 'removeSupportPeople' | 'removeImSupporting' | null>(null);
+  const [connections, setConnections] = useState<Connections | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<{ person: Person; relationship: Relationship } | null>(null);
+  const [adding, setAdding] = useState(false); // add support person modal visibility
+
+  /**
+   * Loads the user's connections from the backend, showing an error with a retry button if it
+   * fails the first time.
+   */
+  const load = async () => {
+    setLoadError(null);
+    try {
+      setConnections(await apiMyConnections());
+    } catch (error) {
+      setLoadError(apiErrorMessage(error, "Couldn't load your connections. Check your connection and try again."));
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+  
+  /**
+   * Invites a support person. Throws if it fails, so the modal can show the error and stay
+   * open, and only closes once the invite has worked.
+   */
+  const handleInvite = async (phone: string) => {
+    await apiInviteSupportPerson(phone);
+    setAdding(false);
+    await load();
+  };
+
+  /**
+   * Removes the selected person: patients delete the link of their support person, support
+   * people revoke their own link.
+   */
+  const handleRemove = async () => {
+    if (!selected) return;
+    try {
+      if (selected.relationship === 'supportsMe') {
+        await apiRemoveSupportPerson(selected.person.id);
+      } else {
+        await apiRemoveConnection(selected.person.id);
+      }
+    } catch (error) {
+      Alert.alert(
+        'Could not remove connection',
+        apiErrorMessage(error, "This connection is linked to other records and can't be removed yet."),
+      );
+      return;
+    }
+    setSelected(null);
+    await load();
+  };
 
   /**
    * This function manages rendering people of different relationship types.
-   * @param title Title of the button, being the persons name.
-   * @param relationship 'Support Person' or 'I'm Supporting'
+   * @param list The people to show.
+   * @param relationship 'supportsMe' (Support Person) or 'imSupporting' (I'm Supporting)
+   * @param emptyMessage Shown when there is no one in the list.
    * @returns A styled list of people of a certain relationship to the user.
    */
-  const renderSection = (title: string, relationship: People['relationship']) => {
-    const peopleList = people.filter((by)=>by.relationship === relationship);
-    
+  const renderSection = (list: Person[], relationship: Relationship, emptyMessage: string) => (
+    <View style ={theme.layoutContainer}>
+      {list.length === 0 && (
+        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>{emptyMessage}</Text>
+      )}
+      <View>
+        {list.map((person,index) => (
+          <View key={person.id} style={[[theme.layoutContainer,theme.centerItems]]}>
+            {index > 0 && <View style={theme.line} />}
+            <ButtonWithIcon
+              label={person.invited ? `${person.name} (invited)` : person.name}
+              onPress={()=> setSelected({ person, relationship })}
+              buttonType='transparentButton'
+              name="chevron-forward-outline"
+              />
+          </View>
+        ))}
+      </View>
+    </View>
+  )
+
+  /**
+   * Renders a loading spinner until the connections are loaded, or the error if they can't be.
+   */
+  if (!connections) {
     return (
-      <View style ={theme.layoutContainer}>
-       <View>
-          {peopleList.map((people,index) => (
-            <View key={people.id} style={[[theme.layoutContainer,theme.centerItems]]}>
-              {index > 0 && <View style={theme.line} />}
-              <ButtonWithIcon
-                label={people.name}
-                onPress={()=> setselected(people)}
-                buttonType='transparentButton'
-                name="chevron-forward-outline"
-                />
-            </View>
-            
-          ))}
-        </View>  
-        </View>   
+      <View style={[theme.centerItems, { flex: 1, padding: 24 }]}>
+        {loadError ? (
+          <>
+            <Text style={[theme.body, theme.fontOnSurface]}>{loadError}</Text>
+            <Text> </Text>
+            <TextButton label="Try again" onPress={load} />
+          </>
+        ) : (
+          <ActivityIndicator size="large" />
+        )}
+      </View>
     );
-  };
+  }
 
   /**
    * Returns screen displaying users support people and users that they support
@@ -101,7 +147,6 @@ export default function Screen() {
    * By pressing on the name of a Support Person, user can see their details and update their permissions.
    */
   return (
-   
     <ScrollView stickyHeaderIndices={[0]}>
       <View style={theme.header}>
         <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>My Connections</Text>
@@ -114,12 +159,12 @@ export default function Screen() {
         <Text> </Text>
         <View style={theme.line}></View>
         <Text> </Text>
-        {renderSection('My Support People', 'supportsMe')}
+        {renderSection(connections.supportPeople, 'supportsMe', 'You have not added any support people yet.')}
   
         <View style={[theme.rightItems]}>
           <TextButton
 	        label="Add Support Person"
-	        onPress={() => setPending('removeSupportPeople')}
+	        onPress={() => setAdding(true)}
           />
         </View> 
           
@@ -135,7 +180,7 @@ export default function Screen() {
         <View style={theme.line}></View>
         <Text> </Text>
 
-        {renderSection('Im Supporting', 'imSupporting')}
+        {renderSection(connections.supporting, 'imSupporting', 'You are not supporting anyone yet.')}
 
         <View style={[theme.layoutContainer,theme.centerItems]}>
   
@@ -145,12 +190,18 @@ export default function Screen() {
 
       <PeopleModal
         visible={selected !== null}
-        name={selected?.name??''} // name or null
-        role={selected?.role??''}
-        phone={selected?.phone??''}
-        permissions={selected?.permissions ?? peoplePermissions}
-        onChange = {() => {}} // void atm, will deal with permission change logic
-        onCancel={() => setselected(null)}
+        name={selected?.person.name ?? ''}
+        role={selected?.relationship === 'supportsMe' ? 'Support Person' : 'Im Supporting'}
+        phone={selected?.person.phone ?? ''}
+        viewAppointments={selected?.person.viewAppointments ?? false}
+        onRemove={handleRemove}
+        onCancel={() => setSelected(null)}
+      />
+
+      <AddSupportPersonModal
+        visible={adding}
+        onConfirm={handleInvite}
+        onCancel={() => setAdding(false)}
       />
 
       <View style={theme.bottomGap}/>
