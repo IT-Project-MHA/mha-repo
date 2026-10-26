@@ -235,7 +235,31 @@ const AddPrescriptionModal = ({visible, title, initialValues, submitLabel, onCon
              * Renders contents of the Modal
              */}
             {renderField('Name','name','default','What is this medication called?')}
+            {renderField('Dosage','dosage', 'decimal-pad', 'How many you take each time?' )}
+            {/* Frequency with its unit */}
+            {renderField('Frequency', 'frequency', 'numeric', 'How often do you take this medication?',
+              <Pressable
+                style={[theme.textInput, { borderColor: colours.onSurface, justifyContent: 'center', minWidth: 110 }]}
+                onPress={() => setFreqOpen(!freqOpen)}
+                >
+                <Text style={[theme.body, { color: colours.onSurface }]}>
+                  {freqUnits.find((u) => u.value === draft.frequency_unit)?.label ?? 'Unit'} ▾
+                </Text>
+              </Pressable>
+            )}
 
+            {freqOpen && freqUnits.map((u) => (
+              <Pressable
+                key={u.value}
+                style={{ paddingVertical: 8, paddingHorizontal: 16 }}
+                onPress={() => {
+                  setDraft((prev) => ({ ...prev, frequency_unit: u.value }));
+                  setFreqOpen(false);
+                }}
+              >
+                <Text style={[theme.body, { color: colours.onSurface }]}>{u.label}</Text>
+              </Pressable>
+            ))}
             {/* Form dropdown */}
             <View style={theme.field}>
               <Text style={[theme.body, { color: colours.onSurface, marginTop: 10 }]}>Form</Text>
@@ -289,32 +313,6 @@ const AddPrescriptionModal = ({visible, title, initialValues, submitLabel, onCon
                 <Text style={[theme.body, { color: colours.onSurface }]}>{u.label}</Text>
               </Pressable>
             ))}
-            {renderField('Dosage','dosage', 'decimal-pad', 'How many you take each time?' )}
-            {/* Frequency with its unit */}
-            {renderField('Frequency', 'frequency', 'numeric', 'How often do you take this medication?',
-              <Pressable
-                style={[theme.textInput, { borderColor: colours.onSurface, justifyContent: 'center', minWidth: 110 }]}
-                onPress={() => setFreqOpen(!freqOpen)}
-                >
-                <Text style={[theme.body, { color: colours.onSurface }]}>
-                  {freqUnits.find((u) => u.value === draft.frequency_unit)?.label ?? 'Unit'} ▾
-                </Text>
-              </Pressable>
-            )}
-
-            {freqOpen && freqUnits.map((u) => (
-              <Pressable
-                key={u.value}
-                style={{ paddingVertical: 8, paddingHorizontal: 16 }}
-                onPress={() => {
-                  setDraft((prev) => ({ ...prev, frequency_unit: u.value }));
-                  setFreqOpen(false);
-                }}
-              >
-                <Text style={[theme.body, { color: colours.onSurface }]}>{u.label}</Text>
-              </Pressable>
-            ))}
-
             {renderDateField('Started on', 'started_on', 'What date did you start this medication?')}
             {initialValues && renderDateField('Stopped on', 'stopped_on', 'What date did you finish this medication?')}
             {renderField('Notes','notes', 'default', 'Optional: side effects, what it helps with, or anything to tell your doctor.')}
