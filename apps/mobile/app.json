@@ -44,7 +44,9 @@
         {
           "contactsPermission": "Allow $(PRODUCT_NAME) to choose a support person from your contacts."
         }
-      ]
+      ],
+      "expo-image",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true,
