@@ -12,6 +12,8 @@ from accounts import devices
 from audit.models import AuditEntry
 from audit.services import record
 
+from accounts.invite import link_pending_invites
+
 VERIFICATION_WINDOW = timedelta(minutes = 10)
 
 class RegistrationError(Exception):
@@ -55,8 +57,7 @@ def link_invites(user):
 
 def register_user(verification_id, device_id, phone_number, display_name, pin, track_health, health = None):
 
-    # Create the account and return user and token
-    # All saved in one transaction so nothing is left half made if step fails
+    # Create the account and return user and token, all saved in one transaction so nothing is left half made if step fails
     # Raises RegistrationError if the phone number isn't verified or is already taken
 
     if not check_verification(verification_id, phone_number):
@@ -67,7 +68,6 @@ def register_user(verification_id, device_id, phone_number, display_name, pin, t
 
     try:
         with transaction.atomic():
-            # create_user hashes the PIN for us
             user = User.objects.create_user(phone_number, display_name, pin)
             UserSettings.objects.create(user = user)
 
@@ -90,10 +90,32 @@ def register_user(verification_id, device_id, phone_number, display_name, pin, t
 
             devices.trust_device(user, device_id)
 
-            token = Token.objects.create(user = user)
+            # Invites sent to this number before it had an account
+            link_pending_invites(user)
+
+            token = devices.sign_in(user, device_id)
 
     except IntegrityError:
         # If multiple registrations for same number the database stops the second
         raise RegistrationError("phone_taken")
 
     return user, token
+
+
+def change_phone(user, verification_id, phone_number):
+    # Move the account to a new number
+
+    if not check_verification(verification_id, phone_number):
+        raise RegistrationError("verification_invalid")
+
+    if User.objects.filter(phone_number = phone_number, deleted_at__isnull = True).exclude(pk = user.pk).exists():
+        raise RegistrationError("phone_taken")
+
+    try:
+        with transaction.atomic():
+            user.phone_number = phone_number
+            user.save(update_fields = ["phone_number", "updated_at"])
+    except IntegrityError:
+        raise RegistrationError("phone_taken")
+
+    link_pending_invites(user)

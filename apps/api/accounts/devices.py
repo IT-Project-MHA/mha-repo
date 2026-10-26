@@ -1,6 +1,6 @@
 from django.utils import timezone
 from rest_framework.authtoken.models import Token
-from accounts.models import TrustedDevice
+from accounts.models import TrustedDevice, PushToken, DeviceToken
 
 
 def is_trusted(user, device_id):
@@ -19,6 +19,17 @@ def trust_device(user, device_id):
 
     return device
 
+
+def sign_in(user, device_id):
+    device = trust_device(user, device_id)
+    DeviceToken.objects.filter(device = device).delete()
+    return DeviceToken.objects.create(user = user, device = device)
+
+def sign_out_everywhere(user):
+    DeviceToken.objects.filter(user = user).delete()
+    PushToken.objects.filter(user = user).delete()
+
+
 def list_devices(user):
     # All unrevoked devices logged in with most recent first
     return TrustedDevice.objects.filter(user = user, revoked_at__isnull = True).order_by("-last_seen_at")
@@ -36,6 +47,7 @@ def revoke_device(user, device_pk):
         device.revoked_at = timezone.now()
         device.save(update_fields = ["revoked_at"])
 
-    Token.objects.filter(user = user).delete()
+    DeviceToken.objects.filter(device = device).delete()
+    PushToken.objects.filter(device = device).delete()
 
     return True

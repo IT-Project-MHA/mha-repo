@@ -99,3 +99,10 @@ class AuditEntryApiTests(APITestCase):
         self.client.force_authenticate(self.stranger)
         self.assertEqual(len(self.client.get("/api/auditEntry/").data), 0)
         self.assertEqual(self.client.get(f"/api/auditEntry/{self.entry.pk}").status_code, 404)
+
+class RecordTests(TestCase):
+
+    def test_unknown_model_raises(self):
+        user = User.objects.create_user("+61400000000", "Josh", PIN)
+        with self.assertRaises(ValueError):
+            record(user, AuditEntry.Action.VIEW, user)

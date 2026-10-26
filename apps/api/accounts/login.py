@@ -1,7 +1,7 @@
 from rest_framework.authtoken.models import Token
 
 from accounts import devices
-from accounts.models import User
+from accounts.models import User, PushToken
 from accounts.registration import check_verification
 
 
@@ -40,12 +40,13 @@ def login_user(phone_number, pin, device_id, verification_id = None):
 
     devices.trust_device(user, device_id)
 
-    # One token per user
-    token, _ = Token.objects.get_or_create(user = user)
+    # Each phone gets its own token
+    token = devices.sign_in(user, device_id)
 
     return user, token
 
 
-def logout_user(user):
-    # Delete the token and sign out on every device
-    Token.objects.filter(user = user).delete()
+def logout_device(token):
+    # Sign out only the phone this token belongs to
+    PushToken.objects.filter(device = token.device).delete()
+    token.delete()
