@@ -1,49 +1,130 @@
 /**
  * My account page, where the user can view/change their details, as well as health conditions.
  */
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { useTheme } from '../../../../context/ThemeContext';
 import ButtonWithIcon from '../../../../components/atomicUI/ButtonWithIcon';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ConfirmModal from '../../../../components/atomicUI/ConfirmModal';
-import AboutMeModal from '../../../../components/atomicUI/AboutMeModal';
+import AboutMeModal, { type Choice, type UserDetails } from '../../../../components/atomicUI/AboutMeModal';
 import TextButton from '../../../../components/atomicUI/TextButton';
-import MyConditionsModal from '../../../../components/atomicUI/MyConditionsModal';
+import MyConditionsModal, { type userDetails } from '../../../../components/atomicUI/MyConditionsModal';
 import { useUser } from '../../../../context/AuthorisationContext';
+import {
+  apiMyAccount,
+  apiSaveAboutMe,
+  apiSaveConditions,
+  apiDeleteMyAccount,
+  apiErrorMessage,
+} from '@/api/settings_api_helpers';
+
+// the saved details of the user, from apiMyAccount
+type Account = {
+  user: { id: string; display_name: string; phone_number: string; email: string | null };
+  profile: {
+    id: string;
+    assigned_gender_at_birth: string | null;
+    birth_year: number | null;
+    has_diagnosis: boolean | null;
+    other_conditions: string | null;
+  } | null; // null until the user has a PatientProfile
+  sexOptions: Choice[];
+};
 
 export default function Screen() {
   const {theme} = useTheme();
   const {setUserType} = useUser();
   const [pending, setPending] = useState< 'logout' | 'delete' | 'editAboutMe' | 'editMyConditions' | null>(null); // modal visibility triggered by pending state
+  const [account, setAccount] = useState<Account | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   /**
-   * PLACEHOLDERS to be replaced by API calls
+   * Loads the user's details from the backend, showing an error with a retry button if it fails.
    */
-  const placeholderDetails = {
-    name: 'Jane Doe',
-    sex: 'Female',
-    email: 'janedoe@awesome.com',
-    phone: '+61 348 985 216',
-    primaryCondition: 'Osteoperosis',
-    otherConditions: 'Arthritis', // How many other conditions, 10 max?
+  const load = async () => {
+    setLoadError(null);
+    try {
+      setAccount(await apiMyAccount());
+    } catch (error) {
+      setLoadError(apiErrorMessage(error, "Couldn't load your account. Check your connection and try again."));
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  /**
+   * Saves from the edit modals. They throw if the save fails, so the modal can show the error and
+   * stay open, and only close once the save has worked.
+   */
+  const handleSaveAboutMe = async (values: UserDetails) => {
+    if (!account) return;
+    const { user, profile } = await apiSaveAboutMe(account.user.id, account.profile?.id ?? null, values);
+    setAccount({ ...account, user, profile });
+    setPending(null);
+  };
+
+  const handleSaveConditions = async (values: userDetails) => {
+    if (!account) return;
+    const profile = await apiSaveConditions(account.profile?.id ?? null, values);
+    setAccount({ ...account, profile });
+    setPending(null);
   };
 
   /**
    * Handles confirmations (when user clicks confirm in a modal) whilst in pending states.
    */
-  const handleConfirmations = () => {
+  const handleConfirmations = async () => {
     if (pending === 'delete'){
-      // API call for deleting account
+      try {
+        await apiDeleteMyAccount();
+        setUserType('Undefined'); // should trigger log in / onboarding
+      } catch (error) {
+        Alert.alert('Could not delete account', apiErrorMessage(error, 'Please try again.'));
+      }
     } else if (pending === 'logout'){
         setUserType('Undefined') // should trigger log in / onboarding
-    } else if (pending === 'editAboutMe'){
-      // changes should be checked for validity before save can happen
-      // save changes to backend 
-    } else if (pending === 'editMyConditions'){
-      // changes should be checked for validity before save can happen
-      // save changes to backend 
     }
     setPending(null);
+  };
+
+  /**
+   * Renders a loading spinner until the user's details are loaded, or the error if they can't be.
+   */
+  if (!account) {
+    return (
+      <View style={[theme.centerItems, { flex: 1, padding: 24 }]}>
+        {loadError ? (
+          <>
+            <Text style={[theme.body, theme.fontOnSurface]}>{loadError}</Text>
+            <Text> </Text>
+            <TextButton label="Try again" onPress={load} />
+          </>
+        ) : (
+          <ActivityIndicator size="large" />
+        )}
+      </View>
+    );
+  }
+
+  const { user, profile, sexOptions } = account;
+  const sexLabel = sexOptions.find((option) => option.value === profile?.assigned_gender_at_birth)?.label ?? 'Not set';
+  const diagnosisLabel = profile?.has_diagnosis == null ? 'Not set' : profile.has_diagnosis ? 'Yes' : 'No';
+  const otherConditions = profile?.other_conditions;
+
+  // saved values the modals open with
+  const aboutMeValues: UserDetails = {
+    name: user.display_name,
+    sex: profile?.assigned_gender_at_birth ?? '',
+    birthYear: profile?.birth_year ? String(profile.birth_year) : '',
+    phone: user.phone_number,
+    email: user.email ?? '',
+  };
+  
+  const conditionsValues: userDetails = {
+    hasDiagnosis: profile?.has_diagnosis ?? null,
+    otherConditions: otherConditions ?? '',
   };
 
   /**
@@ -68,13 +149,15 @@ export default function Screen() {
         <View style={theme.line}></View>
 
         <Text> </Text>
-        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>{placeholderDetails.name}</Text>
+        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>{user.display_name}</Text>
         <Text style={theme.body}> </Text>
-        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>{placeholderDetails.sex}</Text>
+        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>{sexLabel}</Text>
         <Text style={theme.body}> </Text>
-        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>{placeholderDetails.phone}</Text>
+        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>{profile?.birth_year ?? 'Birth year not set'}</Text>
         <Text style={theme.body}> </Text>
-        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>{placeholderDetails.email}</Text>
+        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>{user.phone_number}</Text>
+        <Text style={theme.body}> </Text>
+        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>{user.email || 'No email'}</Text>
         <Text> </Text>
 
         <View style={[theme.rightItems]}>
@@ -94,16 +177,18 @@ export default function Screen() {
         <Text> </Text>
         <View style={theme.line}></View>
         <Text> </Text>
-        <Text style={[theme.h6, theme.leftText, theme.fontOnSurface]}>Primary Condition </Text>
+        
+        <Text style={[theme.h6, theme.leftText, theme.fontOnSurface]}>Diagnosis</Text>
         <Text style={theme.body}> </Text>
-        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>{placeholderDetails.primaryCondition} </Text>
+        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>{diagnosisLabel}</Text>
         <Text> </Text>
 
-        {placeholderDetails.otherConditions !== null && (
+        {!!otherConditions && (
           <View>
           <Text style={[theme.h6, theme.leftText, theme.fontOnSurface]}>Other Conditions</Text>
           <Text style={theme.body}> </Text>
-          <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>{placeholderDetails.otherConditions}</Text>
+          <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>{otherConditions}</Text>
+          <Text> </Text>
           </View>
         )}
         
@@ -161,15 +246,16 @@ export default function Screen() {
 
       <AboutMeModal
         visible={pending === 'editAboutMe'}
-        initialValues = {placeholderDetails}
-        onConfirm={handleConfirmations}
+        initialValues = {aboutMeValues}
+        sexOptions={sexOptions}
+        onConfirm={handleSaveAboutMe}
         onCancel={() => setPending(null)}
       />
 
       <MyConditionsModal
         visible={pending === 'editMyConditions'}
-        initialValues = {placeholderDetails}
-        onConfirm={handleConfirmations}
+        initialValues = {conditionsValues}
+        onConfirm={handleSaveConditions}
         onCancel={() => setPending(null)}
       />
 

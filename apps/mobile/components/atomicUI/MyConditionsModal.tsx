@@ -1,29 +1,31 @@
 /**
  * Modal that allows the user to change their 'my conditions' information
  * 
- * On confirm, input should be checked for validity and saved to backend.
+ * On confirm, input is checked for validity and saved to backend.
  */
-import React, { useEffect } from "react";
-import {Modal, View, Text, Pressable, StyleSheet, TextInput} from 'react-native'
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
+import {Modal, View, Text, Pressable, StyleSheet, TextInput, ActivityIndicator} from 'react-native'
 import { useTheme, ColourSet } from "../../context/ThemeContext";
+import { apiErrorMessage } from "@/api/settings_api_helpers"
 
 export type userDetails ={
-  primaryCondition: string;
-  otherConditions: string; // how many other conditions should the user be able to add?
+  hasDiagnosis: boolean | null; // null if not answered
+  otherConditions: string;
 }
 
 type Props = {
     visible: boolean;
     initialValues: userDetails;
-    onConfirm: () => void; // void for now- change with api
+    onConfirm: (values: userDetails) => Promise<void>; // saves to the backend, throws if it fails
     onCancel: () => void;
 }
 
-const AboutMeModal = ({visible, initialValues, onConfirm, onCancel} : Props) => {
+const MyConditionsModal = ({visible, initialValues, onConfirm, onCancel} : Props) => {
     const { theme, colours } = useTheme();
     const styles = createStyles(colours);
     const [draft, setDraft] = useState<userDetails>(initialValues);
+    const [error, setError] = useState<string | null>(null);
+    const [saving, setSaving] = useState(false);
 
     /**
      * resets modal to saved values (initialValues) when it opens
@@ -34,39 +36,80 @@ const AboutMeModal = ({visible, initialValues, onConfirm, onCancel} : Props) => 
     useEffect(()=>{
       if(visible){
         setDraft(initialValues)
+        setError(null)
       }
     },[visible]);
 
-    /**
-     * handler to update the field when the user types into it
+     /**
+     * saves the input, showing the error and keeping the modal open if it fails. The parent
+     * closes the modal once the save has worked.
      */
-    const updateHandler = (field: keyof userDetails) => (text: string) => setDraft((prev) => ({...prev, [field]: text}))
+    const handleSave = async () => {
+      setSaving(true);
+      setError(null);
+      try {
+        await onConfirm(draft);
+      } catch (error) {
+        setError(apiErrorMessage(error, "Couldn't save your changes. Please try again."));
+      } finally {
+        setSaving(false);
+      }
+    };
 
     /**
-     * function to render a text input section
+     * Function to render the diagnosis section, a yes / no choice
      */
-    const renderField = (label: string, field: keyof userDetails) => (
+    const renderDiagnosis = () => (
+
+      <View style={styles.field}>
+        <Text style={[theme.h6, theme.leftItems, theme.fontOnSurface]}>Do you have a diagnosis?</Text>
+        <Text> </Text>
+        <View style={styles.chips}>
+          {[{ label: 'Yes', value: true }, { label: 'No', value: false }].map((option) => {
+            const selected = draft.hasDiagnosis === option.value;
+            return (
+              <Pressable
+                key={option.label}
+                style={[styles.button, { borderColor: colours.onSurface, borderWidth: 1 },
+                        selected && { backgroundColor: colours.primary }]}
+                onPress={() => setDraft((prev) => ({...prev, hasDiagnosis: option.value}))}
+                accessibilityRole="radio"
+                accessibilityState={{ selected }}
+              >
+                <Text style={theme.body}>{option.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+    );
+
+    /**
+     * Function to render the other conditions text input section
+     */
+    const renderOtherConditions = () => (
     
       <View style={styles.field}>
-        <Text style={[theme.h6, { color: colours.onSurface }, theme.leftItems]}>{label}</Text>
+        <Text style={[theme.h6, theme.leftItems, theme.fontOnSurface]}>Other Conditions</Text>
         <Text> </Text>
         <TextInput
-          value={draft[field]}
-          onChangeText={updateHandler(field)}
+          value={draft.otherConditions}
+          onChangeText={(text) => setDraft((prev) => ({...prev, otherConditions: text}))}
           keyboardType={'default'}
           autoCapitalize={'sentences'}
-          placeholder={label}
+          multiline={true}
+          placeholder="Other Conditions"
           placeholderTextColor={colours.onSurface}
           style={[styles.textInput, { color: colours.onSurface, borderColor: colours.onSurface }]}
         />
       </View>
     );
 
+
   /**
    * returns the modal which renders text input fields to condition and other conditions/s where the 
    * user can change/add conditions.
    * 
-   * change save not implemented- will be implementing with api.
    */
   return (
 
@@ -89,25 +132,29 @@ const AboutMeModal = ({visible, initialValues, onConfirm, onCancel} : Props) => 
           <Text style={[theme.h4, theme.leftItems, theme.fontOnSurface]}>Edit My Details</Text>
           <Text> </Text>
 
-          {renderField('Primary Condition','primaryCondition')}
+          {renderDiagnosis()}
           <Text> </Text>
-          {renderField('Other Conditions','otherConditions')}
+          {renderOtherConditions()}
+
+          {error && <Text style={[theme.body, styles.errorText]} accessibilityRole="alert">{error}</Text>}
 
           <View style={[styles.buttons, theme.centerItems, theme.row]}>
             <Pressable
               style={[styles.button, { borderColor: colours.onSurface, borderWidth: 1 }]}
               onPress={onCancel}
+              disabled={saving}
               accessibilityRole="button"
             >
               <Text style={[theme.body, theme.fontOnSurface]}>Go Back</Text>
             </Pressable>
 
             <Pressable
-              style={[styles.button, { backgroundColor: colours.primary }]}
-              onPress={onConfirm}
+              style={[styles.button, { backgroundColor: colours.primary }, saving && { opacity: 0.6 }]}
+              onPress={handleSave}
+              disabled={saving}
               accessibilityRole="button"
             >
-              <Text style={theme.body}>Save Changes</Text>
+              {saving ? <ActivityIndicator /> : <Text style={theme.body}>Save Changes</Text>}
             </Pressable>
           </View>
         </Pressable>
@@ -116,7 +163,7 @@ const AboutMeModal = ({visible, initialValues, onConfirm, onCancel} : Props) => 
   );
 }
 
-export default AboutMeModal;
+export default MyConditionsModal;
 
 function createStyles(colours: ColourSet){
     return StyleSheet.create({
@@ -166,5 +213,15 @@ function createStyles(colours: ColourSet){
           width: '100%',
           borderRadius: 28,
           padding: 5,
+        },
+        chips : {
+          flexDirection: 'row',
+          flexWrap: 'wrap',
+          gap: 8,
+          marginHorizontal: 8,
+        },
+        errorText : {
+          color: colours.primary,
+          marginTop: 12,
         }
     })};

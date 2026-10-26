@@ -1,33 +1,41 @@
 /**
  * Modal that allows the user to change their about me information
  * 
- * On confirm, input should be checked for validity and saved to backend.
+ * On confirm, input is checked for validity and saved to backend.
  * 
- * Currently does not save inout, will be implemented with API link
  */
-import React, { useEffect } from "react";
-import {Modal, View, Text, Pressable, StyleSheet, TextInput} from 'react-native'
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import {Modal, View, Text, Pressable, StyleSheet, TextInput, ActivityIndicator, Alert} from 'react-native'
 import { useTheme, ColourSet } from "../../context/ThemeContext";
+import { validateAboutMe, apiErrorMessage } from "@/api/settings_api_helpers"
 
 export type UserDetails ={
   name: string;
-  sex: string;
+  sex: string; // value of an assigned_gender_at_birth choice
+  birthYear: string; // 4 digits, or blank
   phone: string;
   email: string;
+}
+
+export type Choice = {
+  value: string; // sent to the API
+  label: string; // shown to the user
 }
 
 type AboutMeModalProps = {
     visible: boolean;
     initialValues: UserDetails;
-    onConfirm: () => void; // void for now- change with api
+    sexOptions: Choice[];
+    onConfirm: (values: UserDetails) => Promise<void>; // saves to the backend, throws if it fails
     onCancel: () => void;
 }
 
-const AboutMeModal = ({visible, initialValues, onConfirm, onCancel} : AboutMeModalProps) => {
+const AboutMeModal = ({visible, initialValues, sexOptions, onConfirm, onCancel} : AboutMeModalProps) => {
     const {theme, colours} = useTheme();
     const styles = createStyles(colours);
     const [draft, setDraft] = useState<UserDetails>(initialValues);
+    const [error, setError] = useState<string | null>(null);
+    const [saving, setSaving] = useState(false);
 
     /**
      * resets modal to saved values (initialValues) when it opens
@@ -38,6 +46,7 @@ const AboutMeModal = ({visible, initialValues, onConfirm, onCancel} : AboutMeMod
     useEffect(()=>{
       if(visible){
         setDraft(initialValues)
+        setError(null)
       }
     },[visible]);
 
@@ -45,6 +54,27 @@ const AboutMeModal = ({visible, initialValues, onConfirm, onCancel} : AboutMeMod
      * handler to update the field when the user types into it
      */
     const updateHandler = (field: keyof UserDetails) => (text: string) => setDraft((prev) => ({...prev, [field]: text}))
+
+    /**
+     * checks the input is valid then saves it, showing the error and keeping the modal open if
+     * either fails. The parent closes the modal once the save has worked.
+     */
+    const handleSave = async () => {
+      const problem = validateAboutMe(draft);
+      if (problem) {
+        setError(problem);
+        return;
+      }
+      setSaving(true);
+      setError(null);
+      try {
+        await onConfirm(draft);
+      } catch (error) {
+        setError(apiErrorMessage(error, "Couldn't save your changes. Please try again."));
+      } finally {
+        setSaving(false);
+      }
+    };
 
     /**
      * Function to render a text input section
@@ -63,6 +93,44 @@ const AboutMeModal = ({visible, initialValues, onConfirm, onCancel} : AboutMeMod
           placeholderTextColor={colours.onSurface}
           style={[styles.textInput, { color: colours.onSurface, borderColor: colours.onSurface }]}
         />
+      </View>
+    );
+
+    const [sexOpen, setSexOpen] = useState(false);
+
+    /**
+     * Function to render the assigned gender at birth section as a dropdown, chosen from the
+     * options the server accepts rather than typed
+     */
+    const renderSexField = () => (
+
+      <View style={styles.field}>
+        <Text style={[theme.h6, theme.leftItems, theme.fontOnSurface]}>Assigned Gender at Birth</Text>
+        <Text> </Text>
+        <Pressable
+          style={[styles.dropdown, { borderColor: colours.onSurface }]}
+          onPress={() => setSexOpen((open) => !open)}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: sexOpen }}
+        >
+          <Text style={[theme.body, theme.fontOnSurface]}>
+            {sexOptions.find((option) => option.value === draft.sex)?.label ?? 'Select'}
+          </Text>
+        </Pressable>
+        {sexOpen && sexOptions.map((option) => (
+          <Pressable
+            key={option.value}
+            style={[styles.dropdownItem, draft.sex === option.value && { backgroundColor: colours.primary }]}
+            onPress={() => {
+              setDraft((prev) => ({...prev, sex: option.value}));
+              setSexOpen(false);
+            }}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: draft.sex === option.value }}
+          >
+            <Text style={theme.body}>{option.label}</Text>
+          </Pressable>
+        ))}
       </View>
     );
   
@@ -95,26 +163,30 @@ const AboutMeModal = ({visible, initialValues, onConfirm, onCancel} : AboutMeMod
 
           {renderField('Name','name','default')}
           <Text> </Text>
-          {renderField('Sex','sex', 'default')}
+          {renderSexField()}
           <Text> </Text>
           {renderField('Phone Number','phone','phone-pad')}
           <Text> </Text>
           {renderField('Email','email','email-address')}
 
+          {error && <Text style={[theme.body, styles.errorText]} accessibilityRole="alert">{error}</Text>}
+
           <View style={[styles.buttons, theme.centerItems, theme.row]}>
             <Pressable
               style={[styles.button, { borderColor: colours.onSurface, borderWidth: 1 }]}
               onPress={onCancel}
+              disabled={saving}
             >
               <Text style={[theme.body, { color: colours.onSurface }]}>Go Back</Text>
             </Pressable>
 
             <Pressable
-              style={[styles.button, { backgroundColor: colours.primary }]}
-              onPress={onConfirm}
+              style={[styles.button, { backgroundColor: colours.primary }, saving && { opacity: 0.6 }]}
+              onPress={handleSave}
+              disabled={saving}
             >
 
-            <Text style={theme.body}>Save Changes</Text>
+            {saving ? <ActivityIndicator /> : <Text style={theme.body}>Save Changes</Text>}
 
             </Pressable>
           </View>
@@ -174,5 +246,28 @@ function createStyles(colours: ColourSet){
           width: '100%',
           borderRadius: 28,
           padding: 5,
-        }
+        },
+        chips : {
+          flexDirection: 'row',
+          flexWrap: 'wrap',
+          gap: 8,
+          marginHorizontal: 8,
+        },
+        errorText : {
+          color: colours.primary,
+          marginTop: 12,
+        },
+        dropdown : {
+          padding: 10,
+          marginHorizontal: 8,
+          borderWidth: 1,
+          minHeight: 44,
+          justifyContent: 'center',
+        },
+        dropdownItem : {
+          padding: 12,
+          marginHorizontal: 8,
+          minHeight: 44,
+          justifyContent: 'center',
+        },
     })};
