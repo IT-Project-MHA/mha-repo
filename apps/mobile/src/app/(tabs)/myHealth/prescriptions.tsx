@@ -1,7 +1,7 @@
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, ScrollView, Alert } from 'react-native';
 import Button from '../../../../components/atomicUI/Button';
 import ButtonWithIcon from '../../../../components/atomicUI/ButtonWithIcon';
-import { useTheme, ColourSet } from '../../../../context/ThemeContext';
+import { useTheme } from '../../../../context/ThemeContext';
 import { useEffect, useState } from 'react';
 import AddPrescriptionModal, {PrescriptionDetails} from '../../../../components/atomicUI/AddPrescriptionModal';
 import { apiPrescription } from '@/api/django-API';
@@ -13,6 +13,34 @@ export default function Screen() {
   const [saving, setSaving] = useState(false); 
   const [pending, setPending] = useState< 'addPrescription' | 'editPrescription' | 'viewPrescription' |  null>(null);  // modal visibility triggered by pending state
   const [selected, setSelected] = useState<any | null>(null);
+
+
+  /**
+   * Handles prescription deletion
+   * 
+   * If user attempts to delete a prescription that is used by another record they are warned and given
+   * an alternative. (from api: Deleting a record that other records depend on returns 409.)
+   */
+const handleDeletePrescription = async () => {
+  if (saving || !selected) return;
+  setSaving(true);
+  try {
+    await apiPrescription('delete', { id: selected.id });
+    await loadPrescriptions();
+    setPending(null);
+    setSelected(null);
+  } catch (e: any) {
+    console.log('delete failed', e?.name, e?.message, e?.status, e?.data);
+    if (e?.status === 409) {
+      Alert.alert(
+        "Can't remove this prescription",
+        'It is used in your weekly check-ins. You can mark it as stopped instead.'
+      );
+    }
+  } finally {
+    setSaving(false);
+  }
+};
 
 
   const loadPrescriptions = () =>
@@ -33,11 +61,14 @@ export default function Screen() {
     loadPrescriptions();
   },[]);
 
-  // creates list of active prescriptions
-  const activePrescriptions = prescriptions.filter((p)=> !(p.stopped_on));
+  // ignore soft-deleted records
+  const visiblePrescriptions = prescriptions.filter((p) => !p.deleted_at);
 
   // creates list of active prescriptions
-  const inactivePrescriptions = prescriptions.filter((p)=> (p.stopped_on));
+  const activePrescriptions = visiblePrescriptions.filter((p)=> !(p.stopped_on));
+
+  // creates list of active prescriptions
+  const inactivePrescriptions = visiblePrescriptions.filter((p)=> (p.stopped_on));
 
   /**
    * Handles adding the prescription after confirmation from the modal
@@ -62,12 +93,15 @@ const handleEditPrescription = async (values: PrescriptionDetails) => {
   setSaving(true);
   try {
     await apiPrescription('update', {
-    id: selected.id,
+      id: selected.id,
       ...values,
+      strength: values.strength === '' ? null : values.strength,
+      strength_unit: values.strength_unit || undefined,
+      frequency_unit: values.frequency_unit || undefined,
       started_on: values.started_on === '' ? null : values.started_on,
       stopped_on: values.stopped_on === '' ? null : values.stopped_on,
       form: values.form || undefined,
-  });
+    });
     await loadPrescriptions();
     setPending(null);
     setSelected(null);
@@ -107,7 +141,7 @@ const selectedDetails: PrescriptionDetails | undefined = selected && {
        * and remove their prescription
        * 
        */}
-       {prescriptions.length === 0 ? (
+       {activePrescriptions.length === 0 ? (
             <View>
               <View style={theme.centerItems}>
 
@@ -120,7 +154,7 @@ const selectedDetails: PrescriptionDetails | undefined = selected && {
                   onPress={() => setPending('addPrescription')}
                   buttonType="roundButton"
                   textStyle={{ color: colours.onTertiary }}
-                  style={{ width: '100%' }}
+                  style={{ width: '80%' }}
                    />
                   
 
@@ -138,7 +172,7 @@ const selectedDetails: PrescriptionDetails | undefined = selected && {
                     label={p.name}
                     onPress={() => openPrescription(p)}
                     buttonType="transparentButton"
-                    name= "trash-outline"
+                    name="chevron-forward-outline"
                     textStyle={{ color: colours.onTertiary }}
                     style={{ width: '80%' }}
                   />
@@ -161,29 +195,28 @@ const selectedDetails: PrescriptionDetails | undefined = selected && {
             </View>
            )}
 
+            {inactivePrescriptions.length > 0 && (
+  <>
     <View style={theme.header}>
-        <Text style={[theme.h5, theme.leftText, theme.fontOnSurface]}>My Inactive Prescriptions</Text>
+      <Text style={[theme.h5, theme.leftText, theme.fontOnSurface]}>My Inactive Prescriptions</Text>
     </View>
 
     {inactivePrescriptions.map((p, index) => (
-                  <View key={p.id} style={[theme.layoutContainer, theme.centerItems]}> 
+      <View key={p.id} style={[theme.layoutContainer, theme.centerItems]}>
+        <ButtonWithIcon
+          label={p.name}
+          onPress={() => openPrescription(p)}
+          buttonType="transparentButton"
+          name="chevron-forward"
+          textStyle={{ color: colours.onTertiary }}
+          style={{ width: '80%' }}
+        />
 
-                  <ButtonWithIcon
-                    label={p.name}
-                    onPress={() => openPrescription(p)}
-                    buttonType="transparentButton"
-                    name= "trash-outline"
-                    textStyle={{ color: colours.onTertiary }}
-                    style={{ width: '80%' }}
-                  />
-
-                  {/**
-                   * puts a divider in between all but the last prescription in the list
-                   */}
-                  {index < activePrescriptions.length - 1 && <View style={theme.line} />}
-
-                  </View>
-            ))}
+        {index < inactivePrescriptions.length - 1 && <View style={theme.line} />}
+      </View>
+    ))}
+  </>
+)}
            
     <View style={theme.bottomGap}/>   
     
@@ -198,13 +231,16 @@ const selectedDetails: PrescriptionDetails | undefined = selected && {
       onConfirm={handleAddPrescription}
       onCancel={() => setPending(null)}
       />
-
+  
   <ViewPrescriptionModal
     visible={pending === 'viewPrescription'}
     prescription={selected}
     onEdit={() => setPending('editPrescription')}
+    onDelete={handleDeletePrescription}
     onClose={() => { setPending(null); setSelected(null); }}
     />
+
+  
 
   <AddPrescriptionModal
     visible={pending === 'editPrescription'}

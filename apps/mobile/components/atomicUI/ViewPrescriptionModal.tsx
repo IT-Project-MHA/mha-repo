@@ -3,13 +3,16 @@ import { Modal, View, Text, Pressable, ScrollView } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { formatDate } from '../../constants/date';
 import { apiStrengthUnit, apiFrequencyUnit, apiFormUnit } from '@/api/django-API';
+import ConfirmModal from './ConfirmModal';
 
+// dropdown choice from backend
 type Option = { value: string; label: string };
 
 type Props = {
   visible: boolean;
   prescription: any | null;
   onEdit: () => void;
+  onDelete: () => void;
   onClose: () => void;
 };
 
@@ -32,11 +35,22 @@ const labelFor = (options: Option[], value?: string | null) => {
   return options.find((o) => o.value === value)?.label ?? value;
 };
 
-const ViewPrescriptionModal = ({ visible, prescription: p, onEdit, onClose }: Props) => {
+/**
+ * Read-only modal showing prescription details called from backend.
+ * 
+ * Features edit prescription, remove prescription options.
+ */
+const ViewPrescriptionModal = ({ visible, prescription: p, onEdit, onDelete, onClose }: Props) => {
   const { theme, colours } = useTheme();
   const [units, setUnits] = useState<Option[]>([]); // strength units
   const [freqUnits, setFreqUnits] = useState<Option[]>([]); // frequency units
   const [forms, setForms] = useState<Option[]>([]); // medication forms
+  const [confirming, setConfirming] = useState(false);
+
+  // hide confirmation when modal closes
+  useEffect(() => {
+    if (!visible) setConfirming(false);
+  }, [visible]);
 
   useEffect(() => {
     apiStrengthUnit()
@@ -97,6 +111,10 @@ const ViewPrescriptionModal = ({ visible, prescription: p, onEdit, onClose }: Pr
               ) : null
             )}
           </ScrollView>
+          
+          <Pressable onPress={() => setConfirming(true)} style={{ marginTop: 16, padding: 5 }}>
+              <Text style={[theme.body, theme.fontUnderlined, { color: colours.primary }]}>Remove Prescription</Text>
+          </Pressable>
 
           <View style={[theme.modalButtons, theme.centerItems, theme.row]}>
             <Pressable
@@ -111,6 +129,25 @@ const ViewPrescriptionModal = ({ visible, prescription: p, onEdit, onClose }: Pr
           </View>
         </Pressable>
       </Pressable>
+
+    
+    <ConfirmModal
+        visible={confirming}
+        title={`Remove ${p?.name ?? 'this prescription'}?`}
+        message={
+          p?.stopped_on
+            ? `Are you sure you want to remove this prescription?\nIt will no longer appear in your lists.`
+          : `Are you sure you want to remove this prescription?\n\nIt will no longer appear in your lists. To keep it in your records add a "Stopped on" date instead.`
+        }
+        confirmLabel="Remove Medication"
+        cancelLabel="Cancel"
+        onConfirm={() => {
+          setConfirming(false);
+          onDelete();
+        }}
+        onCancel={() => setConfirming(false)}
+      />
+
     </Modal>
   );
 };
