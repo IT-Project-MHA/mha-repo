@@ -48,3 +48,15 @@ describe('PeopleModal', () => {
     await waitFor(() => expect(onRemove).toHaveBeenCalled());
   });
 });
+
+ test('for someone the user supports, permissions are shown but cannot be changed', async () => {
+    const { getByText, queryByText, onChange } = await setup({
+      role: 'Im Supporting',
+      permissions: { ...noPerms, viewAssessments: true },
+    });
+    expect(getByText(/✓ View their assessments/)).toBeTruthy();
+    expect(getByText(/✗ View their appointments/)).toBeTruthy();
+    expect(queryByText('View my assessments')).toBeNull(); // no checkboxes
+    await fireEvent.press(getByText(/View their assessments/));
+    expect(onChange).not.toHaveBeenCalled();
+  });
