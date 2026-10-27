@@ -93,7 +93,8 @@ async function request(method, path, body, baseUrl = BASE_URL) {
     const text = await response.text();
     const data = text ? JSON.parse(text) : null;
     if (!response.ok) {
-        throw new ApiError(response.status, data);
+        console.error('API error', method, path, response.status, text);
+        throw new ApiError(`${response.status}: ${text}`);
     }
     return data;
 }

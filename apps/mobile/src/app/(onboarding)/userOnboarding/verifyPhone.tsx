@@ -24,7 +24,10 @@ import { lineThickness } from '../../../../constants/layout';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { Typography } from '../../../../constants/textSize';
 import React from 'react';
-import  Constants  from 'expo-constants';
+
+
+import * as SecureStore from 'expo-secure-store'
+import * as Crypto from 'expo-crypto'
 
 const NUM_DIGITS = 6;
 
@@ -37,8 +40,16 @@ export default function Page() {
   const {set, reset, ...answers} = useOnboardingUserStore.getState();
   const phone_number = answers.phone_number;
   const display_name = answers.display_name;
-  const pin = '0000'; //FIX LATER, add page
+  const pin = '000000'; //FIX LATER, add page
 
+  async function getDeviceId(){
+    let id = await SecureStore.getItemAsync('device_id');
+    if(!id){
+      id = Crypto.randomUUID();
+      await SecureStore.setItemAsync('device_id', id);
+    }
+    return id;
+  }
   async function smsVerifier(code: string){
     //on success,we go to the userType selection page
 
@@ -46,19 +57,24 @@ export default function Page() {
     //fields: phone_number, display_name, email
     try{
       //verify code
-      const verification_id = await verify_code(phone_number, code);
-
+      const result = await verify_code(phone_number, code);
+      const verification_id = result.verification_id;
       //get token
       try{
         //takes verification_id, phone_number, display_name, pin, accepted_terms, accepted_privacy, device_id, track_health (optional), health (optional)
-
+        const device_id = await getDeviceId();
         //bad input
         await register_token({
-          verification_id: verification_id, phone_number:phone_number, display_name:display_name,
-           pin:pin, accepted_terms:true, accepted_privacy:true, deviceID: Constants.deviceId
+          verification_id: verification_id, 
+          phone_number:phone_number, 
+          display_name:display_name,
+           pin:pin, 
+           accepted_terms:true, 
+           accepted_privacy:true, 
+           device_id,
         })
-      }catch{
-
+      }catch (error){
+        console.error('register failed', error)
       }
       //send data
       /*
@@ -72,6 +88,7 @@ export default function Page() {
     
     }catch (error){
       //wrong code or some such
+      console.error('SMS verification failed', error)
     }
 
   }
