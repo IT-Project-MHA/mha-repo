@@ -61,7 +61,7 @@ export default function Page() {
         <Button
         label='Create Account'
         onPress={()=>{router.navigate('/(onboarding)/userOnboarding/createAccount')}}
-        buttonType='roundButton'
+        buttonType='roundSecondaryButton'
         />
         <SignInButton/>
       </View>

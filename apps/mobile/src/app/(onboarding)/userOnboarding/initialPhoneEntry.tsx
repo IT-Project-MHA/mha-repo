@@ -1,6 +1,7 @@
 /**
  * First page of patient onboarding.
  * asks for phone field
+ * sends API request for sms code. Does not proceed until success
  * FIX LATER: add modal for terms of use and privacy policy.
  */
 
@@ -54,7 +55,7 @@ export default function Page() {
         onSubmit={setPhone}
         />
         <View style={styles.label}> 
-          <Text>Must be an Australian mobile phone number, starting in 04</Text>
+          <Text style={styles.subheading}>Must be an Australian mobile phone number, starting in 04</Text>
         </View>
       </View>
 

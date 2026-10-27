@@ -16,7 +16,7 @@ import { NumberEntry } from '../../../../components/answerFields/NumberEntry';
 import Button from '../../../../components/atomicUI/Button';
 import { completeUserOnboarding } from '../../../api/onboarding_api_helpers';
 import { useOnboardingUserStore } from '../../store/onboardingStorage';
-
+import { verify_code, register_token } from '../../../api/django-API';
 
 import { Text, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,7 +24,9 @@ import { lineThickness } from '../../../../constants/layout';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { Typography } from '../../../../constants/textSize';
 import React from 'react';
+import  Constants  from 'expo-constants';
 
+const NUM_DIGITS = 6;
 
 export default function Page() {
   const { colours, theme } = useTheme();
@@ -32,27 +34,46 @@ export default function Page() {
   const styles = createStyles(colours, theme, insets.bottom);
   const router = useRouter();
 
-  const setUserOnboaring = useOnboardingUserStore((s)=> s.set);
   const {set, reset, ...answers} = useOnboardingUserStore.getState();
+  const phone_number = answers.phone_number;
+  const display_name = answers.display_name;
+  const pin = '0000'; //FIX LATER, add page
 
   async function smsVerifier(code: string){
     //on success,we go to the userType selection page
 
     //and send the API request
     //fields: phone_number, display_name, email
-    const {set, reset, ...answers} = useOnboardingUserStore.getState();
     try{
-      await completeUserOnboarding(answers);
-      reset();
-      router.navigate("/(onboarding)/userType");
-    }catch(error){
-      console.error('Failed to create user account', error);
-    }
-    
-    
+      //verify code
+      const verification_id = await verify_code(phone_number, code);
 
+      //get token
+      try{
+        //takes verification_id, phone_number, display_name, pin, accepted_terms, accepted_privacy, device_id, track_health (optional), health (optional)
+
+        //bad input
+        await register_token({
+          verification_id: verification_id, phone_number:phone_number, display_name:display_name,
+           pin:pin, accepted_terms:true, accepted_privacy:true, deviceID: Constants.deviceId
+        })
+      }catch{
+
+      }
+      //send data
+      /*
+      try{
+      await completeUserOnboarding(answers);
+        reset();
+        router.navigate("/(onboarding)/userType");
+      }catch(error){
+        console.error('Failed to create user account', error);
+      }*/
     
-    
+    }catch (error){
+      //wrong code or some such
+    }
+
   }
   return (
     <SafeAreaView style={theme.screen}>
@@ -64,16 +85,16 @@ export default function Page() {
       <View style={styles.bottomBar}>
         <NumberEntry 
         onSubmit={smsVerifier}
-        UPPER_BOUND={9999}
+        UPPER_BOUND={999999}
         LOWER_BOUND={0}
-        MAX_lENGTH_NUM={4}
+        MAX_lENGTH_NUM={NUM_DIGITS}
         />
         <Button
         label="I didn't recieve a code"
         onPress={()=>{/**FIX: implement */}}
-        buttonType='secondaryButton'
+        buttonType='roundSecondaryButton'
         />
-        <Text style={styles.label}>We've sent a code to {answers.phone_number}</Text>
+        <Text style={styles.subheading}>We've sent a code to {answers.phone_number}</Text>
       </View>
 
 

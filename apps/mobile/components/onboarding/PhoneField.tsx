@@ -81,7 +81,7 @@ function PhoneField({onSubmit}: PhoneFieldProps) {
         <View style= {theme.sectionContainer}>
         {!!error && <Text style={styles.subheading}>{error}</Text>}
         </View>
-        <View style= {theme.bottomGap}>
+        <View style = {{marginBottom: 16}}>
         <Button
           label="Submit"
           onPress={handleSubmit}
@@ -92,7 +92,7 @@ function PhoneField({onSubmit}: PhoneFieldProps) {
         <Button
           label="Another method"
           onPress={()=>{}}
-          buttonType="roundButton"
+          buttonType="roundSecondaryButton"
         />
       </View>
     </View>
