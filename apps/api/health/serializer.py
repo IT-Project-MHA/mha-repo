@@ -11,9 +11,14 @@ class PrescriptionSerializer(serializers.ModelSerializer):
         read_only_fields = ['patient_profile']
 
     def validate_dosage(self, dosage):
-        if dosage < 1:
+        if dosage is not None and dosage < 1:
             raise serializers.ValidationError('Dosage must be at least 1.')
         return dosage
+
+    def validate_strength(self, strength):
+        if strength is not None and strength <= 0:
+            raise serializers.ValidationError('Strength must be more than 0.')
+        return strength
 
     def validate_frequency(self, frequency):
         if frequency < 1:

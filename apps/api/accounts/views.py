@@ -1,4 +1,5 @@
 from django.db.models import Q
+from django.utils import timezone
 from rest_framework import generics, serializers, status
 from rest_framework.permissions import AllowAny, IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
@@ -8,30 +9,39 @@ from rest_framework.views import APIView
 
 from mpowered_api.immutable import save_without_immutable_changes
 from mpowered_api.protected import destroy_or_reject_protected
+from mpowered_api.soft_delete import soft_delete
 
 
 from accounts import devices, login, otp, registration, reset_pin
-from accounts.models import PatientProfile, SupportLink, TermsAndPrivacy, TrustedDevice, User, UserSettings
+from accounts.models import PatientProfile, SupportLink, TermsAndPrivacy, TrustedDevice, User, UserSettings, PushToken
 from accounts.rate_limits import PhoneBurstThrottle, PhoneLoginThrottle, PhoneSustainedThrottle
+from accounts.permissions import visible_support_links, visible_patient_profiles
+from accounts.delete import delete_account
+from accounts.invite import *
 
 from accounts.serializer import DeviceListSerializer, LoginSerializer, PatientProfileSerializer, RegisterSerializer, \
     RequestCodeSerializer, ResetPinSerializer, SupportLinkSerializer, TermsAndPrivacySerializer, \
-    TrustedDeviceSerializer, UserSerializer, UserSettingsSerializer, VerifyCodeSerializer
+    TrustedDeviceSerializer, UserSerializer, UserSettingsSerializer, VerifyCodeSerializer, ChangePhoneSerializer, PushTokenSerializer
+
+from audit.models import AuditEntry
+from audit.services import record
 
 LOGIN_ERROR_STATUS = {
     "invalid_credentials": status.HTTP_401_UNAUTHORIZED,
     "verification_required": status.HTTP_403_FORBIDDEN,
-    "verification_invalid": status.HTTP_400_BAD_REQUEST,
+    "verification_invalid": status.HTTP_400_BAD_REQUEST
 }
 
 SUPPORTER_STATUS_CHANGES = {
     SupportLink.Status.INVITED: [SupportLink.Status.ACTIVE, SupportLink.Status.REVOKED],
     SupportLink.Status.ACTIVE: [SupportLink.Status.REVOKED],
-    SupportLink.Status.REVOKED: [],
+    SupportLink.Status.REVOKED: []
 }
 
+
 # Instructions:
-# All views need the header Authorization: Token <token> from /auth/register or /auth/login.
+# All views except sign up, log in, request code, verify code and reset pin 
+# need the header Authorization: Token <token> from /auth/register or /auth/login.
 # Without they return 401.
 
 # Can only see records where patient_profile is user's own, or who user supports.
@@ -174,7 +184,18 @@ class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        login.logout_user(request.user)
+        login.logout_device(request.auth)
+
+        return Response(status = status.HTTP_204_NO_CONTENT)
+    
+class LogoutEverywhereView(APIView):
+    # POST /auth/logout-everywhere
+    # Signs out every phone
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        devices.sign_out_everywhere(request.user)
 
         return Response(status = status.HTTP_204_NO_CONTENT)
 
@@ -244,21 +265,13 @@ class UserRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         user = self.request.user
         return User.objects.filter(id = user.id)
 
+    # Soft deletion
     def perform_destroy(self, instance):
-        destroy_or_reject_protected(instance)
+        delete_account(instance)
 
 
 
 # PatientProfile APIs:
-
-# helper function: returns set of patient profiles that user can access
-def visible_patient_profiles(user):
-    # filter own profile or profiles of patients that user supports
-    return PatientProfile.objects.filter(
-            Q(user = user) |
-            Q(support_links__supporter_user = user,
-              support_links__status = SupportLink.Status.ACTIVE)
-        )
 
 class PatientProfileListCreate(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
@@ -275,10 +288,19 @@ class PatientProfileListCreate(generics.ListCreateAPIView):
     # can only create one's own patient profile, and only 1 PatientProfile
     def perform_create(self, serializer):
         user = self.request.user
-        if PatientProfile.objects.filter(user = user).exists():
+        existing = PatientProfile.objects.filter(user = user).first()
+
+        if existing is not None and existing.deleted_at is None:
             raise serializers.ValidationError(
                 {'user':'A patient profile already exists for this user.'})
-        serializer.save(user = user)
+
+        # If existing account grab old profile abd history
+        if existing is not None:
+            serializer.instance = existing
+            serializer.save(deleted_at = None)
+        else:
+            serializer.save(user = user)
+        record(user, AuditEntry.Action.CREATE, serializer.instance)
 
 class PatientProfileRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
@@ -293,10 +315,36 @@ class PatientProfileRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView)
             query_set = query_set.filter(user = user)
         return query_set.distinct()
 
+    def perform_update(self, serializer):
+        serializer.save()
+        record(self.request.user, AuditEntry.Action.UPDATE, serializer.instance)
+
     def perform_destroy(self, instance):
-        destroy_or_reject_protected(instance)
+        soft_delete(instance)
+        record(self.request.user, AuditEntry.Action.DELETE, instance)
 
+class ChangePhoneView(APIView):
+    # POST /auth/change-phone
 
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "register"
+
+    def post(self, request):
+        serializer = ChangePhoneSerializer(data = request.data)
+        serializer.is_valid(raise_exception = True)
+
+        try:
+            registration.change_phone(request.user, **serializer.validated_data)
+        except registration.RegistrationError as error:
+            if error.reason == "phone_taken":
+                code = status.HTTP_409_CONFLICT
+            else:
+                code = status.HTTP_400_BAD_REQUEST
+
+            return Response({"detail": error.reason}, status = code)
+
+        return Response({"phone_number": request.user.phone_number}, status = status.HTTP_200_OK)
 
 # UserSettings APIs:
 class UserSettingsListCreate(generics.ListCreateAPIView):
@@ -327,13 +375,9 @@ class UserSettingsRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
 # SupportLink APIs:
 
-# helper function: returns set of support links that user can access
-def visible_support_links(user):
-    return SupportLink.objects.filter(Q(patient_user = user) | Q(supporter_user = user))
-
 # helper function: returns user's own patient profile, or raises 400 error if user doesn't have one
 def own_patient_profile(user):
-    patient_profile = PatientProfile.objects.filter(user = user).first()
+    patient_profile = PatientProfile.objects.filter(user = user, deleted_at__isnull = True).first()
     if not patient_profile:
         raise serializers.ValidationError(
             {'patient_profile':'User does not have a patient profile.'})
@@ -359,30 +403,12 @@ class SupportLinkListCreate(generics.ListCreateAPIView):
     # it is linked when that number registers. Either way the supporter has to accept the invite
     def perform_create(self, serializer):
         user = self.request.user
-        patient_profile = own_patient_profile(user)
-        phone_number = serializer.validated_data.get("invited_phone_number")
-        supporter = serializer.validated_data.get("supporter_user")
-
-        if phone_number and supporter is None:
-            if phone_number == user.phone_number:
-                raise serializers.ValidationError(
-                    {'invited_phone_number':'You cannot be your own support person.'})
-            supporter = User.objects.filter(phone_number = phone_number,
-                                            deleted_at__isnull = True).first()
-            if supporter is None and SupportLink.objects.filter(
-                    patient_profile = patient_profile, supporter_user__isnull = True,
-                    invited_phone_number = phone_number,
-                    status = SupportLink.Status.INVITED).exists():
-                raise serializers.ValidationError(
-                    {'invited_phone_number':'This number has already been invited.'})
-
-        if supporter is not None and SupportLink.objects.filter(
-                patient_profile = patient_profile, supporter_user = supporter).exists():
-            raise serializers.ValidationError(
-                {'invited_phone_number':'This person is already your support person.'})
-
-        serializer.save(patient_profile = patient_profile, patient_user = user,
-                        supporter_user = supporter, status = SupportLink.Status.INVITED)
+        data = serializer.validated_data
+        try:
+            serializer.instance = invite_supporter(user, own_patient_profile(user),
+                                                           data.get('invited_phone_number'), data)
+        except InviteError as error:
+            raise serializers.ValidationError({'invited_phone_number': error.reason})
 
 class SupportLinkRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
@@ -394,7 +420,7 @@ class SupportLinkRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         query_status = self.request.query_params.get("status")
         query_set = visible_support_links(user)
 
-        # user can only delete support link where they are the patient
+        # user can only delete support link if they are the patient
         if self.request.method == 'DELETE':
             query_set = query_set.filter(patient_user = user)
         if query_patient_profile:
@@ -405,25 +431,44 @@ class SupportLinkRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_update(self, serializer):
         user = self.request.user
-        instance = serializer.instance
-        errors = {}
-        if instance.patient_user_id == user.id:
-            raise serializers.ValidationError('Patients cannot update a support link.')
-        else:
-            for field, value in serializer.validated_data.items():
-                if field != 'status' and value != getattr(instance, field):
-                    errors[field] = 'Supporters can only change status.'
-            new_status = serializer.validated_data.get('status', instance.status)
-            if new_status != instance.status and new_status not in SUPPORTER_STATUS_CHANGES[instance.status]:
-                errors['status'] = f'Supporters cannot change status from {instance.status} to {new_status}.'
-            
-        if errors:
-            raise serializers.ValidationError(errors)
-        save_without_immutable_changes(serializer, ['supporter_user', 'invited_phone_number',
-            'invited_at'])
+        link = serializer.instance
+        new_status = serializer.validated_data.get('status', link.status)
 
+        # what this user is allowed to change
+        if link.patient_user_id == user.id:
+            # patient can edit switches or remove supporters
+            allowed_fields = ['status'] + PERMISSIONS
+            allowed_statuses = [link.status, SupportLink.Status.REVOKED]
+        else:
+            # supporter can only accept an invite or leave
+            allowed_fields = ['status']
+            allowed_statuses = [link.status] + SUPPORTER_STATUS_CHANGES[link.status]
+
+        # Decline anything else
+        for field, value in serializer.validated_data.items():
+            if field not in allowed_fields and value != getattr(link, field):
+                raise serializers.ValidationError({field: 'You cannot change this.'})
+
+        if new_status not in allowed_statuses:
+            raise serializers.ValidationError({'status': f'Cannot change status to {new_status}.'})
+
+        # Save with date it was accepted or revoked
+        if new_status == link.status:
+            serializer.save()
+        elif new_status == SupportLink.Status.ACTIVE:
+            serializer.save(accepted_at = timezone.now())
+        else:
+            serializer.save(revoked_at = timezone.now())
+
+        record(user, AuditEntry.Action.UPDATE, serializer.instance)
+
+    # Deleting a link revokes it and the row stays for the audit history
     def perform_destroy(self, instance):
-        destroy_or_reject_protected(instance)
+        if instance.status != SupportLink.Status.REVOKED:
+            instance.status = SupportLink.Status.REVOKED
+            instance.revoked_at = timezone.now()
+            instance.save(update_fields = ['status', 'revoked_at', 'updated_at'])
+            record(self.request.user, AuditEntry.Action.REVOKE, instance)
 
 
 # TermsAndPrivacy APIs:
@@ -471,3 +516,21 @@ class TrustedDeviceRetrieve(generics.RetrieveAPIView):
 
     def get_queryset(self):
         return TrustedDevice.objects.filter(user = self.request.user)
+
+
+class PushTokenView(APIView):
+    # POST /auth/push-token
+    # Save expo token
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = PushTokenSerializer(data = request.data)
+        serializer.is_valid(raise_exception = True)
+
+        # A phone that signs into a different account moves its token to that account
+        PushToken.objects.update_or_create(token = serializer.validated_data["token"],
+                                           defaults = {"user": request.user, "device": getattr(request.auth, "device", None)})
+
+        return Response(status = status.HTTP_204_NO_CONTENT)
+
