@@ -8,9 +8,21 @@ import {
     apiUserSettings,
     apiAppointment, apiAssessment, apiMyPain, apiMyMovement, apiMyPersonalCare,
     apiMySocialHealth, apiMyManagement, apiPrescription,
+    apiUserSettings,
+    apiAppointment, apiAssessment, apiMyPain, apiMyMovement, apiMyPersonalCare,
+    apiMySocialHealth, apiMyManagement, apiPrescription,
 } from './django-API';
 import { apiErrorMessage, normalisePhoneNumber } from './care_planner_api_helpers';
 
+/*--------------------My Account------------------------------------------------------*/
+
+export { apiErrorMessage };
+
+/**
+ * returns an Australian mobile number in the format the User table takes (local,
+ * no spaces), e.g. '+61412345678' or '0412 345 678' -> '0412345678', or the number as typed if
+ * it isn't one
+ */
 /*--------------------My Account------------------------------------------------------*/
 
 export { apiErrorMessage };
