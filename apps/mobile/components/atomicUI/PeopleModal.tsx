@@ -10,31 +10,55 @@
 import {Modal, View, Text, Pressable, StyleSheet, ScrollView} from 'react-native'
 import { useTheme, ColourSet } from "../../context/ThemeContext";
 import { useState, useEffect, useRef } from "react";
+import { apiErrorMessage } from '@/api/settings_api_helpers';
+import { Checkbox } from 'expo-checkbox';
 import ConfirmModal from './ConfirmModal';
 import TextWithIconButton from './TextWithIconButton'
+
+
+export type Permissions = {
+    viewAppointments: boolean,
+    viewAssessments: boolean,
+    viewPrescriptions: boolean,
+}
+
+const permissionsLabels: Record<keyof Permissions, string> ={
+    viewAppointments: "View my appointments",
+    viewAssessments: "View my assessments",
+    viewPrescriptions: "View my prescriptions",
+}
+
+const permissionsLabelsImSupporting: Record<keyof Permissions, string> ={
+    viewAppointments: "View their appointments",
+    viewAssessments: "View their assessments",
+    viewPrescriptions: "View their prescriptions",
+}
 
 type Props = {
     visible: boolean;
     name: string;
     role: string;
     phone: string; // blank if not known
-    viewAppointments: boolean; // can_view_appointments of the SupportLink
+    permissions: Permissions;
+    onChange: (permissions: Permissions) => Promise<void>; // saves with the api, throws if it fails
     onRemove: () => Promise<void>; // removes the connection with the api, shows its own errors
     onCancel: () => void;
 }
 
-const PeopleModal = ({visible, name, role, phone, viewAppointments, onRemove, onCancel} : Props) => {
+const PeopleModal = ({visible, name, role, phone, permissions, onChange, onRemove, onCancel} : Props) => {
     const { theme, colours } = useTheme();
     const styles = createStyles(colours);
     const [pending, setPending] = useState< 'removeConnection' | 'removeSupportPerson' | 'addSupportPerson' | null>(null);
-    const last = useRef({role, name, phone, viewAppointments});
+    const last = useRef({role, name, phone, permissions});
+    const [checked, setChecked] = useState<Permissions>(permissions); // monitors check box's for permissions
+    const [error, setError] = useState<string | null>(null);
 
     /**
      * prevents glitch where modal rerenders on fadeout and probs become undefined
      * (this is an issue as the rendering is dependant on conditions regarding data)
      * 
      */
-    if (visible) last.current = {name, role, phone, viewAppointments};
+    if (visible) last.current = {name, role, phone, permissions};
     const show = last.current;
 
     /**
@@ -44,6 +68,31 @@ const PeopleModal = ({visible, name, role, phone, viewAppointments, onRemove, on
     const handleConfirmations = async () => {
         setPending(null);
         await onRemove();
+    };
+
+    // resets to the saved permissions when the modal opens
+    useEffect(() => {
+        if (visible) {
+            setChecked(permissions);
+            setError(null);
+        }
+    }, [visible]);
+
+    /**
+     * toggles a permission and saves it straight away. If the save fails the checkbox goes back
+     * and the error is shown.
+     */
+    const toggle = async (key: keyof Permissions) => {
+        const previous = checked;
+        const next = {...checked, [key]: !checked[key]};
+        setChecked(next);
+        setError(null);
+        try {
+            await onChange(next);
+        } catch (error) {
+            setChecked(previous);
+            setError(apiErrorMessage(error, "Couldn't save the change. Please try again."));
+        }
     };
 
   return (
@@ -104,9 +153,26 @@ const PeopleModal = ({visible, name, role, phone, viewAppointments, onRemove, on
                 <View>
                 <Text style={[theme.xSmall, theme.leftItems, theme.fontOnSurface]}>{show.name} can:</Text>
                 <Text style={theme.xSmall}> </Text>
-                <Text style={[theme.small, theme.leftItems, theme.fontOnSurface]}>
-                    {show.viewAppointments ? '• View my appointments' : '• Only see appointments I share with them'}
-                </Text>
+
+                {(Object.keys(permissionsLabels) as (keyof Permissions)[]).map((id)=>(
+                <Pressable
+                    key={id}
+                    style={[theme.leftItems, theme.row]}
+                    onPress={() => toggle(id)}
+                >
+                <Checkbox
+                    style={styles.checkbox}
+                    value={checked[id]}
+                    onValueChange={() => toggle(id)}
+                    color={checked[id] ? colours.primary: undefined}
+                    />
+                <Text style={[theme.small, theme.fontOnSurface]}>{permissionsLabels[id]}</Text>
+                </Pressable>
+                ))}
+
+                {error && <Text style={[theme.small, styles.errorText]} accessibilityRole="alert">{error}</Text>}
+
+                
                 <Text style={theme.xSmall}> </Text>
                 <Text style={[theme.xSmall, theme.leftItems, theme.fontOnSurface]}>
                     Adding questions and recording answers is set for each appointment.
@@ -126,9 +192,13 @@ const PeopleModal = ({visible, name, role, phone, viewAppointments, onRemove, on
             <View>
                 <Text style={[theme.small, theme.leftItems, theme.fontOnSurface]}>You can:</Text>
                 <Text style={theme.xSmall}> </Text>
-                <Text style={[theme.small, theme.leftItems, theme.fontOnSurface]}>
-                    {show.viewAppointments ? '• View their appointments' : '• Only see appointments they share with you'}
-                </Text>
+                
+                {(Object.keys(permissionsLabelsImSupporting) as (keyof Permissions)[]).map((id)=>(
+                    <Text key={id} style={[theme.small, theme.leftItems, theme.fontOnSurface]}>
+                        {permissions[id] ? '✓' : '✗'} {permissionsLabelsImSupporting[id]}
+                    </Text>
+                ))}
+
                 <Text style={theme.xSmall}> </Text>
                 <Text style={[theme.xSmall, theme.leftItems, theme.fontOnSurface]}>
                     Adding questions and recording answers is set for each appointment.
@@ -198,5 +268,9 @@ function createStyles(colours: ColourSet){
         },
         checkbox: {
             margin: 8,
+        },
+        errorText: {
+            margin: 8,
+            color: colours.primary,
         },
     })};

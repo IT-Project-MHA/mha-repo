@@ -8,21 +8,9 @@ import {
     apiUserSettings,
     apiAppointment, apiAssessment, apiMyPain, apiMyMovement, apiMyPersonalCare,
     apiMySocialHealth, apiMyManagement, apiPrescription,
-    apiUserSettings,
-    apiAppointment, apiAssessment, apiMyPain, apiMyMovement, apiMyPersonalCare,
-    apiMySocialHealth, apiMyManagement, apiPrescription,
 } from './django-API';
 import { apiErrorMessage, normalisePhoneNumber } from './care_planner_api_helpers';
 
-/*--------------------My Account------------------------------------------------------*/
-
-export { apiErrorMessage };
-
-/**
- * returns an Australian mobile number in the format the User table takes (local,
- * no spaces), e.g. '+61412345678' or '0412 345 678' -> '0412345678', or the number as typed if
- * it isn't one
- */
 /*--------------------My Account------------------------------------------------------*/
 
 export { apiErrorMessage };
@@ -191,6 +179,32 @@ export async function apiMyConnections() {
 
     return { supportPeople, supporting, invitations };
 
+}
+
+
+
+// helper function: returns the permissions of a SupportLink as { viewAppointments,
+// viewAssessments, viewPrescriptions }
+function toPermissions(link) {
+    return {
+        viewAppointments: Boolean(link.can_view_appointments),
+        viewAssessments: Boolean(link.can_view_assessments),
+        viewPrescriptions: Boolean(link.can_view_prescriptions),
+    };
+}
+
+/* Saves what a support person can see, as the patient:
+- takes the SupportLink id and the permissions { viewAppointments, viewAssessments,
+  viewPrescriptions }, returns the saved permissions in the same format
+- works for invited links too, the permissions apply once the invite is accepted */
+export async function apiSaveSupportPermissions(linkId, { viewAppointments, viewAssessments, viewPrescriptions }) {
+    const link = await apiSupportLink('update', {
+        id: linkId,
+        can_view_appointments: viewAppointments,
+        can_view_assessments: viewAssessments,
+        can_view_prescriptions: viewPrescriptions,
+    });
+    return toPermissions(link);
 }
 
 

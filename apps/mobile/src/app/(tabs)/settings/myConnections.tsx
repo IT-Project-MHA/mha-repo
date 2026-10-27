@@ -9,7 +9,7 @@ import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import ButtonWithIcon from '../../../../components/atomicUI/ButtonWithIcon';
 import { useState, useEffect } from 'react';
 import TextButton from '../../../../components/atomicUI/TextButton';
-import PeopleModal from '../../../../components/atomicUI/PeopleModal';
+import PeopleModal, { type Permissions } from '../../../../components/atomicUI/PeopleModal';
 import AddSupportPersonModal from '../../../../components/atomicUI/AddSupportPersonModal';
 import { useUser } from '../../../../context/AuthorisationContext';
 import {
@@ -20,6 +20,7 @@ import {
   apiErrorMessage,
   apiAcceptInvitation,
   apiDeclineInvitation,
+  apiSaveSupportPermissions,
 } from "@/api/settings_api_helpers"
 
 // a person on this screen, from apiMyConnections. id is the SupportLink's id
@@ -28,10 +29,16 @@ type Person = {
   name: string;
   phone: string;
   invited: boolean; // invite not accepted yet
-  viewAppointments: boolean;
+  permissions: Permissions;
 };
 
 type Relationship = 'supportsMe' | 'imSupporting';
+
+const noPermissions: Permissions = { 
+  viewAppointments: false, 
+  viewAssessments: false, 
+  viewPrescriptions: false 
+};
 
 type Connections = {
   supportPeople: Person[];
@@ -113,6 +120,22 @@ const handleDecline = async (id: string) => {
     }
     setSelected(null);
     await load();
+  };
+
+    /**
+   * Saves the permissions of the selected support person. Throws if it fails, so the modal can
+   * undo the checkbox and show the error. On success the list and the open modal are updated
+   * without reloading.
+   */
+  const handleChangePermissions = async (permissions: Permissions) => {
+    if (!selected) return;
+    const saved = await apiSaveSupportPermissions(selected.person.id, permissions);
+    setSelected({ ...selected, person: { ...selected.person, permissions: saved } });
+    setConnections((prev) => prev && {
+      ...prev,
+      supportPeople: prev.supportPeople.map((person) =>
+        person.id === selected.person.id ? { ...person, permissions: saved } : person),
+    });
   };
 
   /**
@@ -241,7 +264,8 @@ const handleDecline = async (id: string) => {
         name={selected?.person.name ?? ''}
         role={selected?.relationship === 'supportsMe' ? 'Support Person' : 'Im Supporting'}
         phone={selected?.person.phone ?? ''}
-        viewAppointments={selected?.person.viewAppointments ?? false}
+        permissions={selected?.person.permissions ?? noPermissions}
+        onChange={handleChangePermissions}
         onRemove={handleRemove}
         onCancel={() => setSelected(null)}
       />
