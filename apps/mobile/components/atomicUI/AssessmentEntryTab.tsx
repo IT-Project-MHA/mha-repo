@@ -12,15 +12,21 @@ type AssessmentEntryProps = {
 
 export default function AssessmentEntryTab({onButtonPress, props}: AssessmentEntryProps) {
     const { theme } = useTheme();
+    let completeString;
+    if (true /*backend call */) {
+        completeString = "Updated on " + "19" + " " + "October" + " " + "2026"; // split up into backend call
+    } else {
+        completeString = "";
+    }
     return(
-        <SafeAreaView style={[theme.clearContainer, {flexDirection: "row"}, {padding: 5}]}>
-            <View style={{justifyContent: "flex-start"}}>
+        <SafeAreaView style={[theme.outlinedContainer, {flexDirection: "row", padding: 5, width: '70%', justifyContent: "space-between"}]}>
+            <View>
                 {/* build the box in here, around everything else */}
-                <Text style={theme.fontOnSurface}>title here</Text>
-                <Text style={theme.fontOnSurface}>optional - last completed</Text>
+                <Text style={[theme.h6, theme.fontOnSurface]}>{props?.title}</Text>
+                <Text style={[theme.fontOnSurfaceDull]}>{completeString}</Text>
             </View>
-            <View style={{justifyContent: "flex-end"}}>
-                <Button label="Record->" onPress={onButtonPress} buttonType="borderedTransparentButton"/>
+            <View>
+                <Button label="Record" onPress={onButtonPress} buttonType="roundedTertiaryButton"/>
             </View>
         </SafeAreaView>
     )
