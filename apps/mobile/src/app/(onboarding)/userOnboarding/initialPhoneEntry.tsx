@@ -7,7 +7,7 @@
 import { useRouter } from 'expo-router';
 import { PhoneField } from '../../../../components/onboarding/PhoneField';
 import { useOnboardingUserStore } from '../../store/onboardingStorage';
-
+import {request_code} from '../../../api/django-API'
 
 import { Text, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,6 +16,9 @@ import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { Typography } from '../../../../constants/textSize';
 import React from 'react';
 
+
+
+
 export default function Page() {
   const { colours, theme } = useTheme();
   const insets = useSafeAreaInsets();
@@ -23,9 +26,21 @@ export default function Page() {
   const router = useRouter();
   const setUserOnboaring = useOnboardingUserStore((s)=> s.set);
 
-  function setPhone(phone_number: string){
+  async function setPhone(phone_number: string){
     setUserOnboaring({phone_number});
-    router.navigate('/(onboarding)/userOnboarding/verifyPhone');
+    try
+    {
+      await request_code(phone_number);
+      router.navigate('/(onboarding)/userOnboarding/verifyPhone');
+    }
+    catch(error)
+    {
+      console.error('Failed to send SMS', error);
+      //FIX: show user an error message of some sort
+    }
+
+
+    
   }
 
   return (

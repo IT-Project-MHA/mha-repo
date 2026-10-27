@@ -22,3 +22,4 @@ export async function completeSupportPersonOnboarding(supporter_user, invited_ph
 
     apiSupportLink('create', supporter_user, invited_phone_number);
 }
+

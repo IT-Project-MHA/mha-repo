@@ -16,6 +16,8 @@ import { lineThickness } from '../../../../constants/layout';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { Typography } from '../../../../constants/textSize';
 import React from 'react';
+import Constants from 'expo-constants'
+
 
 export default function Page() {
   const { colours, theme } = useTheme();
@@ -26,6 +28,12 @@ export default function Page() {
 
   function setDisplayName(display_name: string){
     setUserOnboaring({display_name});
+
+    //debugging
+    const devHost = Constants.expoConfig?.hostUri?.split(':')[0];
+    const SERVER_URL = process.env.EXPO_PUBLIC_SERVER_URL ?? (devHost ? `http://${devHost}:8000`: "http://localhost:8000")
+    console.log('SERVER_URL =', SERVER_URL, '| hostUri =', Constants.expoConfig?.hostUri);
+
 
     router.navigate('/(onboarding)/userOnboarding/email')
   }

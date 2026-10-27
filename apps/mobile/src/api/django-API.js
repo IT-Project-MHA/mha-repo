@@ -1,8 +1,12 @@
 import { File } from 'expo-file-system';
+import Constants from 'expo-constants'
 
 // replace with active server URL before deployment. EXPO_PUBLIC_SERVER_URL in apps/mobile/.env
 // overrides it for local testing
-const SERVER_URL = process.env.EXPO_PUBLIC_SERVER_URL ?? "http://localhost:8000";
+
+const devHost = Constants.expoConfig?.hostUri?.split(':')[0];
+
+const SERVER_URL = process.env.EXPO_PUBLIC_SERVER_URL ?? (devHost ? `http://${devHost}:8000`: "http://localhost:8000")
 const BASE_URL = `${SERVER_URL}/api`;
 
 // DEV ONLY until login is built: token of a local test user from apps/mobile/.env, sent with
@@ -532,4 +536,23 @@ export async function apiAuditTarget() {
 // QuestionOption & QuestionOptionOrdered
 export async function apiAppSection() {
     return selectChoices('appSection');
+}
+
+
+//added by Xavier. 
+export async function request_code(phone_number){
+    // request(method, path, body, baseUrl = BASE_URL)
+    return request('POST', '/auth/request-code',  {phone_number}, SERVER_URL);
+}
+
+export async function verify_code(phone_number, otp){
+    // request(method, path, body, baseUrl = BASE_URL)
+    return request('POST', '/auth/verify-code',  {phone_number, otp}, SERVER_URL);
+}
+
+export async function register_token(values = {}){
+    //const { id, appointment, support_link, ...flags } = values;
+    // request(method, path, body, baseUrl = BASE_URL)
+    //takes verification_id, phone_number, display_name, pin, accepted_terms, accepted_privacy, device_id, track_health (optional), health (optional)
+    return request('POST', '/auth/register',  values, SERVER_URL);
 }
