@@ -1,45 +1,47 @@
-import React, {useEffect, useRef, useState} from 'react'
-import {OnboardingSplashComp} from './OnboardingSplashComp'
+import React, {useEffect, useRef} from 'react'
 import { useTheme } from "../../context/ThemeContext";
-import { View } from 'react-native';
-import { ResizeMode, Video} from 'expo-av'
+import { useWindowDimensions, View } from 'react-native';
+import { useVideoPlayer, VideoView} from 'expo-video'
 
 interface Props{
   width: number,
   isActive?: boolean
 }
-
+const ASPECT_RATIO = 1
+const MAX_HEIGHT_FRACTION = 0.6
 
 export function OnboardingSplash1({width, isActive}: Props){
   const {theme} = useTheme();
-  const video = useRef<Video>(null);
-  //const video = ;
+  const player = useVideoPlayer(require('../../assets/onboardingVideos/carePlanner_cropped.mp4'),
+  (p) => {
+    p.loop = true
+    p.muted = true
+  })
+
+  const {height: screenHeight} = useWindowDimensions();
+  const size = Math.min(width, screenHeight * MAX_HEIGHT_FRACTION * ASPECT_RATIO);
 
   useEffect(()=>{
     if(isActive){
-      video?.current?.playAsync();
+      player.play();
     }else{
-      video?.current?.stopAsync();
+      player.pause();
     }
   }, [isActive])
 
   return(
-    <View>
-      <View style={{flex: 1, width}}>
-        <Video
-          ref={video}
+      <View style={{width, flexShrink: 0, alignItems: 'center', justifyContent: 'center'}}>
+        <VideoView
+          player = {player}
           style={{
-            flex: 1,
-            backgroundColor: 'transparent',
+            width: size,
+            height: size / ASPECT_RATIO,
             borderRadius: 10,
-            overflow: 'hidden'
+            overflow: 'hidden',
           }}
-          source={require('../../assets/onboardingVideos/accessibility.mp4')}
-          resizeMode={ResizeMode.COVER}
-          isLooping
-          isMuted
+          contentFit='contain'
+          nativeControls={false}
         />
-      </View>
       </View>
     
   )

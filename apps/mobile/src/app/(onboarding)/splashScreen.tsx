@@ -61,7 +61,7 @@ export default function OnboardingSplashScreen({ onClose}: Props){
         decelerationRate='fast'
         onScroll={onScroll}
         scrollEventThrottle={16}
-        style={{flex:1}}
+        style={[{flex:1}, theme.screen]}
         contentContainerStyle={{
           paddingHorizontal: SIDE_PADDING,
           paddingVertical: ITEM_MARGIN,
@@ -76,7 +76,7 @@ export default function OnboardingSplashScreen({ onClose}: Props){
           width={ITEM_SIZE}
           isActive={step==2}/>
       </ScrollView>
-      <View style = {styles.bottomBar}>
+      <View>
         <Button 
         label='Next'
         onPress={onNextPressed}
