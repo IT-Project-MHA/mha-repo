@@ -28,11 +28,9 @@ export default function Tab() {
     router.navigate('../AssessmentTemp');
   }
 
-  let currMonday = new Date();
-  currMonday.setDate(currMonday.getDate() - (currMonday.getDay()) % 7);
-
   let welcomeString = "Good " + timeMessage + ", " + userName;
-  let nCompleted = 0;
+  let nCompleted = 0; //backend call
+  let lastMondayString = FindLastMonday(new Date());
   return (
     <ScrollView>
       <View style={theme.header}>
@@ -42,26 +40,29 @@ export default function Tab() {
           You've completed {nCompleted}/5 assessments this week.
         </Text>
       </View>
-      //graph
+      <Text style={theme.h6}>   </Text>
       <View style={[theme.sectionContainer, theme.centerItems]}>
         <Text style={[theme.fontOnSurface, theme.h5]}>
-          Assessments for week of {currMonday.getDate()}/{currMonday.getMonth()}
+          Assessments for week of {lastMondayString}
         </Text>
-        <AssessmentEntryTab onButtonPress={buttonFunction}></AssessmentEntryTab>
+        <AssessmentEntryTab onButtonPress={buttonFunction}></AssessmentEntryTab> {/*props backend call*/}
         <AssessmentEntryTab onButtonPress={buttonFunction}></AssessmentEntryTab>
         <AssessmentEntryTab onButtonPress={buttonFunction}></AssessmentEntryTab>
         <AssessmentEntryTab onButtonPress={buttonFunction}></AssessmentEntryTab>
         <AssessmentEntryTab onButtonPress={buttonFunction}></AssessmentEntryTab>
         <View style={theme.lineWithMargin}
         />
-        <Button label="Add a reflection for this week" onPress={() => {
-          return;
-        }} buttonType={"borderedTransparentButton"}></Button>
+        <Button label="Add a reflection for this week" onPress={buttonFunction} buttonType={"roundedTertiaryButton"}></Button>
         <Text style={[theme.fontOnBackground, theme.small, theme.centerText]}>Supported by ABBVIE</Text>
       </View>
       <View style={theme.bottomGap}/>
     </ScrollView>
   );
+}
+
+export function FindLastMonday(currDate: Date) {
+  currDate.setDate(currDate.getDate() - (currDate.getDay() + 6) % 7);
+  return (currDate.getDate().toString() + '/' + (currDate.getMonth() + 1).toString());
 }
 
 function createStyles(colours: ColourSet){
