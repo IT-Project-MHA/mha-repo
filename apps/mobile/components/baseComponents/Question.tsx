@@ -6,6 +6,7 @@ import { StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ENTRY_COMPONENTS, { ENTRY_TYPE } from "../answerFields/EntryRegistry";
 import { InvalidQuestionTypeError } from "@/customErrors/QuestionErrors";
+import { useTheme, ColourSet } from '../../context/ThemeContext';
 
 type QuestionProps = {
   title: String;
@@ -14,30 +15,21 @@ type QuestionProps = {
 }
 
 export default function Question({title, detail, questionType}:  QuestionProps) {
+  const { theme } = useTheme();
+
   const EntryComponent = ENTRY_COMPONENTS[questionType];
+
   if (!EntryComponent) {
     throw new InvalidQuestionTypeError(questionType + ' is not a valid question type');
   }
   return (
     <SafeAreaView>
-      <Text style={Styles.title}>{title}</Text>
+      <Text style={[theme.fontOnBackground, theme.h2, theme.leftText]}>{title}</Text>
       {/*divider*/}
-      <Text style={Styles.detail}>{detail}</Text>
+      <Text style={[theme.fontOnBackground, theme.h6, theme.leftText]}>{detail}</Text>
         <EntryComponent onSubmit={() => {}} />
     </SafeAreaView>
   );
 }
 
 export { Question, QuestionProps};
-
-const Styles = StyleSheet.create({
-  title: {
-    margin: 10,
-    fontSize: 30,
-    fontWeight: "bold"
-  },
-  detail: {
-    margin: 8,
-    fontSize: 15
-  }
-});
