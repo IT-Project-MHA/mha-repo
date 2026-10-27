@@ -77,9 +77,11 @@
   "jest": {
     "preset": "jest-expo",    
     "moduleNameMapper": {
-      "^@/assets/(.*)$": "<rootDir>/assets/$1",
-      "^@/(.*)$": "<rootDir>/src/$1"
-    }
+    "^@/assets/(.*)$": "<rootDir>/assets/$1",
+    "^@/context/(.*)$": "<rootDir>/context/$1",
+    "^@/components/(.*)$": "<rootDir>/components/$1",
+    "^@/(.*)$": "<rootDir>/src/$1"
+}
   },
   "private": true
 }
