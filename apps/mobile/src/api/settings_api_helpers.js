@@ -87,8 +87,8 @@ export function validateAboutMe({ name, birthYear, phone, email }) {
     if (!name.trim()) {
         return 'Enter your name.';
     }
-    if (birthYear.trim() && (!/^\d{4}$/.test(birthYear.trim()) || Number(birthYear) > new Date().getFullYear())) {
-        return 'Enter your birth year as 4 digits, e.g. 1985.';
+    if (birthYear.trim() && (!/^\d{4}$/.test(birthYear.trim()) || Number(birthYear) < 1900 || Number(birthYear) > 2100)) {
+        return 'Enter your birth year between 1900 and 2100, e.g. 1985.';
     }
     if (!normalisePhoneNumber(phone)) {
         return 'Enter an Australian mobile number.';
@@ -138,7 +138,7 @@ export async function apiSaveConditions(profileId, { hasDiagnosis, otherConditio
     return apiPatientProfile('create', details);
 }
 
-/*--------------------My Connections (rename)!------------------------------------------------------*/
+/*--------------------My Support Links------------------------------------------------------*/
 
 /* Details for the My Connections page:
 - takes no parameters and returns { supportPeople, supporting }, each an array of
@@ -150,7 +150,7 @@ export async function apiSaveConditions(profileId, { hasDiagnosis, otherConditio
     - supporting: the active SupportLinks where the user is the support person, name is the
       patient's name. The server doesn't send the patient's phone number, so phone is empty
 - viewAppointments is can_view_appointments of the SupportLink */
-export async function apiMyConnections() {
+export async function apiMySupportLinks() {
     const [[user], links] = await Promise.all([apiUser('select'), apiSupportLink('select')]);
 
     const supportPeople = links
@@ -160,7 +160,7 @@ export async function apiMyConnections() {
             name: link.supporter_name || link.invited_phone_number || 'Support Person',
             phone: link.invited_phone_number ?? '',
             invited: link.status !== 'active',
-            viewAppointments: Boolean(link.can_view_appointments),
+            permissions: toPermissions(link),
         }));
 
     const supporting = links
@@ -170,7 +170,7 @@ export async function apiMyConnections() {
             name: link.patient_name,
             phone: '',
             invited: false,
-            viewAppointments: Boolean(link.can_view_appointments),
+            permissions: toPermissions(link),
         }));
 
     const invitations = links

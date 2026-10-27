@@ -18,7 +18,7 @@ import {
   apiSaveConditions,
   apiDeleteMyAccount,
   validateAboutMe,
-  apiMyConnections,
+  apiMySupportLinks,
   apiInviteSupportPerson,
   apiRemoveSupportPerson,
   apiRemoveConnection,
@@ -184,21 +184,21 @@ describe('apiInviteSupportPerson', () => {
 describe('apiMyConnections', () => {
   test('links where the user is the patient are support people', async () => {
     mockApiSupportLink.mockResolvedValue([link({ id: 'l1' })]);
-    const { supportPeople, supporting } = await apiMyConnections();
+    const { supportPeople, supporting } = await apiMySupportLinks();
     expect(supportPeople.map((p: any) => p.id)).toEqual(['l1']);
     expect(supporting).toEqual([]);
   });
 
   test('an invited link is marked invited, and uses the phone number as its name', async () => {
     mockApiSupportLink.mockResolvedValue([link({})]);
-    const [person] = (await apiMyConnections()).supportPeople;
+    const [person] = (await apiMySupportLinks()).supportPeople;
     expect(person.invited).toBe(true);
     expect(person.name).toBe('+61427052153');
   });
 
   test('revoked links are left out of support people', async () => {
     mockApiSupportLink.mockResolvedValue([link({ status: 'revoked' })]);
-    expect((await apiMyConnections()).supportPeople).toEqual([]);
+    expect((await apiMySupportLinks()).supportPeople).toEqual([]);
   });
 
   test('people the user supports are only the active links where they are the supporter', async () => {
@@ -207,14 +207,14 @@ describe('apiMyConnections', () => {
       link({ id: 'b', patient_user: 'user-9', supporter_user: 'user-1', status: 'invited' }),
       link({ id: 'c', patient_user: 'user-9', supporter_user: 'user-1', status: 'revoked' }),
     ]);
-    const { supporting } = await apiMyConnections();
+    const { supporting } = await apiMySupportLinks();
     expect(supporting.map((p: any) => p.id)).toEqual(['a']);
     expect(supporting[0].name).toBe('John Appleseed'); // the patient's name
   });
 
   test('permissions are read from the can_view_ fields', async () => {
     mockApiSupportLink.mockResolvedValue([link({ can_view_assessments: true })]);
-    const [person] = (await apiMyConnections()).supportPeople;
+    const [person] = (await apiMySupportLinks()).supportPeople;
     expect(person.permissions).toEqual({ viewAppointments: false, viewAssessments: true, viewPrescriptions: false });
   });
 });

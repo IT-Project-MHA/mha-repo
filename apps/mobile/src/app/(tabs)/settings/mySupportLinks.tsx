@@ -13,7 +13,7 @@ import PeopleModal, { type Permissions } from '../../../../components/atomicUI/P
 import AddSupportPersonModal from '../../../../components/atomicUI/AddSupportPersonModal';
 import { useUser } from '../../../../context/AuthorisationContext';
 import {
-  apiMyConnections,
+  apiMySupportLinks,
   apiInviteSupportPerson,
   apiRemoveSupportPerson,
   apiRemoveConnection,
@@ -73,15 +73,15 @@ const handleDecline = async (id: string) => {
 };
 
   /**
-   * Loads the user's connections from the backend, showing an error with a retry button if it
+   * Loads the user's support links from the backend, showing an error with a retry button if it
    * fails the first time.
    */
   const load = async () => {
     setLoadError(null);
     try {
-      setConnections(await apiMyConnections());
+      setConnections(await apiMySupportLinks());
     } catch (error) {
-      setLoadError(apiErrorMessage(error, "Couldn't load your connections. Check your connection and try again."));
+      setLoadError(apiErrorMessage(error, "Couldn't load your support links. Check your connection and try again."));
     }
   };
 
@@ -195,7 +195,7 @@ const handleDecline = async (id: string) => {
   return (
     <ScrollView stickyHeaderIndices={[0]}>
       <View style={theme.header}>
-        <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>My Connections</Text>
+        <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>My Support Links</Text>
       </View>
       <Text> </Text>
 

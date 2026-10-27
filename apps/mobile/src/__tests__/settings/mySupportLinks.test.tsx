@@ -1,9 +1,9 @@
 // Component tests for the My Connections screen.
 
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import Screen from '@/app/(tabs)/settings/myConnections';
+import Screen from '@/app/(tabs)/settings/mySupportLinks';
 import {
-  apiMyConnections,
+  apiMySupportLinks,
   apiRemoveSupportPerson,
   apiAcceptInvitation,
   apiDeclineInvitation,
@@ -28,7 +28,7 @@ jest.mock('@/context/AuthorisationContext', () => ({
 // keeps real validation helpers, blocks calls that reach the server
 jest.mock('@/api/settings_api_helpers', () => ({
   ...jest.requireActual('@/api/settings_api_helpers'),
-  apiMyConnections: jest.fn(),
+  apiMySupportLinks: jest.fn(),
   apiRemoveSupportPerson: jest.fn(),
   apiRemoveConnection: jest.fn(),
   apiInviteSupportPerson: jest.fn(),
@@ -37,7 +37,7 @@ jest.mock('@/api/settings_api_helpers', () => ({
   apiDeclineInvitation: jest.fn(),
 }));
 
-const mockMyConnections = apiMyConnections as jest.Mock;
+const mockMyConnections = apiMySupportLinks as jest.Mock;
 const mockRemoveSupportPerson = apiRemoveSupportPerson as jest.Mock;
 const mockAcceptInvitation = apiAcceptInvitation as jest.Mock;
 const mockDeclineInvitation = apiDeclineInvitation as jest.Mock;
