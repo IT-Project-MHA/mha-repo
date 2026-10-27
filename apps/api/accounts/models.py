@@ -1,3 +1,4 @@
+import secrets
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -16,7 +17,8 @@ class UserManager(BaseUserManager):
         user.save(using = self._db)
         return user
 
-    def create_superuser(self, phone_number, display_name, pin=None, **extra):
+    def create_superuser(self, phone_number, display_name, pin = None, password = None, **extra):
+        extra.setdefault("is_staff", True)
         extra.setdefault("is_superuser", True)
         extra.setdefault("is_active", True)
 
@@ -26,8 +28,7 @@ class UserManager(BaseUserManager):
         if extra.get("is_superuser") is not True:
             raise ValueError("A superuser must have is_superuser = True.")
 
-        return self.create_user(phone_number, display_name, pin, **extra)
-
+        return self.create_user(phone_number, display_name, pin or password, **extra)
 
 
 class User(AbstractBaseUser, PermissionsMixin, BaseModel, SoftDeleteModel):
@@ -75,6 +76,8 @@ class UserSettings(BaseModel):
     offline_backup = models.BooleanField(default = True)
     microphone_access = models.BooleanField(default = False)
     notifications_enabled = models.BooleanField(default = True)
+    assessment_reminders = models.BooleanField(default = True)
+    appointment_reminders = models.BooleanField(default = True)
     text_size_percent = models.PositiveSmallIntegerField(default=100, validators=[MinValueValidator(100), MaxValueValidator(400)],)
 
     class Meta:
@@ -169,3 +172,25 @@ class TrustedDevice(BaseModel):
     class Meta:
         db_table = "trusted_device"
         constraints = [models.UniqueConstraint(fields = ["user", "device_id"], name = "one_row_per_device")]
+
+# One login token per phone so logging out of one leaves the others signed in
+class DeviceToken(BaseModel):
+    key = models.CharField(max_length = 40, unique = True)
+    user = models.ForeignKey(User, on_delete = models.CASCADE, related_name = "device_tokens")
+    device = models.OneToOneField(TrustedDevice, on_delete = models.CASCADE, related_name = "token")
+
+    class Meta:
+        db_table = "device_token"
+
+    def save(self, *args, **kwargs):
+        if not self.key:
+            self.key = secrets.token_hex(20)
+        super().save(*args, **kwargs)
+
+# Expo push token for phone notifications
+class PushToken(BaseModel):
+    user = models.ForeignKey(User, on_delete = models.CASCADE, related_name = "push_tokens")
+    token = models.CharField(max_length = 200, unique = True)
+    device = models.ForeignKey(TrustedDevice, null = True, blank = True, on_delete = models.CASCADE, related_name = "push_tokens")
+    class Meta:
+        db_table = "push_token"

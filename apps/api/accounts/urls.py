@@ -7,11 +7,18 @@ auth_patterns = [
     path("request-code", views.RequestCodeView.as_view(), name = "request-code"),
     path("verify-code", views.VerifyCodeView.as_view(), name = "verify-code"),
     path("register", views.RegisterView.as_view(), name = "register"),
+
     path("login", views.LoginView.as_view(), name = "login"),
     path("logout", views.LogoutView.as_view(), name = "logout"),
+    path("logout-everywhere", views.LogoutEverywhereView.as_view(), name = "logout-everywhere"),
+
     path("devices", views.DeviceListView.as_view(), name = "devices"),
     path("devices/<uuid:device_pk>/revoke", views.RevokeDeviceView.as_view(), name = "revoke-device"),
-    path("reset-pin", views.ResetPinView.as_view(), name = "reset-pin")
+
+    path("reset-pin", views.ResetPinView.as_view(), name = "reset-pin"),
+    path("change-phone", views.ChangePhoneView.as_view(), name = "change-phone"),
+
+    path("push-token", views.PushTokenView.as_view(), name = "push-token")
 ]
 
 # Account data

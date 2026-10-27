@@ -8,9 +8,9 @@ from mpowered_api.base_models import BaseModel, SoftDeleteModel
 class Prescription(BaseModel, SoftDeleteModel): 
     patient_profile = models.ForeignKey(PatientProfile, on_delete = models.CASCADE, related_name = "prescriptions")
     name = models.CharField(max_length = 50)
-    dosage = models.PositiveSmallIntegerField()
+    dosage = models.PositiveSmallIntegerField(null = True, blank = True)
 
-    strength = models.PositiveIntegerField(default=0)
+    strength = models.DecimalField(max_digits = 8, decimal_places = 3, null = True, blank = True)
     started_on = models.DateField(null = True, blank = True)
     stopped_on = models.DateField(null = True, blank = True)
     notes = models.TextField(blank = True)

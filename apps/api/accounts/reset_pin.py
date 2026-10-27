@@ -3,7 +3,7 @@ from django.utils import timezone
 from rest_framework.authtoken.models import Token
 
 from accounts import devices
-from accounts.models import TrustedDevice
+from accounts.models import TrustedDevice, DeviceToken
 from accounts.login import find_user
 from accounts.registration import check_verification
 
@@ -36,8 +36,7 @@ def reset_pin(phone_number, verification_id, pin, device_id):
         TrustedDevice.objects.filter(user = user, revoked_at__isnull = True).update(revoked_at = timezone.now())
         Token.objects.filter(user = user).delete()
 
-        # Phone just passed the otp so it stays signed in
-        devices.trust_device(user, device_id)
-        token = Token.objects.create(user = user)
+        DeviceToken.objects.filter(user = user).delete()
+        token = devices.sign_in(user, device_id)
 
     return user, token

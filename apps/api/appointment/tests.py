@@ -1,10 +1,12 @@
+from datetime import timedelta
+
 from django.utils import timezone
 
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
 from accounts import permissions
-from accounts.models import PatientProfile, SupportLink, User
+from accounts.models import PatientProfile, SupportLink, User, DeviceToken, TrustedDevice
 from appointment.models import Appointment, AppointmentAccess, AppointmentAnswer, AppointmentQuestion
 
 from audit.models import AuditEntry
@@ -28,7 +30,8 @@ class GrantAccessTests(APITestCase):
         self.supporter, self.link = self.add_supporter("+61411111111", SupportLink.Status.ACTIVE)
 
     def sign_in(self, user):
-        token, _ = Token.objects.get_or_create(user = user)
+        device, _ = TrustedDevice.objects.get_or_create(user = user, device_id = "test-phone")
+        token, _ = DeviceToken.objects.get_or_create(user = user, device = device)
         self.client.credentials(HTTP_AUTHORIZATION = f"Token {token.key}")
 
     def add_supporter(self, phone, status):
@@ -347,3 +350,114 @@ class QuestionsWithAnswersTests(APITestCase):
             AppointmentAnswer.objects.create(question = question, text = "A", recorded_by = self.patient)
         with self.assertNumQueries(1):
             self.list_questions()
+
+
+class AnswerPermissionTests(APITestCase):
+    # POST /api/appointmentAnswer/ 
+
+    def setUp(self):
+        self.patient = User.objects.create_user("+61490813123", "Josh", PIN)
+        self.profile = PatientProfile.objects.create(user = self.patient)
+        self.appointment = Appointment.objects.create(
+            patient_profile = self.profile, scheduled_date = timezone.now(), created_by = self.patient,
+        )
+        self.question = AppointmentQuestion.objects.create(appointment = self.appointment, text = "Is this normal?", created_by = self.patient)
+
+        self.supporter = User.objects.create_user("+61411111111", "Mum", PIN)
+        self.link = SupportLink.objects.create(
+            patient_profile = self.profile, patient_user = self.patient,
+            supporter_user = self.supporter, status = SupportLink.Status.ACTIVE,
+        )
+        self.client.force_authenticate(self.supporter)
+
+    def answer(self):
+        return self.client.post("/api/appointmentAnswer/", {"question": str(self.question.id), "text": "Yes"}, format = "json")
+
+    def test_add_questions_cannot_record_answers(self):
+        AppointmentAccess.objects.create(appointment = self.appointment, support_link = self.link, can_add_questions = True)
+        self.assertEqual(self.answer().status_code, 400)
+
+    def test_record_answers_can_record_answers(self):
+        AppointmentAccess.objects.create(appointment = self.appointment, support_link = self.link, can_record_answers = True)
+        self.assertEqual(self.answer().status_code, 201)
+
+# Cancelling, soft deleting, supporter questions, access list and answer permissions
+class AppointmentLifecycleTests(APITestCase):
+
+    def setUp(self):
+        self.patient = User.objects.create_user("+61490813123", "Josh", PIN)
+        self.profile = PatientProfile.objects.create(user = self.patient)
+        self.appointment = Appointment.objects.create(patient_profile = self.profile, created_by = self.patient,
+                                                      scheduled_date = timezone.now() + timedelta(days = 1))
+        self.question = AppointmentQuestion.objects.create(appointment = self.appointment, text = "Is it meant to look like that?",
+                                                           created_by = self.patient)
+        self.supporter = User.objects.create_user("+61411111111", "Mum", PIN)
+        self.link = SupportLink.objects.create(
+            patient_profile = self.profile, patient_user = self.patient, supporter_user = self.supporter,
+            status = SupportLink.Status.ACTIVE,
+        )
+        self.client.force_authenticate(self.patient)
+
+    def grant(self, **flags):
+        return AppointmentAccess.objects.create(appointment = self.appointment, support_link = self.link, **flags)
+
+    def cancel(self):
+        return self.client.post(f"/appointments/{self.appointment.pk}/cancel")
+
+    def add_question(self, text = "Ask about sleep"):
+        return self.client.post("/api/appointmentQuestion/", {"appointment": str(self.appointment.pk), "text": text},
+                                format = "json")
+
+    def test_cancel(self):
+        response = self.cancel()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["status"], "cancelled")
+
+    def test_cancel_twice(self):
+        self.cancel()
+        self.assertEqual(self.cancel().status_code, 400)
+
+    def test_supporter_cannot_cancel(self):
+        self.client.force_authenticate(self.supporter)
+        self.assertEqual(self.cancel().status_code, 404)
+
+    def test_no_changes_after_canceled(self):
+        self.cancel()
+        response = self.client.patch(f"/api/appointment/{self.appointment.pk}", {"doctor": "Dr Smith"}, format = "json")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(self.add_question().status_code, 400)
+
+    def test_delete_is_soft(self):
+        self.assertEqual(self.client.delete(f"/api/appointment/{self.appointment.pk}").status_code, 204)
+        self.appointment.refresh_from_db()
+        self.assertIsNotNone(self.appointment.deleted_at)
+        self.assertEqual(len(self.client.get("/api/appointment/").data), 0)
+
+    def test_patient_question_selected(self):
+        response = self.add_question()
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(response.data["is_selected"])
+
+    def test_supporter_without_grant_cannot_add_question(self):
+        self.client.force_authenticate(self.supporter)
+        self.assertEqual(self.add_question().status_code, 400)
+
+    def test_list_who_has_access(self):
+        self.grant(can_add_questions = True)
+        response = self.client.get(f"/appointments/{self.appointment.pk}/access")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data[0]["supporter_name"], "Mum")
+
+    def test_answer_needs_can_record_answers(self):
+        self.grant(can_add_questions = True)
+        self.client.force_authenticate(self.supporter)
+        response = self.client.post("/api/appointmentAnswer/", {"question": str(self.question.pk), "text": "Yes"},
+                                    format = "json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_answer_with_can_record_answers(self):
+        self.grant(can_record_answers = True)
+        self.client.force_authenticate(self.supporter)
+        response = self.client.post("/api/appointmentAnswer/", {"question": str(self.question.pk), "text": "Yes"},
+                                    format = "json")
+        self.assertEqual(response.status_code, 201)
