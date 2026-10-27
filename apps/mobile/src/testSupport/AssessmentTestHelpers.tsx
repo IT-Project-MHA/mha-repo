@@ -3,7 +3,7 @@ import { AssessmentProps } from "../../components/baseComponents/Assessment";
 import { MultipleChoice } from "../../components/answerFields/MultipleChoice";
 
 function GenerateAssessmentProps() {
-    const props: QuestionProps[] = [{title: "titleA", detail: "detailA", questionType: "EmojiSelect"},
+    const props: QuestionProps[] = [{title: "titleA", detail: "detailA", questionType: "SliderEntry"},
     {title: "titleB", detail: "detailB", questionType: "MultipleChoice"}];
     return props;
 }
