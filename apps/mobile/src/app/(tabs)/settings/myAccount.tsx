@@ -38,6 +38,7 @@ export default function Screen() {
   const [account, setAccount] = useState<Account | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const { setUserType, isSupport, isPatient } = useUser();
+  
 
   // a support person who records a diagnosis or condition becomes a 'both' account
   const upgradeIfHasCondition = (profile: Account['profile']) => {
@@ -78,6 +79,7 @@ export default function Screen() {
     if (!account) return;
     const profile = await apiSaveConditions(account.profile?.id ?? null, values);
     setAccount({ ...account, profile });
+    upgradeIfHasCondition(profile);
     setPending(null);
   };
 
