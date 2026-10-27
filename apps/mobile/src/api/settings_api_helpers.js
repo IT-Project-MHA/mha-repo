@@ -1,18 +1,25 @@
+/* API helpers for settings, built on the calls in django-API.js. Use them
+inside a try/catch block, a failed request throws an ApiError. */
 import {
     apiAssignedGender,
     apiPatientProfile,
     apiUser,
     apiSupportLink,
+    apiUserSettings,
+    apiAppointment, apiAssessment, apiMyPain, apiMyMovement, apiMyPersonalCare,
+    apiMySocialHealth, apiMyManagement, apiPrescription,
 } from './django-API';
 import { apiErrorMessage, normalisePhoneNumber } from './care_planner_api_helpers';
 
+/*--------------------My Account------------------------------------------------------*/
 
-/* Account API helpers for the My Account page, built on the calls in django-API.js. Use them
-inside a try/catch block, a failed request throws an ApiError. */
+export { apiErrorMessage };
 
-// helper function: returns an Australian mobile number in the format the User table takes (local,
-// no spaces), e.g. '+61412345678' or '0412 345 678' -> '0412345678', or the number as typed if
-// it isn't one
+/**
+ * returns an Australian mobile number in the format the User table takes (local,
+ * no spaces), e.g. '+61412345678' or '0412 345 678' -> '0412345678', or the number as typed if
+ * it isn't one
+ */
 function toLocalPhone(phone) {
     const normalised = normalisePhoneNumber(phone);
     return normalised ? `0${normalised.slice(3)}` : phone;
@@ -62,21 +69,6 @@ export async function apiSaveAboutMe(userId, profileId, { name, sex, birthYear, 
     return { user, profile };
 }
 
-/* Saves the My Conditions details, from the edit conditions modal:
-- takes the id of the user's PatientProfile (null if they don't have one) and the details
-  ({ hasDiagnosis, otherConditions }), returns the saved PatientProfile
-- hasDiagnosis is true, false or null (not answered, left out)
-- creates the PatientProfile if there is none yet */
-export async function apiSaveConditions(profileId, { hasDiagnosis, otherConditions }) {
-    const details = {
-        has_diagnosis: hasDiagnosis ?? undefined,
-        other_conditions: otherConditions.trim(),
-    };
-    if (profileId) {
-        return apiPatientProfile('update', { id: profileId, ...details });
-    }
-    return apiPatientProfile('create', details);
-}
 
 /* Deletes the user's account:
 - takes no parameters, returns null
@@ -107,97 +99,42 @@ export function validateAboutMe({ name, birthYear, phone, email }) {
     return null;
 }
 
-/* Connections API helpers for the My Connections page, built on the calls in django-API.js. Use
-them inside a try/catch block, a failed request throws an ApiError. */
-
-/* Details for the My Connections page:
-- takes no parameters and returns { supportPeople, supporting }, each an array of
-  { id, name, phone, invited, viewAppointments }, where id is the SupportLink's id:
-    - supportPeople: the user's SupportLinks as the patient, both active ones and invites the
-      support person hasn't accepted yet (invited is true). Revoked links are left out. name is
-      empty until the support person has an account, so the phone number they were invited with
-      is used
-    - supporting: the active SupportLinks where the user is the support person, name is the
-      patient's name. The server doesn't send the patient's phone number, so phone is empty
-- viewAppointments is can_view_appointments of the SupportLink */
-export async function apiMyConnections() {
-    const [[user], links] = await Promise.all([apiUser('select'), apiSupportLink('select')]);
-
-    const supportPeople = links
-        .filter((link) => link.patient_user === user.id && link.status !== 'revoked')
-        .map((link) => ({
-            id: link.id,
-            name: link.supporter_name || link.invited_phone_number || 'Support Person',
-            phone: link.invited_phone_number ?? '',
-            invited: link.status !== 'active',
-            viewAppointments: Boolean(link.can_view_appointments),
-        }));
-
-    const supporting = links
-        .filter((link) => link.supporter_user === user.id && link.status === 'active')
-        .map((link) => ({
-            id: link.id,
-            name: link.patient_name,
-            phone: '',
-            invited: false,
-            viewAppointments: Boolean(link.can_view_appointments),
-        }));
-
-    return { supportPeople, supporting };
+/* Details for working out the user's role:
+- takes no parameters, returns { hasProfile, isSupporter, onboarded }
+- hasProfile: the user has their own PatientProfile
+- isSupporter: the user is the support person on at least one active SupportLink
+- onboarded: the user has accepted the terms (stand-in until the server has a role field) */
+export async function apiMyRole() {
+    const [user] = await apiUser('select');
+    const [[profile], links, terms] = await Promise.all([
+        apiPatientProfile('select', { user: user.id }),
+        apiSupportLink('select'),
+        apiTermsAndPrivacy('select'),
+    ]);
+    return {
+        hasProfile: Boolean(profile),
+        isSupporter: links.some((l) => l.supporter_user === user.id && l.status === 'active'),
+        onboarded: terms.length > 0,
+    };
 }
 
-/* Invites a support person:
-- takes the phone number as typed and returns the new SupportLink, with status invited
-- the server links it to the account with that number straight away, or when someone
-  registers with it
-- the phone number is saved as e.g. '+61412345678' */
-export async function apiInviteSupportPerson(phone) {
-    return apiSupportLink('create', { invited_phone_number: normalisePhoneNumber(phone) });
-}
-
-/* Removes a support person, as the patient:
-- takes the SupportLink id, returns null
-- the server returns 409 if other records depend on the link, which throws an ApiError */
-export async function apiRemoveSupportPerson(linkId) {
-    return apiSupportLink('delete', { id: linkId });
-}
-
-/* Removes the user as a support person of a patient, as the support person:
-- takes the SupportLink id, returns the saved SupportLink
-- a support person can only change the status, so the link is revoked, not deleted */
-export async function apiRemoveConnection(linkId) {
-    return apiSupportLink('update', { id: linkId, status: 'revoked' });
-}
-
-/* Checks the phone number of an invite before it is sent:
-- takes the phone number as typed, returns a message to show the user, or null if it is valid
-- must be an Australian mobile number, the same rule as the server, spaces are ignored */
-export function validateSupportPhone(phone) {
-    if (!normalisePhoneNumber(phone)) {
-        return 'Enter an Australian mobile number.';
+/* Saves the My Conditions details, from the edit conditions modal:
+- takes the id of the user's PatientProfile (null if they don't have one) and the details
+  ({ hasDiagnosis, otherConditions }), returns the saved PatientProfile
+- hasDiagnosis is true, false or null (not answered, left out)
+- creates the PatientProfile if there is none yet */
+export async function apiSaveConditions(profileId, { hasDiagnosis, otherConditions }) {
+    const details = {
+        has_diagnosis: hasDiagnosis ?? undefined,
+        other_conditions: otherConditions.trim(),
+    };
+    if (profileId) {
+        return apiPatientProfile('update', { id: profileId, ...details });
     }
-    return null;
-}
-
-export { apiErrorMessage };
-
-import { apiUserSettings } from './django-API';
-
-/* Details for the Accessibility page:
-- takes no parameters and returns the user's own UserSettings, or null if they don't have a
-  settings record yet (it is created the first time they save a setting) */
-export async function apiMySettings() {
-    const [settings] = await apiUserSettings('select');
-    return settings ?? null;
-}
-
-/* Saves accessibility settings:
-- takes the id of the user's UserSettings (null if they don't have one) and the changed fields
-  ({ high_contrast, text_size_percent }), returns the saved UserSettings
-- creates the UserSettings if there is none yet */
-export async function apiSaveSettings(settingsId, changes) {
-    if (settingsId) {
-        return apiUserSettings('update', { id: settingsId, ...changes });
+    // nothing entered: don't create a profile
+    if (details.has_diagnosis === undefined && !details.other_conditions) {
+        return null;
     }
-    return apiUserSettings('create', changes);
+    return apiPatientProfile('create', details);
 }
+
