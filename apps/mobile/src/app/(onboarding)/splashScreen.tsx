@@ -51,7 +51,8 @@ export default function OnboardingSplashScreen({ onClose}: Props){
   }
 
   return (
-    <View>
+    <SafeAreaView style={[theme.screen, {flex: 1}]}>
+    <View style={{flex:1}}>
       <ScrollView
         ref={scrollRef}
         horizontal
@@ -76,13 +77,14 @@ export default function OnboardingSplashScreen({ onClose}: Props){
           width={ITEM_SIZE}
           isActive={step==2}/>
       </ScrollView>
-      <View>
+      <View style={styles.bottomBar}>
         <Button 
         label='Next'
         onPress={onNextPressed}
         buttonType='roundButton'></Button>
       </View>
     </View>
+  </SafeAreaView>
   )
 }
 
@@ -117,7 +119,7 @@ export default function OnboardingSplashScreen({ onClose}: Props){
        position: 'absolute',
        left: '7.5%',
        width: '85%',
-       bottom: 120 + bottomInset,
+       bottom: bottomInset,
        gap: 8,
      },
  

@@ -12,7 +12,7 @@ export default function Layout(){
     const {isPatient} = useUser();
   return (
   <Stack>
-    <Stack.Screen name="splashScreen"         options={{ headerLargeTitleEnabled: true }} />
+    <Stack.Screen name="index"         options={{ headerLargeTitleEnabled: true }} />
     <Stack.Screen name="signIn"         options={{ headerLargeTitleEnabled: true }} />
   </Stack>
   );

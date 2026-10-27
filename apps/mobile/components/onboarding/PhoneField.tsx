@@ -70,7 +70,7 @@ function PhoneField({onSubmit}: PhoneFieldProps) {
     <View>
       <View style= {theme.sectionContainer}>
         <TextInput
-          style={[theme.field, theme.option]}
+          style={[styles.field, theme.option]}
           onChangeText={handleChange}
           value={value}
           keyboardType="numeric"

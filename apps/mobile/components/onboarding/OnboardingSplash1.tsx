@@ -2,6 +2,7 @@ import React, {useEffect, useRef} from 'react'
 import { useTheme } from "../../context/ThemeContext";
 import { useWindowDimensions, View } from 'react-native';
 import { useVideoPlayer, VideoView} from 'expo-video'
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface Props{
   width: number,
@@ -30,6 +31,7 @@ export function OnboardingSplash1({width, isActive}: Props){
   }, [isActive])
 
   return(
+
       <View style={{width, flexShrink: 0, alignItems: 'center', justifyContent: 'center'}}>
         <VideoView
           player = {player}
@@ -43,7 +45,6 @@ export function OnboardingSplash1({width, isActive}: Props){
           nativeControls={false}
         />
       </View>
-    
   )
 /**
  * <OnboardingSplashComp width={width}>

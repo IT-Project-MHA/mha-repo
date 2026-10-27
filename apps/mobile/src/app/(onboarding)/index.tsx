@@ -50,13 +50,13 @@ export default function Page() {
         <Text style={styles.subheading}>Lets get you started</Text>
         <Text style={styles.heading}>Sign In or Create an account</Text>
       </View> 
-{/*         <Modal style={styles.bottomBar}
+         <Modal 
         animationType="slide"
         presentationStyle='fullScreen'
         visible={showOnboarding}
         onRequestClose={() => setShowOnboarding(false)}>
           <OnboardingSplashScreen onClose={onFirstLaunchClosed}/>
-       </Modal>*/}
+       </Modal>
       <View style={styles.bottomBar}>
         <Button
         label='Create Account'
