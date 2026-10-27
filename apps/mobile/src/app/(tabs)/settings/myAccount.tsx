@@ -10,6 +10,7 @@ import AboutMeModal, { type Choice, type UserDetails } from '../../../../compone
 import TextButton from '../../../../components/atomicUI/TextButton';
 import MyConditionsModal, { type userDetails } from '../../../../components/atomicUI/MyConditionsModal';
 import { useUser } from '../../../../context/AuthorisationContext';
+import { UserType } from '../../../../constants/userType';
 import {
   apiMyAccount,
   apiSaveAboutMe,
@@ -33,10 +34,18 @@ type Account = {
 
 export default function Screen() {
   const {theme} = useTheme();
-  const {setUserType} = useUser();
   const [pending, setPending] = useState< 'logout' | 'delete' | 'editAboutMe' | 'editMyConditions' | null>(null); // modal visibility triggered by pending state
   const [account, setAccount] = useState<Account | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const { setUserType, isSupport, isPatient } = useUser();
+
+  // a support person who records a diagnosis or condition becomes a 'both' account
+  const upgradeIfHasCondition = (profile: Account['profile']) => {
+    const hasCondition = profile?.has_diagnosis === true || !!profile?.other_conditions?.trim();
+    if (hasCondition && isSupport && !isPatient) {
+      setUserType(UserType.both);
+    }
+  };
 
   /**
    * Loads the user's details from the backend, showing an error with a retry button if it fails.
@@ -79,12 +88,12 @@ export default function Screen() {
     if (pending === 'delete'){
       try {
         await apiDeleteMyAccount();
-        setUserType('Undefined'); // should trigger log in / onboarding
+        setUserType(UserType.undefined); // should trigger log in / onboarding
       } catch (error) {
         Alert.alert('Could not delete account', apiErrorMessage(error, 'Please try again.'));
       }
     } else if (pending === 'logout'){
-        setUserType('Undefined') // should trigger log in / onboarding
+        setUserType(UserType.undefined) // should trigger log in / onboarding
     }
     setPending(null);
   };

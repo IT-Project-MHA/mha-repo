@@ -2,7 +2,6 @@
  * Modal that allows the user to change their about me information
  * 
  * On confirm, input is checked for validity and saved to backend.
- * 
  */
 import { useEffect, useState } from "react";
 import {Modal, View, Text, Pressable, StyleSheet, TextInput, ActivityIndicator, Alert} from 'react-native'
@@ -36,6 +35,7 @@ const AboutMeModal = ({visible, initialValues, sexOptions, onConfirm, onCancel} 
     const [draft, setDraft] = useState<UserDetails>(initialValues);
     const [error, setError] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
+
 
     /**
      * resets modal to saved values (initialValues) when it opens
@@ -137,8 +137,6 @@ const AboutMeModal = ({visible, initialValues, sexOptions, onConfirm, onCancel} 
   /**
    * returns the modal which renders text input fields to condition personal details where the 
    * user can change their information.
-   * 
-   * change save not implemented- will be implementing with api.
    */
   return (
 

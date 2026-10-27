@@ -11,12 +11,15 @@ import { useState, useEffect } from 'react';
 import TextButton from '../../../../components/atomicUI/TextButton';
 import PeopleModal from '../../../../components/atomicUI/PeopleModal';
 import AddSupportPersonModal from '../../../../components/atomicUI/AddSupportPersonModal';
+import { useUser } from '../../../../context/AuthorisationContext';
 import {
   apiMyConnections,
   apiInviteSupportPerson,
   apiRemoveSupportPerson,
   apiRemoveConnection,
   apiErrorMessage,
+  apiAcceptInvitation,
+  apiDeclineInvitation,
 } from "@/api/settings_api_helpers"
 
 // a person on this screen, from apiMyConnections. id is the SupportLink's id
@@ -33,6 +36,7 @@ type Relationship = 'supportsMe' | 'imSupporting';
 type Connections = {
   supportPeople: Person[];
   supporting: Person[];
+  invitations: { id: string; name: string }[];
 };  
 
 export default function Screen() {
@@ -41,6 +45,25 @@ export default function Screen() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selected, setSelected] = useState<{ person: Person; relationship: Relationship } | null>(null);
   const [adding, setAdding] = useState(false); // add support person modal visibility
+  const {refreshUserType} = useUser();
+
+  const handleAccept = async (id: string) => {
+  try {
+    await apiAcceptInvitation(id);
+    await refreshUserType(); // noRole -> supportPerson (or patient -> both)
+    await load();            // reload the connections lists
+  } catch (e) {
+    Alert.alert('Could not accept invitation', apiErrorMessage(e));
+  }
+};
+const handleDecline = async (id: string) => {
+  try {
+    await apiDeclineInvitation(id);
+    await load();
+  } catch (e) {
+    Alert.alert('Could not decline invitation', apiErrorMessage(e));
+  }
+};
 
   /**
    * Loads the user's connections from the backend, showing an error with a retry button if it
@@ -152,6 +175,31 @@ export default function Screen() {
         <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>My Connections</Text>
       </View>
       <Text> </Text>
+
+      {connections.invitations.length > 0 && (
+  <>
+    <View style={theme.sectionContainer}>
+      <Text> </Text>
+      <Text style={[theme.h5, theme.leftText, theme.fontOnSurface]}>Invitations</Text>
+      <Text> </Text>
+      <View style={theme.line}></View>
+      <Text> </Text>
+      {connections.invitations.map((inv) => (
+        <View key={inv.id} style={theme.layoutContainer}>
+          <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>
+            {inv.name} invited you to support them
+          </Text>
+          <View style={[theme.rightItems, theme.row]}>
+            <TextButton label="Decline" onPress={() => handleDecline(inv.id)} />
+            <TextButton label="Accept" onPress={() => handleAccept(inv.id)} />
+          </View>
+        </View>
+      ))}
+    </View>
+    <Text> </Text>
+    <Text> </Text>
+  </>
+)}
       
       <View style={[theme.sectionContainer]}>
         <Text> </Text>
