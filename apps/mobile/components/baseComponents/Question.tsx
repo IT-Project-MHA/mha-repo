@@ -12,6 +12,7 @@ type QuestionProps = {
   title: String;
   detail: String;
   questionType: ENTRY_TYPE;
+  sliderMax?: number;
 }
 
 export default function Question({title, detail, questionType}:  QuestionProps) {

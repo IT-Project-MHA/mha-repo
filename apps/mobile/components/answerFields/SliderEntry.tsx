@@ -10,19 +10,18 @@ import { themes } from "../../constants/theme";
 
 //numberInput variables
 const LOWER_BOUND = 0;
-const UPPER_BOUND = 10;
 
 function sanitizeNumberInput(text: string) {
   let t = text.replace(/[^0-9]/g, ""); //removes any non-number
   return t;
 }
 
-function validateNumberInput(numText: string) {
+function validateNumberInput(numText: string, upperBound: number) {
   //checking if it's something we should accept, i.e. within range
   if (numText == "") return "enter a number"; //what it prints if submitted
 
   const num = Number(numText);
-  if (!Number.isInteger(num) || num < LOWER_BOUND || num > UPPER_BOUND) {
+  if (!Number.isInteger(num) || num < LOWER_BOUND || num > upperBound) {
     return "enter a number between 0 and 10";
   }
   return null;
@@ -41,7 +40,7 @@ const description = [
   "etc3",
 ];
 
-function SliderEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
+function SliderEntry({ onSubmit }: { onSubmit: (v: string) => void }, upperBound: number) {
 
   const { theme } = useTheme();
 
@@ -56,7 +55,7 @@ function SliderEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
   };
 
   const handleSubmit = () => {
-    const err = validateNumberInput(value);
+    const err = validateNumberInput(value, upperBound);
     if (err) {
       setError(err);
       return;
@@ -71,7 +70,7 @@ function SliderEntry({ onSubmit }: { onSubmit: (v: string) => void }) {
         <Slider
           style={theme.slider}
           minimumValue={LOWER_BOUND}
-          maximumValue={UPPER_BOUND}
+          maximumValue={upperBound}
           step={1}
           value={value === "" ? LOWER_BOUND : Number(value)}
           onValueChange={handleChange}
