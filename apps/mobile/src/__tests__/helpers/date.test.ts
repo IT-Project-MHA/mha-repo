@@ -1,3 +1,23 @@
+/** Unit tests for functions in date.ts helper.
+ * Tests cover:
+ * 
+ *  toApiDate:
+ *    - formats a Date as YYYY-MM-DD with zero padding
+ *  parseApiDate:
+ *    - gives local midnight on the same day
+ *    - round trips with toApiDate
+ *  formatDate:
+ *    - formats as day, short month and year
+ *  weekRangeLabel:
+ *    - whole week inside one month shows the month once
+ *    - week crossing a month shows both month
+ *  formatShortDate:
+ *    - day and short month by default
+ *    - includes a two-digit year when asked
+ *  daysBetween: 
+ *    - counts whole days between two YYYY-MM-DD strings
+*/
+
 import {
   toApiDate,
   parseApiDate,
@@ -5,7 +25,7 @@ import {
   formatShortDate,
   weekRangeLabel,
   daysBetween,
-} from "../../constants/date";
+} from "../../../constants/date";
 
 describe("toApiDate", () => {
   test("formats a Date as YYYY-MM-DD with zero padding", () => {

@@ -1,6 +1,31 @@
-// Unit tests for sectionSummaryFields logic in assessmentSectionSummary tab in myHealth
-// tests the 5 possible summaries for each section, and for valid/missing data
-import { na, withNum, titles, fieldsFor } from "../healthInfo/sectionSummaryFields";
+/** Unit tests for sectionSummaryFields logic in assessmentSectionSummary tab in myHealth.
+ * tests the 5 possible summaries for each section, and for valid/missing data
+ * Tests cover:
+ *
+ *  na:
+ *    - falls back to 'Not available' for empty/null/undefined
+ *    - passes a real value through unchanged
+ *  withNum:
+ *    - omits the suffix when the number is null/undefined
+ *    - appends the number when present - including 0
+ *  titles:
+ *    - maps each known section key to its heading
+ *    - has no entry for an unknown key (screen falls back to 'Assessment')
+ *  fieldsFor:
+ *    - returns [] when there is no data yet
+ *    - returns [] for an unknown / missing section key
+ *    - my_pain: filled shows correct display text
+ *    - my_pain: empty shows NA text
+ *    - my_movement: filled shows correct display text
+ *    - my_movement: empty shows NA text
+ *    - personal_care: filled shows correct display text
+ *    - personal_care: empty shows NA text
+ *    - social_health: filled shows correct display text
+ *    - social_health: empty shows NA text
+ *    - management: filled shows correct display text
+ *    - management: empty - dedicated fallback sentences, not generic 'Not available'
+*/
+import { na, withNum, titles, fieldsFor } from "../../healthInfo/sectionSummaryFields";
 
 describe("na", () => {
   test("falls back to 'Not available' for empty/null/undefined", () => {

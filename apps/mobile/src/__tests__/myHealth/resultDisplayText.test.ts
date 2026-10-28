@@ -1,4 +1,31 @@
-// Unit tests for constants/resultDisplayText.ts.
+/** Unit tests for constants/resultDisplayText.ts.
+ * Tests cover:
+ *
+ *  intensity texts:
+ *    - null and undefined give Not available
+ *    - Pain level <=0 returns no pain sentence
+ *    - Pain level 1-3 returns mild pain sentence
+ *    - Pain level 4-6 returns moderate pain sentence
+ *    - Pain level 7-8 returns fairly severe pain sentence
+ *    - Pain level 9 returns extremely severe sentence
+ *    - worst bucket: 10 and above (final else)
+ *  movementScore:
+ *    - null: Not available
+ *    - score text correctly chosen from boundaries (<=5 / <=10 / <=15 / else)
+ *  personalCareScore:
+ *    - null: Not available
+ *    - score text correctly chosen from boundaries (<=3 / <=5 / <=10 / else)
+ *  socialHealthScore:
+ *    - null: Not available
+ *    - score text correctly chosen from boundaries (<=10 / <=19 / <=30 / else)
+ *  averageActivityHourText:
+ *    - null: Not available
+ *    - exactly 1 uses the singular 'hour'
+ *    - every other value uses plural 'hours'
+ *  medicationText:
+ *    - empty / null / undefined: 'no medication' sentence
+ *    - a value is embedded in the sentence
+*/
 
 import {
   NA,
@@ -15,7 +42,7 @@ import {
   socialHealthScore,
   averageActivityHourText,
   medicationText,
-} from "../../constants/resultDisplayText";
+} from "../../../constants/resultDisplayText";
 
 // the intensity texts share same categories for the same values
 type Buckets = {
