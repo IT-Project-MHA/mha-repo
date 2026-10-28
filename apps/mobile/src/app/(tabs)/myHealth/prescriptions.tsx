@@ -83,7 +83,8 @@ const handleDeletePrescription = async () => {
     setPending(null);
   } catch (e: any) {
     console.log('create failed', e?.name, e?.message, e?.status, e?.data);
-  } finally {
+    Alert.alert("Couldn't save prescription", 'Please check your details and try again.');
+  } finally { 
     setSaving(false);
   }
 };
