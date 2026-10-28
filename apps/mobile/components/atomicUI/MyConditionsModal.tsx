@@ -1,20 +1,29 @@
 /**
  * Modal that allows the user to change their 'my conditions' information
  * 
+ * Used two ways:
+ * - a patient edits their saved answers, e.g. to fix a typo
+ * - a support person who has said they experience musculoskeletal symptoms fills it in for the
+ *   first time (creating = true), which makes them a patient
+ * 
  * On confirm, input is checked for validity and saved to backend.
  */
-import React, { useEffect, useState } from "react";
-import {Modal, View, Text, Pressable, StyleSheet, TextInput, ActivityIndicator} from 'react-native'
+import { useEffect, useState } from "react";
+import {Modal, View, Text, Pressable, StyleSheet, TextInput, ActivityIndicator,
+        ScrollView, KeyboardAvoidingView, Platform,
+
+} from 'react-native'
 import { useTheme, ColourSet } from "../../context/ThemeContext";
 import { apiErrorMessage } from "@/api/settings_api_helpers"
 
-export type userDetails ={
-  hasDiagnosis: boolean | null; // null if not answered
-  otherConditions: string;
-}
+export type userDetails = {
+  hasDiagnosis: boolean | null; // meaningful when hasMskIssues is true
+  conditions: string[]; // other conditions / symptoms
+};
 
 type Props = {
     visible: boolean;
+    creating?: boolean; // true when a support person is becoming a patient
     initialValues: userDetails;
     onConfirm: (values: userDetails) => Promise<void>; // saves to the backend, throws if it fails
     onCancel: () => void;
@@ -24,6 +33,7 @@ const MyConditionsModal = ({visible, initialValues, onConfirm, onCancel} : Props
     const { theme, colours } = useTheme();
     const styles = createStyles(colours);
     const [draft, setDraft] = useState<userDetails>(initialValues);
+    const [newCondition, setNewCondition] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
 
@@ -35,76 +45,129 @@ const MyConditionsModal = ({visible, initialValues, onConfirm, onCancel} : Props
      */
     useEffect(()=>{
       if(visible){
-        setDraft(initialValues)
-        setError(null)
+        setDraft(initialValues);
+        setNewCondition("");
+        setError(null);
       }
     },[visible]);
+
+    const hasCondition = (conditions: string[], text: string) => conditions.some((c) => c.toLowerCase() === text.toLowerCase());
+
+    const addCondition = () => {
+      const text = newCondition.trim();
+        if (!text) return;
+          // ignore duplicates, case-insensitive
+          if (draft.conditions.some((c) => c.toLowerCase() === text.toLowerCase())) {
+            setNewCondition("");
+            return;
+      }
+        setDraft((prev) => ({ ...prev, conditions: [...prev.conditions, text] }));
+        setNewCondition("");
+    };
+
+
+  const removeCondition = (index: number) =>
+    setDraft((prev) => ({ ...prev, conditions: prev.conditions.filter((_, i) => i !== index) }));
+
 
      /**
      * saves the input, showing the error and keeping the modal open if it fails. The parent
      * closes the modal once the save has worked.
      */
     const handleSave = async () => {
-      setSaving(true);
-      setError(null);
-      try {
-        await onConfirm(draft);
-      } catch (error) {
-        setError(apiErrorMessage(error, "Couldn't save your changes. Please try again."));
-      } finally {
-        setSaving(false);
+      if (draft.hasDiagnosis === null) {
+        setError("Please specify whether you have a diagnosis.");
+        return;
       }
-    };
 
-    /**
-     * Function to render the diagnosis section, a yes / no choice
-     */
-    const renderDiagnosis = () => (
+    // include anything typed but not yet added
+    const pendingText = newCondition.trim();
+    const conditions = pendingText && !draft.conditions.includes(pendingText)
+      ? [...draft.conditions, pendingText]
+      : draft.conditions;
 
-      <View style={styles.field}>
-        <Text style={[theme.h6, theme.leftItems, theme.fontOnSurface]}>Do you have a diagnosis?</Text>
-        <Text> </Text>
-        <View style={styles.chips}>
-          {[{ label: 'Yes', value: true }, { label: 'No', value: false }].map((option) => {
-            const selected = draft.hasDiagnosis === option.value;
-            return (
-              <Pressable
-                key={option.label}
-                style={[styles.button, { borderColor: colours.onSurface, borderWidth: 1 },
-                        selected && { backgroundColor: colours.primary }]}
-                onPress={() => setDraft((prev) => ({...prev, hasDiagnosis: option.value}))}
-                accessibilityRole="radio"
-                accessibilityState={{ selected }}
-              >
-                <Text style={theme.body}>{option.label}</Text>
-              </Pressable>
-            );
-          })}
+    setSaving(true);
+    setError(null);
+    try {
+      await onConfirm({ ...draft, conditions });
+    } catch (e) {
+      setError(apiErrorMessage(e, "Couldn't save your changes. Please try again."));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // reusable Yes / No chips
+  const renderYesNo = (value: boolean | null, onSelect: (v: boolean) => void) => (
+    <View style={styles.chips}>
+      {[{ label: "Yes", value: true }, { label: "No", value: false }].map((option) => {
+        const selected = value === option.value;
+        return (
+          <Pressable
+            key={option.label}
+            style={[styles.button, { borderColor: colours.onSurface, borderWidth: 1 },
+                    selected && { backgroundColor: colours.primary }]}
+            onPress={() => onSelect(option.value)}
+            accessibilityRole="radio"
+            accessibilityState={{ selected }}
+          >
+            <Text style={theme.body}>{option.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+
+  const renderDiagnosisQuestion = () => (
+    <View style={styles.field}>
+      <Text style={[theme.h6, theme.leftItems, theme.fontOnSurface]}>Do you have a diagnosis?</Text>
+      <Text> </Text>
+      {renderYesNo(draft.hasDiagnosis, (v) => setDraft((prev) => ({ ...prev, hasDiagnosis: v })))}
+    </View>
+  );
+
+  const renderConditionsList = () => (
+    <View style={styles.field}>
+      <Text style={[theme.h6, theme.leftItems, theme.fontOnSurface]}>
+        Other conditions or symptoms
+      </Text>
+      <Text> </Text>
+
+      {draft.conditions.map((condition, index) => (
+        <View key={`${condition}-${index}`} style={styles.conditionRow}>
+          <Text style={[theme.body, theme.fontOnSurface, { flex: 1 }]}>{condition}</Text>
+          <Pressable
+            onPress={() => removeCondition(index)}
+            accessibilityRole="button"
+            accessibilityLabel={`Remove ${condition}`}
+            hitSlop={8}
+          >
+            <Text style={[theme.body, theme.fontOnSurface]}>Remove</Text>
+          </Pressable>
         </View>
-      </View>
-    );
+      ))}
 
-    /**
-     * Function to render the other conditions text input section
-     */
-    const renderOtherConditions = () => (
-    
-      <View style={styles.field}>
-        <Text style={[theme.h6, theme.leftItems, theme.fontOnSurface]}>Other Conditions</Text>
-        <Text> </Text>
+      <View style={styles.addRow}>
         <TextInput
-          value={draft.otherConditions}
-          onChangeText={(text) => setDraft((prev) => ({...prev, otherConditions: text}))}
-          keyboardType={'default'}
-          autoCapitalize={'sentences'}
-          multiline={true}
-          placeholder="Other Conditions"
+          value={newCondition}
+          onChangeText={setNewCondition}
+          onSubmitEditing={addCondition}
+          returnKeyType="done"
+          autoCapitalize="sentences"
+          placeholder="e.g. lower back pain"
           placeholderTextColor={colours.onSurface}
-          style={[styles.textInput, { color: colours.onSurface, borderColor: colours.onSurface }]}
+          style={[styles.textInput, { flex: 1, color: colours.onSurface, borderColor: colours.onSurface }]}
         />
+        <Pressable
+          style={[styles.button, { borderColor: colours.onSurface, borderWidth: 1 }]}
+          onPress={addCondition}
+          accessibilityRole="button"
+        >
+          <Text style={[theme.body, theme.fontOnSurface]}>Add</Text>
+        </Pressable>
       </View>
-    );
-
+    </View>
+  );
 
   /**
    * returns the modal which renders text input fields to condition and other conditions/s where the 
@@ -119,6 +182,8 @@ const MyConditionsModal = ({visible, initialValues, onConfirm, onCancel} : Props
         animationType="fade"
         onRequestClose={onCancel} // considers tapping out of frame a 'cancel' scenario
     > 
+
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         
     <View style={styles.backgroundColour}/>             
     
@@ -132,9 +197,10 @@ const MyConditionsModal = ({visible, initialValues, onConfirm, onCancel} : Props
           <Text style={[theme.h4, theme.leftItems, theme.fontOnSurface]}>Edit My Details</Text>
           <Text> </Text>
 
-          {renderDiagnosis()}
           <Text> </Text>
-          {renderOtherConditions()}
+          {renderDiagnosisQuestion()}
+           <Text> </Text>
+          {renderConditionsList()}
 
           {error && <Text style={[theme.body, styles.errorText]} accessibilityRole="alert">{error}</Text>}
 
@@ -159,6 +225,9 @@ const MyConditionsModal = ({visible, initialValues, onConfirm, onCancel} : Props
           </View>
         </Pressable>
     </Pressable>
+
+    </KeyboardAvoidingView>
+
     </Modal>
   );
 }
@@ -223,5 +292,10 @@ function createStyles(colours: ColourSet){
         errorText : {
           color: colours.primary,
           marginTop: 12,
-        }
+        },
+        conditionRow: {
+      flexDirection: "row", alignItems: "center", gap: 12,
+      marginHorizontal: 8, minHeight: 44,
+    },
+        addRow: { flexDirection: "row", alignItems: "center", gap: 8, marginHorizontal: 8, marginTop: 8 },
     })};

@@ -55,8 +55,9 @@ export const UserProvider = ({children} : {children:React.ReactNode}) => {
             else if (isSupporter || onboarded) setUserType(UserType.supportPerson);
             else if (onboarded) setUserType(UserType.noRole); // bare account, can accept invites
             else setUserType(UserType.undefined); // new user, onboarding
-        } catch {
+        } catch(e) {
             // offline or server error: keep the current role rather than kicking the user out
+            console.warn("refreshUserType failed:", e);
         } finally {
             setIsLoading(false);
         }
@@ -78,7 +79,7 @@ export const UserProvider = ({children} : {children:React.ReactNode}) => {
             isAdmin: userType === UserType.admin,
             isUndefined: userType === UserType.undefined,
         }),
-        [userType]
+        [userType, isLoading, refreshUserType]
     );
  
     return (

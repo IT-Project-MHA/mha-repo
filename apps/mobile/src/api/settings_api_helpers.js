@@ -6,6 +6,7 @@ import {
     apiUser,
     apiSupportLink,
     apiUserSettings,
+    apiTermsAndPrivacy,
     apiAppointment, apiAssessment, apiMyPain, apiMyMovement, apiMyPersonalCare,
     apiMySocialHealth, apiMyManagement, apiPrescription,
 } from './django-API';
@@ -39,13 +40,16 @@ export async function apiMyAccount() {
 }
 
 /* Saves the About Me details, from the edit details modal:
-- takes the user's id, the id of their PatientProfile (null if they don't have one) and the
+- takes the user's id, the id of their PatientProfile (null if they aren't a patient) and the
   details ({ name, sex, birthYear, phone, email }), returns the saved { user, profile }
 - name, phone & email are saved on the User, phone is sent as a local number with no spaces
-- sex & birthYear are saved on the PatientProfile, which is created if there is none yet. 
-  Either is left out when blank, and the profile isn't created
-  when both are
-- a blank email is sent as an empty string */
+- sex & birthYear are saved on the PatientProfile, so only for patients. A profile is never
+  created here, as having one makes the user a patient. Without one they are not saved, so
+  don't ask a support person for them
+- a blank email is sent as an empty string
+- NOTE: the API document says /api/user/ only edits display_name and email, and a phone
+  change goes through /auth/change-phone (SMS verified). django-API.js says phone_number is
+  editable. Check the serializer: if the document is right, phone_number is ignored here */
 export async function apiSaveAboutMe(userId, profileId, { name, sex, birthYear, phone, email }) {
     const user = await apiUser('update', {
         id: userId,
@@ -54,18 +58,19 @@ export async function apiSaveAboutMe(userId, profileId, { name, sex, birthYear, 
         email: email.trim(),
     });
 
-    const details = {
-        assigned_gender_at_birth: sex || undefined,
-        birth_year: birthYear.trim() ? Number(birthYear) : undefined,
-    };
     if (profileId) {
         const profile = await apiPatientProfile('update', { id: profileId, ...details });
         return { user, profile };
     }
-    if (details.assigned_gender_at_birth === undefined && details.birth_year === undefined) {
+    if (!profileId) {
         return { user, profile: null };
     }
-    const profile = await apiPatientProfile('create', details);
+    const profile = await apiPatientProfile('update', {
+        id: profileId,
+        assigned_gender_at_birth: sex || undefined,
+        birth_year: birthYear.trim() ? Number(birthYear) : undefined,
+    });
+
     return { user, profile };
 }
 
@@ -119,21 +124,21 @@ export async function apiMyRole() {
 }
 
 /* Saves the My Conditions details, from the edit conditions modal:
-- takes the id of the user's PatientProfile (null if they don't have one) and the details
-  ({ hasDiagnosis, otherConditions }), returns the saved PatientProfile
-- hasDiagnosis is true, false or null (not answered, left out)
-- creates the PatientProfile if there is none yet */
-export async function apiSaveConditions(profileId, { hasDiagnosis, otherConditions }) {
+- takes the id of the user's PatientProfile (null if they aren't a patient yet) and the details
+  ({ hasDiagnosis, conditions }), returns the saved PatientProfile
+- a patient's profile is updated, to correct their answers
+- a support person who says they have musculoskeletal symptoms has no profile, so one is
+  created, which makes them a patient. Call refreshUserType afterwards. The only way back to a
+  support person is apiDeleteMyData
+- hasDiagnosis is true or false
+- conditions is an array, saved as one string with a condition on each line */
+export async function apiSaveConditions(profileId, { hasDiagnosis, conditions }) {
     const details = {
-        has_diagnosis: hasDiagnosis ?? undefined,
-        other_conditions: otherConditions.trim(),
+        has_diagnosis: hasDiagnosis,
+        other_conditions: conditions.map((c) => c.trim()).filter(Boolean).join('\n'),
     };
     if (profileId) {
         return apiPatientProfile('update', { id: profileId, ...details });
-    }
-    // nothing entered: don't create a profile
-    if (details.has_diagnosis === undefined && !details.other_conditions) {
-        return null;
     }
     return apiPatientProfile('create', details);
 }
