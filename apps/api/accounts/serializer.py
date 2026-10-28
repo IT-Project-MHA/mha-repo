@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, PatientProfile, UserSettings, SupportLink, TermsAndPrivacy, TrustedDevice
+from .models import User, PatientProfile, UserSettings, SupportLink, TermsAndPrivacy, TrustedDevice, PushToken
 from mpowered_api.validators import current_date
 
 from accounts.otp import OTP_LENGTH
@@ -12,11 +12,27 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'phone_number', 'display_name', 'email', 'created_at', 'updated_at', 'deleted_at']
         read_only_fields = ['phone_number', 'deleted_at']
 
+# health details only the patient can see, supporters just get who the profile belongs to
+PATIENT_HEALTH_FIELDS = ['has_diagnosis', 'other_conditions', 'pain_types', 'assigned_gender_at_birth', 'birth_year']
+
 class PatientProfileSerializer(serializers.ModelSerializer):
+
+    display_name = serializers.CharField(source = "user.display_name", read_only = True)
+
     class Meta:
         model = PatientProfile
         fields = '__all__'
         read_only_fields = ['user']
+
+    # Supporters can see the profile but not health details
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+
+        if instance.user_id != self.context['request'].user.id:
+            for field in PATIENT_HEALTH_FIELDS:
+                del data[field]
+
+        return data
 
     def validate_birth_year(self, birth_year):
         # can't be in the future
@@ -39,7 +55,25 @@ class SupportLinkSerializer(serializers.ModelSerializer):
     class Meta:
         model = SupportLink
         fields = '__all__'
-        read_only_fields = ['patient_profile', 'patient_user']
+        read_only_fields = ['patient_profile', 'patient_user', 'supporter_user', 
+                            'invited_at', 'accepted_at', 'revoked_at']
+
+    def get_patient_name(self, link):
+        return link.patient_user.display_name
+
+    # null for an invite to a phone number that has no account yet
+    def get_supporter_name(self, link):
+        return link.supporter_user.display_name if link.supporter_user else None
+
+    # saved in the same format as account phone numbers, so an invite can be matched to the
+    # account made with that number
+    def validate_invited_phone_number(self, invited_phone_number):
+        if not invited_phone_number:
+            return invited_phone_number
+        phone_number = normalise_phone_number(invited_phone_number)
+        if phone_number is None:
+            raise serializers.ValidationError('Enter an Australian mobile number.')
+        return phone_number
 
     def get_patient_name(self, link):
         return link.patient_user.display_name
@@ -167,3 +201,12 @@ class ResetPinSerializer(serializers.Serializer):
     verification_id = serializers.UUIDField()
     pin = serializers.RegexField(rf"^\d{{{PIN_LENGTH}}}$", write_only = True)
     device_id = serializers.CharField(max_length = 128)
+
+class ChangePhoneSerializer(serializers.Serializer):
+    verification_id = serializers.UUIDField()
+    phone_number = PhoneNumberField()
+
+
+class PushTokenSerializer(serializers.Serializer):
+    # The token exp -notifications gives the app
+    token = serializers.RegexField(r"^Expo(nent)?PushToken\[.+\]$", max_length = 200)

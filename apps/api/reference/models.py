@@ -35,6 +35,7 @@ class QuestionOptionOrdered(BaseModel):
     text = models.CharField(max_length = 100)
     question_number = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(20)]) 
     option_number = models.PositiveSmallIntegerField(default=0)
+    is_active = models.BooleanField(default = True)
     score = models.PositiveSmallIntegerField(default=0, validators = [MinValueValidator(0), MaxValueValidator(5)]) 
     class Meta: 
         db_table = "question_option_ordered"
