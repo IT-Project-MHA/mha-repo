@@ -11,9 +11,9 @@ import {
     apiMySocialHealth,
     apiQuestionOptionOrdered,
     apiMyManagement,
+    apiPainTrend,
 } from './django-API';
 
-import { USE_FAKE_DATA, fakeHistory } from '../dev/fakeHistory';
 import {ownPatientProfileId} from './care_planner_api_helpers'
 
 // -------------- Pain Profile --------------
@@ -347,7 +347,6 @@ const HISTORY_FIELDS = {
 * - returns [{completedAt, score}] oldest first, weeks with no record or no value are left out 
 */
 export async function apiScoreHistory(area, patientProfileId) {
-    if (USE_FAKE_DATA) return fakeHistory(area);
 
     const entry = HISTORY_FIELDS[area];
     if (!entry) {
@@ -383,34 +382,31 @@ export function apiPainHistory(patientProfileId) {
 * - returns [{completedAt, score, worst, mildest, locations}] oldest first
 * - score is the weekly average, locations are the option labels
 * */
-export async function apiPainDetailHistory(patientProfileId) {
-    if (USE_FAKE_DATA) return fakeHistory('pain'); 
-
+export async function apiPainDetailHistory(patientProfileId, days, locationId) {
     const profileId = patientProfileId ?? (await ownPatientProfileId());
     if (!profileId) {
         return [];
     }
-    const [assessments, locationOptions] = await Promise.all([
-        apiAssessment('select', { patient_profile: profileId }),
-        apiQuestionOption('select', {app_section: 'my_pain', question_key: 'pain_location'}),
-    ]);
-    const locationNames = new Map(locationOptions.map((o) => [o.id, o.text]));
 
-    const rows = await Promise.all(
-        assessments.map((assessment) => apiMyPain('select', {assessment: assessment.id})),
-    );
+    const weeks = await apiPainTrend('select', {
+        patient_profile: profileId,
+        days,
+        location: locationId,
+    });
+    
+    return weeks
+        .map((w) => ({
+            completedAt: w.week_starting,
+            score: w.average,
+            worst: w.worst,
+            mildest: w.mildest,
+        }))
+        .filter((p) => p.score != null);
+}
 
-    return assessments
-        .map((assessment, index) => {
-            const row = rows[index][0];
-            return {
-                completedAt: assessment.week_starting,
-                score: row?.average ?? null,
-                worst: row?.worst ?? null,
-                mildest: row?.mildest ?? null,
-                locations: (row?.locations ?? []).map((id) => locationNames.get(id)).filter(Boolean),
-            };
-        })
-        .filter((point) => point.score !== null)
-        .sort((a, b) => a.completedAt.localeCompare(b.completedAt));
+/* All pain location options, for the location chips: [{id, label}] */
+export async function apiPainLocations() {
+    const options = await apiQuestionOption('select',
+        {app_section: 'my_pain', question_key: 'pain_location'});
+    return options.map((o) => ({ id: o.id, label: o.text }));
 }

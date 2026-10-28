@@ -4,7 +4,7 @@
 import { LineChart } from "react-native-gifted-charts";
 import { View, ActivityIndicator, Text, StyleSheet, useWindowDimensions } from "react-native";
 import { useTheme, ColourSet } from "../../context/ThemeContext";
-import { apiScoreHistory } from "../../src/api/my_health_api_helpers.js";
+import { apiPainDetailHistory } from "../../src/api/my_health_api_helpers.js";
 import { useEffect, useMemo, useState } from "react";
 import { formatShortDate } from "../../constants/date";
 
@@ -98,7 +98,7 @@ const AssessmentChart = ({ patientProfileId }: { patientProfileId?: number | str
     // load the weekly pain history once (and again if the patient changes)
     useEffect(() => {
         let cancelled = false;
-        apiScoreHistory("pain", patientProfileId)
+        apiPainDetailHistory(patientProfileId)
             .then((result: HistoryPoint[]) => !cancelled && setHistory(result))
             .catch(() => !cancelled && setHistory([]));
         return () => {
