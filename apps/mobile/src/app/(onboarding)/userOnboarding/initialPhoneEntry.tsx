@@ -7,7 +7,7 @@
 
 import { useRouter } from 'expo-router';
 import { PhoneField } from '../../../../components/onboarding/PhoneField';
-import { useOnboardingUserStore } from '../../store/onboardingStorage';
+import { useOnboardingStore } from '../../store/onboardingStorage';
 import {request_code} from '../../../api/django-API'
 
 import { Text, StyleSheet, View } from 'react-native';
@@ -25,7 +25,7 @@ export default function Page() {
   const insets = useSafeAreaInsets();
   const styles = createStyles(colours, theme, insets.bottom);
   const router = useRouter();
-  const setUserOnboaring = useOnboardingUserStore((s)=> s.set);
+  const setUserOnboaring = useOnboardingStore((s)=> s.set);
 
   async function setPhone(phone_number: string){
     setUserOnboaring({phone_number});

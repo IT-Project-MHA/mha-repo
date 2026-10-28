@@ -8,7 +8,7 @@
 
 import { TextEntry } from '../../../../components/answerFields/TextEntry';
 import { useRouter } from 'expo-router';
-import { useOnboardingUserStore } from '../../store/onboardingStorage';
+import { useOnboardingStore } from '../../store/onboardingStorage';
 
 import { Text, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,7 +24,7 @@ export default function Page() {
   const insets = useSafeAreaInsets();
   const styles = createStyles(colours, theme, insets.bottom);
   const router = useRouter();
-  const setUserOnboaring = useOnboardingUserStore((s)=> s.set);
+  const setUserOnboaring = useOnboardingStore((s)=> s.set);
 
   function setDisplayName(display_name: string){
     setUserOnboaring({display_name});
@@ -35,7 +35,7 @@ export default function Page() {
     console.log('SERVER_URL =', SERVER_URL, '| hostUri =', Constants.expoConfig?.hostUri);
 
 
-    router.navigate('/(onboarding)/userOnboarding/email')
+    router.navigate('/(onboarding)/userOnboarding/passcode')
   }
 
   return (

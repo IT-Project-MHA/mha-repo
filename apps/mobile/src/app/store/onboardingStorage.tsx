@@ -1,45 +1,32 @@
 import { create } from 'zustand';
 
 //contains the info gained during onboarding
-type OnboardingUserState = {
-  isPatient: boolean;
-  isSupportPerson: boolean;
-  display_name: string;
-  phone_number?: string;
-  email?: string;
+//needs verification_id, phone_number, display_name, pin, accepted_terms, accepted_privacy, 
+// device_id, track_health (optional), health (optional)
 
-  set: (patch: Partial<Omit<OnboardingUserState, 'set' | 'reset'>>)=>void;
+type OnboardingStorage = {
+  verification_id: string;
+  phone_number: string;
+  display_name: string;
+  pin: number;
+  accepted_terms: boolean;
+  accepted_privacy: boolean;
+  device_id: string;
+  track_health?: boolean;
+  health?: [];
+
+  set: (patch: Partial<Omit<OnboardingStorage, 'set' | 'reset'>>)=>void;
   reset: ()=>void;
 }
 
-const initialUser = {isPatient: false, isSupportPerson: false, display_name: ''}
 
 
-export const useOnboardingUserStore = create<OnboardingUserState>((set) => ({
+const initialUser = {verification_id: '', phone_number: '', display_name: '', pin: 0,
+   accepted_terms: false,   accepted_privacy: false, device_id: '', }
+
+
+export const useOnboardingStore = create<OnboardingStorage>((set) => ({
   ...initialUser,
   set: (patch) =>set(patch),
-  reset: () => set({...initialUser, phone_number: undefined, email: undefined}),
-}))
-
-
-//contains patient construction info:
-// has_diagnosis, other_conditions, assigned_gender_at_birth, birth_year, pain_types[]
-type OnboardingPatientState = {
-  hasDiagnosis: boolean;
-  birthYear?: number;
-  sex?: string;
-  diagnosis?: string[];
-  additionalDiagnosis?: string;
-
-  set: (patch: Partial<Omit<OnboardingPatientState, 'set' | 'reset'>>)=>void;
-  reset: ()=>void;
-}
-
-const initialPatient = {hasDiagnosis: false}
-
-
-export const useOnboardingPatientStore = create<OnboardingPatientState>((set) => ({
-  ...initialPatient,
-  set: (patch) =>set(patch),
-  reset: () => set({...initialPatient, birthYear: undefined, sex: undefined, diagnosis: undefined, additionalDiagnosis: undefined}),
+  reset: () => set({...initialUser, track_health: undefined, health: undefined}),
 }))

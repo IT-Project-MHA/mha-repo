@@ -8,7 +8,7 @@ import { View, Text, ScrollView, StyleSheet } from 'react-native';
 
 import { useRouter } from 'expo-router';
 import { MultipleChoice } from '../../../../components/answerFields/MultipleChoice';
-import { useOnboardingUserStore } from '../../store/onboardingStorage';
+import { useOnboardingStore } from '../../store/onboardingStorage';
 
 import React from 'react';
 
@@ -24,7 +24,7 @@ export default function Page() {
   const { colours, theme } = useTheme();
   const insets = useSafeAreaInsets();
   const styles = createStyles(colours, theme, insets.bottom);
-  const setUserOnboaring = useOnboardingUserStore((s)=> s.set);
+  const setUserOnboaring = useOnboardingStore((s)=> s.set);
 
   const USER_TYPES = ["For myself","To help someone else"]; //patient equivalent text, support person equivalent text
 
@@ -32,14 +32,13 @@ export default function Page() {
     //this function sets the user type based on selection, and navigates to the appropriate page
 
     //check selections and set flags
-    const isPatient = (selection==USER_TYPES[0]);
-    const isSupportPerson = (selection==USER_TYPES[1]);
+    const track_health = (selection==USER_TYPES[0]);
 
-    setUserOnboaring({isPatient, isSupportPerson});
+    setUserOnboaring({track_health});
     //navigation
     //if patient tagged, do that first.
     //support person onboarding is tacked on after phone number verification, with a check to the pseudo-account flag
-    if(isPatient){
+    if(track_health){
       //navigate to sex-select
       router.navigate('/(onboarding)/patientOnboarding/sexSelect');
     }

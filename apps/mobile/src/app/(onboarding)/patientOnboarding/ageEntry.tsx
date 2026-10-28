@@ -12,13 +12,15 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React from 'react';
 
+import { useOnboardingStore } from '../../store/onboardingStorage';
+
 export default function Page() {
   const router = useRouter();
   const { theme } = useTheme();
   
   return (
     <SafeAreaView style={theme.screen}>
-      <Text style={theme.text}> Your year of birth</Text>
+      <Text style={theme.fontOnBackground}> Your year of birth</Text>
       <View style={theme.container}>
         <NumberEntry 
         onSubmit={()=>{router.navigate('/(onboarding)/patientOnboarding/diagnosis')}}

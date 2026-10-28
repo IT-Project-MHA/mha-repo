@@ -24,7 +24,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 //numberInput variables
 
 type NumberProps ={
-  onSubmit: (v: string) => void;
+  onSubmit: (v: any) => void;
   MAX_lENGTH_NUM: number;
   LOWER_BOUND: number;
   UPPER_BOUND: number;

@@ -23,7 +23,7 @@ export default function Page() {
   }
   return (
     <SafeAreaView style={theme.screen}>
-      <Text style={theme.text}>Do you have any other conditions?</Text>
+      <Text style={theme.fontOnBackground}>Do you have any other conditions?</Text>
       <View style={theme.container}>
         <TextEntry 
         onSubmit={handleSubmit}

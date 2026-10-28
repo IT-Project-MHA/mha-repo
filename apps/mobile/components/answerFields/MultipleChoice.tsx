@@ -36,7 +36,7 @@ function MultipleChoice({ questionOptions, onSubmit }: MultipleChoiceProps) {
   };
   return (
     <View style={theme.container}>
-      <Text style={[theme.text, {textAlign: 'center'}]}>"Select the most relevant"</Text>
+      <Text style={[theme.fontOnBackground, {textAlign: 'center'}]}>"Select the most relevant"</Text>
       {/*render options as buttons*/}
       {questionOptions.map((option, index) => (
         <TouchableOpacity

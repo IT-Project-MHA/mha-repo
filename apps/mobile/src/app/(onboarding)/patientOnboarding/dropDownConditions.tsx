@@ -24,23 +24,26 @@ import {apiQuestionOption} from '../../../api/django-API';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React from 'react';
 
+import { useOnboardingStore } from '../../store/onboardingStorage';
+
 export default  function Page() {
   const router = useRouter();
   const { theme } = useTheme();
   const user = "user"
   let conditions = ["undefined"];
+
   async function getConditions(){
       conditions = await apiQuestionOption('select', {
       app_section: 'ONBOARDING',
       question_key: 'pain_type',
     });
   }
-  //getConditions();
+  getConditions();
 
   return (
     <SafeAreaView style={theme.screen}>
       
-      <Text style={theme.text}>I think I need to import something for this</Text>
+      <Text style={theme.fontOnBackground}>I think I need to import something for this</Text>
       <ScrollView
       showsVerticalScrollIndicator={false}
       >

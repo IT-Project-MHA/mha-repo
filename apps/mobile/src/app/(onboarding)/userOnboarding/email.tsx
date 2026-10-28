@@ -1,4 +1,5 @@
 /**
+ * THIS IS SKIPPED RN, AS NOT FULLY SUPPORTED BY API
  * page for email entry
  * asks for email
  * directs to phone entry
@@ -7,7 +8,7 @@
 
 import { TextEntry } from '../../../../components/answerFields/TextEntry';
 import { useRouter } from 'expo-router';
-import { useOnboardingUserStore } from '../../store/onboardingStorage';
+import { useOnboardingStore } from '../../store/onboardingStorage';
 
 
 import { Text, StyleSheet, View } from 'react-native';
@@ -23,12 +24,12 @@ export default function Page() {
   const styles = createStyles(colours, theme, insets.bottom);
   const router = useRouter();
 
-  const setUserOnboaring = useOnboardingUserStore((s)=> s.set);
-  const {set, reset, ...answers} = useOnboardingUserStore.getState();
+  const setUserOnboaring = useOnboardingStore((s)=> s.set);
+  const {set, reset, ...answers} = useOnboardingStore.getState();
 
 
   function setEmail(email: string){
-    setUserOnboaring({email});
+    //setUserOnboaring({email});
 
     router.navigate('/(onboarding)/userOnboarding/initialPhoneEntry');
   }

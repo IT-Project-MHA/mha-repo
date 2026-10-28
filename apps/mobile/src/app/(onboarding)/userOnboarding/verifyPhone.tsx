@@ -14,7 +14,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { NumberEntry } from '../../../../components/answerFields/NumberEntry';
 import Button from '../../../../components/atomicUI/Button';
-import { useOnboardingUserStore } from '../../store/onboardingStorage';
+import { useOnboardingStore } from '../../store/onboardingStorage';
 import { verify_code, register_token } from '../../../api/django-API';
 
 import { Text, StyleSheet, View } from 'react-native';
@@ -36,7 +36,7 @@ export default function Page() {
   const styles = createStyles(colours, theme, insets.bottom);
   const router = useRouter();
 
-  const {set, reset, ...answers} = useOnboardingUserStore.getState();
+  const {set, reset, ...answers} = useOnboardingStore.getState();
   const phone_number = answers.phone_number;
   const display_name = answers.display_name;
   const pin = '000000'; //FIX LATER, add page
@@ -60,7 +60,7 @@ export default function Page() {
       const verification_id = result.verification_id;
 
       router.navigate('/(onboarding)/patientOnboarding/userType');
-      
+
     }catch (error){
       //wrong code or some such
       console.error('SMS verification failed', error)

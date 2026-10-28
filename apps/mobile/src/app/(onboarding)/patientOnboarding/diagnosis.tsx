@@ -13,6 +13,8 @@ import { MultipleChoice } from '../../../../components/answerFields/MultipleChoi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React from 'react';
 
+import { useOnboardingStore } from '../../store/onboardingStorage';
+
 export default function Page() {
   const router = useRouter();
   const { theme } = useTheme();
@@ -23,14 +25,14 @@ export default function Page() {
   return (
     <SafeAreaView style={theme.screen}>
       
-      <Text style={theme.text}>Do you have a musculoskeletal (for example arthritis, back pain, gout) or chronic pain diagnosis from your doctor?</Text>
+      <Text style={theme.fontOnBackground}>Do you have a musculoskeletal (for example arthritis, back pain, gout) or chronic pain diagnosis from your doctor?</Text>
       <View>
         <MultipleChoice 
         questionOptions={["Yes, I have", "No, I haven't"]}
         onSubmit={()=>{router.navigate('/(onboarding)/patientOnboarding/dropDownConditions')}}
         />
       </View>
-      <Text style={theme.text}> No diagnosis? No problem! You know your body and how you feel so being Health MPowered is for you :)</Text>
+      <Text style={theme.fontOnBackground}> No diagnosis? No problem! You know your body and how you feel so being Health MPowered is for you :)</Text>
     </SafeAreaView>
   );
 }
