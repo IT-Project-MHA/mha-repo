@@ -231,30 +231,6 @@ export async function apiPrescription(operation, values) {
     return operate('prescription', operation, values);
 }
 
-/* Assessment:
-- select: id, or filter by patient_profile, week_starting
-- create: week_starting NN, submitted_at, reflection, status
-    - patient_profile is set to the user's own, one assessment per week_starting,
-      week_starting must be on a Monday
-- update: id NN, submitted_at, reflection, status
-    - patient_profile & week_starting cannot be changed
-- delete: id NN */
-export async function apiAssessment(operation, values) {
-    return operate('assessment', operation, values);
-}
-
-/* MyPain:
-- select: id, or filter by assessment NN, patient_profile
-- create: assessment NN, current, worst, average, mildest, other_location, other_characteristic,
-          completed_at, locations[], characteristics[]
-- update: id NN, current, worst, average, mildest, other_location, other_characteristic,
-          completed_at, locations[], characteristics[]
-    - assessment cannot be changed
-- delete: id NN */
-export async function apiMyPain(operation, values) {
-    return operate('myPain', operation, values);
-}
-
 /* MyMovement:
 - select: id, or filter by assessment NN, patient_profile
 - create: assessment NN, active_hours, walking, sitting, lifting, standing, reflection,
