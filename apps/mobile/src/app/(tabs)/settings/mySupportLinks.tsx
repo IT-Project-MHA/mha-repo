@@ -52,7 +52,7 @@ export default function Screen() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selected, setSelected] = useState<{ person: Person; relationship: Relationship } | null>(null);
   const [adding, setAdding] = useState(false); // add support person modal visibility
-  const {refreshUserType} = useUser();
+  const {refreshUserType, isPatient, isSupport} = useUser();
 
   const handleAccept = async (id: string) => {
   try {
@@ -223,13 +223,15 @@ const handleDecline = async (id: string) => {
     <Text> </Text>
   </>
 )}
-      
+    {!(isSupport && !isPatient) && (
+      <>
       <View style={[theme.sectionContainer]}>
         <Text> </Text>
         <Text style={[theme.h5, theme.leftText, theme.fontOnSurface]}>My Support People</Text>
         <Text> </Text>
         <View style={theme.line}></View>
         <Text> </Text>
+
         {renderSection(connections.supportPeople, 'supportsMe', 'You have not added any support people yet.')}
   
         <View style={[theme.rightItems]}>
@@ -238,12 +240,12 @@ const handleDecline = async (id: string) => {
 	        onPress={() => setAdding(true)}
           />
         </View> 
-          
       </View>
 
       <Text> </Text>
       <Text> </Text>
-
+      </>
+    )}
       <View style={theme.sectionContainer}>
         <Text> </Text>
         <Text style={[theme.h5, theme.leftText, theme.fontOnSurface]}>My Connections </Text>
