@@ -1,41 +1,41 @@
 /** Component tests for the assessment chart in Health Tracker.
- * 
- * Test plan: Pain graphs (filterable by pain location and dates).
- * The line chart and pain table are replaced with stand-ins that print what they receive.
- * 
- * Tests cover:
+ *
+ * Pain filtering is done by the server, so the api helpers are mocked to play the server
+ * tests check the chart asks for the right range/location and shows what comes back.
  *
  *  Loading and areas:
- *    - opens on pain and loads the logged-in user's pain history
- *    - loads the given patient's history when a supporter is viewing
+ *    - opens on pain and requests all time, all locations
+ *    - requests the given patient's history when a supporter is viewing
  *    - plots the weekly scores and summarises them in the table
  *    - the table ignores weeks with no worst or mildest value
  *    - choosing another area loads that area and drops the pain table
+ * 
  *  Empty states:
  *    - no assessments yet shows a prompt, an empty chart and no table
- *    - a failed load is treated as no assessments rather than crashing
- *  Filtering by pain location:
- *    - offers every reported location
- *    - choosing a location narrows the chart and table, and All locations brings them back
- *  Time ranges:
- *    - only offers the ranges the data is old enough to fill
- *    - a few weeks of data offers no range choice at all
- *    - choosing a range keeps only the weeks inside it, and All brings them back
+ *   
+ *  Filtering by pain location (server side):
+ *    - offers every location option, even ones with no data
+ *    - choosing a location requests it, All locations clears it
+ * 
+ *  Time ranges (server side):
+ *    - always offers every range
+ *    - 1M requests the last 30 days, 3M 91, All none
  *    - a range with no assessments says so
- *    - a location with no assessments in the range says so
+ *    - a location with no assessments says so
  */
 
-import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import AssessmentChart from '../../../components/graphics/AssessmentChart';
 import { toApiDate } from '../../../constants/date';
 
 // ----- Mocks -----
 const mockApiScoreHistory = jest.fn();
 const mockApiPainDetailHistory = jest.fn();
+const mockApiPainLocations = jest.fn();
 jest.mock('../../api/my_health_api_helpers', () => ({
   apiScoreHistory: (...a: any[]) => mockApiScoreHistory(...a),
   apiPainDetailHistory: (...a: any[]) => mockApiPainDetailHistory(...a),
+  apiPainLocations: (...a: any[]) => mockApiPainLocations(...a),
 }));
 
 jest.mock('../../../context/ThemeContext', () => ({
@@ -68,7 +68,7 @@ jest.mock('../../../components/graphics/PainTable', () => {
   };
 });
 
-// the time range switch becomes one plain button per range
+// the time range switch becomes one button per range
 jest.mock('../../../components/atomicUI/SegmentedControlPill', () => {
   const React = require('react');
   const { Pressable, Text } = require('react-native');
@@ -86,33 +86,36 @@ jest.mock('../../../components/atomicUI/SegmentedControlPill', () => {
 });
 
 // ----- Test data -----
-// a date n days before today, as the API sends it ('YYYY-MM-DD')
 const daysAgo = (n: number) => toApiDate(new Date(Date.now() - n * 24 * 60 * 60 * 1000));
 
-const pt = (
-  days: number,
-  score: number,
-  worst: number | null = 8,
-  mildest: number | null = 2,
-  locations: string[] = []
-) => ({ completedAt: daysAgo(days), score, worst, mildest, locations });
+// one week as apiPainDetailHistory returns it
+const pt = (days: number, score: number, worst: number | null = 8, mildest: number | null = 2) => ({
+  completedAt: daysAgo(days),
+  score,
+  worst,
+  mildest,
+});
+
+const BACK = { id: 'loc-back', label: 'Lower back' };
+const SHOULDER = { id: 'loc-shoulder', label: 'Shoulder' };
 
 beforeEach(() => {
   jest.resetAllMocks();
   mockApiPainDetailHistory.mockResolvedValue([]);
   mockApiScoreHistory.mockResolvedValue([]);
+  mockApiPainLocations.mockResolvedValue([BACK, SHOULDER]);
 });
 
 describe('loading and areas', () => {
-  test('opens on pain and loads the logged-in user\'s pain history', async () => {
+  test('opens on pain and requests all time, all locations', async () => {
     const { findByText } = await render(<AssessmentChart />);
     expect(await findByText('Your average pain over time')).toBeTruthy();
-    expect(mockApiPainDetailHistory).toHaveBeenCalledWith(undefined);
+    expect(mockApiPainDetailHistory).toHaveBeenCalledWith(undefined, null, null);
   });
 
-  test('loads the given patient\'s history when a supporter is viewing', async () => {
+  test('requests the given patient\'s history when a supporter is viewing', async () => {
     await render(<AssessmentChart patientProfileId="patient-9" />);
-    expect(mockApiPainDetailHistory).toHaveBeenCalledWith('patient-9');
+    expect(mockApiPainDetailHistory).toHaveBeenCalledWith('patient-9', null, null);
   });
 
   test('plots the weekly scores and summarises them in the table', async () => {
@@ -147,82 +150,95 @@ describe('empty states', () => {
     expect(queryByText(/^table\[/)).toBeNull();
   });
 
-  test('a failed load is treated as no assessments rather than crashing', async () => {
-    mockApiPainDetailHistory.mockRejectedValue(new Error('Network request failed'));
-    const { findByText } = await render(<AssessmentChart />);
-    expect(await findByText('Complete assessments to see your pain over time')).toBeTruthy();
-  });
 });
 
-describe('filtering by pain location', () => {
-  const history = [
-    pt(21, 3, 5, 1, ['Lower back']),
-    pt(14, 5, 7, 2, ['Shoulder']),
-    pt(7, 7, 9, 3, ['Lower back', 'Shoulder']),
-  ];
-
-  test('offers every reported location, and filtering narrows the chart and table', async () => {
-    mockApiPainDetailHistory.mockResolvedValue(history);
+describe('filtering by pain location (server side)', () => {
+  test('offers every location option, even ones with no data', async () => {
     const { findByText, getByText } = await render(<AssessmentChart />);
     expect(await findByText('All locations')).toBeTruthy();
     expect(getByText('Lower back')).toBeTruthy();
     expect(getByText('Shoulder')).toBeTruthy();
-    expect(getByText(/weeks:3\]$/)).toBeTruthy();
+  });
+
+  test('choosing a location requests it, and All locations clears it', async () => {
+    // play the server: all weeks, or only the weeks with that location
+    mockApiPainDetailHistory.mockImplementation(async (_id, _days, location) =>
+      location === BACK.id ? [pt(21, 3), pt(7, 7)] : [pt(21, 3), pt(14, 5), pt(7, 7)]
+    );
+    const { findByText, getByText } = await render(<AssessmentChart />);
+    expect(await findByText('chart:3,5,7')).toBeTruthy();
 
     await fireEvent.press(getByText('Lower back'));
+    expect(await findByText('chart:3,7')).toBeTruthy();
+    expect(mockApiPainDetailHistory).toHaveBeenLastCalledWith(undefined, null, BACK.id);
     expect(getByText('Your average pain (Lower back) over time')).toBeTruthy();
     expect(getByText(/^table\[All time · Lower back\|.*weeks:2\]$/)).toBeTruthy();
-    expect(getByText('chart:3,7')).toBeTruthy();
 
     await fireEvent.press(getByText('All locations'));
-    expect(getByText(/weeks:3\]$/)).toBeTruthy();
+    expect(await findByText('chart:3,5,7')).toBeTruthy();
+    expect(mockApiPainDetailHistory).toHaveBeenLastCalledWith(undefined, null, null);
   });
 });
 
-describe('time ranges', () => {
-  test('only offers the ranges the data is old enough to fill', async () => {
-    mockApiPainDetailHistory.mockResolvedValue([pt(100, 4), pt(7, 6)]);
-    const { findByText, queryByText } = await render(<AssessmentChart />);
-    expect(await findByText('1M')).toBeTruthy();
-    expect(await findByText('3M')).toBeTruthy();
-    expect(await findByText('All')).toBeTruthy();
-    expect(queryByText('6M')).toBeNull();
-    expect(queryByText('1Y')).toBeNull();
-  });
-
-  test('a few weeks of data offers no range choice at all', async () => {
+describe('time ranges (server side)', () => {
+  test('always offers every range, even with only a few weeks of data', async () => {
     mockApiPainDetailHistory.mockResolvedValue([pt(14, 4), pt(7, 6)]);
-    const { findByText, queryByText } = await render(<AssessmentChart />);
+    const { findByText } = await render(<AssessmentChart />);
     await findByText('chart:4,6');
-    expect(queryByText('1M')).toBeNull();
-    expect(queryByText('All')).toBeNull();
+    for (const label of ['1M', '3M', '6M', '1Y', 'All']) {
+      expect(await findByText(label)).toBeTruthy();
+    }
   });
 
-  test('choosing a range keeps only the weeks inside it, and All brings them back', async () => {
-    mockApiPainDetailHistory.mockResolvedValue([pt(100, 3), pt(50, 5), pt(7, 7)]);
+  test('1M requests the last 30 days, 3M the last 91, and All requests no limit', async () => {
     const { findByText, getByText } = await render(<AssessmentChart />);
     await findByText('1M');
 
     await fireEvent.press(getByText('1M'));
-    expect(getByText(/^table\[Last 1M\|.*weeks:1\]$/)).toBeTruthy();
-    expect(getByText('chart:7')).toBeTruthy();
+    await waitFor(() =>
+      expect(mockApiPainDetailHistory).toHaveBeenLastCalledWith(undefined, 30, null)
+    );
+
+    await fireEvent.press(getByText('3M'));
+    await waitFor(() =>
+      expect(mockApiPainDetailHistory).toHaveBeenLastCalledWith(undefined, 91, null)
+    );
 
     await fireEvent.press(getByText('All'));
-    expect(getByText(/^table\[All time\|.*weeks:3\]$/)).toBeTruthy();
+    await waitFor(() =>
+      expect(mockApiPainDetailHistory).toHaveBeenLastCalledWith(undefined, null, null)
+    );
+  });
+
+  test('shows the weeks the server returns for the 30 days', async () => {
+    mockApiPainDetailHistory.mockImplementation(async (_id, days) =>
+      days === 30 ? [pt(7, 7)] : [pt(100, 3), pt(50, 5), pt(7, 7)]
+    );
+    const { findByText, getByText } = await render(<AssessmentChart />);
+    expect(await findByText(/^table\[All time\|.*weeks:3\]$/)).toBeTruthy();
+
+    await fireEvent.press(getByText('1M'));
+    expect(await findByText(/^table\[Last 1M\|.*weeks:1\]$/)).toBeTruthy();
+    expect(getByText('chart:7')).toBeTruthy();
   });
 
   test('a range with no assessments says so', async () => {
-    mockApiPainDetailHistory.mockResolvedValue([pt(100, 4)]);
-    const { findByText, getByText } = await render(<AssessmentChart />);
+    mockApiPainDetailHistory.mockImplementation(async (_id, days) =>
+      days === 30 ? [] : [pt(100, 4)]
+    );
+    const { findByText } = await render(<AssessmentChart />);
     await fireEvent.press(await findByText('1M'));
-    expect(getByText('No assessments in this period')).toBeTruthy();
+    expect(await findByText('No assessments in this period')).toBeTruthy();
   });
 
-  test('a location with no assessments in the range says so', async () => {
-    mockApiPainDetailHistory.mockResolvedValue([pt(100, 4, 7, 2, ['Lower back']), pt(7, 6, 9, 3, ['Shoulder'])]);
-    const { findByText, getByText } = await render(<AssessmentChart />);
+  test('a location with no assessments says so', async () => {
+    mockApiPainDetailHistory.mockImplementation(async (_id, _days, location) =>
+      location === BACK.id ? [] : [pt(7, 6)]
+    );
+    const { findByText } = await render(<AssessmentChart />);
     await fireEvent.press(await findByText('Lower back'));
-    await fireEvent.press(await findByText('1M'));
-    expect(getByText('No assessments with pain in lower back in this period')).toBeTruthy();
+    expect(
+      await findByText('No assessments with pain in lower back in this period')
+    ).toBeTruthy();
   });
 });
