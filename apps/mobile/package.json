@@ -74,7 +74,8 @@
   },
   "jest": {
     "preset": "jest-expo",
-    "testEnvironment": "jsdom"
+    "testEnvironment": "node",
+    "testTimeout": 30000
   },
   "private": true
 }
