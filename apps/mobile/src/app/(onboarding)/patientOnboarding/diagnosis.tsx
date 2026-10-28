@@ -11,6 +11,7 @@ import { useTheme } from "../../../../context/ThemeContext";
 import { useRouter } from 'expo-router';
 import { MultipleChoice } from '../../../../components/answerFields/MultipleChoice';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import React from 'react';
 
 export default function Page() {
   const router = useRouter();

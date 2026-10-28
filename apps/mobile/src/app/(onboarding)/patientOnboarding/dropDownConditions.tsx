@@ -22,6 +22,7 @@ import { useRouter } from 'expo-router';
 import { MultiSelect } from '../../../../components/answerFields/MultiSelect';
 import {apiQuestionOption} from '../../../api/django-API';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import React from 'react';
 
 export default  function Page() {
   const router = useRouter();

@@ -12,6 +12,10 @@ import { MultipleChoice } from '../../../../components/answerFields/MultipleChoi
 import { useTheme } from "../../../../context/ThemeContext";
 import { useOnboardingPatientStore } from '../../store/onboardingStorage';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import React from 'react';
+
+
+
 export default function Page() {
   const router = useRouter();
   const { theme } = useTheme();

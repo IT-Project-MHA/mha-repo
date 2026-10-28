@@ -43,19 +43,3 @@ export const useOnboardingPatientStore = create<OnboardingPatientState>((set) =>
   set: (patch) =>set(patch),
   reset: () => set({...initialPatient, birthYear: undefined, sex: undefined, diagnosis: undefined, additionalDiagnosis: undefined}),
 }))
-
-type OnboardingSupportPersonState = {
-  connections?: number[];
-
-  set: (patch: Partial<Omit<OnboardingSupportPersonState, 'set' | 'reset'>>)=>void;
-  reset: ()=>void;
-}
-
-
-const initialSupportPerson = {connections: undefined}
-
-export const useOnboardingSupportPersonStore = create<OnboardingSupportPersonState>((set) => ({
-  ...initialSupportPerson,
-  set: (patch) =>set(patch),
-  reset: () => set({...initialSupportPerson}),
-}))

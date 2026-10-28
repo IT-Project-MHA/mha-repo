@@ -14,7 +14,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { NumberEntry } from '../../../../components/answerFields/NumberEntry';
 import Button from '../../../../components/atomicUI/Button';
-import { completeUserOnboarding } from '../../../api/onboarding_api_helpers';
 import { useOnboardingUserStore } from '../../store/onboardingStorage';
 import { verify_code, register_token } from '../../../api/django-API';
 
@@ -59,33 +58,9 @@ export default function Page() {
       //verify code
       const result = await verify_code(phone_number, code);
       const verification_id = result.verification_id;
-      //get token
-      try{
-        //takes verification_id, phone_number, display_name, pin, accepted_terms, accepted_privacy, device_id, track_health (optional), health (optional)
-        const device_id = await getDeviceId();
-        //bad input
-        await register_token({
-          verification_id: verification_id, 
-          phone_number:phone_number, 
-          display_name:display_name,
-           pin:pin, 
-           accepted_terms:true, 
-           accepted_privacy:true, 
-           device_id,
-        })
-      }catch (error){
-        console.error('register failed', error)
-      }
-      //send data
-      /*
-      try{
-      await completeUserOnboarding(answers);
-        reset();
-        router.navigate("/(onboarding)/userType");
-      }catch(error){
-        console.error('Failed to create user account', error);
-      }*/
-    
+
+      router.navigate('/(onboarding)/patientOnboarding/userType');
+      
     }catch (error){
       //wrong code or some such
       console.error('SMS verification failed', error)

@@ -104,7 +104,7 @@ function TextEntry({ onSubmit, placeholder, keyboardType, textContentType }: Tex
   return (
       <View style={[theme.sectionContainer, styles.content]}>
         <TextInput
-          style={[styles.field, theme.option]}
+          style={[ styles.subheading, styles.field]}
           onChangeText={handleChange}
           value={value}
           placeholder={placeholder}
