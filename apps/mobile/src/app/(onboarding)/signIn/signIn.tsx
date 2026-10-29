@@ -12,6 +12,7 @@
 import { useRouter } from 'expo-router';
 import { PhoneField } from '../../../../components/onboarding/PhoneField';
 import { useOnboardingStore } from '../../../store/onboardingStorage';
+import { useAppStore } from '../../../store/appStore';
 import {request_code} from '../../../api/django-API'
 
 import { Text, StyleSheet, View } from 'react-native';
@@ -31,11 +32,24 @@ export default function Page() {
   const router = useRouter();
   const setUserOnboaring = useOnboardingStore((s)=> s.set);
 
+  const {...info} = useAppStore.getState();
+
   async function setPhone(phone_number: string){
     setUserOnboaring({phone_number});
+    if(info.deviceId!=null){
+      try{
+        
+        router.navigate('/(tabs)');
+      }catch(error){
+
+      }
+      
+    }
     try
     {
       await request_code(phone_number);
+
+      
       router.navigate('/(onboarding)/signIn/phoneVerification');
     }
     catch(error)

@@ -9,7 +9,7 @@ export function SignInButton() {
   const { theme } = useTheme();
   return  (<Button
           label="sign in"
-          onPress={() => router.navigate('/(onboarding)/signIn/signIn')}
+          onPress={() => router.navigate('/(onboarding)/signIn/enterPin')}
           buttonType = "roundButton"
         />);
 };
