@@ -9,11 +9,37 @@ import { AssessmentEntryTab } from "../../../components/atomicUI/AssessmentEntry
 import Button from "../../../components/atomicUI/Button";
 import { useRouter } from 'expo-router';
 import { useTheme, ColourSet } from '../../../context/ThemeContext';
+import { apiUser, apiAssessment, apiMyPain, apiMyMovement, apiMyPersonalCare, apiMySocialHealth, apiMyManagement} from '@/api/django-API';
+
+async function retrieveUserName() {
+    const [user] = await apiUser('select');
+    return user.display_name;
+}
+
+async function FindCurrAssessment(lastMonday: string) {
+  const [assessment] = await apiAssessment('select', {week_starting: lastMonday});
+  return assessment;
+}
+
+// async function loadCategory(assessment: any, category: string) {
+//   let category = away api
+// }
 
 export default function Tab() {
   const router = useRouter();
   const { theme } = useTheme();
-  let userName = "Fitz"; //temp variable, API call
+
+  const lastMonday = new Date();
+
+
+  FindLastMonday(lastMonday);
+  let lastMondayParseable = lastMonday.toISOString().split('T')[0];
+  const currAssessment = FindCurrAssessment(lastMondayParseable);
+  if (currAssessment == null) {
+    apiAssessment('create', {week_starting: lastMondayParseable});
+   }
+
+  const userName =  retrieveUserName();
   let timeMessage = "day";
   var time = (new Date()).getHours();
   if (time >= 5 && time < 12) {
@@ -30,7 +56,8 @@ export default function Tab() {
 
   let welcomeString = "Good " + timeMessage + ", " + userName;
   let nCompleted = 0; //backend call
-  let lastMondayString = FindLastMonday(new Date());
+  let lastMondayString = (lastMonday.getDate().toString() + '/' + (lastMonday.getMonth() + 1).toString());
+
   return (
     <ScrollView>
       <View style={theme.header}>
@@ -40,16 +67,15 @@ export default function Tab() {
           You've completed {nCompleted}/5 assessments this week.
         </Text>
       </View>
-      <Text style={theme.h6}>   </Text>
       <View style={[theme.sectionContainer, theme.centerItems]}>
         <Text style={[theme.fontOnSurface, theme.h5]}>
           Assessments for week of {lastMondayString}
         </Text>
-        <AssessmentEntryTab onButtonPress={buttonFunction}></AssessmentEntryTab> {/*props backend call*/}
-        <AssessmentEntryTab onButtonPress={buttonFunction}></AssessmentEntryTab>
-        <AssessmentEntryTab onButtonPress={buttonFunction}></AssessmentEntryTab>
-        <AssessmentEntryTab onButtonPress={buttonFunction}></AssessmentEntryTab>
-        <AssessmentEntryTab onButtonPress={buttonFunction}></AssessmentEntryTab>
+        <AssessmentEntryTab onButtonPress={buttonFunction} assessment={currAssessment} assessmentCall={apiMyPain}></AssessmentEntryTab>
+        <AssessmentEntryTab onButtonPress={buttonFunction} assessment={currAssessment} assessmentCall={apiMyMovement}></AssessmentEntryTab>
+        <AssessmentEntryTab onButtonPress={buttonFunction} assessment={currAssessment} assessmentCall={apiMyPersonalCare}></AssessmentEntryTab>
+        <AssessmentEntryTab onButtonPress={buttonFunction} assessment={currAssessment} assessmentCall={apiMySocialHealth}></AssessmentEntryTab>
+        <AssessmentEntryTab onButtonPress={buttonFunction} assessment={currAssessment} assessmentCall={apiMyManagement}></AssessmentEntryTab>
         <View style={theme.lineWithMargin}
         />
         <Button label="Add a reflection for this week" onPress={buttonFunction} buttonType={"roundedTertiaryButton"}></Button>
@@ -62,7 +88,7 @@ export default function Tab() {
 
 export function FindLastMonday(currDate: Date) {
   currDate.setDate(currDate.getDate() - (currDate.getDay() + 6) % 7);
-  return (currDate.getDate().toString() + '/' + (currDate.getMonth() + 1).toString());
+  return;
 }
 
 function createStyles(colours: ColourSet){
