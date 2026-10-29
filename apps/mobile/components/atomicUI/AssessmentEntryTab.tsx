@@ -7,16 +7,28 @@ import { AssessmentProps } from "../baseComponents/Assessment";
 
 type AssessmentEntryProps = {
     onButtonPress: () => void;
+    assessment: Promise<any>;
+    assessmentCall: (operation: any, values: any) => Promise<any>;
     props?: AssessmentProps;
 }
 
-export default function AssessmentEntryTab({onButtonPress, props}: AssessmentEntryProps) {
+async function loadAssessmentCategory(assessmentEnter: any, assessmentCall: (operation: any, values: any) => Promise<any>) {
+  let temp = assessmentCall('select', {assessment: assessmentEnter});
+  if (temp == null) {
+    return assessmentCall('create', {assessment: assessmentEnter})
+  } else {
+    return temp;
+  }
+}
+
+export default function AssessmentEntryTab({onButtonPress, assessment, assessmentCall, props}: AssessmentEntryProps) {
     const { theme } = useTheme();
+    const category = loadAssessmentCategory(assessment, assessmentCall);
     let completeString;
-    if (true /*backend call */) {
-        completeString = "Updated on " + "19" + " " + "October" + " " + "2026"; // split up into backend call
+    if (completeString == null) {
+        // nothing
     } else {
-        completeString = "";
+        completeString = "Updated on " + "19" + " " + "October" + " " + "2026"; // split up into backend call
     }
     return(
         <SafeAreaView style={[theme.outlinedContainer, {flexDirection: "row", padding: 5, width: '70%', justifyContent: "space-between"}]}>
