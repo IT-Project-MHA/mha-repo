@@ -5,10 +5,10 @@
 //we want some buttons in here that take us to assessments
 
 import { View, ScrollView, Text, StyleSheet } from 'react-native';
-import { AssessmentEntryTab } from "../../../components/atomicUI/AssessmentEntryTab";
-import Button from "../../../components/atomicUI/Button";
+import { AssessmentEntryTab } from "../../../../components/atomicUI/AssessmentEntryTab";
+import Button from "../../../../components/atomicUI/Button";
 import { useRouter } from 'expo-router';
-import { useTheme, ColourSet } from '../../../context/ThemeContext';
+import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { apiUser, apiAssessment, apiMyPain, apiMyMovement, apiMyPersonalCare, apiMySocialHealth, apiMyManagement} from '@/api/django-API';
 
 async function retrieveUserName() {

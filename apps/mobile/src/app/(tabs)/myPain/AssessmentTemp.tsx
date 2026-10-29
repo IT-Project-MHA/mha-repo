@@ -1,4 +1,4 @@
-import Assessment from "../../components/baseComponents/Assessment";
+import Assessment from "../../../../components/baseComponents/Assessment";
 import { GenerateAssessmentProps } from "@/testSupport/AssessmentTestHelpers";
 
 export default function Destination() {
