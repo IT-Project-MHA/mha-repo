@@ -15,7 +15,7 @@ import { useRouter } from 'expo-router';
 import { NumberEntry } from '../../../../components/answerFields/NumberEntry';
 import Button from '../../../../components/atomicUI/Button';
 import { useOnboardingStore } from '../../../store/onboardingStorage';
-import { verify_code, register_token } from '../../../api/django-API';
+import { verify_code, request_code } from '../../../api/django-API';
 
 import { Text, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -25,8 +25,6 @@ import { Typography } from '../../../../constants/textSize';
 import React from 'react';
 
 
-import * as SecureStore from 'expo-secure-store'
-import * as Crypto from 'expo-crypto'
 import GetDeviceId from '../../../../components/onboarding/GetDeviceID';
 
 
@@ -69,6 +67,21 @@ export default function Page() {
     }
 
   }
+
+  async function resendCode(){
+    try
+    {
+      await request_code(phone_number);
+      router.navigate('/(onboarding)/signIn/phoneVerification');
+    }
+    catch(error)
+    {
+      console.error('Failed to send SMS', error);
+      //FIX: show user an error message of some sort
+    }
+
+  }
+
   return (
     <SafeAreaView style={theme.screen}>
       <View style={[theme.header, styles.title]}>
@@ -84,8 +97,8 @@ export default function Page() {
         MAX_lENGTH_NUM={NUM_DIGITS}
         />
         <Button
-        label="I didn't recieve a code"
-        onPress={()=>{/**FIX: implement */}}
+        label="Resend Code"
+        onPress={resendCode}
         buttonType='roundSecondaryButton'
         />
         <Text style={styles.subheading}>We've sent a code to {answers.phone_number}</Text>
