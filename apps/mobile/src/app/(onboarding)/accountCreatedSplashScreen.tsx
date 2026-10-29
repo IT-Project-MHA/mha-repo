@@ -12,6 +12,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useOnboardingStore } from '../store/onboardingStorage';
+import { useAppStore } from '../store/appStore';
 import { register_token } from '../../api/django-API';
 
 import { Text, StyleSheet, View } from 'react-native';
@@ -32,19 +33,21 @@ export default function Page() {
   const router = useRouter();
 
   const {set, reset, ...answers} = useOnboardingStore.getState();
-  const phone_number = answers.phone_number;
-  const display_name = answers.display_name;
 
 
+  const setOnboardedFlag = useAppStore((s)=> s.completeOnboarding);
 
   async function createAccount(){
     //takes the data we gathered and sends the register_token request
 
     try{
-      
+
       //takes verification_id, phone_number, display_name, pin, accepted_terms, accepted_privacy,
       //  device_id, track_health (optional), health (optional)
       register_token(answers);
+
+      //set the onboarded flag
+      setOnboardedFlag();
       //on success,we go to the landing page (tabs)
       router.navigate('/(tabs)');
 

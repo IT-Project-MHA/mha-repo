@@ -37,19 +37,20 @@ export default function Page() {
       try{
         const options = await apiQuestionOption('select', {
           app_section: 'onboarding',
-          question_key: 'pain_type',
+          question_key: 'assigned_gender_at_birth',
         });
         console.log('options', JSON.stringify(options))
 
-        if(!cancelled){
-          setQuestionOptions(
-            options
-            .filter((o: any) => o.is_active)
-            .sort((a: any, b: any) => a.sort_order - b.sort_order)
-            .map((o: any) => o.text)
-          );
-        }
-        console.log('questionOptions', questionOptions)
+        const mapped = options
+          .filter((o: any) => o.is_active)
+          .sort((a: any, b: any) => a.sort_order - b.sort_order)
+          .map((o: any) => o.text)
+          
+        console.log('questionOptions', mapped)
+
+        if(!cancelled) setQuestionOptions(mapped);
+
+        
 
       }catch(error){
         console.error('Failed to load options', error);
@@ -79,13 +80,8 @@ export default function Page() {
     <SafeAreaView style={theme.screen}>
       <Text style={theme.fontOnBackground}>Cool!</Text>
       <Text style={theme.fontOnBackground}>What's your assigned gender at birth?</Text>
-      <View>
-        <MultipleChoice 
-        questionOptions={questionOptions}
-        onSubmit={setSex}
-        />
-      </View>
-      <View>
+
+
         {loading ? (
           <Text style={theme.fontOnBackground}>Loading...</Text>
         ) : error ? (
@@ -93,7 +89,7 @@ export default function Page() {
         ) : (
           <MultipleChoice questionOptions={questionOptions} onSubmit={setSex} />
         )}
-      </View>
+
     </SafeAreaView>
   );
 }

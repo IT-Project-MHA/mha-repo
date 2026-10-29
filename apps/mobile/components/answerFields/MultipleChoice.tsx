@@ -5,14 +5,7 @@ import { Text, TouchableOpacity, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import Button from "../atomicUI/Button";
 
-//MultipleChoice variables
 
-const MAX_SELECTIONS = 10;
-
-function validateMultipleChoice(numText: string) {
-  //checking if it's something we should accept, i.e. within range
-  return null;
-}
 
 type MultipleChoiceProps ={
   questionOptions: string[];
@@ -22,7 +15,7 @@ type MultipleChoiceProps ={
 function MultipleChoice({ questionOptions, onSubmit }: MultipleChoiceProps) {
   const { theme } = useTheme();
 
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null); // Tracks the currently selected answer
+  const [selectedAnswer, setSelectedAnswer] = useState<string >(""); // Tracks the currently selected answer
 
   const handleSelect = (answer: string) => {
     // Called when a user selects an answer
@@ -36,24 +29,27 @@ function MultipleChoice({ questionOptions, onSubmit }: MultipleChoiceProps) {
   };
   return (
     <View style={theme.container}>
-      <Text style={[theme.fontOnBackground, {textAlign: 'center'}]}>"Select the most relevant"</Text>
-      {/*render options as buttons*/}
+
       {questionOptions.map((option, index) => (
         <TouchableOpacity
           key={index}
           style={[
             theme.option,
-            selectedAnswer === option && theme.selectedOption, // Highlights selected option
+            selectedAnswer.includes(option) && theme.selectedOption, // Highlights selected options
           ]}
           onPress={() => handleSelect(option)}
         >
           <Text style={[
-            theme.optionText,
-            selectedAnswer === option && theme.selectedOptionText, // Highlights selected option
-          ]}
-          >{option}</Text>
+            theme.fontOnBackground,
+            selectedAnswer.includes(option) && theme.fontOnSurface, // Highlights selected option
+          ]}>{option}</Text>
         </TouchableOpacity>
       ))}
+
+      {/* display current selections */}
+      <View style={{ marginTop: 10}}>
+        <Text style={theme.fontOnSurface}>Selected: {selectedAnswer}</Text>
+      </View>
       <Button
       label= "Continue"
       onPress={handleSubmit}
@@ -62,5 +58,4 @@ function MultipleChoice({ questionOptions, onSubmit }: MultipleChoiceProps) {
     </View>
   );
 }
-
 export { MultipleChoice }; //add the new component here

@@ -30,7 +30,7 @@ type OnboardingStorage = {
 
 
 const initialUser = {verification_id: '', phone_number: '', display_name: '', pin: 0,
-   accepted_terms: false,   accepted_privacy: false, device_id: '', }
+   accepted_terms: true,   accepted_privacy: true, device_id: '', }
 
 
 export const useOnboardingStore = create<OnboardingStorage>((set) => ({

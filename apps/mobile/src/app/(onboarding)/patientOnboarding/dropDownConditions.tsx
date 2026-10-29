@@ -86,7 +86,7 @@ export default  function Page() {
   return (
     <SafeAreaView style={theme.screen}>
       
-      <Text style={theme.fontOnBackground}>I think I need to import something for this</Text>
+      <Text style={theme.fontOnBackground}>Do you have any of the following conditions? You can select multiple</Text>
       <ScrollView
       showsVerticalScrollIndicator={false}
       >

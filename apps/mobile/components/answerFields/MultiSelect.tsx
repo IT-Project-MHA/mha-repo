@@ -41,7 +41,7 @@ function MultiSelect({ questionOptions, onSubmit, headingText, MIN_SELECTIONS, M
   };
   return (
     <View style={theme.container}>
-      <Text style={[theme.text, {textAlign: 'center'}]}>{headingText}</Text>
+      <Text /*style={[theme.text, {textAlign: 'center'}]}*/>{headingText}</Text>
       {/* render options as buttons */}
       {questionOptions.map((option, index) => (
         <TouchableOpacity
@@ -53,15 +53,15 @@ function MultiSelect({ questionOptions, onSubmit, headingText, MIN_SELECTIONS, M
           onPress={() => handleSelect(option)}
         >
           <Text style={[
-            theme.optionText,
-            selectedAnswers.includes(option) && theme.selectedOptionText, // Highlights selected option
+            theme.fontOnBackground,
+            selectedAnswers.includes(option) && theme.fontOnBackground, // Highlights selected option
           ]}>{option}</Text>
         </TouchableOpacity>
       ))}
 
       {/* display current selections */}
       <View style={{ marginTop: 10}}>
-        <Text style={theme.text}>Selected: {selectedAnswers.join(", ")}</Text>
+        <Text style={theme.fontOnBackground}>Selected: {selectedAnswers.join(", ")}</Text>
       </View>
       <Button
       label= "Continue"

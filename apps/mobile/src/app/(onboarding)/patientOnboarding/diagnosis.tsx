@@ -23,7 +23,7 @@ export default function Page() {
   const {set, reset, ...answers} = useOnboardingStore.getState();
 
   const questionOptions = ["Yes, I have", "No, I haven't"];
-  
+
   function setHasDiagnosis(selection: string){
 
     const hasDiagnosis = (selection==questionOptions[0])
@@ -41,12 +41,12 @@ export default function Page() {
     <SafeAreaView style={theme.screen}>
       
       <Text style={theme.fontOnBackground}>Do you have a musculoskeletal (for example arthritis, back pain, gout) or chronic pain diagnosis from your doctor?</Text>
-      <View>
+
         <MultipleChoice 
         questionOptions={questionOptions}
         onSubmit={setHasDiagnosis}
         />
-      </View>
+
       <Text style={theme.fontOnBackground}> No diagnosis? No problem! You know your body and how you feel so being Health MPowered is for you :)</Text>
     </SafeAreaView>
   );
