@@ -14,7 +14,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React from 'react';
 
-import { useOnboardingStore } from '../../store/onboardingStorage';
+import { useOnboardingStore } from '../../../store/onboardingStorage';
 
 export default function Page() {
   const router = useRouter();

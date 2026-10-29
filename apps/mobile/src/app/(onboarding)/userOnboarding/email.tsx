@@ -8,7 +8,7 @@
 
 import { TextEntry } from '../../../../components/answerFields/TextEntry';
 import { useRouter } from 'expo-router';
-import { useOnboardingStore } from '../../store/onboardingStorage';
+import { useOnboardingStore } from '../../../store/onboardingStorage';
 
 
 import { Text, StyleSheet, View } from 'react-native';

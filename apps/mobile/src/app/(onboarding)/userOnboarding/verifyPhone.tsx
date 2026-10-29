@@ -14,7 +14,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { NumberEntry } from '../../../../components/answerFields/NumberEntry';
 import Button from '../../../../components/atomicUI/Button';
-import { useOnboardingStore } from '../../store/onboardingStorage';
+import { useOnboardingStore } from '../../../store/onboardingStorage';
 import { verify_code, register_token } from '../../../api/django-API';
 
 import { Text, StyleSheet, View } from 'react-native';
@@ -23,6 +23,10 @@ import { lineThickness } from '../../../../constants/layout';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { Typography } from '../../../../constants/textSize';
 import React from 'react';
+
+
+import * as SecureStore from 'expo-secure-store'
+import * as Crypto from 'expo-crypto'
 import GetDeviceId from '../../../../components/onboarding/GetDeviceID';
 
 

@@ -24,7 +24,7 @@ import {apiQuestionOption} from '../../../api/django-API';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React from 'react';
 
-import { useOnboardingStore } from '../../store/onboardingStorage';
+import { useOnboardingStore } from '../../../store/onboardingStorage';
 import { useEffect, useState } from 'react';
 
 export default  function Page() {

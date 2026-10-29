@@ -7,7 +7,7 @@
 
 import { useRouter } from 'expo-router';
 import { PhoneField } from '../../../../components/onboarding/PhoneField';
-import { useOnboardingStore } from '../../store/onboardingStorage';
+import { useOnboardingStore } from '../../../store/onboardingStorage';
 import {request_code} from '../../../api/django-API'
 
 import { Text, StyleSheet, View } from 'react-native';

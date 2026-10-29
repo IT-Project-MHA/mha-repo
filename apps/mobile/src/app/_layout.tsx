@@ -7,7 +7,7 @@ import { UserProvider } from "../../context/AuthorisationContext";
 
 import {useEffect, useState } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
-import { useAppStore } from "./store/appStore";
+import { useAppStore } from "../store/appStore";
 
 import React from "react";
 
@@ -54,6 +54,12 @@ export default function RootLayout() {
   const isOnboarded = useAppStore((s) => s.isOnboarded);
   const [hydrated, setHydrated] = useState(useAppStore.persist.hasHydrated());
 
+
+  //temporary code to reset flag so that I can test onboarding
+  useEffect(()=>{
+    useAppStore.setState({isOnboarded: false});
+  }, []);
+
   useEffect(()=>{
     const unsub = useAppStore.persist.onFinishHydration(()=>setHydrated(true));
     return unsub;
@@ -69,7 +75,7 @@ export default function RootLayout() {
     <ThemeProvider>
       <PaperThemeProvider>
         <UserProvider>
-          <Stack screenOptions={{headerShown: true}}>\
+          <Stack>
             <Stack.Protected guard={!isOnboarded}>
               <Stack.Screen name="(onboarding)"/>
             </Stack.Protected>

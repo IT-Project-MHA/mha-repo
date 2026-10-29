@@ -8,7 +8,7 @@ import { View, Text, ScrollView, StyleSheet } from 'react-native';
 
 import { useRouter } from 'expo-router';
 import { MultipleChoice } from '../../../../components/answerFields/MultipleChoice';
-import { useOnboardingStore } from '../../store/onboardingStorage';
+import { useOnboardingStore } from '../../../store/onboardingStorage';
 
 import React from 'react';
 
@@ -29,7 +29,7 @@ export default function Page() {
 
   function setUserType(selection: string){
     //this function sets the user type based on selection, and navigates to the appropriate page
-
+    console.log('setUserType', selection, selection === USER_TYPES[0]);
     //check selections and set flags
     const track_health = (selection==USER_TYPES[0]);
 
@@ -41,10 +41,10 @@ export default function Page() {
       //navigate to sex-select
       router.navigate('/(onboarding)/patientOnboarding/sexSelect');
     }
-    else{
+    if(!track_health)
       //navigate to landing page
-      router.navigate('/(tabs)');
-    }
+      router.navigate('/(onboarding)/accountCreatedSplashScreen')
+
   }
   return (
     <SafeAreaView style={theme.screen}>

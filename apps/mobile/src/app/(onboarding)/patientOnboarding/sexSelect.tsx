@@ -10,7 +10,7 @@ import { useRouter } from 'expo-router';
 import { Text, View } from 'react-native';
 import { MultipleChoice } from '../../../../components/answerFields/MultipleChoice';
 import { useTheme } from "../../../../context/ThemeContext";
-import { useOnboardingStore } from '../../store/onboardingStorage';
+import { useOnboardingStore } from '../../../store/onboardingStorage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React from 'react';
 

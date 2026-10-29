@@ -11,8 +11,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { useOnboardingStore } from '../store/onboardingStorage';
-import { useAppStore } from '../store/appStore';
+import { useOnboardingStore } from '../../store/onboardingStorage';
+import { useAppStore } from '../../store/appStore';
 import { register_token } from '../../api/django-API';
 
 import { Text, StyleSheet, View } from 'react-native';

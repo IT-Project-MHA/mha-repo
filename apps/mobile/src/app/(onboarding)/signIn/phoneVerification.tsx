@@ -17,7 +17,7 @@ import { NumberEntry } from '../../../../components/answerFields/NumberEntry';
 import Button from '../../../../components/atomicUI/Button';
 import { useTheme } from "../../../../context/ThemeContext";
 import { completeUserOnboarding } from '../../../api/onboarding_api_helpers';
-import { useOnboardingUserStore } from '../../store/onboardingStorage';
+import { useOnboardingUserStore } from '../../../store/onboardingStorage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Page() {
