@@ -183,13 +183,12 @@ export default function Screen() {
 
   const { diagnoses, conditions } = unpackConditions(profile?.other_conditions);
 
-  // should be irrelevant
   const diagnosisLabel =
     profile?.has_diagnosis == null
       ? "Not set"
       : profile.has_diagnosis
         ? diagnoses.join(", ") || "Yes"
-        : "No";
+        : "No Diagnosis";
 
   const otherConditions = conditions.join("\n");
 

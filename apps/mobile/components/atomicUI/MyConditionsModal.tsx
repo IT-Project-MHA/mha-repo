@@ -72,7 +72,6 @@ const MyConditionsModal = ({
       setDraft(initialValues);
       setNewCondition("");
       setNewDiagnosis("");
-      setNewDiagnosis("");
       setEditingDiagnosis(false);
       setError(null);
     }
@@ -109,31 +108,25 @@ const MyConditionsModal = ({
 
   // saves input data when 'Save Changes' is pressed
   const handleSave = async () => {
-    // never called because clicking nothign and 
+    // never called because clicking nothign and
     // pressing saves gives the user a patient profile
-    
-    if (!creating && draft.hasDiagnosis === null) {
 
+    if (!creating && draft.hasDiagnosis === null) {
       setError("Please specify whether you have a diagnosis.");
       return;
     }
 
-    let diagnoses = draft.diagnoses ?? [];
-    let conditions = withPending(draft.conditions, newCondition);
+    const diagnoses = draft.hasDiagnosis
+      ? withPending(draft.diagnoses ?? [], newDiagnosis)
+      : [];
+    let conditions = withPending(draft.conditions ?? [], newCondition);
 
-    if (creating && !draft.hasDiagnosis) {
-      // if the user unticks the checkbox the input fields go away and drafts are discarded
-      diagnoses = [];
-      conditions = [];
-    } else if (draft.hasDiagnosis) {
-      // an individual diagnosis can be edited/removed but state hasDiagnosis = true cannot be changed
-      diagnoses = withPending(diagnoses, newDiagnosis);
-      if (diagnoses.length === 0) {
-        setError("Please add your diagnosis."); // patient trys to press save with no diagnoses
-        return;
-      }
-    } 
-    setSaving(true); 
+    if (draft.hasDiagnosis && diagnoses.length === 0) {
+      setError("Please add your diagnosis.");
+      return;
+    }
+
+    setSaving(true);
     setError(null);
     try {
       await onConfirm({
@@ -150,23 +143,35 @@ const MyConditionsModal = ({
     }
   };
 
-  const renderDiagnosisCheckbox = () => (
-    <View style={styles.checkboxField}>
-      <Checkbox.Item
-        label="I have a diagnosis"
-        status={draft.hasDiagnosis ? "checked" : "unchecked"}
-        onPress={() =>
-          setDraft((prev) => ({ ...prev, hasDiagnosis: !prev.hasDiagnosis }))
-        }
-        labelStyle={[theme.body, {color: colours.onSurface}]}
-        style={styles.checkboxItem}
+  const renderDiagnosisCheckbox = () => {
+    const locked = !creating && initialValues.hasDiagnosis === true;
+
+    return (
+      <View style={styles.checkboxField}>
+        <Checkbox.Item
+          label="I have a diagnosis"
+          status={draft.hasDiagnosis ? "checked" : "unchecked"}
+          disabled={locked}
+          onPress={() => {
+            if (locked) return;
+            setDraft((prev) => ({ ...prev, hasDiagnosis: !prev.hasDiagnosis }));
+          }}
+          labelStyle={[theme.body, { color: colours.onSurface }]}
+          style={styles.checkboxItem}
         />
-    </View>
-  );
+      </View>
+    );
+  };
 
   const renderDiagnosisQuestion = () => (
     <View style={styles.field}>
-      <Text style={[theme.h6, theme.leftItems, {color: colours.onSurface, marginBottom: 20}]}>
+      <Text
+        style={[
+          theme.h6,
+          theme.leftItems,
+          { color: colours.onSurface, marginBottom: 20 }
+        ]}
+      >
         Do you have a diagnosis?
       </Text>
       {renderDiagnosisCheckbox()}
@@ -181,14 +186,20 @@ const MyConditionsModal = ({
     setText: (t: string) => void
   ) => (
     <View style={styles.field}>
-      <Text style={[theme.h6, theme.leftItems, {color: colours.onSurface, marginVertical: 10}]}>
+      <Text
+        style={[
+          theme.h6,
+          theme.leftItems,
+          { color: colours.onSurface, marginVertical: 10 }
+        ]}
+      >
         {title}
       </Text>
       <Text> </Text>
 
       {(draft[key] ?? []).map((item, index) => (
         <View key={`${item}-${index}`} style={styles.conditionRow}>
-          <Text style={[theme.body, {color: colours.onSurface}, { flex: 1 }]}>
+          <Text style={[theme.body, { color: colours.onSurface }, { flex: 1 }]}>
             {item}
           </Text>
           <Pressable
@@ -197,7 +208,9 @@ const MyConditionsModal = ({
             accessibilityLabel={`Remove ${item}`}
             hitSlop={8}
           >
-            <Text style={[theme.body, {color: colours.onSurface}]}>Remove</Text>
+            <Text style={[theme.body, { color: colours.onSurface }]}>
+              Remove
+            </Text>
           </Pressable>
         </View>
       ))}
@@ -307,23 +320,21 @@ const MyConditionsModal = ({
                       newDiagnosis,
                       setNewDiagnosis
                     )}
-                    <Text> </Text>
-                    {renderList(
-                      "Other conditions or symptoms",
-                      "e.g. lower back pain",
-                      "conditions",
-                      newCondition,
-                      setNewCondition
-                    )}
                   </>
+                )}
+                <Text> </Text>
+                {renderList(
+                  "Other conditions or symptoms",
+                  "e.g. lower back pain",
+                  "conditions",
+                  newCondition,
+                  setNewCondition
                 )}
               </>
             ) : (
               <>
                 {renderDiagnosisQuestion()}
-                {draft.hasDiagnosis && (
-                  renderDiagnosisSummary()
-                )}
+                {draft.hasDiagnosis && renderDiagnosisSummary()}
                 <Text> </Text>
                 {renderList(
                   "Other conditions or symptoms",
@@ -370,7 +381,9 @@ const MyConditionsModal = ({
                 {saving ? (
                   <ActivityIndicator />
                 ) : (
-                  <Text style={theme.body}>Save Changes</Text>
+                  <Text style={theme.body}>
+                    {creating ? "Change to patient profile" : "Save Changes"}
+                  </Text>
                 )}
               </Pressable>
             </View>
@@ -436,8 +449,7 @@ function createStyles(colours: ColourSet) {
       width: "95%",
       borderRadius: 28,
       padding: 5,
-      alignSelf: 'center'
-
+      alignSelf: "center"
     },
     chips: {
       flexDirection: "row",
@@ -457,7 +469,7 @@ function createStyles(colours: ColourSet) {
     },
     checkboxItem: {
       outlineWidth: 2,
-      outlineColor: colours.tertiary,
+      outlineColor: colours.tertiary
     },
     conditionRow: {
       flexDirection: "row",
@@ -472,6 +484,6 @@ function createStyles(colours: ColourSet) {
       gap: 8,
       marginHorizontal: 8,
       marginTop: 8
-    },
+    }
   });
 }
