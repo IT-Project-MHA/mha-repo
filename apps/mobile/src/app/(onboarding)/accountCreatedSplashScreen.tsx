@@ -45,6 +45,9 @@ export default function Page() {
       //takes verification_id, phone_number, display_name, pin, accepted_terms, accepted_privacy,
       //  device_id, track_health (optional), health (optional)
       register_token(answers);
+      
+      //reset so it's not holding this info forever
+      useOnboardingStore((s) => s.reset);
 
       //set the onboarded flag
       setOnboardedFlag();

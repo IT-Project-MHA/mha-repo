@@ -77,7 +77,7 @@ function PhoneField({onSubmit}: PhoneFieldProps) {
           maxLength={MAX_lENGTH_NUM}
           textContentType="telephoneNumber"
         />
-        <View>
+
         <View style= {theme.sectionContainer}>
         {!!error && <Text style={styles.subheading}>{error}</Text>}
         </View>
@@ -88,12 +88,6 @@ function PhoneField({onSubmit}: PhoneFieldProps) {
           buttonType="roundButton"
         />
         </View>
-        </View>
-        <Button
-          label="Another method"
-          onPress={()=>{}}
-          buttonType="roundSecondaryButton"
-        />
       </View>
     </View>
   );

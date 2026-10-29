@@ -1,6 +1,6 @@
 /**
  * First page of sign-in sequence
- * 
+ * If new device request-code → verify-code → login again with verification code
  * Includes:
  * Phone field
  * Header text
@@ -9,40 +9,61 @@
  * back button
  */
 
-import { View, Text, StyleSheet } from 'react-native';
-import { PhoneField } from '../../../../components/onboarding/PhoneField';
-
 import { useRouter } from 'expo-router';
+import { PhoneField } from '../../../../components/onboarding/PhoneField';
+import { useOnboardingStore } from '../../../store/onboardingStorage';
+import {request_code} from '../../../api/django-API'
 
-
+import { Text, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { lineThickness } from '../../../../constants/layout';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { Typography } from '../../../../constants/textSize';
 import React from 'react';
 
+
+
+
 export default function Page() {
   const { colours, theme } = useTheme();
   const insets = useSafeAreaInsets();
   const styles = createStyles(colours, theme, insets.bottom);
   const router = useRouter();
+  const setUserOnboaring = useOnboardingStore((s)=> s.set);
 
-  function sendSMS(phone: string){
-    //FIX: add verification API call
+  async function setPhone(phone_number: string){
+    setUserOnboaring({phone_number});
+    try
+    {
+      await request_code(phone_number);
+      router.navigate('/(onboarding)/signIn/phoneVerification');
+    }
+    catch(error)
+    {
+      console.error('Failed to send SMS', error);
+      //FIX: show user an error message of some sort
+    }
 
-    router.navigate("/(onboarding)/signIn/phoneVerification");
+
+    
   }
 
   return (
     <SafeAreaView style={theme.screen}>
       <View style={[theme.header, styles.title]}>
-        <Text style={styles.heading}>Sign In</Text>
+        <Text style={styles.subheading}>Cool!</Text>
+        <Text style={styles.heading}>Add your mobile</Text>
       </View>
-      <View style={styles.bottomBar}>
+      <View style = {styles.bottomBar}>
         <PhoneField
-          onSubmit={sendSMS}
+        onSubmit={setPhone}
         />
+        <View style={styles.label}> 
+          <Text style={styles.subheading}>Must be an Australian mobile phone number, starting in 04</Text>
+        </View>
       </View>
+
+      
     </SafeAreaView>
   );
 }
