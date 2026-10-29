@@ -44,7 +44,7 @@ function useLocalFlag(key: string, defaultValue = true) {
 }
 
 export default function Screen() {
-  const { theme } = useTheme();
+  const { theme, colours } = useTheme();
   const [settings, setSettings] = useState<any>(null); // null = no record yet
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -141,7 +141,7 @@ export default function Screen() {
   const osHint = (key: string) =>
     OS_PERMISSIONS[key] && osGranted[key] && !settings?.[key] ? (
       <Pressable onPress={() => Linking.openSettings()}>
-        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>
+        <Text style={[theme.small, theme.leftText, {color: colours.onSurface, marginVertical: 15}]}>
           Turned off in the app. To also remove it from your phone, open phone settings.
         </Text>
       </Pressable>
@@ -176,7 +176,7 @@ export default function Screen() {
         {osHint('microphone_access')}
 
         <Text> </Text>
-        <View style={theme.line} />
+        <View style={[theme.line, {marginVertical: 10}]} />
         <Text> </Text>
 
         <View style={theme.row}>
@@ -196,8 +196,7 @@ export default function Screen() {
           <Toggle switchOn={notificationsOn && appointmentReminders} onToggle={() => setAppointmentReminders(!appointmentReminders)} />
         </View>
 
-        <Text> </Text>
-        <View style={theme.line} />
+
         <Text> </Text>
       </View>
       <View style={theme.bottomGap} />
