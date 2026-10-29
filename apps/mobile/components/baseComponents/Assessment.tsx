@@ -4,7 +4,7 @@ import { Text, View, StyleSheet} from "react-native";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { useRouter } from 'expo-router';
 import Button from "../atomicUI/Button";
-import ButtonWithIcon from '../atomicUI/ButtonWithIcon';
+import TextWithLeftIconButton from "../atomicUI/TextWithLeftIconButton";
 import { Question, QuestionProps } from "../../components/baseComponents/Question";
 import {EmptyQuestionArrayError} from "../../src/customErrors/QuestionErrors";
 import { useTheme, ColourSet } from '../../context/ThemeContext';
@@ -31,14 +31,14 @@ export default function Assessment({title, questions}: AssessmentProps) {
   let currQuestion: QuestionProps = questions[currIndex];
 
   let returnRoute = () => {
-    router.navigate('/painTracker');
+    router.navigate('/(tabs)/myPain');
   }
 
   return (
     <SafeAreaView>
       <View style={[{flexDirection: "row", alignContent: "flex-start"}]}>
-        <ButtonWithIcon
-	        label="Back"
+        <TextWithLeftIconButton
+	        label="Assessments"
 	        onPress={() => {
           if (currIndex == 0) {
             returnRoute();
@@ -46,17 +46,16 @@ export default function Assessment({title, questions}: AssessmentProps) {
             setNumber(currIndex - 1);
           }
           returnRoute}}
-          buttonType="secondaryButton"
-          name="chevron-back-outline"
+          iconName="chevron-back-outline"
         />
       </View>
       <Question title={questions[currIndex].title} 
       detail={questions[currIndex].detail} questionType={questions[currIndex].questionType} />
-      <Text style={[theme.fontOnBackground, theme.h6, theme.leftText]}>{'Progress: ' + (currIndex+1) + '/' + questions.length}</Text>
-      <View style={[{flexDirection: "row", justifyContent: "space-around"}]}>
+      <View style={[{flexDirection: "column", alignItems: "center", justifyContent: "space-between", gap: 20}]}>
+        <Text style={[theme.fontOnBackground, theme.h6, theme.centerText]}>{'Progress: ' + (currIndex+1) + '/' + questions.length}</Text>
         <Button label="Record" onPress={() => {
           if (currIndex >= questions.length-1) {
-              // submit assessment
+             // submit assessment
               returnRoute();
             } else {
               setNumber(currIndex + 1);
