@@ -10,7 +10,7 @@ import { useRouter } from 'expo-router';
 import { NumberEntry } from '../../../../components/answerFields/NumberEntry';
 import Button from '../../../../components/atomicUI/Button';
 import { useOnboardingStore } from '../../../store/onboardingStorage';
-import { verify_code, register_token } from '../../../api/django-API';
+import { ApiError, login } from '../../../api/django-API';
 
 import { Text, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,8 +18,10 @@ import { lineThickness } from '../../../../constants/layout';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { Typography } from '../../../../constants/textSize';
 import React from 'react';
+import {useAppStore} from '../../../store/appStore'
 
-
+import { HelperText } from 'react-native-paper';
+import GetDeviceId from '../../../../components/onboarding/GetDeviceID';
 
 
 const NUM_DIGITS = 6;
@@ -29,12 +31,51 @@ export default function Page() {
   const insets = useSafeAreaInsets();
   const styles = createStyles(colours, theme, insets.bottom);
   const router = useRouter();
+
+  const resetOnboarding = useOnboardingStore((s)=> s.reset);
+  const completeOnboarding = useAppStore((s)=> s.completeOnboarding);
   const setUserOnboaring = useOnboardingStore((s)=> s.set);
+  const {...info} = useOnboardingStore.getState();
 
+  const [error, setError] = useState<string | null>(null);
 
-  function saveCode(pin: number){
+  async function attemptLogIn(pin: number){
     setUserOnboaring({pin});
-    router.navigate('/(onboarding)/signIn/signIn')
+
+    const device_id = await GetDeviceId();
+    console.log('device_id', device_id, typeof device_id)
+    const values = {
+      phone_number: info.phone_number,
+      pin: pin,
+      device_id: device_id,
+    }
+    try{
+      await login(values);
+
+      resetOnboarding();
+      //set the onboarded flag
+      completeOnboarding();
+      //continue to landing page
+      router.navigate('/(tabs)')
+    }catch (error){
+      
+      if(error instanceof ApiError){
+        
+        if(error.status==403){
+          //if 403 continue to verification
+          router.navigate('/(onboarding)/signIn/phoneVerification')
+        }
+        if(error.status == 401){
+          //401 tell user invalid credentials
+          setError('Invalid phone number or PIN')
+          return;
+        }
+      }
+      console.error('login failed', error);
+      setError('Something went wrong, please try again.')
+      
+    }
+    
   }
 
   return (
@@ -45,8 +86,11 @@ export default function Page() {
       </View>
 
       <View style={styles.bottomBar}>
+        <HelperText type='error' visible={!!error}>
+          {error}
+        </HelperText>
         <NumberEntry 
-        onSubmit={saveCode}
+        onSubmit={attemptLogIn}
         UPPER_BOUND={999999}
         LOWER_BOUND={0}
         MAX_lENGTH_NUM={NUM_DIGITS}

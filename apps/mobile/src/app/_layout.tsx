@@ -76,9 +76,7 @@ export default function RootLayout() {
       <PaperThemeProvider>
         <UserProvider>
           <Stack>
-            <Stack.Protected guard={!isOnboarded}>
-              <Stack.Screen name="(onboarding)"/>
-            </Stack.Protected>
+            <Stack.Screen name="(onboarding)"/>
             
             <Stack.Protected guard={isOnboarded}>
               <Stack.Screen name="(tabs)"/>

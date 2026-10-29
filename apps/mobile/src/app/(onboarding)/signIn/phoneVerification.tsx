@@ -16,7 +16,7 @@ import { NumberEntry } from '../../../../components/answerFields/NumberEntry';
 import Button from '../../../../components/atomicUI/Button';
 import { useOnboardingStore } from '../../../store/onboardingStorage';
 import { useAppStore } from '../../../store/appStore';
-import { verify_code, request_code } from '../../../api/django-API';
+import { verify_code, request_code, login, ApiError } from '../../../api/django-API';
 
 import { Text, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,6 +24,7 @@ import { lineThickness } from '../../../../constants/layout';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { Typography } from '../../../../constants/textSize';
 import React from 'react';
+import GetDeviceId from '../../../../components/onboarding/GetDeviceID';
 
 
 
@@ -42,6 +43,37 @@ export default function Page() {
 
   const resetOnboarding = useOnboardingStore((s)=> s.reset);
   const completeOnboarding = useAppStore((s)=> s.completeOnboarding);
+  const setUserOnboaring = useOnboardingStore((s)=> s.set);
+  const {...info} = useOnboardingStore.getState();
+
+  const [error, setError] = useState<string | null>(null);
+
+  async function attemptLogIn(verification_number: string){
+
+    smsVerifier(verification_number);
+
+    const values = {
+      phone_number: info.phone_number,
+      pin: info.pin,
+      device_id: await GetDeviceId(),
+      verification_id: info.verification_id,
+    }
+    try{
+      await login(values);
+
+      resetOnboarding();
+      //set the onboarded flag
+      completeOnboarding();
+
+      //continue to landing page
+      router.navigate('/(tabs)')
+
+    }catch (error){
+      console.error('login failed', error);
+      setError('Something went wrong, please try again.');
+    }
+    
+  }
 
   async function smsVerifier(code: string){
     //on success,we go to the userType selection page
@@ -52,12 +84,7 @@ export default function Page() {
       //verify code
       const result = await verify_code(phone_number, code);
       const verification_id = result.verification_id;
-
-      resetOnboarding();
-      //set flag
-      completeOnboarding();
-
-      router.navigate('/(tabs)');
+      setUserOnboaring({verification_id});
 
     }catch (error){
       //wrong code or some such
@@ -89,7 +116,7 @@ export default function Page() {
 
       <View style={styles.bottomBar}>
         <NumberEntry 
-        onSubmit={smsVerifier}
+        onSubmit={attemptLogIn}
         UPPER_BOUND={999999}
         LOWER_BOUND={0}
         MAX_lENGTH_NUM={NUM_DIGITS}

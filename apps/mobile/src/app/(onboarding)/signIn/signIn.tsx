@@ -32,34 +32,9 @@ export default function Page() {
   const router = useRouter();
   const setUserOnboaring = useOnboardingStore((s)=> s.set);
 
-  const {...info} = useAppStore.getState();
-
-  async function setPhone(phone_number: string){
+  function setPhone(phone_number: string){
     setUserOnboaring({phone_number});
-    if(info.deviceId!=null){
-      try{
-        
-        router.navigate('/(tabs)');
-      }catch(error){
-
-      }
-      
-    }
-    try
-    {
-      await request_code(phone_number);
-
-      
-      router.navigate('/(onboarding)/signIn/phoneVerification');
-    }
-    catch(error)
-    {
-      console.error('Failed to send SMS', error);
-      //FIX: show user an error message of some sort
-    }
-
-
-    
+    router.navigate('/(onboarding)/signIn/enterPin');
   }
 
   return (

@@ -2,7 +2,7 @@
  * First screen user sees when they first open the app. Not shown again once onboarding complete, unless they clear their data or some such
  */
 
-import { useWindowDimensions, ScrollView, NativeSyntheticEvent, NativeScrollEvent, View, StyleSheet } from 'react-native';
+import { useWindowDimensions, ScrollView, NativeSyntheticEvent, NativeScrollEvent, View, StyleSheet, ScrollViewInstance } from 'react-native';
 
 import { useRouter } from 'expo-router';
 import { useState, useRef} from 'react'
@@ -27,7 +27,7 @@ export default function OnboardingSplashScreen({ onClose}: Props){
   const styles = createStyles(colours, theme, insets.bottom);
 
   const screenSize = useWindowDimensions(); //so we can work on many different display sizes
-  const scrollRef = useRef<ScrollView>(null);  //scroll ref
+  const scrollRef = useRef<ScrollViewInstance>(null);  //scroll ref
   const [step, setStep] = useState(1);
 
   const RELALTIVE_SIZE = 0.9; //how big should the splash be relative to the screen

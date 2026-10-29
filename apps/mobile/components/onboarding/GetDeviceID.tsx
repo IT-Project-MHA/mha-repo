@@ -8,5 +8,5 @@ export default async function GetDeviceId(){
     id = Crypto.randomUUID();
     await SecureStore.setItemAsync('device_id', id);
   }
-  return id.toString;
+  return id;
 }

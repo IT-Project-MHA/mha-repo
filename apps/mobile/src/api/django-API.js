@@ -94,7 +94,7 @@ async function request(method, path, body, baseUrl = BASE_URL) {
     const data = text ? JSON.parse(text) : null;
     if (!response.ok) {
         console.error('API error', method, path, response.status, text);
-        throw new ApiError(`${response.status}: ${text}`);
+        throw new ApiError(response.status, data);
     }
     return data;
 }
@@ -555,4 +555,9 @@ export async function register_token(values = {}){
     // request(method, path, body, baseUrl = BASE_URL)
     //takes verification_id, phone_number, display_name, pin, accepted_terms, accepted_privacy, device_id, track_health (optional), health (optional)
     return request('POST', '/auth/register',  values, SERVER_URL);
+}
+
+export async function login(values = {}){
+    //values include phone_number, pin, device_id, verification_id (new device only)
+    return request('POST', 'auth/login', values, SERVER_URL);
 }
