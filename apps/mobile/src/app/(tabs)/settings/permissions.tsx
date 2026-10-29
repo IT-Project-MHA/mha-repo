@@ -199,11 +199,6 @@ export default function Screen() {
         <Text> </Text>
         <View style={theme.line} />
         <Text> </Text>
-
-        <View style={theme.row}>
-          <Text style={[theme.h6, theme.leftText, theme.fontOnSurface]}>Offline Backup</Text>
-          <Toggle switchOn={isOn('offline_backup')} onToggle={() => setPermission('offline_backup', !isOn('offline_backup'))} />
-        </View>
       </View>
       <View style={theme.bottomGap} />
     </ScrollView>
