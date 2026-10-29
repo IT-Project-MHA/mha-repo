@@ -1,7 +1,7 @@
 /**
  */
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
-import ButtonWithIcon from '../../../../components/atomicUI/ButtonWithIcon';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import StickyButtonWithIcon, { STICKY_BUTTON_GAP } from '../../../../components/atomicUI/StickyButtonWithIcon';
 import { useRouter } from 'expo-router';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { useEffect, useState } from 'react';
@@ -10,9 +10,7 @@ import { apiAboutMe, apiMyConditions, apiMyPainSummary, apiMovementSummary, apiP
 import { currentPainIntensityText, averagePainIntensityText, worstPainIntensityText, 
   mildestPainIntensityText, averageActivityHourText, moodIntensityText, relationshipsIntensityText,
   enjoymentIntensityText, medicationText } from '../../../../constants/resultDisplayText';
-import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system/legacy';
+import { pdfPage, sharePdf } from '@/helpers/pdfExport';
 
 export default function Screen() {
   const router = useRouter();
@@ -89,55 +87,10 @@ export default function Screen() {
   // append the raw number to a label for number-input fields, e.g. 'Current pain: 7'
   const withNum = (label: string, n?: number | null) => n == null ? label : `${label}: ${n}`;
 
-  const buildHtml = () => {
-    const generated = new Date().toLocaleString('en-AU', {timeZone: 'Australia/Sydney'});
-    return `
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <style>
-      /* A4 page with print margin; extra bottom margin for footer */
-      @page {size: A4; margin: 18mm 16mm 10mm;}
-      * {box-sizing: border-box;}
-      body {
-        font-family: -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif;
-        color: #1a1a1a;
-        font-size: 16px;
-        line-height: 1.4;
-        margin: 0;
-        }
-      h1 {font-size: 28px; margin: 0;}
-        .title-row {display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px;}
-        .generated {font-size: 14px; color: #666; text-align: right;}
-        .card {
-          border: 1px solid #e0e0e0;
-          border-radius: 32px;
-          padding: 16px 16px;
-          margin-bottom: 26px;
-          page-break-inside: avoid;
-        }
-        .card h2 {font-size: 18px; margin: 0 0 8px;}
-        table {width: 100%; border-collapse: collapse;}
-        td {padding: 4px 0; vertical-align: top;}
-        td.label {width: 45%; color: #1a1a1a;}
-        td.value {width: 55%; font-weight: 500;}
-        .footer {
-          position: fixed;
-          left: 0; right: 0; bottom: 0;
-          text-align: right;
-          font-size: 14px;
-          color: #666;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="footer">Generated from most recent weekly assessment data from the M-Powered Platform</div>
-      <div class="title-row">
-        <h1>My Pain Profile</h1>
-        <span class="generated">Generated ${generated}</span>
-      </div>
-
+  const buildHtml = () => pdfPage({
+    title: 'My Pain Profile',
+    footer: 'Generated from most recent weekly assessment data from the M-Powered Platform',
+    body: `
       <div class="card">
       <h2>About me</h2>
       <table>
@@ -208,64 +161,19 @@ export default function Screen() {
         ${row('Emotion', management.emotion ||
           'You did not perform any dedicated strategy to manage your mood.')}
       </table>
-    </div>
-  </body>
-</html>`;
-
-  };
+    </div>`,
+  });
 
   const handleExportPdf = async () => {
     if (loading) return;
-    try {
-      // PDF in binary data
-      const {base64} = await Print.printToFileAsync({
-        // A4 dimensions: 595 x 841.
-        html: buildHtml(), width: 595, height: 842, base64: true,
-      });
-      if (!base64) {
-        Alert.alert('Could not create PDF', 'No PDF data was produced.');
-        return;
-      }
-
-      if (!(await Sharing.isAvailableAsync())){
-        Alert.alert('Sharing unavailable', 'Sharing is not available on this device/platform (e.g. web).');
-        return;
-      }
-
-      // Write the PDF into the app's private storage
-      
-      // full path to write to
-      const dest = FileSystem.documentDirectory + 'pain-profile.pdf';
-      await FileSystem.writeAsStringAsync(dest, base64, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-
-      // open OS share interface
-      await Sharing.shareAsync(dest, {
-        mimeType: 'application/pdf',
-        dialogTitle: 'Share my Pain Profile',
-        UTI: 'com.adobe.pdf'
-      });
-    } catch (e: any) {
-      console.log('failed to export pain profile pdf', e?.message);
-      Alert.alert('Could not create PDF', String(e?.message ?? e));
-    }
-  }
+    await sharePdf(buildHtml(), 'pain-profile.pdf', 'Share my Pain Profile');
+  };
 
   return (
+    <>
     <ScrollView stickyHeaderIndices={[0]}>
       <View style={theme.header}>
         <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>My Pain Profile</Text>
-        <View style={styles.shareButton}>
-          <ButtonWithIcon
-            label={loading ? 'Loading…' : 'Share PDF'}
-            onPress={handleExportPdf}
-            buttonType="roundButton"
-            name="share-outline"
-            textStyle={{ color: colours.onTertiary }}
-            disabled={loading}
-          />
-        </View>
       </View>
 
       {/**
@@ -444,9 +352,17 @@ export default function Screen() {
 
 
       <View style={theme.bottomGap}/>
+      <View style={{height: STICKY_BUTTON_GAP}}/>
 
     </ScrollView>
 
+    <StickyButtonWithIcon
+      label={loading ? 'Loading…' : 'Share PDF'}
+      onPress={handleExportPdf}
+      name="share-outline"
+      disabled={loading}
+    />
+    </>
   );
 }
 
@@ -466,9 +382,5 @@ function createStyles(colours: ColourSet){
         marginBottom: 30,
       },
 
-      shareButton: {
-        alignItems: 'center',
-        paddingTop: 30,
-      },
   })
 };

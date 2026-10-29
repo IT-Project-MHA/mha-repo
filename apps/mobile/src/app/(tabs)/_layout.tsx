@@ -4,6 +4,10 @@ import { StyleSheet } from 'react-native';
 import { useTheme, ColourSet } from '../../../context/ThemeContext';
 import { useUser } from '../../../context/AuthorisationContext';
 
+// consts that can be imported & used in other tabs/components
+export const TAB_BAR_HEIGHT = 70;
+export const TAB_BAR_BOTTOM = '4%';
+
 
 /**
  * Defines the structure of the navigation bar using the react native 'tab view' component structure
@@ -35,6 +39,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Index Home',
+          href: null, 
           tabBarIcon: ({ color }) => (
             <Ionicons name ="home-outline" size={26} color={color} />
           ),
@@ -44,6 +49,7 @@ export default function TabLayout() {
         name="painTracker"
         options={{
           title: 'Pain Tracker',
+          href: isPatient ? undefined : null, // if isPatient is false, href = null (doesn't show tab)
           tabBarIcon: ({ color }) => (
             <Ionicons name ="body-outline" size={26} color={color} />
           ),
@@ -107,9 +113,9 @@ function createStyles(colours: ColourSet){
 
   // the nav bar
   floatingTabBar: {
-    bottom: '4%',
+    bottom: TAB_BAR_BOTTOM,
     position: 'absolute',
-    height: 70,
+    height: TAB_BAR_HEIGHT,
   
     flexDirection: 'row',
     alignItems: 'center',
