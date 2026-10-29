@@ -5,6 +5,14 @@ import { enGB, registerTranslation } from "react-native-paper-dates";
 import { ThemeProvider, useTheme } from "../../context/ThemeContext";
 import { UserProvider } from "../../context/AuthorisationContext";
 
+import {useEffect, useState } from 'react';
+import * as SplashScreen from 'expo-splash-screen';
+import { useAppStore } from "./store/appStore";
+
+import React from "react";
+
+SplashScreen.preventAutoHideAsync();
+
 // date pickers use Australian day/month/year format
 registerTranslation("en-GB", enGB);
 
@@ -43,15 +51,35 @@ function PaperThemeProvider({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
+  const isOnboarded = useAppStore((s) => s.isOnboarded);
+  const [hydrated, setHydrated] = useState(useAppStore.persist.hasHydrated());
+
+  useEffect(()=>{
+    const unsub = useAppStore.persist.onFinishHydration(()=>setHydrated(true));
+    return unsub;
+  }, []);
+  useEffect(()=> {
+    if (hydrated) SplashScreen.hideAsync();
+
+  }, [hydrated]);
+
+  if(!hydrated) return null;
 
   return(
     <ThemeProvider>
       <PaperThemeProvider>
-      <UserProvider>
-      <Stack>
-      <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
-      </Stack>
-      </UserProvider>
+        <UserProvider>
+          <Stack screenOptions={{headerShown: true}}>\
+            <Stack.Protected guard={!isOnboarded}>
+              <Stack.Screen name="(onboarding)"/>
+            </Stack.Protected>
+            
+            <Stack.Protected guard={isOnboarded}>
+              <Stack.Screen name="(tabs)"/>
+            </Stack.Protected>
+
+          </Stack>
+        </UserProvider>
       </PaperThemeProvider>
     </ThemeProvider>
   )

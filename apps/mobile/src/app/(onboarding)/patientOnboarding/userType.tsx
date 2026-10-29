@@ -25,7 +25,6 @@ export default function Page() {
   const insets = useSafeAreaInsets();
   const styles = createStyles(colours, theme, insets.bottom);
   const setUserOnboaring = useOnboardingStore((s)=> s.set);
-
   const USER_TYPES = ["For myself","To help someone else"]; //patient equivalent text, support person equivalent text
 
   function setUserType(selection: string){
@@ -44,7 +43,7 @@ export default function Page() {
     }
     else{
       //navigate to landing page
-      router.navigate('/(onboarding)/supportPersonOnboarding/supportPersonOnboarding');
+      router.navigate('/(tabs)');
     }
   }
   return (

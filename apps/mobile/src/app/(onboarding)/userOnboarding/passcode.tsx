@@ -37,13 +37,14 @@ export default function Page() {
 
   function saveCode(pin: number){
     setUserOnboaring({pin});
+    router.navigate('/(onboarding)/userOnboarding/initialPhoneEntry')
   }
-  
+
   return (
     <SafeAreaView style={theme.screen}>
       <View style={[theme.header, styles.title]}>
         <Text style={styles.subheading}>Cool!</Text>
-        <Text style={styles.heading}>Verify your mobile</Text>
+        <Text style={styles.heading}>Pick a six digit pin</Text>
       </View>
 
       <View style={styles.bottomBar}>

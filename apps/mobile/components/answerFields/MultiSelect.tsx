@@ -40,7 +40,7 @@ function MultiSelect({ questionOptions, onSubmit, headingText, MIN_SELECTIONS, M
       onSubmit(selectedAnswers);
   };
   return (
-    <SafeAreaView style={theme.container}>
+    <View style={theme.container}>
       <Text style={[theme.text, {textAlign: 'center'}]}>{headingText}</Text>
       {/* render options as buttons */}
       {questionOptions.map((option, index) => (
@@ -68,7 +68,7 @@ function MultiSelect({ questionOptions, onSubmit, headingText, MIN_SELECTIONS, M
       onPress={handleSubmit}
       buttonType='primaryButton'
       />
-    </SafeAreaView>
+    </View>
   );
 }
 

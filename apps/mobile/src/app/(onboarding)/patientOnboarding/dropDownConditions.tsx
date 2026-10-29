@@ -25,20 +25,62 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import React from 'react';
 
 import { useOnboardingStore } from '../../store/onboardingStorage';
+import { useEffect, useState } from 'react';
 
 export default  function Page() {
   const router = useRouter();
   const { theme } = useTheme();
-  const user = "user"
-  let conditions = ["undefined"];
 
-  async function getConditions(){
-      conditions = await apiQuestionOption('select', {
-      app_section: 'ONBOARDING',
-      question_key: 'pain_type',
-    });
+
+  const setUserOnboaring = useOnboardingStore((s)=> s.set);
+  const {set, reset, ...answers} = useOnboardingStore.getState();
+  
+
+  const [questionOptions, setQuestionOptions] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(()=>{
+    let cancelled = false;
+    async function loadOptions(){
+      try{
+        const options = await apiQuestionOption('select', {
+          app_section: 'onboarding',
+          question_key: 'pain_type',
+        });
+        console.log('options', JSON.stringify(options))
+        if(!cancelled){
+          setQuestionOptions(
+            options
+            .filter((o: any) => o.is_active)
+            .sort((a: any, b: any) => a.sort_order - b.sort_order)
+            .map((o: any) => o.text)
+          );
+        }
+
+      }catch(error){
+        console.error('Failed to load options', error);
+        if(!cancelled) setError('could not load options')
+      }finally{
+        if (!cancelled) setLoading(false);
+      }
+
+    }
+    loadOptions();
+    return () => {cancelled = true;};
+  }, []);
+
+  function setPainTypes(painTypes: string[]){
+
+    //append option to health list
+    let health = answers.health;
+    if(health!=undefined)
+      health.pain_types = painTypes;
+    
+    setUserOnboaring({health})
+    //on success, next page
+    router.navigate('/(onboarding)/patientOnboarding/additionalConditionsTextEntry')
   }
-  getConditions();
 
   return (
     <SafeAreaView style={theme.screen}>
@@ -48,11 +90,11 @@ export default  function Page() {
       showsVerticalScrollIndicator={false}
       >
         <MultiSelect
-        questionOptions={conditions}
+        questionOptions={questionOptions}
         headingText='You can select multiple conditions'
-        onSubmit={()=>{router.navigate('/(onboarding)/patientOnboarding/additionalConditionsTextEntry')}}
+        onSubmit={setPainTypes}
         MIN_SELECTIONS={0}
-        MAX_SELECTIONS={conditions.length+1}
+        MAX_SELECTIONS={questionOptions.length+1}
         />
       </ScrollView>
     </SafeAreaView>

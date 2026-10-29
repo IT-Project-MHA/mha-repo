@@ -552,7 +552,6 @@ export async function verify_code(phone_number, otp){
 }
 
 export async function register_token(values = {}){
-    //const { id, appointment, support_link, ...flags } = values;
     // request(method, path, body, baseUrl = BASE_URL)
     //takes verification_id, phone_number, display_name, pin, accepted_terms, accepted_privacy, device_id, track_health (optional), health (optional)
     return request('POST', '/auth/register',  values, SERVER_URL);

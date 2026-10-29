@@ -23,10 +23,10 @@ import { lineThickness } from '../../../../constants/layout';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { Typography } from '../../../../constants/textSize';
 import React from 'react';
+import GetDeviceId from '../../../../components/onboarding/GetDeviceID';
 
 
-import * as SecureStore from 'expo-secure-store'
-import * as Crypto from 'expo-crypto'
+
 
 const NUM_DIGITS = 6;
 
@@ -38,17 +38,8 @@ export default function Page() {
 
   const {set, reset, ...answers} = useOnboardingStore.getState();
   const phone_number = answers.phone_number;
-  const display_name = answers.display_name;
-  const pin = '000000'; //FIX LATER, add page
+  const setUserOnboaring = useOnboardingStore((s)=> s.set);
 
-  async function getDeviceId(){
-    let id = await SecureStore.getItemAsync('device_id');
-    if(!id){
-      id = Crypto.randomUUID();
-      await SecureStore.setItemAsync('device_id', id);
-    }
-    return id;
-  }
   async function smsVerifier(code: string){
     //on success,we go to the userType selection page
 
@@ -58,6 +49,13 @@ export default function Page() {
       //verify code
       const result = await verify_code(phone_number, code);
       const verification_id = result.verification_id;
+      setUserOnboaring({verification_id});
+
+      const result2 = (await GetDeviceId());
+      const device_id = result2.toString()
+      console.log(device_id)
+      
+      setUserOnboaring({device_id});
 
       router.navigate('/(onboarding)/patientOnboarding/userType');
 

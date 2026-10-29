@@ -30,7 +30,6 @@ export default function OnboardingSplashScreen({ onClose}: Props){
   const scrollRef = useRef<ScrollView>(null);  //scroll ref
   const [step, setStep] = useState(1);
 
-  const STEP_COUNT=2;
   const RELALTIVE_SIZE = 0.9; //how big should the splash be relative to the screen
   const ITEM_SIZE = screenSize.width * RELALTIVE_SIZE;
   const ITEM_MARGIN = 40;
