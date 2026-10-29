@@ -11,45 +11,42 @@ import {
     apiMySocialHealth, apiMyManagement, apiPrescription,
 } from './django-API';
 import { apiErrorMessage, normalisePhoneNumber } from './care_planner_api_helpers';
+export { apiErrorMessage };
 
 /*--------------------My Account------------------------------------------------------*/
-
-export { apiErrorMessage };
 
 /**
  * returns an Australian mobile number in the format the User table takes (local,
  * no spaces), e.g. '+61412345678' or '0412 345 678' -> '0412345678', or the number as typed if
- * it isn't one
+ * it isn't one.
  */
 function toLocalPhone(phone) {
     const normalised = normalisePhoneNumber(phone);
     return normalised ? `0${normalised.slice(3)}` : phone;
 }
 
-/* Details for the My Account page:
-- takes no parameters and returns { user, profile, sexOptions }:
-    - user: the user's own User
-    - profile: the user's own PatientProfile, or null if they don't have one yet (it is created
+/* Returns patientProfile account details:
+- Returns { user, profile, sexOptions }
+    - user: the user's userId
+    - profile: the user's PatientProfile, or null if they don't have one yet (it is created
       the first time they save a field that belongs to it)
     - sexOptions: the choices for assigned_gender_at_birth, each { value, label } */
 export async function apiMyAccount() {
     const [[user], sexOptions] = await Promise.all([apiUser('select'), apiAssignedGender()]);
+
     // filtering by user, as select also returns the profiles of patients the user supports
     const [profile] = await apiPatientProfile('select', { user: user.id });
     return { user, profile: profile ?? null, sexOptions };
 }
 
 /* Saves the About Me details, from the edit details modal:
-- takes the user's id, the id of their PatientProfile (null if they aren't a patient) and the
-  details ({ name, sex, birthYear, phone, email }), returns the saved { user, profile }
-- name, phone & email are saved on the User, phone is sent as a local number with no spaces
-- sex & birthYear are saved on the PatientProfile, so only for patients. A profile is never
-  created here, as having one makes the user a patient. Without one they are not saved, so
-  don't ask a support person for them
+-takes the user's id, the id of their PatientProfile (null if they aren't a patient) and the
+details ({ name, sex, birthYear, phone, email }), returns the saved { user, profile }
+- name, phone & email are saved on the User
+- sex & birthYear are only saved on a PatientProfile. 
 - a blank email is sent as an empty string
-- NOTE: the API document says /api/user/ only edits display_name and email, and a phone
-  change goes through /auth/change-phone (SMS verified). django-API.js says phone_number is
-  editable. Check the serializer: if the document is right, phone_number is ignored here */
+- phone number needs to be authenticated*
+*/
 export async function apiSaveAboutMe(userId, profileId, { name, sex, birthYear, phone, email }) {
     const user = await apiUser('update', {
         id: userId,
@@ -58,25 +55,19 @@ export async function apiSaveAboutMe(userId, profileId, { name, sex, birthYear, 
         email: email.trim(),
     });
 
-    if (profileId) {
-        const profile = await apiPatientProfile('update', { id: profileId, ...details });
-        return { user, profile };
-    }
     if (!profileId) {
         return { user, profile: null };
     }
+
     const profile = await apiPatientProfile('update', {
         id: profileId,
         assigned_gender_at_birth: sex || undefined,
         birth_year: birthYear.trim() ? Number(birthYear) : undefined,
     });
-
     return { user, profile };
 }
 
-
 /* Deletes the user's account:
-- takes no parameters, returns null
 - the server returns 409 if other records depend on the user, which throws an ApiError */
 export async function apiDeleteMyAccount() {
     const [user] = await apiUser('select');
@@ -86,7 +77,7 @@ export async function apiDeleteMyAccount() {
 /* Checks the About Me details before they are saved:
 - takes the details ({ name, sex, birthYear, phone, email }), returns a message to show the
   user, or null if they are all valid
-- phone must be an Australian mobile number, the same rule as the server, spaces are ignored
+- phone must be an Australian mobile number
 - birthYear can be left blank, otherwise it must be a 4 digit year that isn't in the future */
 export function validateAboutMe({ name, birthYear, phone, email }) {
     if (!name.trim()) {
@@ -104,11 +95,11 @@ export function validateAboutMe({ name, birthYear, phone, email }) {
     return null;
 }
 
-/* Details for working out the user's role:
-- takes no parameters, returns { hasProfile, isSupporter, onboarded }
-- hasProfile: the user has their own PatientProfile
+/* Used for determining users role
+- returns { hasProfile, isSupporter, onboarded }
+- hasProfile: the user has a PatientProfile
 - isSupporter: the user is the support person on at least one active SupportLink
-- onboarded: the user has accepted the terms (stand-in until the server has a role field) */
+- onboarded: the user has onboarded */
 export async function apiMyRole() {
     const [user] = await apiUser('select');
     const [[profile], links, terms] = await Promise.all([
@@ -126,16 +117,15 @@ export async function apiMyRole() {
 /* Saves the My Conditions details, from the edit conditions modal:
 - takes the id of the user's PatientProfile (null if they aren't a patient yet) and the details
   ({ hasDiagnosis, conditions }), returns the saved PatientProfile
-- a patient's profile is updated, to correct their answers
-- a support person who says they have musculoskeletal symptoms has no profile, so one is
-  created, which makes them a patient. Call refreshUserType afterwards. The only way back to a
-  support person is apiDeleteMyData
-- hasDiagnosis is true or false
-- conditions is an array, saved as one string with a condition on each line */
-export async function apiSaveConditions(profileId, { hasDiagnosis, conditions }) {
+- a patient's profile is updated when they save condition changes.
+- a support person who says they have musculoskeletal symptoms has no profile, so a
+   patientProfile is created. The only way back to a support person is apiDeleteMyData.
+- hasDiagnosis is boolean
+- conditions is an array */
+export async function apiSaveConditions(profileId, { hasDiagnosis, diagnoses, conditions }) {
     const details = {
         has_diagnosis: hasDiagnosis,
-        other_conditions: conditions.map((c) => c.trim()).filter(Boolean).join('\n'),
+        other_conditions: packConditions(diagnoses, conditions),
     };
     if (profileId) {
         return apiPatientProfile('update', { id: profileId, ...details });
@@ -143,17 +133,40 @@ export async function apiSaveConditions(profileId, { hasDiagnosis, conditions })
     return apiPatientProfile('create', details);
 }
 
+/**
+ * Diagnoses and other conditions are stored in an 'other_conditions' (hasDiagnosis is a bool)
+ * separated by \n. To tell them apart, diagnosis entries are prefixed with "[dx] ".
+ */
+const DX_PREFIX = "[dx] ";
+
+/**
+ * Packs diagnoses and other conditions into `other_conditions` with differentiation
+ * between diagnoses and conditions.
+ * - Diagnosis lines are prefixed with DX_PREFIX
+ * - Diagnoses are first
+ */
+export const packConditions = (diagnoses, conditions) =>
+  [...(diagnoses ?? []).map((d) => DX_PREFIX + d), ...(conditions ?? [])].join("\n");
+
+/**
+ * Splits other_conditions into {diagnoses, conditions}.
+ */
+export const unpackConditions = (s) => {
+  const lines = (s ?? "").split("\n").map((c) => c.trim()).filter(Boolean);
+  return {
+    diagnoses: lines.filter((l) => l.startsWith(DX_PREFIX)).map((l) => l.slice(DX_PREFIX.length)),
+    conditions: lines.filter((l) => !l.startsWith(DX_PREFIX)),
+  };
+};
+
 /*--------------------My Support Links------------------------------------------------------*/
 
 /* Details for the My Connections page:
-- takes no parameters and returns { supportPeople, supporting }, each an array of
-  { id, name, phone, invited, viewAppointments }, where id is the SupportLink's id:
-    - supportPeople: the user's SupportLinks as the patient, both active ones and invites the
-      support person hasn't accepted yet (invited is true). Revoked links are left out. name is
-      empty until the support person has an account, so the phone number they were invited with
-      is used
-    - supporting: the active SupportLinks where the user is the support person, name is the
-      patient's name. The server doesn't send the patient's phone number, so phone is empty
+- returns { supportPeople, supporting }, each an array of
+{ id, name, phone, invited, viewAppointments }, where id is the SupportLink's id
+    - supportPeople: active and invited support links. name is empty until the support 
+    person has an account.
+    - supporting: the active SupportLinks where the user is the support person.
 - viewAppointments is can_view_appointments of the SupportLink */
 export async function apiMySupportLinks() {
     const [[user], links] = await Promise.all([apiUser('select'), apiSupportLink('select')]);
@@ -188,8 +201,10 @@ export async function apiMySupportLinks() {
 
 
 
-// helper function: returns the permissions of a SupportLink as { viewAppointments,
-// viewAssessments, viewPrescriptions }
+/**
+ * Returns the permissions of a SupportLink as { viewAppointments, viewAssessments, 
+ * viewPrescriptions }
+ */
 function toPermissions(link) {
     return {
         viewAppointments: Boolean(link.can_view_appointments),
@@ -221,14 +236,12 @@ export async function apiAcceptInvitation(linkId) {
 
 /* Invites a support person:
 - takes the phone number as typed and returns the new SupportLink, with status invited
-- the server links it to the account with that number straight away, or when someone
-  registers with it
-- the phone number is saved as e.g. '+61412345678' */
+- the phone number is saved in the normalised format*/
 export async function apiInviteSupportPerson(phone) {
     return apiSupportLink('create', { invited_phone_number: normalisePhoneNumber(phone) });
 }
 
-/* Declines an invitation, as the support person: the link is revoked, not deleted */
+/* Declines an invitation, as the support person */
 export async function apiDeclineInvitation(linkId) {
     return apiSupportLink('update', { id: linkId, status: 'revoked' });
 }
@@ -242,14 +255,14 @@ export async function apiRemoveSupportPerson(linkId) {
 
 /* Removes the user as a support person of a patient, as the support person:
 - takes the SupportLink id, returns the saved SupportLink
-- a support person can only change the status, so the link is revoked, not deleted */
+- a support person can only change the status, so the link is revoked */
 export async function apiRemoveConnection(linkId) {
     return apiSupportLink('update', { id: linkId, status: 'revoked' });
 }
 
 /* Checks the phone number of an invite before it is sent:
 - takes the phone number as typed, returns a message to show the user, or null if it is valid
-- must be an Australian mobile number, the same rule as the server, spaces are ignored */
+- must be an Australian mobile number */
 export function validateSupportPhone(phone) {
     if (!normalisePhoneNumber(phone)) {
         return 'Enter an Australian mobile number.';
@@ -261,7 +274,7 @@ export function validateSupportPhone(phone) {
 
 /* Details for the Accessibility page:
 - takes no parameters and returns the user's own UserSettings, or null if they don't have a
-  settings record yet (it is created the first time they save a setting) */
+  settings record yet */
 export async function apiMySettings() {
     const [settings] = await apiUserSettings('select');
     return settings ?? null;
@@ -287,8 +300,7 @@ export async function apiSaveSettings(settingsId, changes) {
   PatientProfile (already a support person account)
 - deletes dependants first (assessment sections, appointments, support links as the patient,
   then assessments & prescriptions), and the PatientProfile last
-- a failed request throws an ApiError (409 if something still depends on a record). Nothing is
-  rolled back, but it is safe to call again, as each call only deletes what is left */
+- a failed request throws an ApiError (409 if something still depends on a record). */
 export async function apiDeleteMyData() {
     const [user] = await apiUser('select');
     const [profile] = await apiPatientProfile('select', { user: user.id });
