@@ -35,7 +35,6 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Index Home',
-          href: null, 
           tabBarIcon: ({ color }) => (
             <Ionicons name ="home-outline" size={26} color={color} />
           ),
@@ -45,7 +44,6 @@ export default function TabLayout() {
         name="painTracker"
         options={{
           title: 'Pain Tracker',
-          href: isPatient ? undefined : null, // if isPatient is false, href = null (doesn't show tab)
           tabBarIcon: ({ color }) => (
             <Ionicons name ="body-outline" size={26} color={color} />
           ),

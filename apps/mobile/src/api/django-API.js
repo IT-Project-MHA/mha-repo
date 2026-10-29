@@ -231,6 +231,18 @@ export async function apiPrescription(operation, values) {
     return operate('prescription', operation, values);
 }
 
+/* MyPain:
+- select: id, or filter by assessment NN, patient_profile
+- create: assessment NN, current, worst, average, mildest, other_location, other_characteristic,
+          completed_at, locations[], characteristics[]
+- update: id NN, current, worst, average, mildest, other_location, other_characteristic,
+          completed_at, locations[], characteristics[]
+    - assessment cannot be changed
+- delete: id NN */
+export async function apiMyPain(operation, values) {
+    return operate('myPain', operation, values);
+}
+
 /* MyMovement:
 - select: id, or filter by assessment NN, patient_profile
 - create: assessment NN, active_hours, walking, sitting, lifting, standing, reflection,
