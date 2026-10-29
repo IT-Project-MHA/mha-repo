@@ -31,6 +31,7 @@ export default function Tab() {
 
   const lastMonday = new Date();
 
+  const timeMessage = SetTimeMessage(lastMonday);
 
   FindLastMonday(lastMonday);
   // let lastMondayParseable = lastMonday.toISOString().split('T')[0];
@@ -40,15 +41,6 @@ export default function Tab() {
   //  }
 
   const userName = "Fitz" //retrieveUserName();
-  let timeMessage = "day";
-  var time = (new Date()).getHours();
-  if (time >= 5 && time < 12) {
-    timeMessage = "morning";
-  } else if (time >= 12 && time < 17) {
-    timeMessage = "afternoon";
-  } else if (time >= 17 || time < 5) {
-    timeMessage = "evening";
-  }
   
   let buttonFunction = () => {
     router.navigate('/(tabs)/myPain/AssessmentTemp');
@@ -89,6 +81,19 @@ export default function Tab() {
 export function FindLastMonday(currDate: Date) {
   currDate.setDate(currDate.getDate() - (currDate.getDay() + 6) % 7);
   return;
+}
+
+export function SetTimeMessage(currTime: Date) {
+  let timeMessage = "day";
+  var time = (new Date()).getHours();
+  if (time >= 5 && time < 12) {
+    timeMessage = "morning";
+  } else if (time >= 12 && time < 17) {
+    timeMessage = "afternoon";
+  } else if (time >= 17 || time < 5) {
+    timeMessage = "evening";
+  }
+  return timeMessage;
 }
 
 function createStyles(colours: ColourSet){
