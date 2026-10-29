@@ -2,6 +2,7 @@
 //heading
 // instruction text
 import type React from "react";
+import { View } from "react-native";
 import { StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ENTRY_COMPONENTS, { ENTRY_TYPE } from "../answerFields/EntryRegistry";
@@ -24,10 +25,12 @@ export default function Question({title, detail, questionType}:  QuestionProps) 
     throw new InvalidQuestionTypeError(questionType + ' is not a valid question type');
   }
   return (
-    <SafeAreaView>
-      <Text style={[theme.fontOnBackground, theme.h2, theme.leftText]}>{title}</Text>
-      {/*divider*/}
-      <Text style={[theme.fontOnBackground, theme.h6, theme.leftText]}>{detail}</Text>
+    <SafeAreaView> 
+      <View style={[{flexDirection: "column", margin: 15}]}>
+        <Text style={[theme.fontOnBackground, theme.h2, theme.leftText]}>{title}</Text>
+        {/*divider*/}
+        <Text style={[theme.fontOnBackground, theme.h6, theme.leftText]}>{detail}</Text>
+      </View>
         <EntryComponent onSubmit={() => {}} />
     </SafeAreaView>
   );
