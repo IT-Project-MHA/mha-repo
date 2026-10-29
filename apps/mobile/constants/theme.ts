@@ -70,8 +70,12 @@ const createTheme = (colours: ColourSet) =>
       borderRadius: 28,
 
       shadowColor: colours.primary,
-      shadowOpacity: 0.15,
+      shadowOpacity: .15,
       shadowRadius: 7,
+      shadowOffset: {
+          width: 0,
+          height: 0, 
+    },
     },
 
     // divider
