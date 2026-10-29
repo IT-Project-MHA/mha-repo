@@ -57,6 +57,7 @@ export default  function Page() {
             .map((o: any) => o.text)
           );
         }
+        console.log('questionOptions', questionOptions)
 
       }catch(error){
         console.error('Failed to load options', error);
