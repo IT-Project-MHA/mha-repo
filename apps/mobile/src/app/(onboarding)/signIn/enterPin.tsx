@@ -50,11 +50,12 @@ export default function Page() {
       device_id: device_id,
     }
     try{
-      await login(values);
+      const result = await login(values);
+      const token = result.token;
 
       resetOnboarding();
       //set the onboarded flag
-      completeOnboarding();
+      completeOnboarding(token);
       //continue to landing page
       router.navigate('/(tabs)')
     }catch (error){

@@ -33,9 +33,9 @@ export default function Page() {
   const router = useRouter();
 
   const {set, reset, ...answers} = useOnboardingStore.getState();
+  const resetOnboarding = useOnboardingStore((s)=> s.reset);
+  const completeOnboarding = useAppStore((s)=> s.completeOnboarding);
 
-
-  const setOnboardedFlag = useAppStore((s)=> s.completeOnboarding);
 
   async function createAccount(){
     //takes the data we gathered and sends the register_token request
@@ -44,13 +44,13 @@ export default function Page() {
 
       //takes verification_id, phone_number, display_name, pin, accepted_terms, accepted_privacy,
       //  device_id, track_health (optional), health (optional)
-      register_token(answers);
-      
-      //reset so it's not holding this info forever
-      useOnboardingStore((s) => s.reset);
+      const result = await register_token(answers);
+      const token = result.token;
 
+      
+      resetOnboarding();
       //set the onboarded flag
-      setOnboardedFlag();
+      completeOnboarding(token);
       //on success,we go to the landing page (tabs)
       router.navigate('/(tabs)');
 

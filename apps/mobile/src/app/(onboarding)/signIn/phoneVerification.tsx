@@ -59,11 +59,12 @@ export default function Page() {
       verification_id: info.verification_id,
     }
     try{
-      await login(values);
-
+      const result = await login(values);
+      const token = result.token;
+      
       resetOnboarding();
       //set the onboarded flag
-      completeOnboarding();
+      completeOnboarding(token);
 
       //continue to landing page
       router.navigate('/(tabs)')
