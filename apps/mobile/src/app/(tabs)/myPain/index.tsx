@@ -33,13 +33,13 @@ export default function Tab() {
 
 
   FindLastMonday(lastMonday);
-  let lastMondayParseable = lastMonday.toISOString().split('T')[0];
-  const currAssessment = FindCurrAssessment(lastMondayParseable);
-  if (currAssessment == null) {
-    apiAssessment('create', {week_starting: lastMondayParseable});
-   }
+  // let lastMondayParseable = lastMonday.toISOString().split('T')[0];
+  // const currAssessment = FindCurrAssessment(lastMondayParseable);
+  // if (currAssessment == null) {
+  //   apiAssessment('create', {week_starting: lastMondayParseable});
+  //  }
 
-  const userName =  retrieveUserName();
+  const userName = "Fitz" //retrieveUserName();
   let timeMessage = "day";
   var time = (new Date()).getHours();
   if (time >= 5 && time < 12) {
@@ -51,7 +51,7 @@ export default function Tab() {
   }
   
   let buttonFunction = () => {
-    router.navigate('../AssessmentTemp');
+    router.navigate('/(tabs)/myPain/AssessmentTemp');
   }
 
   let welcomeString = "Good " + timeMessage + ", " + userName;
@@ -71,11 +71,11 @@ export default function Tab() {
         <Text style={[theme.fontOnSurface, theme.h5]}>
           Assessments for week of {lastMondayString}
         </Text>
-        <AssessmentEntryTab onButtonPress={buttonFunction} assessment={currAssessment} assessmentCall={apiMyPain}></AssessmentEntryTab>
-        <AssessmentEntryTab onButtonPress={buttonFunction} assessment={currAssessment} assessmentCall={apiMyMovement}></AssessmentEntryTab>
-        <AssessmentEntryTab onButtonPress={buttonFunction} assessment={currAssessment} assessmentCall={apiMyPersonalCare}></AssessmentEntryTab>
-        <AssessmentEntryTab onButtonPress={buttonFunction} assessment={currAssessment} assessmentCall={apiMySocialHealth}></AssessmentEntryTab>
-        <AssessmentEntryTab onButtonPress={buttonFunction} assessment={currAssessment} assessmentCall={apiMyManagement}></AssessmentEntryTab>
+        <AssessmentEntryTab onButtonPress={buttonFunction} /*</View>assessment={currAssessment}*/ assessmentCall={apiMyPain}></AssessmentEntryTab>
+        <AssessmentEntryTab onButtonPress={buttonFunction} /*assessment={currAssessment}*/ assessmentCall={apiMyMovement}></AssessmentEntryTab>
+        <AssessmentEntryTab onButtonPress={buttonFunction} /*assessment={currAssessment}*/ assessmentCall={apiMyPersonalCare}></AssessmentEntryTab>
+        <AssessmentEntryTab onButtonPress={buttonFunction} /*assessment={currAssessment}*/ assessmentCall={apiMySocialHealth}></AssessmentEntryTab>
+        <AssessmentEntryTab onButtonPress={buttonFunction} /*assessment={currAssessment}*/ assessmentCall={apiMyManagement}></AssessmentEntryTab>
         <View style={theme.lineWithMargin}
         />
         <Button label="Add a reflection for this week" onPress={buttonFunction} buttonType={"roundedTertiaryButton"}></Button>
