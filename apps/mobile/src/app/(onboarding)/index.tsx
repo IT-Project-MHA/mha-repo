@@ -53,8 +53,7 @@ export default function Page() {
         </Text>
       </View>
 
-      {/**
-       *  <Modal
+       <Modal
         animationType="slide"
         presentationStyle="fullScreen"
         visible={showOnboarding}
@@ -62,8 +61,7 @@ export default function Page() {
       >
       <OnboardingSplashScreen onClose={onFirstLaunchClosed} />
       </Modal>
-       * 
-       */}
+       
 
     
       <View style={[theme.clearContainer, theme.centerItems, {justifyContent: 'space-between'}]}>

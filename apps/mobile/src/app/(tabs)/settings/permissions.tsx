@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, ScrollView, Alert, Linking, AppState, ActivityIndicator, Pressable } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
@@ -153,8 +153,8 @@ export default function Screen() {
   if (loadError) {
     return (
       <View style={theme.sectionContainer}>
-        <Text style={[theme.body, theme.fontOnSurface]}>{loadError}</Text>
-        <Pressable onPress={load}><Text style={[theme.h6, theme.fontOnSurface]}>Try again</Text></Pressable>
+        <Text style={[theme.body, {color: colours.onSurface}]}>{loadError}</Text>
+        <Pressable onPress={load}><Text style={[theme.h6, {color: colours.onSurface}]}>Try again</Text></Pressable>
       </View>
     );
   }
@@ -164,13 +164,13 @@ export default function Screen() {
   return (
     <ScrollView stickyHeaderIndices={[0]}>
       <View style={theme.header}>
-        <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>Permissions</Text>
+        <Text style={[theme.h4, theme.leftText, {color: colours.onSurface}]}>Permissions</Text>
       </View>
       <Text> </Text>
 
       <View style={[theme.sectionContainer]}>
         <View style={theme.row}>
-          <Text style={[theme.h6, theme.leftText, theme.fontOnSurface]}>Microphone</Text>
+          <Text style={[theme.h6, theme.leftText, {color: colours.onSurface}]}>Microphone</Text>
           <Toggle switchOn={isOn('microphone_access')} onToggle={() => setPermission('microphone_access', !isOn('microphone_access'))} />
         </View>
         {osHint('microphone_access')}
@@ -180,7 +180,7 @@ export default function Screen() {
         <Text> </Text>
 
         <View style={theme.row}>
-          <Text style={[theme.h6, theme.leftText, theme.fontOnSurface]}>Notifications</Text>
+          <Text style={[theme.h6, theme.leftText, {color: colours.onSurface}]}>Notifications</Text>
           <Toggle switchOn={notificationsOn} onToggle={() => setPermission('notifications_enabled', !notificationsOn)} />
         </View>
         {osHint('notifications_enabled')}
@@ -188,11 +188,11 @@ export default function Screen() {
 
         {/* sub-options only apply while notifications are on */}
         <View style={[theme.row, { opacity: notificationsOn ? 1 : 0.4 }]} pointerEvents={notificationsOn ? 'auto' : 'none'}>
-          <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>Weekly Assessment Reminders</Text>
+          <Text style={[theme.body, theme.leftText, {color: colours.onSurface}]}>Weekly Assessment Reminders</Text>
           <Toggle switchOn={notificationsOn && assessmentReminders} onToggle={() => setAssessmentReminders(!assessmentReminders)} />
         </View>
         <View style={[theme.row, { opacity: notificationsOn ? 1 : 0.4 }]} pointerEvents={notificationsOn ? 'auto' : 'none'}>
-          <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>Appointment Reminders</Text>
+          <Text style={[theme.body, theme.leftText, {color: colours.onSurface}]}>Appointment Reminders</Text>
           <Toggle switchOn={notificationsOn && appointmentReminders} onToggle={() => setAppointmentReminders(!appointmentReminders)} />
         </View>
 

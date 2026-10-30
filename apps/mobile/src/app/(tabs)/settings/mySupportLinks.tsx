@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { useTheme, ColourSet } from "../../../../context/ThemeContext";
 import ButtonWithIcon from "../../../../components/atomicUI/ButtonWithIcon";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import TextButton from "../../../../components/atomicUI/TextButton";
 import PeopleModal, {
   type Permissions
@@ -214,7 +214,7 @@ export default function Screen() {
       <View style={[theme.centerItems, { flex: 1, padding: 24 }]}>
         {loadError ? (
           <>
-            <Text style={[theme.body, theme.fontOnSurface]}>{loadError}</Text>
+            <Text style={[theme.body, {color: colours.onSurface}]}>{loadError}</Text>
             <Text> </Text>
             <TextButton label="Try again" onPress={load} fontColour={colours.onSurface} />
           </>
@@ -235,7 +235,7 @@ export default function Screen() {
   return (
     <ScrollView stickyHeaderIndices={[0]}>
       <View style={theme.header}>
-        <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>
+        <Text style={[theme.h4, theme.leftText, {color: colours.onSurface}]}>
           My Support Links
         </Text>
       </View>
@@ -245,7 +245,7 @@ export default function Screen() {
         <>
           <View style={theme.sectionContainer}>
             <Text> </Text>
-            <Text style={[theme.h5, theme.leftText, theme.fontOnSurface]}>
+            <Text style={[theme.h5, theme.leftText, {color: colours.onSurface}]}>
               Invitations
             </Text>
             <Text> </Text>
@@ -253,7 +253,7 @@ export default function Screen() {
             <Text> </Text>
             {connections.invitations.map((inv) => (
               <View key={inv.id} style={theme.layoutContainer}>
-                <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>
+                <Text style={[theme.body, theme.leftText, {color: colours.onSurface}]}>
                   {inv.name} invited you to support them
                 </Text>
                 <View style={[theme.rightItems, theme.row]}>

@@ -11,6 +11,7 @@
 import { useRouter } from "expo-router";
 import { NumberEntry } from "../../../../components/answerFields/NumberEntry";
 import Button from "../../../../components/atomicUI/Button";
+import TextButton from "@/components/atomicUI/TextButton";
 import { useOnboardingStore } from "../../../store/onboardingStorage";
 import { verify_code, request_code } from "../../../api/django-API";
 
@@ -69,6 +70,13 @@ export default function Page() {
         </Text>
       </View>
 
+       <View style={[theme.layoutContainer, theme.leftItems]}>
+          <Text style={[theme.body, { color: colours.onSurface }]}>
+            We've sent a temporary verification code to {answers.phone_number}.
+            It is valid for 5 minutes.
+          </Text>
+        </View>
+
       <View>
         <NumberEntry
           onSubmit={smsVerifier}
@@ -76,19 +84,14 @@ export default function Page() {
           LOWER_BOUND={0}
           MAX_lENGTH_NUM={NUM_DIGITS}
         />
-        <Button
+        
+        <View style={[theme.header, theme.rightItems, theme.clearContainer]}>
+
+        <TextButton
           label="Resend Code"
           onPress={resendCode}
-          buttonType="roundButton"
+          fontColour={colours.onBackground}
         />
-
-        <View style={[theme.header, theme.centerItems]}>
-          
-          <Text style={[theme.body, { color: colours.onSurface }]}>
-            We've sent a temporary verification code to {answers.phone_number}.
-            It is valid for 5 minutes.
-          </Text>
-
         </View>
       </View>
     </ScrollView>

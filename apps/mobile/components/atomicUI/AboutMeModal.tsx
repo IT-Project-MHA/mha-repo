@@ -3,7 +3,7 @@
  *
  * On confirm, input is checked for validity and saved to backend.
  */
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Modal,
   View,

@@ -2,14 +2,14 @@
  * Legal page, where use can view the terms and conditions and the privacy policy.
  * 
  */
-import { View, Text, ScrollView} from 'react-native';
+import React, { View, Text, ScrollView} from 'react-native';
 import { useTheme } from '../../../../context/ThemeContext';
 import ButtonWithIcon from '../../../../components/atomicUI/ButtonWithIcon';
 import * as WebBrowser from 'expo-web-browser';
 
 
 export default function Screen() {
-  const {theme} = useTheme();
+  const {theme, colours} = useTheme();
 
   /**
    * Using a placeholder link for demonstration purposes. When the client 
@@ -26,7 +26,7 @@ export default function Screen() {
   return (
     <ScrollView stickyHeaderIndices={[0]}>
       <View style={theme.header}>
-        <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>Legal</Text>
+        <Text style={[theme.h4, theme.leftText, {color: colours.onSurface}]}>Legal</Text>
       </View>
     
     <Text> </Text>

@@ -115,11 +115,9 @@ export default function RootLayout() {
 
   return(
     <ThemeProvider>
-      <PaperThemeProvider>
         <UserProvider>
           <RootNavigator />
         </UserProvider>
-      </PaperThemeProvider>
     </ThemeProvider>
   )
 }

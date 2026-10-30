@@ -16,7 +16,8 @@
  *  - users account is deleted
  */
 import { View, Text, ScrollView, ActivityIndicator, Alert } from "react-native";
-import { useState, useEffect } from "react";
+import ChangePhoneModal from "../../../../components/atomicUI/ChangePhoneModal";
+import React, { useState, useEffect } from "react";
 
 import { useUser } from "../../../../context/AuthorisationContext";
 import { UserType } from "../../../../constants/userType";
@@ -153,7 +154,7 @@ export default function Screen() {
       <View style={[theme.centerItems, { flex: 1, padding: 24 }]}>
         {loadError ? (
           <>
-            <Text style={[theme.body, theme.fontOnSurface]}>{loadError}</Text>
+            <Text style={[theme.body, {color: colours.onSurface}]}>{loadError}</Text>
             <Text> </Text>
             <TextButton label="Try again" onPress={load} fontColour={colours.onSurface} />
           </>
@@ -240,7 +241,7 @@ export default function Screen() {
 
       <View style={theme.sectionContainer}>
         <Text> </Text>
-        <Text style={[theme.h5, theme.leftText, theme.fontOnSurface]}>
+        <Text style={[theme.h5, theme.leftText, {color: colours.onSurface}]}>
           About Me
         </Text>
 
@@ -289,22 +290,22 @@ export default function Screen() {
         {profile ? (
           // patient: show their answers, with the option to correct them
           <>
-            <Text style={[theme.h6, theme.leftText, theme.fontOnSurface]}>
+            <Text style={[theme.h6, theme.leftText, {color: colours.onSurface}]}>
               Diagnosis
             </Text>
             <Text style={theme.body}> </Text>
-            <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>
+            <Text style={[theme.body, theme.leftText, {color: colours.onSurface}]}>
               {diagnosisLabel}
             </Text>
             <Text> </Text>
 
             {!!otherConditions && (
               <View>
-                <Text style={[theme.h6, theme.leftText, theme.fontOnSurface]}>
+                <Text style={[theme.h6, theme.leftText, {color: colours.onSurface}]}>
                   Other Conditions
                 </Text>
                 <Text style={theme.body}> </Text>
-                <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>
+                <Text style={[theme.body, theme.leftText, {color: colours.onSurface}]}>
                   {otherConditions}
                 </Text>
                 <Text> </Text>
@@ -321,7 +322,7 @@ export default function Screen() {
           </>
         ) : (
           <>
-            <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>
+            <Text style={[theme.body, theme.leftText, {color: colours.onSurface}]}>
               Do you experience musculoskeletal symptoms?
             </Text>
             <Text> </Text>

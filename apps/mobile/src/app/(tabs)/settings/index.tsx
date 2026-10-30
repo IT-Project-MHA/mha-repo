@@ -1,19 +1,19 @@
 /**
  * Every user can access this screen and uses it to navigate to other pages within settings.
  */
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { View, Text, StyleSheet, ScrollView } from 'react-native';
 import ButtonWithIcon from '../../../../components/atomicUI/ButtonWithIcon';
 import { useRouter } from 'expo-router';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 
 export default function Screen() {
   const router = useRouter();
-  const { theme } = useTheme();
+  const { theme, colours } = useTheme();
 
   return (
     <ScrollView stickyHeaderIndices={[0]}>
       <View style={theme.header}>
-        <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>Settings</Text>
+        <Text style={[theme.h4, theme.leftText, {color: colours.onSurface}]}>Settings</Text>
       </View>
 
       <Text> </Text>
@@ -24,6 +24,7 @@ export default function Screen() {
 	        onPress={() => router.navigate('/settings/myAccount')}
           buttonType="transparentButton"
           name="chevron-forward-outline"
+          textStyle={{color: colours.onSurface}}
         />
 
         <View style={theme.line}
@@ -34,6 +35,7 @@ export default function Screen() {
 	        onPress={() => router.navigate('/settings/mySupportLinks')}
           buttonType="transparentButton"
           name="chevron-forward-outline"
+          textStyle={{color: colours.onSurface}}
         />
 
         <View style={theme.line}
@@ -44,6 +46,7 @@ export default function Screen() {
 	        onPress={() => router.navigate('/settings/accessibility')}
           buttonType="transparentButton"
           name="chevron-forward-outline"
+          textStyle={{color: colours.onSurface}}
         />
     
          <View style={theme.line}
@@ -54,6 +57,7 @@ export default function Screen() {
 	        onPress={() => router.navigate('/settings/myData')}
           buttonType="transparentButton"
           name="chevron-forward-outline"
+          textStyle={{color: colours.onSurface}}
         />
    
         <View style={theme.line}
@@ -64,6 +68,7 @@ export default function Screen() {
 	        onPress={() => router.navigate('/settings/permissions')}
           buttonType="transparentButton"
           name="chevron-forward-outline"
+          textStyle={{color: colours.onSurface}}
         />
 
       </View>
@@ -77,6 +82,7 @@ export default function Screen() {
 	          onPress={() => router.navigate('/settings/legal')}
             buttonType="transparentButton"
             name="chevron-forward-outline"
+            textStyle={{color: colours.onSurface}}
           />
 
           <View style={theme.line}
@@ -87,6 +93,7 @@ export default function Screen() {
 	          onPress={() => router.navigate('/settings/support')}
             buttonType="transparentButton"
             name="chevron-forward-outline"
+            textStyle={{color: colours.onSurface}}
           />
       </View>
 
@@ -95,9 +102,3 @@ export default function Screen() {
     </ScrollView>
   );
 }
-
-function createStyles(colours: ColourSet){
-    return StyleSheet.create({
-})
-};
-

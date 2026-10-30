@@ -4,7 +4,7 @@
  *
  * Users can also view the privacy policy (currently a placeholder to be updated by client).
  */
-import { View, Text, ScrollView, Alert } from "react-native";
+import React, { View, Text, ScrollView, Alert } from "react-native";
 import { useTheme } from "../../../../context/ThemeContext";
 import ButtonWithIcon from "../../../../components/atomicUI/ButtonWithIcon";
 import { useState } from "react";
@@ -66,7 +66,7 @@ export default function Screen() {
   return (
     <ScrollView stickyHeaderIndices={[0]}>
       <View style={theme.header}>
-        <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>
+        <Text style={[theme.h4, theme.leftText, {color: colours.onSurface}]}>
           My Data
         </Text>
       </View>

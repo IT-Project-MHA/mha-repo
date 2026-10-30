@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, View, TouchableOpacity } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import Button from "../atomicUI/Button";
@@ -17,7 +16,6 @@ function MultiSelect({ questionOptions, onSubmit, headingText, MIN_SELECTIONS, M
   const { theme } = useTheme();
 
   const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]); // Tracks the currently selected answers
-
 
   function validateMultipleChoice(): boolean {
     //checking if it's something we should accept, i.e. selectedAnswers is between our bounds

@@ -5,13 +5,13 @@
  * High contrast and text size are saved to the server (via ThemeContext),
  * Dark mode is device only.
  */
-import { View, Text, ScrollView } from "react-native";
+import React, { View, Text, ScrollView } from "react-native";
 import { useTheme } from "../../../../context/ThemeContext";
 import TextDropdown from "../../../../components/atomicUI/TextDropdown";
 import Toggle from "../../../../components/atomicUI/Toggle";
 
 export default function Tab() {
-  const { theme, setMode, setHighContrast, isDark, isHC } = useTheme();
+  const { theme, setMode, setHighContrast, isDark, isHC, colours } = useTheme();
 
   /**
    * Function that runs when the theme toggle is pressed
@@ -32,7 +32,7 @@ export default function Tab() {
   return (
     <ScrollView stickyHeaderIndices={[0]}>
       <View style={theme.header}>
-        <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>
+        <Text style={[theme.h4, theme.leftText, {color: colours.onSurface}]}>
           Accessibility
         </Text>
       </View>
@@ -40,7 +40,7 @@ export default function Tab() {
       <Text> </Text>
       <View style={theme.sectionContainer}>
         <View style={theme.row}>
-          <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>
+          <Text style={[theme.body, theme.leftText, {color: colours.onSurface}]}>
             Dark Mode
           </Text>
           <Toggle onToggle={toggleColour} switchOn={isDark} />
@@ -51,7 +51,7 @@ export default function Tab() {
         <Text> </Text>
 
         <View style={theme.row}>
-          <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>
+          <Text style={[theme.body, theme.leftText, {color: colours.onSurface}]}>
             High Contrast
           </Text>
           <Toggle onToggle={toggleContrast} switchOn={isHC} />
@@ -62,7 +62,7 @@ export default function Tab() {
 
         <Text> </Text>
 
-        <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>
+        <Text style={[theme.body, theme.leftText, {color: colours.onSurface}]}>
           Adjust Text Size
         </Text>
 

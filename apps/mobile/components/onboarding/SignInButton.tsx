@@ -13,5 +13,3 @@ export function SignInButton() {
           buttonType = "roundButton"
         />);
 };
-
-/***/

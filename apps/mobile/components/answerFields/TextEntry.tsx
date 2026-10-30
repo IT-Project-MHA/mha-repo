@@ -128,19 +128,9 @@ function TextEntry({ onSubmit, placeholder, keyboardType, textContentType }: Tex
 
 function createStyles(colours: ColourSet, text: Typography, bottomInset: number) {
   return StyleSheet.create({
-    screen: {
-      flex: 1,
-      backgroundColor: colours.background,
-    },
     content: {
       paddingBottom: 100 + bottomInset,
       gap: 40,
-    },
-    title: {
-      marginBottom: -19,
-    },
-    card: {
-      gap: 12,
     },
     field: {
       height: 60,
@@ -151,13 +141,6 @@ function createStyles(colours: ColourSet, text: Typography, bottomInset: number)
       borderColor: colours.secondary,
       justifyContent: 'center',
       textAlign: 'center',
-    },
-    bottomBar: {
-      position: 'absolute',
-      left: '7.5%',
-      width: '85%',
-      bottom: 30+bottomInset,
-      gap: 8,
     },
   });
 }
