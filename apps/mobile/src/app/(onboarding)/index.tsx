@@ -61,7 +61,7 @@ export default function Page() {
         <Button
         label='Create Account'
         onPress={()=>{router.navigate('/(onboarding)/userOnboarding/createAccount')}}
-        buttonType='roundSecondaryButton'
+        buttonType='roundButton'
         />
         <SignInButton/>
       </View>
@@ -171,7 +171,7 @@ function createStyles(colours: ColourSet, text: Typography, bottomInset: number)
 
     divider: {
       borderTopWidth: lineThickness,
-      borderTopColor: colours.secondary2,
+      borderTopColor: colours.ex2,
     },
 
     selectedRow: {

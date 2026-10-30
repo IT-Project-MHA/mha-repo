@@ -3,7 +3,6 @@ import { useTheme } from '../../context/ThemeContext';
 
 type ButtonType = "textButton";
 
-
 /**
  * defines the required input on button creation
  * 
@@ -17,6 +16,7 @@ type ButtonType = "textButton";
 type ButtonProps = {
   label: string;
   onPress: () => void;
+  fontColour: string;
 };
 
 /**
@@ -25,8 +25,8 @@ type ButtonProps = {
  * @param onPress prescribes an action to the button when pressed
  * @returns  button that is styled to look like plain text
  */
-const TextButton = ({label, onPress}: ButtonProps) => {
-  const { theme } = useTheme();
+const TextButton = ({label, onPress, fontColour}: ButtonProps) => {
+  const { theme, colours } = useTheme();
 
   return (
     <TouchableOpacity
@@ -34,7 +34,7 @@ const TextButton = ({label, onPress}: ButtonProps) => {
       style={theme['textButton']}
       onPress={onPress}
     >
-    <Text style={[theme.body, theme.fontOnSurface, theme.fontUnderlined]}>{label}</Text>
+    <Text style={[theme.body, {color: fontColour}, theme.fontUnderlined]}>{label}</Text>
     
     </TouchableOpacity>
   );

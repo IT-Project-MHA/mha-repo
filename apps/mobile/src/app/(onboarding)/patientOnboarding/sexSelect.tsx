@@ -49,16 +49,12 @@ export default function Page() {
         console.log('questionOptions', mapped)
 
         if(!cancelled) setQuestionOptions(mapped);
-
-        
-
       }catch(error){
         console.error('Failed to load options', error);
         if(!cancelled) setError('could not load options')
       }finally{
         if (!cancelled) setLoading(false);
       }
-
     }
     loadOptions();
     return () => {cancelled = true;};

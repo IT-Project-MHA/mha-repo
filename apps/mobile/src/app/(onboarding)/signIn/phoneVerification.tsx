@@ -125,7 +125,7 @@ export default function Page() {
         <Button
         label="Resend Code"
         onPress={resendCode}
-        buttonType='roundSecondaryButton'
+        buttonType='roundButton'
         />
         <Text style={styles.subheading}>We've sent a code to {answers.phone_number}</Text>
       </View>
@@ -239,7 +239,7 @@ function createStyles(colours: ColourSet, text: Typography, bottomInset: number)
 
     divider: {
       borderTopWidth: lineThickness,
-      borderTopColor: colours.secondary2,
+      borderTopColor: colours.ex2,
     },
 
     selectedRow: {

@@ -30,8 +30,8 @@ export default function Screen() {
         />
 
         <ButtonWithIcon
-	        label="My Connections"
-	        onPress={() => router.navigate('/settings/myConnections')}
+	        label="My Support Links"
+	        onPress={() => router.navigate('/settings/mySupportLinks')}
           buttonType="transparentButton"
           name="chevron-forward-outline"
         />

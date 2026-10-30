@@ -1,11 +1,11 @@
 /**
  * Button with an icon
  */
-import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
+import { StyleProp, ViewStyle, TextStyle, Text, View, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import {Ionicons, IoniconsIconName} from '@react-native-vector-icons/ionicons'
 
-type ButtonType = "primaryButton" | "secondaryButton" | "roundButton" | "roundSecondaryButton" | "squareButtonWithLine" | "transparentButton";
+type ButtonType = "primaryButton" | "secondaryButton" | "transparentButton" | "textButton" | "roundButton";
 
 /**
  * defines the required input on button creation
@@ -24,6 +24,9 @@ type ButtonProps = {
   onPress: () => void;
   buttonType: ButtonType;
   name: IoniconsIconName;
+  style?: StyleProp<ViewStyle>; // optional, added on top of the button type's style, e.g. for layout
+  textStyle?: StyleProp<TextStyle>; // optional, added on top of the label's style, e.g. to centre lines
+  disabled?: boolean; // optional, when true the button is dimmed and ignores presses
 };
 
 /**
@@ -35,23 +38,27 @@ type ButtonProps = {
  * @param buttonType string that maps to a button type, defined in theme.ts
  * @returns a styled button component, which performs some funtion when pressed, with an icon
  */
-const Button = ({label, onPress, buttonType, name}: ButtonProps) => {
+const Button = ({label, onPress, buttonType, name, style, textStyle, disabled}: ButtonProps) => {
   const { theme, colours} = useTheme();
 
+  // flatten so we can safely read .color, whatever shape textStyle is
+  const flatTextStyle = StyleSheet.flatten(textStyle);
+  const iconColour = flatTextStyle?.color ?? colours.onSurface;
+
   return (
-    
+
     <TouchableOpacity
-  
       activeOpacity={0.7}
-      style={theme[buttonType]}
+      disabled={disabled}
+      style={[theme[buttonType], style, disabled && styles.disabled]}
       onPress={onPress}
     >
     <View style={styles.row}>
-      <Text style={[theme.h6, theme.fontOnSurface]}>{label}</Text>
+      <Text style={[textStyle, theme.body]}>{label}</Text>
         <Ionicons
             name={name}
             size={16}
-            color={colours.onSurface}  
+            color={iconColour as string}  
             style={styles.icon}
         />
    
@@ -75,5 +82,9 @@ const styles = StyleSheet.create({
     icon: {
         position: 'absolute', // absolute detaches it from the text
         right: 0,
+    },
+    // dimmed look while the button is disabled
+    disabled: {
+        opacity: 0.5,
     },
 });

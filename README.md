@@ -156,28 +156,114 @@ git push -u origin new-feature    //push new branch to repo
 # Merging a branch to main
 
 ```bash
-git checkout new-feature    //check you're in the right branch
-git fetch origin            //fetch the latest updates from repo, to ensure your                                  local main is up to date
-
-// update main 
-git checkout main           //switch to main
-git pull origin main        //pull any changes in main
-
-//merge branch to main
-git merge new-feature
+deactivate
 ```
 
-# Pull requests
+To reset the local database - delete `apps/api/db.sqlite3`, then run `migrate` and `seed_options` again.
 
-All code should be reviewed by the team before being pushed to main. Merge branches via pull requests to run changes by the team and keep a record of which code has been reviewed and who by.
 
-- Keep pull requests short for quick review and to simplify version history.
 
-- Provide a clear, specific title.
+# Repo structure
+```
+mha-repo/
+├── .github/workflows/tests.yml   # CI - runs the Django tests on every PR and push to main
+├── package.json                  # npm
+└── apps/
+    ├── api/                      # Django backend
+    │   ├── mpowered_api/         # Settings, urls and shared base models 
+    │   ├── accounts/             # Users, sign up, login, one-time codes, PINs, devices, support links, SMS and notifications
+    │   ├── health/               # Weekly assessments, the five sections, prescriptions and pain trends
+    │   ├── appointment/          # Appointments, questions, answers, recordings and supporter grants
+    │   ├── audit/                # Audit log of who viewed or changed health data
+    │   ├── reference/            # Questionnaire options, seeded by seed_options from seed/options.json
+    │   └── requirements.txt
+    └── mobile/                   # React Native (Expo) app
+        ├── src/app/              # Screens (Expo Router), one folder per tab
+        │   └── (tabs)/           # painTracker, myHealth, carePlanner, sharedWithMe and settings
+        ├── src/api/              # Calls to the Django API
+        ├── src/db/               # local device database
+        ├── components/           # answer fields, base components and buttons
+        ├── context/              # Login, theme and appointment state
+        └── constants/            # Themes, colours, layout, and dropdown options
+```
 
-- Include an explanation of what it is and why, including what issues it resolves/what tasks are completed.
+Each Django app follows the same layout: 
+`models.py` - tables) 
+`serializer.py` - JSON input and outputs
+`views.py` - endpoints
+`urls.py` - routes
+`admin.py` - Django Admin
+`tests.py` - tests
+
+
+
+# Documentation
+
+**Requirements**
+- [Requirements Specification](https://student-team-vpdzm0ea.atlassian.net/wiki/spaces/IP/pages/6356995/Requirements+Specification)
+- [User Stories](https://student-team-vpdzm0ea.atlassian.net/wiki/spaces/IP/pages/10321921/User+Stories)
+- [Personas](https://student-team-vpdzm0ea.atlassian.net/wiki/spaces/IP/pages/14712833/Personas)
+- [Motivational Model](https://student-team-vpdzm0ea.atlassian.net/wiki/spaces/IP/pages/14745601/Motivational+Model)
+- [Acceptance Criteria](https://student-team-vpdzm0ea.atlassian.net/wiki/spaces/IP/pages/40665096/Acceptance+Criteria)
+
+**Design and architecture**
+- [Software Models & Design](https://student-team-vpdzm0ea.atlassian.net/wiki/spaces/IP/pages/12976129/Software+Models+Design)
+- [Technical Stack](https://student-team-vpdzm0ea.atlassian.net/wiki/spaces/IP/pages/7634945/Technical+Stack)
+- [Architecture Goals and Constraints](https://student-team-vpdzm0ea.atlassian.net/wiki/spaces/IP/pages/19333138/Architecture+Goals+and+Constraints)
+- [System Architecture Diagram](https://student-team-vpdzm0ea.atlassian.net/wiki/spaces/IP/pages/20021258/System+Architecture+Diagram)
+- [Attack Tree + mitigations](https://student-team-vpdzm0ea.atlassian.net/wiki/spaces/IP/pages/31031346/Attack+Tree+mititgations)
+- [Design Doc](https://student-team-vpdzm0ea.atlassian.net/wiki/spaces/IP/pages/88965123/Design+Doc)
+
+**Development**
+- [Coding Standards](https://student-team-vpdzm0ea.atlassian.net/wiki/spaces/IP/pages/19333122/Coding+Standards)
+- [API Document](https://student-team-vpdzm0ea.atlassian.net/wiki/spaces/IP/pages/108396545/API+Document)
+- [Test Plan](https://student-team-vpdzm0ea.atlassian.net/wiki/spaces/IP/pages/100433921/Test+Plan)
+- [Deployment](https://student-team-vpdzm0ea.atlassian.net/wiki/spaces/IP/pages/104726540/Deployment)
+
+**Handover documents (docs/ folder)**
+
+
+
+# Changelog
+
+**Sprint 5**
+- feature development: onboarding screens
+- feature development: My Health screens 
+- feature development: push reminders, SMS codes, audit log, recordings in cloud storage
+- feature development: Django tests in CI with 80% coverage
+
+**Sprint 4**
+- feature development: login, one-time codes and permissions
+- feature development: CRUD APIs for accounts, health, appointments, reference and audit
+- feature development: Care Planner screens
+- feature development: navigation bar 
+- feature development: Settings section
+- feature development: reusable answer components 
+- feature development: Jest test setup 
+- bugfix: database schema fixes from the 22 Sep review 
+
+**Sprint 3**
+- feature development: cloud database tables
+- feature development: local database tables 
+- feature development: frontend set up 
+- feature development: foundational UI buttons and sliders 
+
+**Sprint 2**
+- Repo set up with React Native (Expo) and Django
+
+**Sprint 1**
+- No code 
+
+
 
 - Pass tests before submitting a PR. 
 
 # Testing the app
 npm test
+
+# Traceability matrix
+
+Each user story is linked to its acceptance criteria and test cases in the [Test Plan](https://student-team-vpdzm0ea.atlassian.net/wiki/spaces/IP/pages/100433921/Test+Plan) (section "User Stories to Test Cases").
+
+
+# Licence

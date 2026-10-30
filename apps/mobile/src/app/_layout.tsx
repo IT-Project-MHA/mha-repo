@@ -1,20 +1,38 @@
 import { Stack } from "expo-router";
 import { Platform } from "react-native";
+import React, { useEffect,useState } from "react";
+
 import { configureFonts, MD3DarkTheme, MD3LightTheme, PaperProvider } from "react-native-paper";
 import { enGB, registerTranslation } from "react-native-paper-dates";
-import { ThemeProvider, useTheme } from "../../context/ThemeContext";
-import { UserProvider } from "../../context/AuthorisationContext";
 
-import {useEffect, useState } from 'react';
+import { ThemeProvider, useTheme } from "../../context/ThemeContext";
+import { UserProvider, useUser } from "../../context/AuthorisationContext";
+
+import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
 import { useAppStore } from "../store/appStore";
-
-import React from "react";
 
 SplashScreen.preventAutoHideAsync();
 
 // date pickers use Australian day/month/year format
 registerTranslation("en-GB", enGB);
+
+/**
+ * Android 13+ will not show the notification permission prompt until at least one
+ * notification channel exists, so this creates one when the app starts.
+ */
+async function setUpNotificationChannel() {
+  if (Platform.OS !== "android") return;
+  try {
+    await Notifications.setNotificationChannelAsync("default", {
+      name: "Default",
+      importance: Notifications.AndroidImportance.DEFAULT,
+    });
+  } catch(e) {
+    // not fatal, but the permission prompt may not appear on Android 13+
+    console.warn("Could not create notification channel", e);
+}
+}
 
 /**
  * Gives Paper/md3 components the app's current theme colours
@@ -50,23 +68,47 @@ function PaperThemeProvider({ children }: { children: React.ReactNode }) {
   return <PaperProvider theme={paperTheme}>{children}</PaperProvider>;
 }
 
+/**
+ * decides which screens the user can reach: onboarding/login, or the main tabs.
+ */
+function RootNavigator() {
+  const { isUndefined, isLoading } = useUser();
+
+  useEffect(() => {
+    if (!isLoading) SplashScreen.hideAsync();
+  }, [isLoading]);
+
+  if (isLoading) return null;
+
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Protected guard={isUndefined}>
+        <Stack.Screen name="(onboarding)" />
+      </Stack.Protected>
+
+      <Stack.Protected guard={!isUndefined}>
+        <Stack.Screen name="(tabs)" />
+      </Stack.Protected>
+    </Stack>
+  );
+}
+
 export default function RootLayout() {
-  const isOnboarded = useAppStore((s) => s.isOnboarded);
   const [hydrated, setHydrated] = useState(useAppStore.persist.hasHydrated());
 
-
-  //temporary code to reset flag so that I can test onboarding
-  useEffect(()=>{
-    useAppStore.setState({isOnboarded: false});
+  // set up notification channel on boot
+  useEffect(() => {
+    setUpNotificationChannel();
   }, []);
 
+  // waits for the persisted store to load, to prevent wrong onboarding trigger
   useEffect(()=>{
     const unsub = useAppStore.persist.onFinishHydration(()=>setHydrated(true));
     return unsub;
   }, []);
+
   useEffect(()=> {
     if (hydrated) SplashScreen.hideAsync();
-
   }, [hydrated]);
 
   if(!hydrated) return null;
@@ -75,14 +117,7 @@ export default function RootLayout() {
     <ThemeProvider>
       <PaperThemeProvider>
         <UserProvider>
-          <Stack>
-            <Stack.Screen name="(onboarding)"/>
-            
-            <Stack.Protected guard={isOnboarded}>
-              <Stack.Screen name="(tabs)"/>
-            </Stack.Protected>
-
-          </Stack>
+          <RootNavigator />
         </UserProvider>
       </PaperThemeProvider>
     </ThemeProvider>

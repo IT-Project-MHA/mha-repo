@@ -1,11 +1,15 @@
 /**
  * Colour schemes across themes light / dark / light HC / dark HC
+ * Themes can easily be extended, either by matching the 
+ * ColourSet type, or by adjusting it.
  * 
- * 'on' colours can be used as text on their counterparts (primary/onPrimary etc.) meeting
- *  WCAG contrast standards.
+ * Contrasts between values / onValues have been checked for contrast
+ * using WGAC standard calculator. High contrast themes maintain at least a 7 : 1 ratio between values / onValues and regular
+ * themes maintain at least 4.5 : 1
  * 
- *  '2' colours are alternate versions to their counterparts (primary/primary2)
- *  and can be used for components, etc. against the background.
+ * Ex colours meet text contrast requirements against primary colours.
+ *  - light themes: 'ex' colours are darker versions of primary, secondary, tertiary
+ *  - dark themes: they are lighter. 
  * 
  */
 export type ColourSet = {
@@ -19,12 +23,12 @@ export type ColourSet = {
   onPrimary: string;
   onSecondary: string;
   onTertiary: string;
-  primary2: string;
-  secondary2: string;
-  tertiary2: string;
-  onPrimary2: string;
-  onSecondary2: string;
-  onTertiary2: string;
+  ex1: string;
+  ex2: string;
+  ex3: string;
+  onEx1: string;
+  onEx2: string; 
+  onEx3: string; 
 };
 
 /**
@@ -38,16 +42,15 @@ export const lightColours: ColourSet = {
   tertiary: '#79b0c6',
   onBackground: '#1d1b20',
   onSurface: '#35313b',
-  onPrimary: '#1d1b20', 
+  onPrimary: '#1d1b20',
   onSecondary: '#1d1b20',
   onTertiary: '#1d1b20',
-
-  primary2: '#b8483f',
-  secondary2: '#866826',
-  tertiary2: '#417387', 
-  onPrimary2: '#feeeec', 
-  onSecondary2: '#fdf0d3',
-  onTertiary2: '#dff5fd',
+  ex1: '#b8483f',
+  ex2: '#866826',
+  ex3: '#417387',
+  onEx1: '#FFB7B1',
+  onEx2: '#F7CD77',
+  onEx3: '#A8D3E4',  
 };
 
 /**
@@ -64,13 +67,12 @@ export const darkColours: ColourSet = {
   onPrimary: '#1d1b20',
   onSecondary: '#1d1b20',
   onTertiary: '#1d1b20',
-
-  primary2: '#b8483f',
-  secondary2: '#866826',
-  tertiary2: '#417387', 
-  onPrimary2: '#feeeec', 
-  onSecondary2: '#fdf0d3',
-  onTertiary2: '#dff5fd',
+  ex1: '#b8483f', // deeper coral
+  ex2: '#866826', // deeper yellow
+  ex3: '#417387', // deeper teal'
+  onEx1: '#FFB7B1',
+  onEx2: '#F7CD77',
+  onEx3: '#A8D3E4',
 };
 
 /**
@@ -87,13 +89,12 @@ export const lightHcColours: ColourSet = {
   onPrimary: '#080808',
   onSecondary: '#080808',
   onTertiary: '#080808',
-  
-  primary2: '#9c2b22',
-  secondary2: '#5e4a1f',
-  tertiary2: '#005b7f', 
-  onPrimary2: '#fff9f9', 
-  onSecondary2: '#fff9f9',
-  onTertiary2: '#fff9f9',
+  ex1: '#9c2b22', // deep red coral
+  ex2: '#5e4a1f', // deep yellow 
+  ex3: '#005b7f', // a deep teal
+  onEx1: '#FFF9F9',
+  onEx2: '#FFF9F9',
+  onEx3: '#FFF9F9',
 };
 
 /**
@@ -106,15 +107,14 @@ export const darkHcColours: ColourSet = {
   secondary: '#ffd23f',
   tertiary: '#48cbff',
   onBackground: '#fff9f9',
-  onSurface: '#fff9f9',
+  onSurface: '#fff3f3',
   onPrimary: '#080808',
   onSecondary: '#080808',
   onTertiary: '#080808',
-
-  primary2: '#ffc4bd',
-  secondary2: '#e8a317',
-  tertiary2: '#bde9fb',
-  onPrimary2: '#080808',   
-  onSecondary2: '#080808',
-  onTertiary2: '#080808',  
+  ex1: '#ff968c',
+  ex2: '#e0bb68',
+  ex3: '#9bcbdc', 
+  onEx1: '#FFF9F9',
+  onEx2: '#FFF9F9',
+  onEx3: '#FFF9F9',
 };

@@ -1,11 +1,8 @@
-/**
- * button componant styled to theme.ts and themeContext
- */
-import { Pressable, Text } from 'react-native';
-import { useTheme } from '../../context/ThemeContext';
+import React from "react";
+import { StyleProp, StyleSheet, Text, TextStyle, TouchableOpacity, ViewStyle } from "react-native";
+import { useTheme } from "../../context/ThemeContext";
 
-
-type ButtonType = "primaryButton" | "secondaryButton" | "roundButton" | "roundSecondaryButton" | "transparentButton" | "textButton";
+type ButtonType = "primaryButton" | "secondaryButton" | "transparentButton" | "textButton" | "roundButton" ;
 
 
 /**
@@ -34,16 +31,17 @@ type ButtonProps = {
  * @param buttonType string that maps to a button type, defined in theme.ts
  * @returns a styled button component, which performs some funtion when pressed
  */
-const Button = ({label, onPress, buttonType}: ButtonProps) => {
+const Button = ({ label, onPress, buttonType, style, textStyle }: ButtonProps) => {
   const { theme } = useTheme();
 
   return (
-    <Pressable
-      style={theme[buttonType]}
+    <TouchableOpacity
+      activeOpacity={0.7}
+      style={[theme[buttonType], style]}
       onPress={onPress}
     >
-    <Text style={[theme.h6, theme.fontOnSurface, theme.centerText]}>{label}</Text>
-    </Pressable>
+      <Text style={[textStyle, theme.body]}>{label}</Text>
+    </TouchableOpacity>
   );
 };
 

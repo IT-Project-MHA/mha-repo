@@ -1,5 +1,6 @@
 import { File } from 'expo-file-system';
 import Constants from 'expo-constants'
+import { useAppStore } from '../store/appStore';
 
 // replace with active server URL before deployment. EXPO_PUBLIC_SERVER_URL in apps/mobile/.env
 // overrides it for local testing
@@ -11,12 +12,15 @@ const BASE_URL = `${SERVER_URL}/api`;
 
 // DEV ONLY until login is built: token of a local test user from apps/mobile/.env, sent with
 // every request
-const DEV_TOKEN = process.env.EXPO_PUBLIC_DEV_TOKEN;
+// const DEV_TOKEN = process.env.EXPO_PUBLIC_DEV_TOKEN;
 
 // helper function: returns the headers that tell the server who the user is, as an object of
 // header names & values ({} without a token)
 function authHeaders() {
-    return Object.fromEntries(DEV_TOKEN ? [['Authorization', `Token ${DEV_TOKEN}`]] : []);
+    //return Object.fromEntries(DEV_TOKEN ? [['Authorization', `Token ${DEV_TOKEN}`]] : []);
+    const token = useAppStore.getState().token;
+    return token ? { Authorization: `Token ${token}` } : {};
+
 }
 
 /* Instructions:
@@ -539,6 +543,23 @@ export async function apiAppSection() {
     return selectChoices('appSection');
 }
 
+/* PainTrend:
+- select: patient_profile, days, location (QuestionOption id of a pain_location)
+    - returns weekly pain scores, oldest first: week_starting, current, worst, average,
+      mildest, locations
+    - leave days out for all time
+- create/update/delete: N/A */
+export async function apiPainTrend(operation, values) {
+    return operate('painTrend', operation, values);
+}
+
+/* PainProfile:
+- select: patient_profile
+    - returns latest_pain, recent_locations (last 30 days), current_prescriptions, last_updated
+- create/update/delete: N/A */
+export async function apiPainProfile(operation, values) {
+    return operate('painProfile', operation, values);
+}
 
 //added by Xavier. 
 export async function request_code(phone_number){

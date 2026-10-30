@@ -14,8 +14,6 @@
  * Figma list:
  * ["Arthritis", "Ankylosing spondylitis", "Back pain", "Baker’s cyst", "Bursitis", "Foot related conditions", "Fibromyalgia", "Gout", "Juvenile idiopathic arthritis", "Hand conditions", "Lupus", "Neck pain", "Osteoarthritis", "Osteoporosis", "Paget’s disease", "Perthes’ disease", "Polymyalgia rheumatica", "Psoriatic arthritis", "Raynaud’s phenomenon", "Reactive arthritis", "Rheumatoid arthritis", "Scleroderma", "Shoulder pain", "Sjogren’s disease"]
  */
-
-
 import { View, Text, ScrollView } from 'react-native';
 import { useTheme } from "../../../../context/ThemeContext";
 import { useRouter } from 'expo-router';
@@ -32,11 +30,12 @@ export default  function Page() {
   const { theme } = useTheme();
 
 
-  const setUserOnboaring = useOnboardingStore((s)=> s.set);
+  const setUserOnboarding = useOnboardingStore((s)=> s.set);
   const {set, reset, ...answers} = useOnboardingStore.getState();
   
 
   const [questionOptions, setQuestionOptions] = useState<string[]>([]);
+  const [idByText, setIdByText] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,12 +49,12 @@ export default  function Page() {
         });
         console.log('options', JSON.stringify(options))
         if(!cancelled){
-          setQuestionOptions(
-            options
-            .filter((o: any) => o.is_active)
-            .sort((a: any, b: any) => a.sort_order - b.sort_order)
-            .map((o: any) => o.text)
-          );
+          const active = options
+    .filter((o: any) => o.is_active)
+    .sort((a: any, b: any) => a.sort_order - b.sort_order);
+
+  setQuestionOptions(active.map((o: any) => o.text));
+  setIdByText(Object.fromEntries(active.map((o: any) => [o.text, o.id])));
         }
         console.log('questionOptions', questionOptions)
 
@@ -71,14 +70,16 @@ export default  function Page() {
     return () => {cancelled = true;};
   }, []);
 
-  function setPainTypes(painTypes: string[]){
+  function setPainTypes(selected: string[]){
+    // the server wants QuestionOption ids, not the display text
+    const ids = selected.map((text) => idByText[text]).filter(Boolean);
 
-    //append option to health list
-    let health = answers.health;
-    if(health!=undefined)
-      health.pain_types = painTypes;
-    
-    setUserOnboaring({health})
+    // read the store at call time and build a new object rather than mutating it
+    const { health } = useOnboardingStore.getState();
+    if (health) {
+    setUserOnboarding({ health: { ...health, pain_types: ids } });
+    }
+
     //on success, next page
     router.navigate('/(onboarding)/patientOnboarding/additionalConditionsTextEntry')
   }

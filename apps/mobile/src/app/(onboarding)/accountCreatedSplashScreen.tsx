@@ -6,10 +6,9 @@
 //verification_id, phone_number, display_name, pin,
 //  accepted_terms, accepted_privacy, device_id, track_health (optional), health (optional)
 
+import { useEffect, useRef, useState } from 'react';
+import { useUser } from '../../../context/AuthorisationContext';
 
-
-
-import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useOnboardingStore } from '../../store/onboardingStorage';
 import { useAppStore } from '../../store/appStore';
@@ -22,15 +21,14 @@ import { useTheme, ColourSet } from '../../../context/ThemeContext';
 import { Typography } from '../../../constants/textSize';
 import React from 'react';
 
-
-
-const NUM_DIGITS = 6;
-
 export default function Page() {
   const { colours, theme } = useTheme();
   const insets = useSafeAreaInsets();
   const styles = createStyles(colours, theme, insets.bottom);
   const router = useRouter();
+
+  const { refreshUserType } = useUser();
+  const hasStarted = useRef(false);
 
   const {set, reset, ...answers} = useOnboardingStore.getState();
   const resetOnboarding = useOnboardingStore((s)=> s.reset);
@@ -39,30 +37,35 @@ export default function Page() {
 
   async function createAccount(){
     //takes the data we gathered and sends the register_token request
-
     try{
+      // read answers at call time, before reset
+      const { set, reset, ...answers } = useOnboardingStore.getState();
 
-      //takes verification_id, phone_number, display_name, pin, accepted_terms, accepted_privacy,
-      //  device_id, track_health (optional), health (optional)
+      // takes verification_id, phone_number, display_name, pin, accepted_terms, accepted_privacy,
+      // device_id, track_health (optional), health (optional)
       const result = await register_token(answers);
-      const token = result.token;
+      console.log('register result:', JSON.stringify(result)); 
 
-      
+      completeOnboarding(result.token); // saves token first
+      console.log('stored:', JSON.stringify(useAppStore.getState()));
+
       resetOnboarding();
-      //set the onboarded flag
-      completeOnboarding(token);
+      console.log('calling refreshUserType');
+      
+      await refreshUserType(); // now apiMyRole() can authenticate
       //on success,we go to the landing page (tabs)
-      router.navigate('/(tabs)');
-
-    }catch (error){
-      //wrong code or some such
+      // RootNavigator moves to (tabs) when userType becomes defined
+    } catch (error){
       console.error('register token failed:', error)
     }
-
   }
 
-  //actually call the function
-  createAccount();
+  // runs once when the screen is loaded
+  useEffect(() => {
+    if (hasStarted.current) return;
+    hasStarted.current = true;
+    createAccount();
+  }, []);
 
   return (
     <SafeAreaView style={theme.screen}>
@@ -185,7 +188,7 @@ function createStyles(colours: ColourSet, text: Typography, bottomInset: number)
 
     divider: {
       borderTopWidth: lineThickness,
-      borderTopColor: colours.secondary2,
+      borderTopColor: colours.ex2,
     },
 
     selectedRow: {
