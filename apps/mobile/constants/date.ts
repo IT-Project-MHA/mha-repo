@@ -12,6 +12,12 @@ export const formatDateTime = (dateTime: string) =>
     minute: '2-digit',
   });
 
+/**
+ * Formats a date without its time into a readable string e.g. '12 Oct 2026'.
+ */
+export const formatDate = (date: Date) =>
+  date.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+
 // time without date
 export type TimeOfDay = { hours: number; minutes: number };
 
@@ -70,18 +76,6 @@ export const parseApiDate = (value: string) => {
   const [y, m, d] = value.split('-').map(Number);
   return new Date(y, m - 1, d);
 };
-
-/** 
- * Receives a date string in the form 'YYYY-MM-DD', parses it to date object and returns date as display text.
- * 
- * Goes through parseApiDate so the day is never shifted by the phone's timezone.
- */
-export const formatDate = (value: string) =>
-  parseApiDate(value).toLocaleDateString('en-AU', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
 
 // converts YYYY-MM-DD on a Monday to display text Monday-Sunday (whole week)
 export const weekRangeLabel = (weekStarting: string) => {

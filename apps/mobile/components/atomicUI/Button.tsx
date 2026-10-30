@@ -13,15 +13,13 @@ type ButtonType = "primaryButton" | "secondaryButton" | "transparentButton" | "t
  * <Button
 	    label="light mode"
 	    onPress={() => setMode('light')}
-      buttonType="primaryButton"
+      buttonType="roundButton"
     />
  */
 type ButtonProps = {
   label: string;
   onPress: () => void;
   buttonType: ButtonType;
-  style?: StyleProp<ViewStyle>; // optional, added on top of the button type's style, e.g. for layout
-  textStyle?: StyleProp<TextStyle>; // optional, added on top of the label's style, e.g. to centre lines
 };
 
 /**
@@ -31,8 +29,6 @@ type ButtonProps = {
  * @param label string that says what the button should say
  * @param onPress prescribes an action to the button when pressed
  * @param buttonType string that maps to a button type, defined in theme.ts
- * @param style optional extra style, e.g. { flex: 1 } to share a row with another button
- * @param textStyle optional extra label style, e.g. { textAlign: 'center' } for a two line label
  * @returns a styled button component, which performs some funtion when pressed
  */
 const Button = ({ label, onPress, buttonType, style, textStyle }: ButtonProps) => {

@@ -1,3 +1,5 @@
+import { File } from 'expo-file-system';
+
 // replace with active server URL before deployment. EXPO_PUBLIC_SERVER_URL in apps/mobile/.env
 // overrides it for local testing
 const SERVER_URL = process.env.EXPO_PUBLIC_SERVER_URL ?? "http://localhost:8000";
@@ -97,6 +99,12 @@ function isFile(value) {
     return value != null && typeof value === 'object' && 'uri' in value;
 }
 
+// helper function: converts a device file ({ uri, name, type }) to a file part Expo's fetch can
+// upload ({ name, type, bytes }), which reads the file's contents from the device when it is sent
+function toFormDataFile({ uri, name, type }) {
+    return { name, type, bytes: () => new File(uri).bytes() };
+}
+
 // returns attributes as FormData if any attribute is a file (multipart upload), otherwise as is
 function toRequestBody(attributes) {
     if (!Object.values(attributes).some(isFile)) {
@@ -105,7 +113,7 @@ function toRequestBody(attributes) {
     const formData = new FormData();
     Object.entries(attributes)
         .filter(([, value]) => value != null)
-        .forEach(([key, value]) => formData.append(key, value));
+        .forEach(([key, value]) => formData.append(key, isFile(value) ? toFormDataFile(value) : value));
     return formData;
 }
 

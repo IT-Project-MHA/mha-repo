@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useMemo } from 'react';
 import { useColorScheme } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { themes, ThemeMode, themeColours } from '../constants/theme';
 import type { ColourSet } from '../constants/colourScheme';
 import { createTypography, FontScale, Typography } from '../constants/textSize';
@@ -49,6 +50,8 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
    */
   const [mode, setMode] = useState<ThemeMode>(systemScheme === 'dark' ? 'dark' : 'light');
   const [fontScale, setFontScale] = useState<FontScale>(1) // creates fontScale starting at 1x
+  // height of the Android nav bar / iPhone home indicator, the nav bar sits above it
+  const bottomInset = useSafeAreaInsets().bottom;
 
   /**
    * Building the context value. UseMemo only re renders when an object in the dependancy array
@@ -56,7 +59,12 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
    */
   const value = useMemo<ThemeContextType>(
           () => ({
-              theme: {...themes[mode],...createTypography(fontScale)},
+              theme: {
+                ...themes[mode],
+                ...createTypography(fontScale),
+                // the gap also clears the system nav bar under the nav bar
+                bottomGap: { ...themes[mode].bottomGap, height: themes[mode].bottomGap.height + bottomInset },
+              },
               colours: themeColours[mode],
               mode,
               setMode,
@@ -65,7 +73,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
               isDark: mode === 'dark' || mode === 'darkHC',
               isHC: mode === 'darkHC' || mode === 'lightHC',
           }),
-          [mode, fontScale] // object is rebuilt when one of these changes
+          [mode, fontScale, bottomInset] // object is rebuilt when one of these changes
       );
 
   return (

@@ -4,11 +4,12 @@
  * be read and the recording can only be played.
  */
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
-import { textLayout } from '../../../../constants/layout';
+import { Typography } from '../../../../constants/textSize';
 import { useAppointment } from '../../../../context/AppointmentContext';
 import { apiAppointmentAnswerRecording } from '../../../api/django-API';
 
@@ -19,8 +20,9 @@ const formatTime = (seconds: number) => {
 };
 
 export default function Screen() {
-  const { colours } = useTheme();
-  const styles = createStyles(colours);
+  const { colours, theme } = useTheme();
+  const insets = useSafeAreaInsets();
+  const styles = createStyles(colours, theme, insets.bottom);
   const { id, index } = useLocalSearchParams<{ id: string; index: string }>();
   const { findAppointment } = useAppointment();
   const question = findAppointment(id)?.questions[Number(index)];
@@ -55,7 +57,7 @@ export default function Screen() {
     return (
       <View style={styles.screen}>
         <View style={styles.content}>
-          <Text style={styles.body}>This question could not be found.</Text>
+          <Text style={[styles.body, theme.leftText]}>This question could not be found.</Text>
         </View>
       </View>
     );
@@ -63,40 +65,49 @@ export default function Screen() {
 
   return (
     <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.question}>{question.text}</Text>
+      <ScrollView stickyHeaderIndices={[0]} contentContainerStyle={styles.content}>
+        <View style={[theme.header, styles.title]}>
+          <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>View Answer</Text>
+        </View>
+        <View style={[theme.sectionContainer, styles.card]}>
+          <View style={styles.cardContent}>
+            <Text style={styles.question}>{question.text}</Text>
 
-        <Text style={styles.heading}>Answer</Text>
-        {question.answer ? (
-          <View style={styles.field}>
-            <Text style={styles.input}>{question.answer}</Text>
+            <Text style={styles.heading}>Typed answer</Text>
+            {question.answer ? (
+              <View style={styles.field}>
+                <Text style={styles.input}>{question.answer}</Text>
+              </View>
+            ) : (
+              <Text style={styles.body}>No answer added</Text>
+            )}
+
+            <View style={[theme.line, styles.answerDivider]} />
+
+          <Text style={styles.heading}>Recorded answer</Text>
+            {question.recording ? (
+              // the time shows once the recording has loaded, kept short to fit on one line
+              <Button
+                label={
+                  duration > 0
+                    ? `${playing ? 'Pause' : pausedPartWay ? 'Resume' : 'Play'}  ` +
+                      `${formatTime(timePlayed)}/${formatTime(duration)}`
+                    : 'Play recording'
+                }
+                onPress={togglePlayback}
+                buttonType="roundButton"
+              />
+            ) : (
+              <Text style={styles.body}>No recording added</Text>
+            )}
           </View>
-        ) : (
-          <Text style={styles.body}>No answer added</Text>
-        )}
-
-        <Text style={styles.heading}>Recorded answer</Text>
-        {question.recording ? (
-          // the time left shows once the recording has loaded
-          <Button
-            label={
-              (playing ? 'Pause' : pausedPartWay ? 'Resume recording' : 'Play recording') +
-              (duration > 0 ? `\n${formatTime(timePlayed)}/${formatTime(duration)}` : '')
-            }
-            onPress={togglePlayback}
-            buttonType="primaryButton"
-            style={styles.tallButton}
-            textStyle={styles.centredText}
-          />
-        ) : (
-          <Text style={styles.body}>No recording added</Text>
-        )}
+        </View>
       </ScrollView>
     </View>
   );
 }
 
-function createStyles(colours: ColourSet) {
+function createStyles(colours: ColourSet, text: Typography, bottomInset: number) {
   return StyleSheet.create({
     screen: {
       flex: 1,
@@ -104,50 +115,52 @@ function createStyles(colours: ColourSet) {
     },
 
     content: {
-      paddingHorizontal: 16,
-      paddingTop: 24,
-      paddingBottom: 60,
+      paddingBottom: 120 + bottomInset,
+      gap: 38,
+    },
+
+    title: {
+      marginBottom: -19,
+    },
+
+    card: {
       gap: 12,
     },
 
-    // twice the height of a one line button
-    tallButton: {
-      minHeight: 2 * 24 + 2 * 12,
-      justifyContent: 'center',
-    },
-
-    centredText: {
-      textAlign: 'center',
+    cardContent: {
+      width: '85%',
+      alignSelf: 'center',
+      gap: 12,
     },
 
     question: {
-      ...textLayout,
-      fontSize: 22,
-      lineHeight: 28,
+      ...text.h5,
       color: colours.onBackground,
     },
 
+    answerDivider: {
+      width: '100%',
+      marginTop: 12,
+    },
+
     heading: {
-      ...textLayout,
-      color: colours.onBackground,
+      ...text.h6,
+      color: colours.onSurface,
       marginTop: 8,
     },
 
     body: {
-      fontSize: 16,
-      lineHeight: 24,
-      letterSpacing: 0.5,
+      ...text.body,
       color: colours.onBackground,
     },
 
     input: {
-      fontSize: 16,
-      lineHeight: 24,
+      ...text.body,
       color: colours.onSurface,
     },
 
     field: {
-      backgroundColor: colours.surface,
+      backgroundColor: colours.background,
       borderRadius: 8,
       padding: 12,
     },

@@ -10,7 +10,6 @@ import {
     apiSupportLink,
     apiUser,
 } from './django-API';
-import { suggestedIdOfText } from '../../constants/suggestedQuestions';
 
 /* Care planner API helpers, built on the calls in django-API.js. Use them inside a try/catch block,
 a failed request throws an ApiError. */
@@ -32,6 +31,7 @@ export async function apiPatientAppointments() {
     }
     return apiAppointment('select', { patient_profile: profileId });
 }
+
 
 /* Appointments where the user is the support person:
 - takes no parameters and returns an array of all appointments of other patients that the user
@@ -101,15 +101,53 @@ export async function apiSaveAnswer(questionId, answerId, { text, recording } = 
     return apiAppointmentAnswer('create', { question: questionId, ...values });
 }
 
+/* Saves the user's own questions of an appointment, from the add questions pages of patients and
+support persons:
+- takes the appointment id and the user's questions in order, each { id, text, source }: id is
+  the saved question's id (left out for a new one), source is 'suggested', 'patient' or 'support'
+- creates the new questions, changes the text of saved ones that changed, and deletes the user's
+  saved questions that aren't listed (with their answers). Questions other people added aren't
+  changed, the server only lets a support person change their own
+- a support person needs can_add_questions in AppointmentAccess */
+export async function apiSaveOwnQuestions(appointmentId, questions) {
+    const [[user], saved] = await Promise.all([
+        apiUser('select'),
+        apiAppointmentQuestion('select', { appointment: appointmentId }),
+    ]);
+    const own = saved.filter((question) => question.created_by === user.id);
+
+    const kept = new Set(questions.map((question) => question.id).filter(Boolean));
+    for (const question of own) {
+        if (!kept.has(question.id)) {
+            await apiAppointmentQuestion('delete', { id: question.id });
+        }
+    }
+
+    // one at a time, so the server numbers new questions in the order they were added
+    for (const question of questions) {
+        const savedQuestion = own.find((item) => item.id === question.id);
+        if (question.id && !savedQuestion) {
+            // someone else's question, left as it is
+            continue;
+        }
+        if (!savedQuestion) {
+            await apiAppointmentQuestion('create', {
+                appointment: appointmentId,
+                text: question.text,
+                source: question.source,
+            });
+        } else if (savedQuestion.text !== question.text) {
+            await apiAppointmentQuestion('update', { id: question.id, text: question.text });
+        }
+    }
+}
+
 /* Pain values for the suggested questions (PainSummary in constants/suggestedQuestions.ts):
 - takes a patient_profile id, or nothing for the user's own, returns { locations, average, worst,
   mildest, current }
 - goes through the patient's weekly assessments from the newest week back, until each value is
   found: locations, worst, mildest & current come from the most recent week that has them, average
-  is the average of the 2 most recent weeks that have it (or the 1 week if there's only 1), rounded
-- a value no assessment has is left out (locations is empty), so its questions aren't shown. A
-  support person only sees the patient's assessments if the patient allows it
-  (can_view_assessments), otherwise every value is left out */
+  is the average of the 2 most recent weeks that have it (or the 1 week if there's only 1), rounded */
 export async function apiPainSummary(patientProfileId) {
     const summary = { locations: [] };
     const profileId = patientProfileId ?? (await ownPatientProfileId());
@@ -162,7 +200,7 @@ export async function apiPainSummary(patientProfileId) {
 
 /* One appointment with everything the appointment pages show:
 - takes the appointment id, returns the Appointment with:
-    - questions: in order, each { id, text, source, addedBy, suggestedId, answerId, answer,
+    - questions: in order, each { id, text, source, addedBy, answerId, answer,
       recording }. addedBy is 'support' when someone other than the patient added it, answerId is
       the answer's id (left out when there is no answer), recording is the answer's recording URL
       (it needs the user's token to download)
@@ -200,8 +238,6 @@ export async function apiAppointmentDetails(appointmentId) {
                 text: question.text,
                 source: question.source,
                 addedBy: question.created_by !== appointment.created_by ? 'support' : undefined,
-                suggestedId:
-                    question.source === 'suggested' ? suggestedIdOfText(question.text) : undefined,
                 answerId: answer?.id,
                 answer: answer?.text || undefined,
                 recording: answer?.recording_file || undefined,
@@ -270,15 +306,17 @@ export function apiErrorMessage(error, fallback) {
     return message ?? fallback;
 }
 
-/* Saves the details of the appointment being created, from the create appointment page:
+/* Saves the details of an appointment, from the create & edit appointment pages:
 - takes the id of the appointment if it has already been saved (null the first time) and the
   details ({ scheduledDate, doctor, healthService }), returns the saved Appointment
-- creates the Appointment the first time, then updates the same one when the page is saved again
+- creates the Appointment the first time, then updates the same one
+- scheduledDate can be left out when updating, to keep the saved one: the server refuses a
+  scheduled_date in the past, so a past appointment can only be changed without it
 - healthService is left out when not chosen: the server uses its default when creating, and keeps
   the saved one when updating */
 export async function apiSaveAppointment(appointmentId, { scheduledDate, doctor, healthService }) {
     const details = {
-        scheduled_date: scheduledDate.toISOString(),
+        scheduled_date: scheduledDate ? scheduledDate.toISOString() : undefined,
         doctor: doctor,
         health_service: healthService ?? undefined,
     };
@@ -350,24 +388,4 @@ export async function apiSaveSupportPeople(appointmentId, supportPeople) {
     }
 
     return supportLinkIds;
-}
-
-/* Saves the questions of the appointment being created, from the add questions page:
-- takes the appointment id and the questions ({ text, source }), returns nothing
-- replaces the appointment's questions with the given ones, in the given order
-- safe to call again after a failure or after the page is saved again */
-export async function apiSaveQuestions(appointmentId, questions) {
-    const saved = await apiAppointmentQuestion('select', { appointment: appointmentId });
-    for (const question of saved) {
-        await apiAppointmentQuestion('delete', { id: question.id });
-    }
-
-    // one at a time, so the server numbers them in the order they were added
-    for (const question of questions) {
-        await apiAppointmentQuestion('create', {
-            appointment: appointmentId,
-            text: question.text,
-            source: question.source,
-        });
-    }
 }

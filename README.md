@@ -278,6 +278,11 @@ Each Django app follows the same layout:
 
 
 
+- Pass tests before submitting a PR. 
+
+# Testing the app
+npm test
+
 # Traceability matrix
 
 Each user story is linked to its acceptance criteria and test cases in the [Test Plan](https://student-team-vpdzm0ea.atlassian.net/wiki/spaces/IP/pages/100433921/Test+Plan) (section "User Stories to Test Cases").

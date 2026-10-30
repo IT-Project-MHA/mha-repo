@@ -3,13 +3,15 @@
  */
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTheme as usePaperTheme } from 'react-native-paper';
-import { DatePickerInput } from 'react-native-paper-dates';
 import Button from '../../../../components/atomicUI/Button';
+import DateInput from '../../../../components/atomicUI/DateInput';
 import TimeInput from '../../../../components/atomicUI/TimeInput';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
-import { textLayout } from '../../../../constants/layout';
+import { Typography } from '../../../../constants/textSize';
+import { lineThickness } from '../../../../constants/layout';
 import {
   APPOINTMENT_EARLIEST,
   APPOINTMENT_LATEST,
@@ -29,8 +31,9 @@ const startOfToday = () => {
 };
 
 export default function Screen() {
-  const { colours } = useTheme();
-  const styles = createStyles(colours);
+  const { colours, theme } = useTheme();
+  const insets = useSafeAreaInsets();
+  const styles = createStyles(colours, theme, insets.bottom);
   const router = useRouter();
   const { colors: paperColours } = usePaperTheme();
   const { draft, updateDraft } = useAppointment();
@@ -95,94 +98,95 @@ export default function Screen() {
 
   return (
     <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.heading}>Appointment date</Text>
-        <DatePickerInput
-          locale="en-GB"
-          inputMode="start"
-          value={date}
-          onChange={(newDate) => {
-            setDate(newDate);
-            if (newDate && time) setError(null);
-          }}
-          validRange={{ startDate: startOfToday() }}
-          placeholder="Pick appointment date"
-          withDateFormatInLabel={false}
-          style={styles.dateInput}
-          underlineColor="transparent"
-          activeUnderlineColor="transparent"
-        />
-
-        <Text style={styles.heading}>Appointment time</Text>
-        <TimeInput
-          value={time}
-          onChange={(newTime) => {
-            setTime(newTime);
-            if (date) setError(null);
-          }}
-          placeholder="Pick appointment time"
-          earliest={APPOINTMENT_EARLIEST}
-          latest={APPOINTMENT_LATEST}
-        />
-
-        <View>
-          <Text style={styles.heading}>Doctor's name</Text>
-          <Text style={styles.subheading}>Optional</Text>
+      <ScrollView stickyHeaderIndices={[0]} contentContainerStyle={styles.content}>
+        <View style={[theme.header, styles.title]}>
+          <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>Create Appointment</Text>
         </View>
-        <TextInput
-          style={[styles.field, styles.input]}
-          value={doctor}
-          onChangeText={setDoctor}
-          placeholder="Doctor's name"
-          placeholderTextColor={paperColours.onSurfaceVariant}
-        />
+        <View style={[theme.sectionContainer, styles.card]}>
+          <View style={styles.cardContent}>
+            <Text style={[styles.heading, styles.label, styles.firstLabel]}>Appointment date</Text>
+            <DateInput
+              value={date}
+              onChange={(newDate) => {
+                setDate(newDate);
+                if (newDate && time) setError(null);
+              }}
+              placeholder="Pick appointment date"
+              earliest={startOfToday()}
+            />
 
-        <Text style={styles.heading}>Health services</Text>
-        <TouchableOpacity
-          style={[styles.field, styles.dropdown]}
-          onPress={() => setDropdownOpen(!dropdownOpen)}
-        >
-          <Text style={styles.input}>{serviceLabel}</Text>
-          <Text style={styles.input}>{dropdownOpen ? '▲' : '▼'}</Text>
-        </TouchableOpacity>
-        {dropdownOpen && (
-          <View style={styles.optionList}>
-            {healthServices.map(({ value, label }, index) => (
-              <TouchableOpacity
-                key={value}
-                style={[
-                  styles.optionRow,
-                  index > 0 && styles.divider,
-                  service === value && styles.selectedRow, // highlights selected option
-                ]}
-                onPress={() => handleSelect(value)}
-              >
-                <Text style={[styles.input, service === value && styles.selectedText]}>
-                  {label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            <Text style={[styles.heading, styles.label]}>Appointment time</Text>
+            <TimeInput
+              value={time}
+              onChange={(newTime) => {
+                setTime(newTime);
+                if (date) setError(null);
+              }}
+              placeholder="Pick appointment time"
+              earliest={APPOINTMENT_EARLIEST}
+              latest={APPOINTMENT_LATEST}
+            />
+
+            <View style={styles.label}>
+              <Text style={styles.heading}>Doctor's name</Text>
+              <Text style={styles.subheading}>Optional</Text>
+            </View>
+            <TextInput
+              style={[styles.field, styles.input]}
+              value={doctor}
+              onChangeText={setDoctor}
+              placeholder="Doctor's name"
+              placeholderTextColor={colours.onSurface}
+            />
+
+            <Text style={[styles.heading, styles.label]}>Health service</Text>
+            <TouchableOpacity
+              style={[styles.field, styles.dropdown]}
+              onPress={() => setDropdownOpen(!dropdownOpen)}
+            >
+              <Text style={styles.input}>{serviceLabel}</Text>
+              <Text style={styles.input}>{dropdownOpen ? '▲' : '▼'}</Text>
+            </TouchableOpacity>
+            {dropdownOpen && (
+              <View style={styles.optionList}>
+                {healthServices.map(({ value, label }, index) => (
+                  <TouchableOpacity
+                    key={value}
+                    style={[
+                      styles.optionRow,
+                      index > 0 && styles.divider,
+                      service === value && styles.selectedRow, // highlights selected option
+                    ]}
+                    onPress={() => handleSelect(value)}
+                  >
+                    <Text style={[styles.input, service === value && styles.selectedText]}>
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
-        )}
+        </View>
       </ScrollView>
 
       <View style={styles.bottomBar}>
         {!!error && (
-          <Text style={[styles.error, { color: paperColours.error }]}>
+          <Text style={[styles.error, { color: paperColours.error, borderColor: paperColours.error }]}>
             {error}
           </Text>
         )}
         <Button
           label={saving ? 'Saving...' : 'Save'}
           onPress={handleSubmit}
-          buttonType="primaryButton"
+          buttonType="roundButton"
         />
       </View>
     </View>
   );
 }
 
-function createStyles(colours: ColourSet) {
+function createStyles(colours: ColourSet, text: Typography, bottomInset: number) {
   return StyleSheet.create({
     screen: {
       flex: 1,
@@ -190,47 +194,76 @@ function createStyles(colours: ColourSet) {
     },
 
     content: {
-      paddingHorizontal: 16,
-      paddingTop: 24,
-      paddingBottom: 16,
+      paddingBottom: 200 + bottomInset,
+      gap: 38,
+    },
+
+    title: {
+      marginBottom: -19,
+    },
+
+    card: {
       gap: 12,
     },
 
+    cardContent: {
+      paddingHorizontal: '5%',
+      paddingBottom: 5,
+    },
+
     bottomBar: {
-      paddingHorizontal: 16,
-      marginBottom: 44,
+      position: 'absolute',
+      left: '7.5%',
+      width: '85%',
+      bottom: 120 + bottomInset,
       gap: 8,
     },
 
     heading: {
-      ...textLayout,
-      color: colours.onBackground,
+      ...text.h6,
+      color: colours.onSurface,
+      paddingHorizontal: '5%',
     },
 
     subheading: {
-      fontSize: 14,
+      ...text.small,
       color: colours.onBackground,
+      paddingHorizontal: '5%',
+      marginTop: 4,
+    },
+
+    label: {
+      marginTop: 29,
+      marginBottom: 19,
+    },
+
+    firstLabel: {
+      marginTop: 5,
     },
 
     field: {
-      backgroundColor: colours.surface,
-      borderRadius: 8,
-      padding: 12,
-    },
-
-    dateInput: {
-      backgroundColor: colours.surface,
-      borderRadius: 8,
-      overflow: 'hidden',
+      height: 40,
+      paddingVertical: 5,
+      paddingHorizontal: 10,
+      marginHorizontal: 8,
+      borderWidth: 1,
+      borderColor: colours.onSurface,
+      justifyContent: 'center',
     },
 
     input: {
-      fontSize: 16,
+      ...text.body,
       color: colours.onSurface,
     },
 
     error: {
-      fontSize: 14,
+      ...text.small,
+      borderWidth: 1,
+      borderRadius: 8,
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+      backgroundColor: colours.background,
+      overflow: 'hidden',
     },
 
     dropdown: {
@@ -240,8 +273,10 @@ function createStyles(colours: ColourSet) {
     },
 
     optionList: {
-      backgroundColor: colours.surface,
-      borderRadius: 8,
+      marginTop: 8,
+      marginHorizontal: 8,
+      borderWidth: 1,
+      borderColor: colours.onSurface,
       overflow: 'hidden',
     },
 
@@ -251,7 +286,7 @@ function createStyles(colours: ColourSet) {
     },
 
     divider: {
-      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopWidth: lineThickness,
       borderTopColor: colours.ex3,
     },
 
@@ -261,7 +296,6 @@ function createStyles(colours: ColourSet) {
 
     selectedText: {
       color: colours.onSecondary,
-      fontWeight: 'bold',
     },
   });
 }

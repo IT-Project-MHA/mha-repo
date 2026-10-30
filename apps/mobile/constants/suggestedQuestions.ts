@@ -28,7 +28,6 @@ export const SUGGESTED_QUESTIONS: { key: string; heading: string; questions: Sug
       { template: 'What could be causing pain in my {locations}?' },
       {
         template: 'Are these areas related, or are they likely separate issues?',
-        // needs more than one area
         showIf: (pain) => pain.locations.length > 1,
       },
     ],
@@ -40,7 +39,6 @@ export const SUGGESTED_QUESTIONS: { key: string; heading: string; questions: Sug
       { template: 'My average pain over the past two weeks has been around {average} — what does this indicate?' },
       {
         template: 'Even though I don’t have pain right now, I’ve had severe pain at times (up to {worst}). What could explain these flare-ups?',
-        // only true when the patient's current pain is 0
         showIf: (pain) => pain.current === 0,
       },
       { template: 'Is it normal for pain to vary between mild ({mildest}) and very severe ({worst})?' },
@@ -72,9 +70,7 @@ export const SUGGESTED_QUESTIONS: { key: string; heading: string; questions: Sug
   },
 ];
 
-//  a suggested question's checkbox id is its category key and number, e.g. 'location1'
-export const suggestedId = (key: string, index: number) => `${key}${index + 1}`;
-
+// any word inside {}
 const PLACEHOLDER = /\{(\w+)\}/g;
 
 // a list of words as written in a sentence, e.g. 'neck and knee', 'lower back, neck, and knee'
@@ -106,46 +102,53 @@ const fillQuestion = ({ template, showIf }: SuggestedQuestion, pain: PainSummary
   return missing ? null : text;
 };
 
+// matches a question's text with any values in place of its placeholders
+const templatePattern = (template: string) =>
+  new RegExp(
+    `^${template
+      .split(PLACEHOLDER)
+      // split keeps the placeholder names at the odd places & skip regex special chars 
+      .map((part, index) => (index % 2 ? '.+' : part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
+      .join('')}$`,
+  );
+
+/**
+ * Whether a question's text is one of the suggested questions, with any values in its
+ * placeholders. A question saved before its suggestion's wording was changed doesn't match, so it is
+ * shown with the questions written by the user instead.
+ */
+export const isSuggestedText = (text: string) =>
+  SUGGESTED_QUESTIONS.some(({ questions }) =>
+    questions.some(({ template }) => templatePattern(template).test(text)),
+  );
+
 /**
  * The suggested questions to show under each heading, filled in with the patient's pain values.
- * A suggestion already saved to the appointment keeps the text it was saved with, so its values
- * don't change later. A question without the values it needs is left out, and so is a heading with
- * no questions.
+ * saved is the saved question whose text matches the suggestion, which keeps the text it was saved
+ * with so its values don't change later. A question without the values it needs is left out, and so
+ * is a heading with no questions. checkboxId only tells the checkboxes apart on the page, it isn't
+ * saved, unlike a saved question's id.
  */
-export const fillSuggestedQuestions = (
+export const fillSuggestedQuestions = <T extends { text: string }>(
   pain: PainSummary,
-  savedQuestions: { suggestedId?: string; text: string }[] = [],
+  savedQuestions: T[] = [],
 ) =>
   SUGGESTED_QUESTIONS.map(({ key, heading, questions }) => ({
     key,
     heading,
     questions: questions
       .map((question, index) => {
-        const id = suggestedId(key, index);
-        const saved = savedQuestions.find((item) => item.suggestedId === id);
-        return { id, text: saved?.text ?? fillQuestion(question, pain) };
+        const pattern = templatePattern(question.template);
+        const saved = savedQuestions.find((item) => pattern.test(item.text));
+        return {
+          checkboxId: `${key}${index + 1}`,
+          text: saved?.text ?? fillQuestion(question, pain),
+          saved,
+        };
       })
-      .filter((question): question is { id: string; text: string } => question.text !== null),
+      .filter(
+        (question): question is { checkboxId: string; text: string; saved: T | undefined } =>
+          question.text !== null,
+      ),
+    // remove headings with no questions
   })).filter(({ questions }) => questions.length > 0);
-
-// matches a question's text with any values in place of its placeholders
-const templatePattern = (template: string) =>
-  new RegExp(
-    `^${template
-      .split(PLACEHOLDER)
-      // split keeps the placeholder names at the odd places
-      .map((part, index) => (index % 2 ? '.+' : part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
-      .join('')}$`,
-  );
-
-/**
- * The id of the suggested question a saved question's text came from, matched with its template
- * as the values filled in may be different now, or undefined if it isn't a suggestion.
- */
-export const suggestedIdOfText = (text: string) => {
-  for (const { key, questions } of SUGGESTED_QUESTIONS) {
-    const index = questions.findIndex(({ template }) => templatePattern(template).test(text));
-    if (index !== -1) return suggestedId(key, index);
-  }
-  return undefined;
-};

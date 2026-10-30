@@ -15,7 +15,7 @@ type ButtonType = "primaryButton" | "secondaryButton" | "transparentButton" | "t
  * <Button
         label="light mode"
         onPress={() => setMode('light')}
-        buttonType="primaryButton"
+        buttonType="roundButton"
         name="alarm"
     />
  */

@@ -2,19 +2,31 @@
  * Patients check the details of their new appointment plan before submitting it.
  * Opened after addQuestions screen.
  */
+import { Fragment } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Button from '../../../../components/atomicUI/Button';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
-import { textLayout } from '../../../../constants/layout';
+import { Typography } from '../../../../constants/textSize';
 import { formatDateTime } from '../../../../constants/date';
 import { useAppointment } from '../../../../context/AppointmentContext';
 
 export default function Screen() {
-  const { colours } = useTheme();
-  const styles = createStyles(colours);
+  const { colours, theme } = useTheme();
+  const insets = useSafeAreaInsets();
+  const styles = createStyles(colours, theme, insets.bottom);
   const router = useRouter();
   const { draft, resetDraft } = useAppointment();
+
+  const overview = [
+    {
+      label: 'Appointment date and time',
+      value: draft.scheduledDate ? formatDateTime(draft.scheduledDate.toISOString()) : '',
+    },
+    { label: "Doctor's name", value: draft.doctor || 'Not given' },
+    { label: 'Health service', value: draft.healthService ?? 'Not given' },
+  ];
 
   // each page of the create appointment flow has already saved its part to the server, so this
   // clears the draft, so the next new appointment doesn't change this one, and goes back to the
@@ -26,79 +38,85 @@ export default function Screen() {
 
   return (
     <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={[styles.headline, styles.firstHeadline]}>Overview</Text>
-        <View style={styles.section}>
-          <Text style={styles.heading}>Appointment date and time</Text>
-          <View style={styles.field}>
-            <Text style={styles.input}>
-              {draft.scheduledDate && formatDateTime(draft.scheduledDate.toISOString())}
-            </Text>
-          </View>
+      <ScrollView stickyHeaderIndices={[0]} contentContainerStyle={styles.content}>
+        <View style={[theme.header, styles.title]}>
+          <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>Review my Appointment Plan</Text>
         </View>
-
-        <View style={styles.section}>
-          <Text style={styles.heading}>Doctor's name</Text>
-          <View style={styles.field}>
-            <Text style={styles.input}>{draft.doctor || 'Not given'}</Text>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.heading}>Health service</Text>
-          <View style={styles.field}>
-            <Text style={styles.input}>{draft.healthService ?? 'Not given'}</Text>
-          </View>
-        </View>
-
-        <Text style={styles.headline}>Support Persons</Text>
-        <View style={[styles.field, styles.list]}>
-          {draft.supportPeople.length > 0 ? (
-            draft.supportPeople.map((person, index) => (
-              <Text
-                key={index}
-                style={[styles.input, styles.listItem, index > 0 && styles.divider]}
-              >
-                {/* someone invited without an account yet has no name, their number tells
-                    them apart */}
-                {person.name || `Pending invite (${person.phone})`}
-              </Text>
-            ))
-          ) : (
-            <Text style={[styles.input, styles.listItem]}>No support persons added</Text>
-          )}
-        </View>
-
-        <Text style={styles.headline}>Questions to ask</Text>
-        {draft.questions.length > 0 ? (
-          <View style={[styles.field, styles.list]}>
-            {draft.questions.map((question, index) => (
-              <Text
-                key={index}
-                style={[styles.input, styles.listItem, index > 0 && styles.divider]}
-              >
-                {question.text}
-              </Text>
+        <View style={[theme.sectionContainer, styles.card]}>
+          <View style={styles.cardContent}>
+            <Text style={styles.headline}>Overview</Text>
+            {overview.map(({ label, value }, index) => (
+              <Fragment key={label}>
+                {index > 0 && <View style={theme.line} />}
+                <View style={styles.row}>
+                  <Text style={styles.label}>{label}:</Text>
+                  <Text style={styles.value}>{value}</Text>
+                </View>
+              </Fragment>
             ))}
           </View>
-        ) : (
-          // no card when there are no questions
-          <Text style={styles.body}>No Questions Added</Text>
-        )}
+        </View>
+
+        <View style={[theme.sectionContainer, styles.card]}>
+          <View style={styles.cardContent}>
+            <Text style={styles.headline}>Support Persons</Text>
+            {draft.supportPeople.length > 0 ? (
+              draft.supportPeople.map((person, index) => {
+                // get list of access strings
+                const access = [
+                  person.canAddQuestions && 'Add questions',
+                  person.canAddAnswers && "Add doctor's answer",
+                ].filter(Boolean);
+
+                return (
+                  <Fragment key={index}>
+                    {index > 0 && <View style={theme.line} />}
+                    <View style={styles.row}>
+                      {/* someone invited without an account yet has no name */}
+                      <Text style={styles.label}>{person.name || 'Pending invite'}</Text>
+                      <Text style={styles.value}>{person.phone}</Text>
+                      <Text style={styles.value}>
+                        Access: {access.length > 0 ? access.join(', ') : 'None'}
+                      </Text>
+                    </View>
+                  </Fragment>
+                );
+              })
+            ) : (
+              <Text style={[styles.value, styles.row]}>No support persons added</Text>
+            )}
+          </View>
+        </View>
+
+        <View style={[theme.sectionContainer, styles.card]}>
+          <View style={styles.cardContent}>
+            <Text style={styles.headline}>Questions to ask</Text>
+            {draft.questions.length > 0 ? (
+              draft.questions.map((question, index) => (
+                <Fragment key={index}>
+                  {index > 0 && <View style={theme.line} />}
+                  <Text style={[styles.value, styles.row]}>{question.text}</Text>
+                </Fragment>
+              ))
+            ) : (
+              <Text style={[styles.value, styles.row]}>No questions added</Text>
+            )}
+          </View>
+        </View>
       </ScrollView>
 
       <View style={styles.bottomBar}>
         <Button
-          label="Submit"
+          label="Finish"
           onPress={handleSubmit}
-          buttonType="primaryButton"
+          buttonType="roundButton"
         />
       </View>
     </View>
   );
 }
 
-function createStyles(colours: ColourSet) {
+function createStyles(colours: ColourSet, text: Typography, bottomInset: number) {
   return StyleSheet.create({
     screen: {
       flex: 1,
@@ -106,68 +124,52 @@ function createStyles(colours: ColourSet) {
     },
 
     content: {
-      paddingHorizontal: 16,
-      paddingTop: 24,
-      paddingBottom: 16,
+      paddingBottom: 200 + bottomInset,
+      gap: 38,
+    },
+
+    title: {
+      marginBottom: -19,
+    },
+
+    card: {
       gap: 12,
     },
 
     bottomBar: {
-      paddingHorizontal: 16,
-      marginBottom: 44,
+      position: 'absolute',
+      left: '7.5%',
+      width: '85%',
+      bottom: 120 + bottomInset,
+    },
+
+    cardContent: {
+      paddingHorizontal: '5%',
+      paddingBottom: 5,
     },
 
     headline: {
-      fontSize: 28,
-      lineHeight: 36,
-      fontWeight: '400',
-      color: colours.onBackground,
-      marginTop: 16,
+      ...text.h4,
+      color: colours.onSurface,
+      paddingHorizontal: '5%',
+      marginTop: 5,
+      marginBottom: 7,
     },
 
-    firstHeadline: {
-      marginTop: 0,
+    row: {
+      paddingHorizontal: '5%',
+      paddingBlock: 24,
+      gap: 4,
     },
 
-    section: {
-      gap: 8,
-    },
-
-    heading: {
-      ...textLayout,
-      color: colours.onBackground,
-    },
-
-    body: {
-      fontSize: 16,
-      lineHeight: 24,
-      letterSpacing: 0.5,
-      color: colours.onBackground,
-    },
-
-    input: {
-      fontSize: 16,
+    label: {
+      ...text.h6,
       color: colours.onSurface,
     },
 
-    field: {
-      backgroundColor: colours.surface,
-      borderRadius: 8,
-      padding: 12,
-    },
-
-    list: {
-      padding: 0,
-      overflow: 'hidden',
-    },
-
-    listItem: {
-      padding: 12,
-    },
-
-    divider: {
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: colours.ex3,
+    value: {
+      ...text.body,
+      color: colours.onSurface,
     },
   });
 }

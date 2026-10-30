@@ -15,7 +15,6 @@ export type AppointmentQuestion = {
   text: string;
   source: 'suggested' | 'patient' | 'support';
   addedBy?: 'support'; // left out when the patient added it
-  suggestedId?: string;
   answerId?: string; // the server's id of the answer, left out until one is saved
   answer?: string;
   recording?: string; // file uri, or the server's download URL

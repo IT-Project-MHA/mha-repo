@@ -1,6 +1,6 @@
 import { StyleSheet } from "react-native";
 import { lightColours, darkColours, lightHcColours, darkHcColours, ColourSet } from "./colourScheme";
-import { primaryButtonLayout, buttonLayout, textLayout, transparentButtonLayout, textButtonLayout, roundButtonLayout } from "./layout";
+import { primaryButtonLayout, buttonLayout, textLayout, transparentButtonLayout, textButtonLayout, roundButtonLayout, lineThickness } from "./layout";
 
 /**
  * Builds a style sheet for each theme, using colour schemes defined in colourScheme.ts
@@ -34,6 +34,18 @@ const createTheme = (colours: ColourSet) =>
       backgroundColor: colours.secondary,
       ...buttonLayout,
     },
+    roundButton: {
+      backgroundColor: colours.tertiary,
+      ...roundButtonLayout,
+    },
+    roundSecondaryButton: {
+      backgroundColor: colours.background,
+      ...roundButtonLayout,
+      borderWidth: 1,
+      borderTopWidth: 1,
+      borderBottomWidth: 1,
+      borderColor: colours.onSurface,
+    },
     transparentButton:{
       backgroundColor: 'transparent',
       ...transparentButtonLayout,
@@ -41,10 +53,6 @@ const createTheme = (colours: ColourSet) =>
     textButton:{
       backgroundColor: 'transparent',
       ...textButtonLayout,
-    },
-    roundButton: {
-      backgroundColor: colours.tertiary,
-      ...roundButtonLayout,
     },
 
     /**
@@ -80,7 +88,8 @@ const createTheme = (colours: ColourSet) =>
       shadowOpacity: 0.15,
       shadowRadius: 6,
     },
-     /**
+        
+    /**
      * use only for manipulating layouts within a container as it
      * has no padding.
      * 
