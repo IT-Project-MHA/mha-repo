@@ -23,6 +23,7 @@ type ButtonProps = {
   label: string;
   onPress: () => void;
   iconName: IoniconsIconName;
+  fontColour: string;
 };
 
 /**
@@ -31,7 +32,7 @@ type ButtonProps = {
  * @param onPress prescribes an action to the button when pressed
  * @returns  button that is styled to look like plain text
  */
-const TextButton = ({label, onPress,iconName}: ButtonProps) => {
+const TextButton = ({label, onPress,iconName, fontColour}: ButtonProps) => {
   const { theme, colours } = useTheme();
 
   return (
@@ -45,7 +46,7 @@ const TextButton = ({label, onPress,iconName}: ButtonProps) => {
             <Ionicons
                 name={iconName}
                 size={16}
-                color={colours.onSurface}  
+                color={ fontColour}  
                 style={styles.icon}
             />
     </View>

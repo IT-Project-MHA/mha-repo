@@ -12,8 +12,6 @@ staticfiles/
 .env
 *.local
 .vscode/settings.json
-package-lock.json
-apps/mobile/package.json
 
 # SQL lite
 db.sqlite3

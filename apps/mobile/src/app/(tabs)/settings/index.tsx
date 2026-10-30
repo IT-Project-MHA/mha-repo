@@ -8,7 +8,7 @@ import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 
 export default function Screen() {
   const router = useRouter();
-  const { theme } = useTheme();
+  const { theme, colours } = useTheme();
 
   return (
     <ScrollView stickyHeaderIndices={[0]}>
@@ -24,16 +24,18 @@ export default function Screen() {
 	        onPress={() => router.navigate('/settings/myAccount')}
           buttonType="transparentButton"
           name="chevron-forward-outline"
+          fontColour={colours.onSurface}
         />
 
         <View style={theme.line}
         />
 
         <ButtonWithIcon
-	        label="My Connections"
+	        label="My Support Links"
 	        onPress={() => router.navigate('/settings/myConnections')}
           buttonType="transparentButton"
           name="chevron-forward-outline"
+          fontColour={colours.onSurface}
         />
 
         <View style={theme.line}
@@ -44,6 +46,7 @@ export default function Screen() {
 	        onPress={() => router.navigate('/settings/accessibility')}
           buttonType="transparentButton"
           name="chevron-forward-outline"
+          fontColour={colours.onSurface}
         />
     
          <View style={theme.line}
@@ -54,6 +57,7 @@ export default function Screen() {
 	        onPress={() => router.navigate('/settings/myData')}
           buttonType="transparentButton"
           name="chevron-forward-outline"
+          fontColour={colours.onSurface}
         />
    
         <View style={theme.line}
@@ -64,6 +68,7 @@ export default function Screen() {
 	        onPress={() => router.navigate('/settings/permissions')}
           buttonType="transparentButton"
           name="chevron-forward-outline"
+          fontColour={colours.onSurface}
         />
 
       </View>
@@ -77,6 +82,7 @@ export default function Screen() {
 	          onPress={() => router.navigate('/settings/legal')}
             buttonType="transparentButton"
             name="chevron-forward-outline"
+            fontColour={colours.onSurface}
           />
 
           <View style={theme.line}
@@ -87,6 +93,7 @@ export default function Screen() {
 	          onPress={() => router.navigate('/settings/support')}
             buttonType="transparentButton"
             name="chevron-forward-outline"
+            fontColour={colours.onSurface}
           />
       </View>
 

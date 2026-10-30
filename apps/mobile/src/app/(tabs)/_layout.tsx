@@ -5,6 +5,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, ColourSet } from '../../../context/ThemeContext';
 import { useUser } from '../../../context/AuthorisationContext';
 
+// consts that can be imported & used in other tabs/components
+export const TAB_BAR_HEIGHT = 40;
+export const TAB_BAR_BOTTOM = '4%';
+
 
 /**
  * Defines the structure of the navigation bar using the react native 'tab view' component structure
@@ -23,7 +27,7 @@ export default function TabLayout() {
       screenOptions={{
         tabBarStyle: {
           ...styles.floatingTabBar,
-          height: 70 + insets.bottom,
+          height: TAB_BAR_HEIGHT + insets.bottom,
           paddingBottom: insets.bottom,
         },
         // centres each icon & label between the top of the nav bar and the system nav bar
@@ -114,11 +118,14 @@ function createStyles(colours: ColourSet){
   },
 
   floatingTabBar: {
-    bottom: 0,
+    bottom: TAB_BAR_BOTTOM,
     position: 'absolute',
-    height: 70,
+    height: TAB_BAR_HEIGHT,
 
-    borderRadius: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+
+    borderRadius: 100,
     borderTopWidth: 0,     
     borderBottomWidth: 0, 
 

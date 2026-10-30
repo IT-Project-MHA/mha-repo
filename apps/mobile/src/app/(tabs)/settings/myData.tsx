@@ -11,7 +11,7 @@ import ConfirmModal from '../../../../components/atomicUI/ConfirmModal';
 import * as WebBrowser from 'expo-web-browser';
 
 export default function Screen() {
-  const {theme} = useTheme();
+  const {theme, colours} = useTheme();
 
   const PRIVACY_URL = 'https://s2.q4cdn.com/175719177/files/doc_presentations/Placeholder-PDF.pdf';
   const openPrivacy = () => WebBrowser.openBrowserAsync(PRIVACY_URL);
@@ -43,6 +43,7 @@ export default function Screen() {
 	        onPress={() => setPending('delete')}
           buttonType="transparentButton"
           name="trash-bin-outline"
+          fontColour={colours.onSurface}
         />
 
        <View style={theme.line}></View>
@@ -52,6 +53,7 @@ export default function Screen() {
 	        onPress={openPrivacy}
           buttonType="transparentButton"
           name="arrow-up-right-box-outline"
+          fontColour={colours.onSurface}
         />
 
       </View>

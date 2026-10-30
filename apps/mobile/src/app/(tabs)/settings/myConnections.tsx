@@ -57,13 +57,13 @@ const placeholderPeople: People[] =[
   {id: '3', name: 'Underscores', role: 'Im Supporting', phone: '+61 254 973 921', relationship: 'imSupporting', permissions: underscoresPermissions},
 ]
   
-
 export default function Screen() {
   const {theme} = useTheme();
   const [people, setPeople] =useState<People[]>(placeholderPeople);
   const [selected, setselected] = useState<People | null >(null);
   const [pending, setPending] = useState< 'removeSupportPeople' | 'removeImSupporting' | null>(null);
 
+  const {colours} = useTheme();
   /**
    * This function manages rendering people of different relationship types.
    * @param title Title of the button, being the persons name.
@@ -84,9 +84,9 @@ export default function Screen() {
                 onPress={()=> setselected(people)}
                 buttonType='transparentButton'
                 name="chevron-forward-outline"
+                fontColour={colours.onSurface}
                 />
-            </View>
-            
+            </View> 
           ))}
         </View>  
         </View>   
@@ -104,7 +104,7 @@ export default function Screen() {
    
     <ScrollView stickyHeaderIndices={[0]}>
       <View style={theme.header}>
-        <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>My Connections</Text>
+        <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>My Support Links</Text>
       </View>
       <Text> </Text>
       
@@ -120,6 +120,7 @@ export default function Screen() {
           <TextButton
 	        label="Add Support Person"
 	        onPress={() => setPending('removeSupportPeople')}
+          fontColour={colours.onSurface}
           />
         </View> 
           

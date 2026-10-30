@@ -161,6 +161,7 @@ const PeopleModal = ({visible, name, role, phone, permissions, onChange, onCance
 	                    label="Remove Support Person"
 	                    onPress={() => setPending('removeSupportPerson')}
                         iconName="trash-bin-outline"
+                        fontColour={colours.onSurface}
                     />
                 </View>
             </View>
@@ -186,6 +187,7 @@ const PeopleModal = ({visible, name, role, phone, permissions, onChange, onCance
 	                    label="Remove Connection"
 	                    onPress={() => setPending('removeConnection')}
                         iconName="trash-bin-outline"
+                        fontColour={colours.onSurface}
                     />
                 </View>
             </View> 
