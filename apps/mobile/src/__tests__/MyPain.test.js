@@ -1,7 +1,7 @@
 import {Question, QuestionProps} from "../../components/baseComponents/Question";
 import {Assessment, AssessmentProps} from "../../components/baseComponents/Assessment";
 import { GenerateAssessmentProps, GenerateQuestionProps} from "../testSupport/AssessmentTestHelpers";
-import { Tab, FindLastMonday } from "../app/(tabs)/painTracker";
+import { Tab, FindLastMonday } from "../app/(tabs)/myPain/index";
 import {Button} from "react-native";
 import {render, fireEvent, getByText, queryByText, waitFor} from '@testing-library/react';
 import { TextEncoder, TextDecoder } from 'util';
