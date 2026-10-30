@@ -256,12 +256,14 @@ const createTheme = (colours: ColourSet) =>
       paddingHorizontal: 80, 
       borderRadius: 8,
       backgroundColor: colours.background,
+      alignItems: 'center' as const,
     },
     option: {
       backgroundColor: colours.surface,
-      padding: 15,
+      paddingVertical: 12, 
+      paddingHorizontal: 80, 
       borderRadius: 8,
-      marginBottom: 15,
+      alignItems: 'center' as const,
     },
     selectedOption: {
       backgroundColor: colours.secondary,
@@ -276,6 +278,13 @@ const createTheme = (colours: ColourSet) =>
       color: colours.onSecondary,
       ...textLayout,
     },
+    /*optionSpacing: {
+      backgroundColor: 'transparent',
+      paddingVertical: 12, 
+      paddingHorizontal: 80, 
+      borderRadius: 8,
+      alignItems: 'center' as const,
+    },*/
     //emoji
     emojiContainer: {
       paddingVertical: 12, 

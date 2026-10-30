@@ -8,6 +8,7 @@
  * to import only this file, and keeps logic in one place.
  * 
  */
+import React from "react";
 import { UserType } from "../constants/userType";
 import { createContext, useContext, useState, useMemo, useCallback, useEffect } from "react";
 import { apiMyRole } from "@/api/settings_api_helpers";
