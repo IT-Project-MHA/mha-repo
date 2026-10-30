@@ -40,7 +40,7 @@ const description = [
   "etc3",
 ];
 
-function SliderEntry({ onSubmit }: { onSubmit: (v: string) => void }, upperBound: number) {
+function SliderEntry({ onSubmit , upperBound }: { onSubmit: (v: string) => void }, upperBound: number) {
 
   const { theme } = useTheme();
 
