@@ -3,7 +3,7 @@ import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { StyleSheet,  } from 'react-native';
 
 /**
- * Defines the structure of the screens within the settings page.
+ * Defines the structure of the screens within the myPain page.
  * 
  * @returns screens which correspond to different files as screens.
  */
