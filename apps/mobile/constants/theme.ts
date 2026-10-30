@@ -83,8 +83,8 @@ const createTheme = (colours: ColourSet) =>
       paddingHorizontal: '3%',
       borderRadius: 28,
 
-      shadowColor: colours.primary,
-      shadowOpacity: .15,
+      //shadowColor: colours.primary,
+      //shadowOpacity: .15,
       shadowRadius: 7,
       shadowOffset: {
           width: 0,
@@ -228,8 +228,8 @@ const createTheme = (colours: ColourSet) =>
       justifyContent: 'center',
       width: '100%',
       alignContent: 'flex-start',
-      paddingBottom: 20,
-      paddingTop: 15,
+      paddingBottom: 15,
+      paddingTop: 10,
       borderColor: colours.background,
       borderWidth: 3,
     },
@@ -237,12 +237,6 @@ const createTheme = (colours: ColourSet) =>
     /**
      * Styles for font details (colour, underline, etc)
      */
-    fontOnSurface: {
-      color: colours.onSurface,
-    },
-    fontOnBackground: {
-      color: colours.onBackground,
-    },
     fontUnderlined: {
       textDecorationLine: 'underline',
     },
