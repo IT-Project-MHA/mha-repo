@@ -44,7 +44,7 @@ function PaperThemeProvider({ children }: { children: React.ReactNode }) {
       ...baseTheme.colors,
       primary: colours.primary,
       onPrimary: colours.onPrimary,
-      primaryContainer: colours.primary2,
+      primaryContainer: colours.ex1,
       secondary: colours.secondary,
       onSecondary: colours.onSecondary,
       secondaryContainer: colours.secondary,

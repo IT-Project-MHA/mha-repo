@@ -155,7 +155,7 @@ export default function Screen() {
           <>
             <Text style={[theme.body, theme.fontOnSurface]}>{loadError}</Text>
             <Text> </Text>
-            <TextButton label="Try again" onPress={load} />
+            <TextButton label="Try again" onPress={load} fontColour={colours.onSurface} />
           </>
         ) : (
           <ActivityIndicator />
@@ -271,6 +271,7 @@ export default function Screen() {
           <TextButton
             label="Edit Details"
             onPress={() => setPending("editAboutMe")}
+            fontColour={colours.onSurface}
           />
         </View>
       </View>
@@ -314,6 +315,7 @@ export default function Screen() {
               <TextButton
                 label="Edit Details"
                 onPress={() => setPending("editMyConditions")}
+                fontColour={colours.onSurface}
               />
             </View>
           </>
@@ -371,6 +373,7 @@ export default function Screen() {
         <TextButton
             label="Delete my account"
             onPress={() => setPending("delete")}
+            fontColour={colours.onSurface}
         />
       </View>
 

@@ -216,7 +216,7 @@ export default function Screen() {
           <>
             <Text style={[theme.body, theme.fontOnSurface]}>{loadError}</Text>
             <Text> </Text>
-            <TextButton label="Try again" onPress={load} />
+            <TextButton label="Try again" onPress={load} fontColour={colours.onSurface} />
           </>
         ) : (
           <ActivityIndicator size="small" />
@@ -260,10 +260,12 @@ export default function Screen() {
                   <TextButton
                     label="Decline"
                     onPress={() => handleDecline(inv.id)}
+                    fontColour={colours.onSurface}
                   />
                   <TextButton
                     label="Accept"
                     onPress={() => handleAccept(inv.id)}
+                    fontColour={colours.onSurface}
                   />
                 </View>
               </View>
@@ -295,6 +297,7 @@ export default function Screen() {
               <TextButton
                 label="Add Support Person"
                 onPress={() => setAdding(true)}
+                fontColour={colours.onSurface}
               />
             </View>
           </View>
