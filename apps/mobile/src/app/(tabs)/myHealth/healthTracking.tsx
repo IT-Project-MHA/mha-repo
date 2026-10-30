@@ -8,9 +8,11 @@ import {apiAssessment} from '@/api/django-API';
 import {ownPatientProfileId} from '@/api/care_planner_api_helpers';
 import {apiAnsweredSections} from '@/api/my_health_api_helpers';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
-import {weekRangeLabel} from '../../../../constants/date';
-import AssessmentChart from '../../../../components/graphics/AssessmentChart';
+import {weekRangeLabel, formatDate} from '../../../../constants/date';
+import AssessmentChart, {ChartSnapshot} from '../../../../components/graphics/AssessmentChart';
 import SegmentedPill from '../../../../components/atomicUI/SegmentedControlPill';
+import StickyButtonWithIcon, {STICKY_BUTTON_GAP} from '../../../../components/atomicUI/StickyButtonWithIcon';
+import {pdfPage, sharePdf} from '@/helpers/pdfExport';
 
 const SECTIONS = [
   {key: 'my_pain', label: 'My Pain'},
@@ -20,15 +22,66 @@ const SECTIONS = [
   {key: 'management', label: 'My Management'},
 ] as const;
 
+// formats a number for a table cell, '–' when missing
+const fmt = (v: number | null | undefined) => (v == null ? '–' : String(v));
 
+/**
+ * Builds the PDF of the chart card
+ */
+function chartPdfHtml(chart: ChartSnapshot, image: string | null) {
+  const table = chart.stats ? `
+    <table class="data-table">
+      <tr><th class="week">Week</th><th>Average</th><th>Worst</th><th>Mildest</th></tr>
+      <tr class="overall"><td class="week">Overall</td><td>${fmt(chart.stats.average)}</td>
+        <td>${fmt(chart.stats.worst)}</td><td>${fmt(chart.stats.mildest)}</td></tr>
+      ${[...chart.points].reverse().map((w) => `
+        <tr><td class="week">${formatDate(w.completedAt)}</td><td>${fmt(w.score)}</td>
+          <td>${fmt(w.worst)}</td><td>${fmt(w.mildest)}</td></tr>`).join('')}
+    </table>` : '';
+
+  return pdfPage({
+    title: 'My Assessment Records',
+    footer: 'Generated from weekly assessment data from the M-Powered Platform',
+    extraStyle: `
+      .chart-card {page-break-inside: auto;}
+      .period {color: #666; margin: 0 0 12px;}
+      .chart-image {width: 100%;}
+      .data-table {margin-top: 16px; border: 1px solid #e0e0e0;}
+      .data-table th, .data-table td {border: 1px solid #e0e0e0; padding: 6px; text-align: center;}
+      .data-table .week {text-align: left;}
+      .data-table .overall td {font-weight: 700;}
+      .data-table tr {page-break-inside: avoid;}`,
+    body: `
+    <div class="card chart-card">
+      <h2>${chart.title}</h2>
+      <p class="period">${chart.periodLabel}</p>
+      ${image ? `<img class="chart-image" src="data:image/png;base64,${image}"/>` : ''}
+      ${table}
+    </div>`,
+  });
+}
 
 export default function Screen() {
 
   const { theme,colours } = useTheme();
   const styles = createStyles(colours);
   const [index, setIndex]= useState(0);
+  const [chart, setChart] = useState<ChartSnapshot | null>(null);
+  const chartLoading = !chart || chart.loading;
+
+  const handleExportPdf = async () => {
+    if (!chart || chart.loading) return;
+    let image: string | null = null;
+    try {
+      image = await chart.captureChart();
+    } catch (e: any) {
+      console.log('failed to capture chart', e?.message);
+    }
+    await sharePdf(chartPdfHtml(chart, image), 'assessment-chart.pdf', 'Share my Assessment Chart');
+  };
 
   return (
+    <>
     <ScrollView stickyHeaderIndices={[0]}>
       <View style={theme.header}>
         <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>My Assessment Records</Text>
@@ -44,21 +97,31 @@ export default function Screen() {
       </View>
       
       
-       {index === 0 ? <ChartPage/> : <RecordPage /> }
+       {index === 0 ? <ChartPage onSnapshotChange={setChart}/> : <RecordPage /> }
       <View style={theme.bottomGap}/>
+      {index === 0 && <View style={{height: STICKY_BUTTON_GAP}}/>}
 
     </ScrollView>
 
+    {index === 0 && (
+      <StickyButtonWithIcon
+        label={chartLoading ? 'Loading…' : 'Share PDF'}
+        onPress={handleExportPdf}
+        name="share-outline"
+        disabled={chartLoading}
+      />
+    )}
+    </>
   );
 }
 
-function ChartPage(){
+function ChartPage({onSnapshotChange}: {onSnapshotChange: (snapshot: ChartSnapshot) => void}){
   const { theme } = useTheme();
 
   return (
     <View>
       <View style={[theme.layoutContainer]}>
-        <AssessmentChart/>
+        <AssessmentChart onSnapshotChange={onSnapshotChange}/>
         <View style={theme.bottomGap}/>
       </View>
     </View>

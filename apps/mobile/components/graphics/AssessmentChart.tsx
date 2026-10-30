@@ -16,12 +16,14 @@ import {
 } from "react-native";
 import SegmentedPill from "../atomicUI/SegmentedControlPill";
 import { useTheme, ColourSet } from "../../context/ThemeContext";
+import { themeColours } from "../../constants/theme";
 import {
   apiScoreHistory,
   apiPainDetailHistory,
   apiPainLocations
 } from "../../src/api/my_health_api_helpers.js";
-import { useEffect, useMemo, useState } from "react";
+import { ComponentRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { captureRef } from "react-native-view-shot";
 import PainSummaryTable from "./PainTable";
 import {
   parseApiDate,
@@ -48,6 +50,18 @@ type HistoryPoint = {
   // pain only
   worst?: number | null;
   mildest?: number | null;
+};
+
+/**
+ * What the chart card is currently showing, for exporting
+ */
+export type ChartSnapshot = {
+  title: string;
+  periodLabel: string;
+  points: HistoryPoint[];
+  stats: { average: number | null; worst: number | null; mildest: number | null } | null;
+  loading: boolean;
+  captureChart: () => Promise<string | null>; // screenshot of the line chart as base64 png
 };
 
 /**
@@ -152,18 +166,24 @@ function Chip({
  * Renders the line chart card.
  * - patientProfileId: whose data to show. Leave out to show the logged-in user's own,
  *   pass a patient's id when a supporter is viewing it
+ * - onSnapshotChange: optional, calls the function when data changes
  *
  * Data flow:
  * history (from server) -> filtered by range and location -> points 
  */
 const AssessmentChart = ({
-  patientProfileId
+  patientProfileId,
+  onSnapshotChange
 }: {
   patientProfileId?: number | string | null;
+  onSnapshotChange?: (snapshot: ChartSnapshot) => void;
 }) => {
-  const { theme, colours } = useTheme();
+  const { theme, colours, isDark, isHC } = useTheme();
   const styles = createStyles(colours);
   const { width } = useWindowDimensions();
+  // true while the chart is screenshotted for the PDF, so it's drawn in light colours
+  const [capturing, setCapturing] = useState(false);
+  const chartColours = capturing ? themeColours[isHC ? "lightHC" : "light"] : colours;
   const [areaKey, setAreaKey] = useState<string>(AREAS[0].key);
   const [locations, setLocations] = useState<{ id: string; label: string }[]>([]);
   const [locationFilter, setLocationFilter] = useState<string | null>(null); // option id, null = all
@@ -277,7 +297,7 @@ const AssessmentChart = ({
                 <Text
                   numberOfLines={1}
                   style={{
-                    color: colours.onBackground,
+                    color: chartColours.onBackground,
                     fontSize: 10,
                     textAlign: "center"
                   }}
@@ -288,7 +308,7 @@ const AssessmentChart = ({
             )
           : undefined
     }));
-  }, [points, spacing, colours]);
+  }, [points, spacing, chartColours]);
 
     const isFiltered = selected.days !== null || locationFilter !== null;
     const noHistory = history !== null && history.length === 0 && !isFiltered;
@@ -302,7 +322,33 @@ const AssessmentChart = ({
   const yLabels = Array.from({ length: 6 }, (_, i) =>
     String(Math.round(i * step * 10) / 10)
   );
-  const axisTextStyle = { color: colours.onBackground, fontSize: 10 };
+  const axisTextStyle = { color: chartColours.onBackground, fontSize: 10 };
+
+  const title = `${area.title}${activeLocation ? ` (${activeLocation})` : ""} over time`;
+  const periodLabel = `${selected.days === null ? "All time" : `Last ${selected.label}`}${
+    activeLocation ? ` · ${activeLocation}` : ""
+  }`;
+  const loading = history === null;
+
+  const chartRef = useRef<ComponentRef<typeof View>>(null);
+  const captureChart = useCallback(async () => {
+    if (!chartRef.current) return null;
+    if (!isDark) return captureRef(chartRef, { format: "png", result: "base64" });
+    setCapturing(true);
+    // in dark mode, redraws the chart in light colours for the screenshot then switches back
+    try {
+      await new Promise((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve))
+      );
+      return await captureRef(chartRef, { format: "png", result: "base64" });
+    } finally {
+      setCapturing(false);
+    }
+  }, [isDark]);
+
+  useEffect(() => {
+    onSnapshotChange?.({ title, periodLabel, points, stats, loading, captureChart });
+  }, [onSnapshotChange, title, periodLabel, points, stats, loading, captureChart]);
 
   return (
     <View style={[styles.container, { marginVertical: 30 }]}>
@@ -314,8 +360,7 @@ const AssessmentChart = ({
           { marginVertical: 15 }
         ]}
       >
-        {area.title}
-        {activeLocation ? ` (${activeLocation})` : ""} over time
+        {title}
       </Text>
       <View style={[theme.line, { marginBottom: 20 }]} />
 
@@ -371,12 +416,15 @@ const AssessmentChart = ({
         ) : (
           // Renders Line chart
           <View
+            ref={chartRef}
+            collapsable={false} // Android: keep this View so it can be captured
             style={{
               width: "100%",
               overflow: "hidden",
               marginEnd: 18,
               marginTop: 40,
-              marginBottom: 10
+              marginBottom: 10,
+              backgroundColor: capturing ? chartColours.background : undefined
             }}
           >
             <LineChart
@@ -393,11 +441,11 @@ const AssessmentChart = ({
               scrollToEnd
               curved
               thickness={showEmpty ? 0 : 3}
-              color={showEmpty ? "transparent" : colours.secondary}
+              color={showEmpty ? "transparent" : chartColours.secondary}
               hideDataPoints={showEmpty || points.length > 30}
-              xAxisColor={colours.tertiary}
-              yAxisColor={colours.tertiary}
-              dataPointsColor={colours.primary}
+              xAxisColor={chartColours.tertiary}
+              yAxisColor={chartColours.tertiary}
+              dataPointsColor={chartColours.primary}
               yAxisTextStyle={axisTextStyle}
               xAxisLabelTextStyle={axisTextStyle}
             />
@@ -441,9 +489,7 @@ const AssessmentChart = ({
           <PainSummaryTable
             weeks={points}
             stats={stats}
-            periodLabel={`${selected.days === null ? "All time" : `Last ${selected.label}`}${
-              activeLocation ? ` · ${activeLocation}` : ""
-            }`}
+            periodLabel={periodLabel}
             formatDate={formatDate}
           />
         )}
