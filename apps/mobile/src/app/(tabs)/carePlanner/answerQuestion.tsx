@@ -6,7 +6,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useNavigation } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import Button from '../../../../components/atomicUI/Button';
 import ConfirmModal from '../../../../components/atomicUI/ConfirmModal';
 import SignatureCanvas, { SignatureViewRef } from 'react-native-signature-canvas';
@@ -62,13 +62,12 @@ export default function Screen() {
   const styles = createStyles(colours, theme, insets.bottom);
   const { colors: paperColours } = usePaperTheme();
   const { id, index } = useLocalSearchParams<{ id: string; index: string }>();
-  const navigation = useNavigation();
   const { findAppointment, updateAppointment, updateQuestion: updateAppointmentQuestion } =
     useAppointment();
   const appointment = findAppointment(id);
   const question = appointment?.questions[Number(index)];
 
-  // starts with the saved answer, saved to the appointment as it is typed
+
   const [answer, setAnswer] = useState(question?.answer ?? '');
   // the signature canvas is shown in place of the doctor's permission button while signing
   const [signing, setSigning] = useState(false);
@@ -129,13 +128,10 @@ export default function Screen() {
     });
   };
 
-  // a typed answer is saved once typing stops for a second, or when the page closes
-  const textTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // a typed answer is saved when the page closes
   // the typed answer waiting to be saved, null when there is nothing to save
   const pendingText = useRef<string | null>(null);
   const saveTypedAnswer = () => {
-    if (textTimer.current) clearTimeout(textTimer.current);
-    textTimer.current = null;
     if (pendingText.current === null) return;
     saveAnswer({ text: pendingText.current });
     pendingText.current = null;
@@ -146,8 +142,6 @@ export default function Screen() {
     setAnswer(text);
     updateQuestion({ answer: text.trim() || undefined });
     pendingText.current = text.trim();
-    if (textTimer.current) clearTimeout(textTimer.current);
-    textTimer.current = setTimeout(saveTypedAnswer, 1000);
   };
 
   // asks for the microphone the first time, then records until submit is pressed or 2 minutes of
@@ -190,16 +184,8 @@ export default function Screen() {
     if (recordingStarted && durationMillis >= MAX_RECORDING_SECONDS * 1000) submitRecording();
   }, [recordingStarted, durationMillis]);
 
-  // leaving the page submits a recording in progress, saved straight to the appointment as the
-  // page closes before the recording has stopped
-  useEffect(
-    () =>
-      navigation.addListener('beforeRemove', () => {
-        saveTypedAnswer();
-        if (recordingStarted) submitRecording();
-      }),
-    [navigation, recordingStarted],
-  );
+  // leaving the page saves a typed answer, but not a recording in progress
+  useEffect(() => () => saveTypedAnswer(), []);
 
   // how far playback has got, or 0 if it will start from the beginning
   const timePlayed = playing || pausedPartWay ? currentTime : 0;
@@ -314,11 +300,11 @@ export default function Screen() {
               />
             </View>
             {/* stacked, the button types' side padding is too wide for three in a row */}
-            <Button label="Cancel" onPress={pressCancelSigning} buttonType="roundSecondaryButton" />
+            <Button label="Cancel" onPress={pressCancelSigning} buttonType="secondaryButton" />
             <Button
               label="Clear"
               onPress={() => signatureRef.current?.clearSignature()}
-              buttonType="roundSecondaryButton"
+              buttonType="secondaryButton"
             />
             <Button
               label="Save"
@@ -369,7 +355,7 @@ export default function Screen() {
             <Button
               label="Delete recording"
               onPress={() => setConfirmingDeleteRecording(true)}
-              buttonType="roundSecondaryButton"
+              buttonType="secondaryButton"
             />
             {signatureButton}
           </>

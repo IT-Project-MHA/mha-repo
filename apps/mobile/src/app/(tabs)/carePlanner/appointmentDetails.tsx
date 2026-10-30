@@ -230,7 +230,7 @@ export default function Screen() {
           <Button
             label={deleting ? 'Deleting...' : 'Delete appointment'}
             onPress={() => setConfirmingDelete(true)}
-            buttonType="roundSecondaryButton"
+            buttonType="secondaryButton"
           />
         </View>
       </ScrollView>

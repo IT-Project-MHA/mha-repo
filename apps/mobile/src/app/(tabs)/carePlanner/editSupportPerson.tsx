@@ -170,7 +170,7 @@ export default function Screen() {
         <Button
           label="Delete support person"
           onPress={() => setConfirmingDelete(true)}
-          buttonType="roundSecondaryButton"
+          buttonType="secondaryButton"
         />
         <Button label={saving ? 'Saving...' : 'Save'} onPress={save} buttonType="roundButton" />
       </View>
