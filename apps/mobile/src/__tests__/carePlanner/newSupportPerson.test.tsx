@@ -5,6 +5,10 @@
  *    - a valid phone number shows the sign-up hint
  *    - Save with no phone or link shows the mandatory-fields error
  *    - a valid phone number adds the person to the draft and goes back (create flow)
+ *    - Choose from My Contacts: permission denied, closed without choosing, mobile number preferred,
+ *    -   no phone number, and contacts that fail to open
+ *    - someone already added to the appointment can't be added again
+ *    - adding to an existing appointment saves to the server and goes back, or shows the error
  */
 
 import React from 'react';
@@ -17,6 +21,10 @@ const mockApiMySupportLinks = jest.fn();
 const mockApiSaveSupportPeople = jest.fn();
 
 let mockParams: any = {};
+let mockDraft: any = { appointmentId: 'a1', supportPeople: [] };
+let mockAppointments: any[] = [];
+const mockRequestContactsPermission = jest.fn();
+const mockPresentPicker = jest.fn();
 
 jest.mock('expo-router', () => ({
   useRouter: () => mockRouter,
@@ -25,9 +33,9 @@ jest.mock('expo-router', () => ({
 }));
 jest.mock('../../../context/AppointmentContext', () => ({
   useAppointment: () => ({
-    draft: { appointmentId: 'a1', supportPeople: [] },
+    draft: mockDraft,
     updateDraft: mockUpdateDraft,
-    appointments: [],
+    appointments: mockAppointments,
     pickedSupportLink: null,
     pickSupportLink: mockPickSupportLink,
   }),
@@ -48,14 +56,18 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 jest.mock('expo-contacts', () => ({
-  requestPermissionsAsync: jest.fn().mockResolvedValue({ granted: false }),
-  Contact: { presentPicker: jest.fn() },
+  requestPermissionsAsync: (...a: any[]) => mockRequestContactsPermission(...a),
+  Contact: { presentPicker: (...a: any[]) => mockPresentPicker(...a) },
 }));
 
 import Screen from '../../app/(tabs)/carePlanner/newSupportPerson';
 
 beforeEach(() => {
   mockParams = {};
+  mockDraft = { appointmentId: 'a1', supportPeople: [] };
+  mockAppointments = [];
+  mockRequestContactsPermission.mockResolvedValue({ granted: true });
+  mockPresentPicker.mockResolvedValue(null);
   mockApiMySupportLinks.mockResolvedValue([]);
   mockApiSaveSupportPeople.mockResolvedValue(['link1']);
 });
@@ -115,4 +127,85 @@ test('a valid phone number adds the person to the draft and goes back', async ()
   expect(mockRouter.back).toHaveBeenCalled();
   // saving to backend is not done in this tab
   expect(mockApiSaveSupportPeople).not.toHaveBeenCalled(); 
+});
+
+// a contact as returned by the contacts picker, with the given phone numbers
+const contactWith = (numbers: string[]) => ({
+  getPhones: jest.fn().mockResolvedValue(numbers.map((number) => ({ number }))),
+});
+
+const chooseContact = async () => {
+  await act(async () => { await fireEvent.press(screen.getByText('Choose from My Contacts')); });
+};
+
+const jane = {
+  name: '',
+  phone: '+61412345678',
+  canAddQuestions: false,
+  canAddAnswers: false,
+  supportLinkId: undefined,
+};
+
+test("a chosen contact's mobile number is filled in, preferred over other numbers", async () => {
+  mockPresentPicker.mockResolvedValue(contactWith(['(03) 9999 0000', '0412 345 678']));
+  await act(async () => { await render(<Screen />); });
+  await chooseContact();
+  expect(screen.getByPlaceholderText('phone number').props.value).toBe('0412 345 678');
+});
+
+test('a contact with no phone number shows a message', async () => {
+  mockPresentPicker.mockResolvedValue(contactWith([]));
+  await act(async () => { await render(<Screen />); });
+  await chooseContact();
+  expect(screen.getByText('This contact has no phone number.')).toBeTruthy();
+});
+
+test('contacts that fail to open show a message', async () => {
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+  mockPresentPicker.mockRejectedValue(new Error('placeholder error'));
+  await act(async () => { await render(<Screen />); });
+  await chooseContact();
+  expect(screen.getByText('Your contacts could not be opened.')).toBeTruthy();
+});
+
+test("someone already added to the appointment can't be added again", async () => {
+  mockDraft = { appointmentId: 'a1', supportPeople: [jane] };
+  await act(async () => { await render(<Screen />); });
+  await act(async () => {
+    await fireEvent.changeText(screen.getByPlaceholderText('phone number'), '0412 345 678');
+  });
+  await act(async () => { await fireEvent.press(screen.getByText('Save')); });
+  expect(
+    screen.getByText('This support person has already been added to the appointment.'),
+  ).toBeTruthy();
+  expect(mockUpdateDraft).not.toHaveBeenCalled();
+});
+
+test('adding to an existing appointment saves to the server and goes back', async () => {
+  mockParams = { appointmentId: 'a2' };
+  mockAppointments = [{ id: 'a2', supportPeople: [] }];
+  await act(async () => { await render(<Screen />); });
+  await act(async () => {
+    await fireEvent.changeText(screen.getByPlaceholderText('phone number'), '0412 345 678');
+  });
+  await act(async () => { await fireEvent.press(screen.getByText('Save')); });
+  expect(mockApiSaveSupportPeople).toHaveBeenCalledWith('a2', [jane]);
+  expect(mockUpdateDraft).not.toHaveBeenCalled();
+  expect(mockRouter.back).toHaveBeenCalled();
+});
+
+test('a failed save to an existing appointment shows the error and stays on the page', async () => {
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+  mockApiSaveSupportPeople.mockRejectedValue(new Error('network'));
+  mockParams = { appointmentId: 'a2' };
+  mockAppointments = [{ id: 'a2', supportPeople: [] }];
+  await act(async () => { await render(<Screen />); });
+  await act(async () => {
+    await fireEvent.changeText(screen.getByPlaceholderText('phone number'), '0412 345 678');
+  });
+  await act(async () => { await fireEvent.press(screen.getByText('Save')); });
+  expect(
+    screen.getByText('Your support person could not be saved, please try again'),
+  ).toBeTruthy();
+  expect(mockRouter.back).not.toHaveBeenCalled();
 });

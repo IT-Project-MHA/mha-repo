@@ -5,6 +5,7 @@
  *    - a date & time in the past shows the past error and does not save
  *    - the health service dropdown opens and a choice is selected
  *    - a valid submit saves the appointment, updates the draft and navigates to addSupportPerson
+ *    - a failed save shows the error and stays on the page
  */
 
 import React from 'react';
@@ -126,4 +127,15 @@ test('a valid submit saves the appointment and navigates to addSupportPerson', a
     expect.objectContaining({ appointmentId: '1', healthService: 'General Practitioner' }),
   );
   expect(mockRouter.push).toHaveBeenCalledWith('/carePlanner/addSupportPerson');
+});
+
+test('a failed save shows the error and stays on the page', async () => {
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+  mockApiSaveAppointment.mockRejectedValue(new Error('placeholder error'));
+  await act(async () => { await render(<Screen />); });
+  await pickDateAndTime();
+  await act(async () => { await fireEvent.press(screen.getByText('Save')); });
+  expect(screen.getByText('Your appointment could not be saved, please try again')).toBeTruthy();
+  expect(mockUpdateDraft).not.toHaveBeenCalled();
+  expect(mockRouter.push).not.toHaveBeenCalled();
 });

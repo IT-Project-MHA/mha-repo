@@ -5,6 +5,7 @@
  *    - pressing a person row opens newSupportPerson to edit them
  *    - the trash icon removes the person from the draft
  *    - Save invites the support people and navigates to addQuestions
+ *    - a failed save shows the error and stays on the page
  */
 
 import React from 'react';
@@ -84,4 +85,15 @@ test('Save invites the support people and navigates to addQuestions', async () =
     supportPeople: [{ ...person, supportLinkId: 'link1' }],
   });
   expect(mockRouter.push).toHaveBeenCalledWith('/carePlanner/addQuestions');
+});
+
+test('a failed save shows the error and stays on the page', async () => {
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+  mockApiSaveSupportPeople.mockRejectedValue(new Error('placeholder error'));
+  mockDraft = { appointmentId: 'a1', supportPeople: [person] };
+  await act(async () => { await render(<Screen />); });
+  await act(async () => { await fireEvent.press(screen.getByText('Save')); });
+  expect(screen.getByText('Your support persons could not be saved, please try again')).toBeTruthy();
+  expect(mockUpdateDraft).not.toHaveBeenCalled();
+  expect(mockRouter.push).not.toHaveBeenCalled();
 });
