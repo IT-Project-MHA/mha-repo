@@ -8,7 +8,7 @@ import { useUser } from '../../../context/AuthorisationContext';
 
 // consts that can be imported & used in other tabs/components
 export const TAB_BAR_HEIGHT = 40;
-export const TAB_BAR_BOTTOM = '4%';
+export const TAB_BAR_BOTTOM = 0;
 
 
 /**
@@ -37,8 +37,8 @@ export default function TabLayout() {
         tabBarLabelStyle: {
           ...theme.xSmall,
         },
-        tabBarActiveTintColor: colours.onPrimary,
-        tabBarInactiveTintColor: colours.ex3,
+        tabBarActiveTintColor: colours.secondary,
+        tabBarInactiveTintColor: colours.ex2,
         headerShown: false,     
       }}
     >
@@ -125,15 +125,17 @@ function createStyles(colours: ColourSet){
 
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
 
-    borderRadius: 100,
+
+    //borderRadius: 100,
     borderTopWidth: 0,     
     borderBottomWidth: 0, 
 
     backgroundColor: colours.primary,
-
+    
     shadowColor: colours.primary,
-    shadowOffset: { width: 2, height: 2 },
+    shadowOffset: { width: 0, height:0 },
     shadowOpacity: 0.15,
     shadowRadius: 6,
 
