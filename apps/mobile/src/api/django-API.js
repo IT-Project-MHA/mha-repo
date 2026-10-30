@@ -525,3 +525,21 @@ export async function apiAuditTarget() {
 export async function apiAppSection() {
     return selectChoices('appSection');
 }
+
+/* PainTrend:
+- select: patient_profile, days, location (QuestionOption id of a pain_location)
+    - returns weekly pain scores, oldest first: week_starting, current, worst, average,
+      mildest, locations
+    - leave days out for all time
+- create/update/delete: N/A */
+export async function apiPainTrend(operation, values) {
+    return operate('painTrend', operation, values);
+}
+
+/* PainProfile:
+- select: patient_profile
+    - returns latest_pain, recent_locations (last 30 days), current_prescriptions, last_updated
+- create/update/delete: N/A */
+export async function apiPainProfile(operation, values) {
+    return operate('painProfile', operation, values);
+}
