@@ -11,6 +11,7 @@ import { NumberEntry } from '../../../../components/answerFields/NumberEntry';
 import Button from '../../../../components/atomicUI/Button';
 import { useOnboardingStore } from '../../../store/onboardingStorage';
 import { ApiError, login } from '../../../api/django-API';
+import { useUser } from '@/context/AuthorisationContext';
 
 import { Text, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,6 +33,7 @@ export default function Page() {
   const styles = createStyles(colours, theme, insets.bottom);
   const router = useRouter();
 
+  const { refreshUserType } = useUser();
   const resetOnboarding = useOnboardingStore((s)=> s.reset);
   const completeOnboarding = useAppStore((s)=> s.completeOnboarding);
   const setUserOnboaring = useOnboardingStore((s)=> s.set);
@@ -40,31 +42,30 @@ export default function Page() {
   const [error, setError] = useState<string | null>(null);
 
   async function attemptLogIn(pin: number){
+    setError(null);
     setUserOnboaring({pin});
 
+    // read at call time to always get the current phone number
+    const { phone_number } = useOnboardingStore.getState();
     const device_id = await GetDeviceId();
-    console.log('device_id', device_id, typeof device_id)
-    const values = {
-      phone_number: info.phone_number,
-      pin: pin,
-      device_id: device_id,
-    }
+
     try{
-      const result = await login(values);
+      const result = await login({ phone_number, pin, device_id });
       const token = result.token;
 
-      resetOnboarding();
       //set the onboarded flag
-      completeOnboarding(token);
-      //continue to landing page
-      router.navigate('/(tabs)')
-    }catch (error){
+      completeOnboarding(token); // token first so next call authenticated
+      resetOnboarding();
+      await refreshUserType(); // RootNavigator moves to (tabs) once userType is defined
+
+    } catch (error){
       
       if(error instanceof ApiError){
-        
+    
         if(error.status==403){
-          //if 403 continue to verification
+          //if 403 continue to verification (new device)
           router.navigate('/(onboarding)/signIn/phoneVerification')
+          return;
         }
         if(error.status == 401){
           //401 tell user invalid credentials
@@ -74,19 +75,16 @@ export default function Page() {
       }
       console.error('login failed', error);
       setError('Something went wrong, please try again.')
-      
     }
-    
   }
 
   return (
     <SafeAreaView style={theme.screen}>
-      <View style={[theme.header, styles.title]}>
-        <Text style={styles.subheading}></Text>
-        <Text style={styles.heading}>Enter your six digit pin</Text>
+      <View style={[theme.header, theme.h4]}>
+        <Text style={[theme.h5]}>Enter your six digit pin</Text>
       </View>
 
-      <View style={styles.bottomBar}>
+      <View>
         <HelperText type='error' visible={!!error}>
           {error}
         </HelperText>
@@ -103,59 +101,6 @@ export default function Page() {
 
 function createStyles(colours: ColourSet, text: Typography, bottomInset: number) {
   return StyleSheet.create({
-    screen: {
-      flex: 1,
-      backgroundColor: colours.background,
-    },
-
-    content: {
-      paddingBottom: 200 + bottomInset,
-      gap: 38,
-    },
-
-    title: {
-      marginBottom: -19,
-    },
-
-    card: {
-      gap: 12,
-    },
-
-    cardContent: {
-      paddingHorizontal: '5%',
-      paddingBottom: 5,
-    },
-
-    bottomBar: {
-      position: 'absolute',
-      left: '7.5%',
-      width: '85%',
-      bottom: 120 + bottomInset,
-      gap: 8,
-    },
-
-    heading: {
-      ...text.h6,
-      color: colours.onSurface,
-      paddingHorizontal: '5%',
-    },
-
-    subheading: {
-      ...text.small,
-      color: colours.onBackground,
-      paddingHorizontal: '5%',
-      marginTop: 4,
-    },
-
-    label: {
-      marginTop: 29,
-      marginBottom: 19,
-    },
-
-    firstLabel: {
-      marginTop: 5,
-    },
-
     field: {
       height: 40,
       paddingVertical: 5,
@@ -165,12 +110,6 @@ function createStyles(colours: ColourSet, text: Typography, bottomInset: number)
       borderColor: colours.onSurface,
       justifyContent: 'center',
     },
-
-    input: {
-      ...text.body,
-      color: colours.onSurface,
-    },
-
     error: {
       ...text.small,
       borderWidth: 1,
@@ -179,38 +118,6 @@ function createStyles(colours: ColourSet, text: Typography, bottomInset: number)
       paddingHorizontal: 12,
       backgroundColor: colours.background,
       overflow: 'hidden',
-    },
-
-    dropdown: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-
-    optionList: {
-      marginTop: 8,
-      marginHorizontal: 8,
-      borderWidth: 1,
-      borderColor: colours.onSurface,
-      overflow: 'hidden',
-    },
-
-    optionRow: {
-      paddingVertical: 10,
-      paddingHorizontal: 12,
-    },
-
-    divider: {
-      borderTopWidth: lineThickness,
-      borderTopColor: colours.ex2,
-    },
-
-    selectedRow: {
-      backgroundColor: colours.secondary,
-    },
-
-    selectedText: {
-      color: colours.onSecondary,
     },
   });
 }
