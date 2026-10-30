@@ -3,27 +3,18 @@
  * -asks for phone field
  * -sends API request for sms code. Does not proceed until success
  */
-
 import { useRouter } from "expo-router";
 import { PhoneField } from "../../../../components/onboarding/PhoneField";
 import { useOnboardingStore } from "../../../store/onboardingStorage";
 import { request_code, ApiError } from "../../../api/django-API";
 
-import { Text, StyleSheet, View, ScrollView } from "react-native";
-import {
-  SafeAreaView,
-  useSafeAreaInsets
-} from "react-native-safe-area-context";
-import { lineThickness } from "../../../../constants/layout";
-import { useTheme, ColourSet } from "../../../../context/ThemeContext";
-import { Typography } from "../../../../constants/textSize";
+import { Text, View, ScrollView } from "react-native";
+import { useTheme } from "../../../../context/ThemeContext";
 import React, { useState } from "react";
 import { HelperText } from "react-native-paper";
 
 export default function Page() {
   const { colours, theme } = useTheme();
-  const insets = useSafeAreaInsets();
-  const styles = createStyles(colours, theme, insets.bottom);
   const router = useRouter();
   const setUserOnboaring = useOnboardingStore((s) => s.set);
 
@@ -76,70 +67,8 @@ export default function Page() {
         <HelperText type="error" visible={!!error} style={theme.centerText}>
           {error}
         </HelperText>
+
       </View>
     </ScrollView>
   );
-}
-
-function createStyles(
-  colours: ColourSet,
-  text: Typography,
-  bottomInset: number
-) {
-  return StyleSheet.create({
-    screen: {
-      flex: 1,
-      backgroundColor: colours.background
-    },
-
-    content: {
-      paddingBottom: 200 + bottomInset,
-      gap: 38
-    },
-
-    title: {
-      marginBottom: -19
-    },
-
-    card: {
-      gap: 12
-    },
-
-    cardContent: {
-      paddingHorizontal: "5%",
-      paddingBottom: 5
-    },
-
-    bottomBar: {
-      position: "absolute",
-      left: "7.5%",
-      width: "85%",
-      bottom: 120 + bottomInset,
-      gap: 8
-    },
-    field: {
-      height: 40,
-      paddingVertical: 5,
-      paddingHorizontal: 10,
-      marginHorizontal: 8,
-      borderWidth: 1,
-      borderColor: colours.onSurface,
-      justifyContent: "center"
-    },
-
-    input: {
-      ...text.body,
-      color: colours.onSurface
-    },
-
-    error: {
-      ...text.small,
-      borderWidth: 1,
-      borderRadius: 8,
-      paddingVertical: 6,
-      paddingHorizontal: 12,
-      backgroundColor: colours.background,
-      overflow: "hidden"
-    }
-  });
 }
