@@ -84,9 +84,12 @@ const createTheme = (colours: ColourSet) =>
       borderRadius: 28,
 
       shadowColor: colours.primary,
-      shadowOffset: { width: 2, height: 2 },
-      shadowOpacity: 0.15,
-      shadowRadius: 6,
+      shadowOpacity: .15,
+      shadowRadius: 7,
+      shadowOffset: {
+          width: 0,
+          height: 0, 
+    },
     },
         
     /**

@@ -64,7 +64,7 @@ export default function ScreenLayout() {
         }}
       />
       <Stack.Screen 
-        name="myConnections"
+        name="mySupportLinks"
         options={{
           title: '',
         }}
