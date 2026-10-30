@@ -67,7 +67,6 @@ type TextProps ={
   //height: number;
 }
 
-
 function validateTextInput(text: string) {
   //checking if it's something we should accept, i.e. within range
   //if (text == "") return "enter text"; //what it prints if submitted
@@ -98,13 +97,13 @@ function TextEntry({ onSubmit, placeholder, keyboardType, textContentType }: Tex
       setError(err);
       return;
     }
-    onSubmit(value.trim()); //also gets rid of trailing white space
+    onSubmit(value.trim()); // gets rid of trailing white space
   };
 
   return (
-      <View style={[theme.sectionContainer, styles.content]}>
+      <View style={[theme.clearContainer, styles.content, {padding: 40}]}>
         <TextInput
-          style={[ styles.subheading, styles.field]}
+          style={[theme.h6, styles.field]}
           onChangeText={handleChange}
           value={value}
           placeholder={placeholder}
@@ -113,10 +112,10 @@ function TextEntry({ onSubmit, placeholder, keyboardType, textContentType }: Tex
           maxLength={MAX_LENGTH_TEXT}
           onSubmitEditing={handleSubmit}
         />
-        <View style={styles.bottomBar}>
-          {!!error && <Text style={styles.subheading}>{error}</Text>}
+        <View style={theme.centerItems}>
+          {!!error && <Text style={[theme.body, {color: colours.onSurface}]}>{error}</Text>}
           <Button
-            label="submit"
+            label="Submit"
             onPress={handleSubmit}
             buttonType="roundButton"
           />
@@ -133,110 +132,32 @@ function createStyles(colours: ColourSet, text: Typography, bottomInset: number)
       flex: 1,
       backgroundColor: colours.background,
     },
-
     content: {
-      paddingBottom: 200 + bottomInset,
-      gap: 38,
+      paddingBottom: 100 + bottomInset,
+      gap: 40,
     },
-
     title: {
       marginBottom: -19,
     },
-
     card: {
       gap: 12,
     },
-
-    cardContent: {
-      paddingHorizontal: '5%',
-      paddingBottom: 5,
+    field: {
+      height: 60,
+      paddingVertical: 3,
+      paddingHorizontal: 40,
+      borderRadius:100,
+      borderWidth: 2,
+      borderColor: colours.secondary,
+      justifyContent: 'center',
+      textAlign: 'center',
     },
-
     bottomBar: {
       position: 'absolute',
       left: '7.5%',
       width: '85%',
       bottom: 30+bottomInset,
       gap: 8,
-    },
-
-    heading: {
-      ...text.h6,
-      color: colours.onSurface,
-      paddingHorizontal: '5%',
-    },
-
-    subheading: {
-      ...text.small,
-      color: colours.onBackground,
-      paddingHorizontal: '5%',
-      marginTop: 4,
-    },
-
-    label: {
-      marginTop: 29,
-      marginBottom: 19,
-    },
-
-    firstLabel: {
-      marginTop: 5,
-    },
-
-    field: {
-      height: 40,
-      paddingVertical: 5,
-      paddingHorizontal: 10,
-      marginHorizontal: 8,
-      borderWidth: 1,
-      borderColor: colours.onSurface,
-      justifyContent: 'center',
-    },
-
-    input: {
-      ...text.body,
-      color: colours.onSurface,
-    },
-
-    error: {
-      ...text.small,
-      borderWidth: 1,
-      borderRadius: 8,
-      paddingVertical: 6,
-      paddingHorizontal: 12,
-      backgroundColor: colours.background,
-      overflow: 'hidden',
-    },
-
-    dropdown: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-
-    optionList: {
-      marginTop: 8,
-      marginHorizontal: 8,
-      borderWidth: 1,
-      borderColor: colours.onSurface,
-      overflow: 'hidden',
-    },
-
-    optionRow: {
-      paddingVertical: 10,
-      paddingHorizontal: 12,
-    },
-
-    divider: {
-      borderTopWidth: lineThickness,
-      borderTopColor: colours.secondary2,
-    },
-
-    selectedRow: {
-      backgroundColor: colours.secondary,
-    },
-
-    selectedText: {
-      color: colours.onSecondary,
     },
   });
 }

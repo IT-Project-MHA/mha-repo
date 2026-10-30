@@ -1,20 +1,22 @@
 /**
- * Index for onboarding, is the sign-on page
+ * Initial sign in / create account page for onboarding.
  */
+import { Text, StyleSheet, Modal, View } from "react-native";
+import { SignInButton } from "../../../components/onboarding/SignInButton";
 
-import { Text, StyleSheet, Modal, View } from 'react-native';
-import {SignInButton} from '../../../components/onboarding/SignInButton';
+import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import OnboardingSplashScreen from "./splashScreen";
+import Button from "../../../components/atomicUI/Button";
 
-import { useRouter } from 'expo-router';
-import {useEffect, useState} from 'react';
-import OnboardingSplashScreen from './splashScreen';
-import Button from '../../../components/atomicUI/Button';
-
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { lineThickness } from '../../../constants/layout';
-import { useTheme, ColourSet } from '../../../context/ThemeContext';
-import { Typography } from '../../../constants/textSize';
-import React from 'react';
+import {
+  SafeAreaView,
+  useSafeAreaInsets
+} from "react-native-safe-area-context";
+import { lineThickness } from "../../../constants/layout";
+import { useTheme, ColourSet } from "../../../context/ThemeContext";
+import { Typography } from "../../../constants/textSize";
+import React from "react";
 
 export default function Page() {
   const { colours, theme } = useTheme();
@@ -22,109 +24,108 @@ export default function Page() {
   const styles = createStyles(colours, theme, insets.bottom);
   const router = useRouter();
 
-
   const [showOnboarding, setShowOnboarding] = useState(false);
 
-
-  useEffect(()=>{
-    async function checkIfOnboarded(){
+  useEffect(() => {
+    async function checkIfOnboarded() {
       //const firstLaunchVal = await AsyncStorage.getItem(LocalConfig.IsOnboarded);
       const isOnboarded = false;
-      if (!isOnboarded){
+      if (!isOnboarded) {
         setShowOnboarding(true);
       }
     }
     checkIfOnboarded();
-  }, [])
+  }, []);
 
-  async function onFirstLaunchClosed(){
+  async function onFirstLaunchClosed() {
     //await AsyncStorage.setItem(LocalConfig.IsOnboarded, 'true');
     setShowOnboarding(false);
   }
 
-
-
   return (
     <SafeAreaView style={theme.screen}>
-      <View style={[theme.header, styles.title]}>
-        <Text style={styles.subheading}>Lets get you started</Text>
-        <Text style={styles.heading}>Sign In or Create an account</Text>
-      </View> 
-         <Modal 
-        animationType="slide"
-        presentationStyle='fullScreen'
-        visible={showOnboarding}
-        onRequestClose={() => setShowOnboarding(false)}>
-          <OnboardingSplashScreen onClose={onFirstLaunchClosed}/>
-       </Modal>
-      <View style={styles.bottomBar}>
-        <Button
-        label='Create Account'
-        onPress={()=>{router.navigate('/(onboarding)/userOnboarding/createAccount')}}
-        buttonType='roundButton'
-        />
-        <SignInButton/>
+      <View style={[theme.header, theme.leftItems]}>
+        <Text style={[theme.h5, { color: colours.onSurface }]}>
+          Lets get you started.
+        </Text>
+        <Text style={[theme.body, { color: colours.onSurface }]}>
+          Sign In or Create an Account.
+        </Text>
       </View>
-      
+
+      {/**
+       *  <Modal
+        animationType="slide"
+        presentationStyle="fullScreen"
+        visible={showOnboarding}
+        onRequestClose={() => setShowOnboarding(false)}
+      >
+      <OnboardingSplashScreen onClose={onFirstLaunchClosed} />
+      </Modal>
+       * 
+       */}
+
+    
+      <View style={[theme.clearContainer, theme.centerItems, {justifyContent: 'space-between'}]}>
+
+        <Button
+          label="Create Account"
+          onPress={() => {
+            router.navigate("/(onboarding)/userOnboarding/createAccount");
+          }}
+          buttonType="roundButton"
+        />
+
+        <View style={{padding: 20}}/>
+
+        <Button
+          label="Sign In"
+          onPress={() => {
+            router.navigate("/(onboarding)/signIn/signIn");
+          }}
+          buttonType="roundButton"
+        />
+
+      </View>
     </SafeAreaView>
   );
 }
 
-function createStyles(colours: ColourSet, text: Typography, bottomInset: number) {
+function createStyles(
+  colours: ColourSet,
+  text: Typography,
+  bottomInset: number
+) {
   return StyleSheet.create({
     screen: {
       flex: 1,
-      backgroundColor: colours.background,
+      backgroundColor: colours.background
     },
-
     content: {
       paddingBottom: 200 + bottomInset,
-      gap: 38,
+      gap: 38
     },
-
-    title: {
-      marginBottom: -19,
-    },
-
     card: {
-      gap: 12,
+      gap: 12
     },
-
     cardContent: {
-      paddingHorizontal: '5%',
-      paddingBottom: 5,
+      paddingHorizontal: "5%",
+      paddingBottom: 5
     },
-
     bottomBar: {
-      position: 'absolute',
-      left: '7.5%',
-      width: '85%',
+      position: "absolute",
+      left: "7.5%",
+      width: "85%",
       bottom: 120 + bottomInset,
-      gap: 8,
+      gap: 8
     },
-
-    heading: {
-      ...text.h6,
-      color: colours.onSurface,
-      paddingHorizontal: '5%',
-    },
-
-    subheading: {
-      ...text.small,
-      color: colours.onBackground,
-      paddingHorizontal: '5%',
-      marginTop: 4,
-    },
-
     label: {
       marginTop: 29,
-      marginBottom: 19,
+      marginBottom: 19
     },
-
     firstLabel: {
-      marginTop: 5,
+      marginTop: 5
     },
-
     field: {
       height: 40,
       paddingVertical: 5,
@@ -132,14 +133,12 @@ function createStyles(colours: ColourSet, text: Typography, bottomInset: number)
       marginHorizontal: 8,
       borderWidth: 1,
       borderColor: colours.onSurface,
-      justifyContent: 'center',
+      justifyContent: "center"
     },
-
     input: {
       ...text.body,
-      color: colours.onSurface,
+      color: colours.onSurface
     },
-
     error: {
       ...text.small,
       borderWidth: 1,
@@ -147,39 +146,29 @@ function createStyles(colours: ColourSet, text: Typography, bottomInset: number)
       paddingVertical: 6,
       paddingHorizontal: 12,
       backgroundColor: colours.background,
-      overflow: 'hidden',
+      overflow: "hidden"
     },
-
     dropdown: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center"
     },
-
     optionList: {
       marginTop: 8,
       marginHorizontal: 8,
       borderWidth: 1,
       borderColor: colours.onSurface,
-      overflow: 'hidden',
+      overflow: "hidden"
     },
-
     optionRow: {
       paddingVertical: 10,
-      paddingHorizontal: 12,
+      paddingHorizontal: 12
     },
-
-    divider: {
-      borderTopWidth: lineThickness,
-      borderTopColor: colours.ex2,
-    },
-
     selectedRow: {
-      backgroundColor: colours.secondary,
+      backgroundColor: colours.secondary
     },
-
     selectedText: {
-      color: colours.onSecondary,
-    },
+      color: colours.onSecondary
+    }
   });
 }

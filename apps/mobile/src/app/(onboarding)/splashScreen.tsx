@@ -1,4 +1,8 @@
 /**
+ * 
+ */
+
+/**
  * First screen user sees when they first open the app. Not shown again once onboarding complete, unless they clear their data or some such
  */
 
@@ -190,7 +194,7 @@ export default function OnboardingSplashScreen({ onClose}: Props){
  
      divider: {
        borderTopWidth: lineThickness,
-       borderTopColor: colours.secondary2,
+
      },
  
      selectedRow: {

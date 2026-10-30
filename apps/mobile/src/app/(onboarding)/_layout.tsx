@@ -7,13 +7,32 @@ export default function OnboardingLayout() {
     const {colours, theme} = useTheme();
   const styles = createStyles(colours); 
 
-  return <Stack screenOptions={{   
-    headerShown: true,
-    headerBackTitle: 'Back',
-    headerStyle: {
-        ...styles.headerStyle,
-    }
-    }} 
+  return (
+  <Stack 
+      screenOptions={{
+        headerStyle: styles.headerStyle,
+        headerShadowVisible: false, // no line 
+        headerTitleAlign: 'left', // text to left
+    
+        // header text
+        headerTitleStyle: {
+          fontSize: theme.h4.fontSize,
+          fontWeight: theme.h4.fontWeight,
+        },
+        headerTintColor: colours.onBackground,
+
+        // content of the page
+        contentStyle: { 
+          backgroundColor: colours.background
+        },
+
+        // back button
+        headerBackTitleStyle: {
+          fontSize: theme.h6.fontSize,
+        },
+        headerBackButtonDisplayMode: 'default',
+        headerBackTitle: 'Back',
+      }}
     >
     <Stack.Screen 
       name="index"
@@ -41,7 +60,7 @@ export default function OnboardingLayout() {
        * Need to do this for every page to have a back button specific to onboarding
        */}
 </Stack>
-}
+)}
 
 function createStyles(colours: ColourSet){
     return StyleSheet.create({

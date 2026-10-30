@@ -1,23 +1,33 @@
 /**
- * first page of sign-up sequence
- * asks for name
- * directs to terms and conditions page
+ * First page of sign-up sequence:
+ * - Asks for name (display_name)
+ * - Directs user to terms
  */
-
-
-
 import { TextEntry } from '../../../../components/answerFields/TextEntry';
 import { useRouter } from 'expo-router';
 import { useOnboardingStore } from '../../../store/onboardingStorage';
 
-import { Text, StyleSheet, View } from 'react-native';
+import ButtonWithIcon from '../../../../components/atomicUI/ButtonWithIcon';
+import { Text, StyleSheet, View, ScrollView } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { lineThickness } from '../../../../constants/layout';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { Typography } from '../../../../constants/textSize';
-import React from 'react';
-import Constants from 'expo-constants'
+import * as WebBrowser from 'expo-web-browser';
 
+import React from 'react';
+
+/**
+   * Using a placeholder link for demonstration purposes. When the client 
+   * updates up with the PDF we can put it in a google drive, etc. (lots of options)
+   * 
+   * Client will also be able to update this themselves.
+   */
+  const TERMS_URL = 'https://s2.q4cdn.com/175719177/files/doc_presentations/Placeholder-PDF.pdf';
+  const openTerms = () => WebBrowser.openBrowserAsync(TERMS_URL);
+  
+  const PRIVACY_URL = 'https://s2.q4cdn.com/175719177/files/doc_presentations/Placeholder-PDF.pdf';
+  const openPrivacy = () => WebBrowser.openBrowserAsync(PRIVACY_URL);
 
 export default function Page() {
   const { colours, theme } = useTheme();
@@ -28,41 +38,44 @@ export default function Page() {
 
   function setDisplayName(display_name: string){
     setUserOnboaring({display_name});
-
-    //debugging
-    const devHost = Constants.expoConfig?.hostUri?.split(':')[0];
-    const SERVER_URL = process.env.EXPO_PUBLIC_SERVER_URL ?? (devHost ? `http://${devHost}:8000`: "http://localhost:8000")
-    console.log('SERVER_URL =', SERVER_URL, '| hostUri =', Constants.expoConfig?.hostUri);
-
-
     router.navigate('/(onboarding)/userOnboarding/passcode')
   }
 
   return (
-    <SafeAreaView style={theme.screen}>
-      <View style={[theme.header, styles.title]}>
-        <Text style={styles.subheading}>Start making that account!</Text>
-        <Text style={styles.heading}>Choose a username</Text>
+    <ScrollView stickyHeaderIndices={[0]}>
+      <View>
+      <View style={[theme.header, theme.leftText] }>
+        <Text style={[theme.h5, {color: colours.onSurface}]}>Choose a username</Text>
       </View>
-      <View style={styles.bottomBar}>
+
         <TextEntry 
         onSubmit={setDisplayName}
         placeholder='Type here'
         keyboardType='default'
         />
-        {/**FIX: link to terms of use and privacy policy */}
-        <View style={styles.label}>
-          <Text style={styles.subheading}>By signing up, you agree to MPowered's Terms of Use and Privacy Policy</Text>
+
+        <View style={[theme.centerItems, theme.clearContainer]}>
+            <Text style={[theme.xSmall, {color: colours.onSurface}]}>By signing up, you agree to MPowered's Terms of Use and Privacy Policy</Text>
         </View>
-        
-      </View>
-      
-      
-    </SafeAreaView>
+        <View style={theme.centerItems}>
+        <ButtonWithIcon
+	          label="Terms & Conditions"
+	          onPress={openTerms}
+            buttonType="transparentButton"
+            name="arrow-up-right-box-outline"
+          />
+          <ButtonWithIcon
+	          label="Privacy Policy"
+	          onPress={openPrivacy}
+            buttonType="transparentButton"
+            name="arrow-up-right-box-outline"
+          />
+
+        </View>
+        </View>
+    </ScrollView>
   );
 }
-
-
 
 function createStyles(colours: ColourSet, text: Typography, bottomInset: number) {
   return StyleSheet.create({

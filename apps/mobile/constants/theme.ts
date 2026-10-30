@@ -39,12 +39,8 @@ const createTheme = (colours: ColourSet) =>
       ...roundButtonLayout,
     },
     roundSecondaryButton: {
-      backgroundColor: colours.background,
+      color: colours.secondary,
       ...roundButtonLayout,
-      borderWidth: 1,
-      borderTopWidth: 1,
-      borderBottomWidth: 1,
-      borderColor: colours.onSurface,
     },
     transparentButton:{
       backgroundColor: 'transparent',
