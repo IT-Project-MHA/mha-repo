@@ -7,7 +7,6 @@
  * 
  * clickable text for resending code
  * 
- * Assuming four digit code
  */
 
 import { useEffect, useState } from 'react';
@@ -24,11 +23,7 @@ import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { Typography } from '../../../../constants/textSize';
 import React from 'react';
 
-
 import GetDeviceId from '../../../../components/onboarding/GetDeviceID';
-
-
-
 
 const NUM_DIGITS = 6;
 
@@ -43,7 +38,7 @@ export default function Page() {
   const setUserOnboaring = useOnboardingStore((s)=> s.set);
 
   async function smsVerifier(code: string){
-    //on success,we go to the userType selection page
+    //on success, we go to the userType selection page
 
     //and send the API request
     //fields: phone_number, display_name, email
@@ -56,16 +51,12 @@ export default function Page() {
       const result2 = (await GetDeviceId());
       const device_id = result2.toString()
       console.log(device_id)
-      
       setUserOnboaring({device_id});
-
       router.navigate('/(onboarding)/patientOnboarding/userType');
 
     }catch (error){
-      //wrong code or some such
       console.error('SMS verification failed', error)
     }
-
   }
 
   async function resendCode(){

@@ -162,32 +162,6 @@ function createStyles(colours: ColourSet, text: Typography, bottomInset: number)
       justifyContent: 'space-between',
       alignItems: 'center',
     },
-
-    optionList: {
-      marginTop: 8,
-      marginHorizontal: 8,
-      borderWidth: 1,
-      borderColor: colours.onSurface,
-      overflow: 'hidden',
-    },
-
-    optionRow: {
-      paddingVertical: 10,
-      paddingHorizontal: 12,
-    },
-
-    divider: {
-      borderTopWidth: lineThickness,
-      borderTopColor: colours.secondary2,
-    },
-
-    selectedRow: {
-      backgroundColor: colours.secondary,
-    },
-
-    selectedText: {
-      color: colours.onSecondary,
-    },
   });
 }
 

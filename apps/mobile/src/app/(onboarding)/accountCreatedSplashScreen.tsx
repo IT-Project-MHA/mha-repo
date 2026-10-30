@@ -13,8 +13,9 @@ import { useRouter } from 'expo-router';
 import { useOnboardingStore } from '../../store/onboardingStorage';
 import { useAppStore } from '../../store/appStore';
 import { register_token } from '../../api/django-API';
+import Button from '@/components/atomicUI/Button';
 
-import { Text, StyleSheet, View } from 'react-native';
+import { Text, StyleSheet, View, ScrollView } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { lineThickness } from '../../../constants/layout';
 import { useTheme, ColourSet } from '../../../context/ThemeContext';
@@ -27,6 +28,9 @@ export default function Page() {
   const styles = createStyles(colours, theme, insets.bottom);
   const router = useRouter();
 
+  // in the case of account creation failing
+  const [failed, setFailed] = useState(false);
+
   const { refreshUserType } = useUser();
   const hasStarted = useRef(false);
 
@@ -36,6 +40,7 @@ export default function Page() {
 
 
   async function createAccount(){
+    setFailed(false);
     //takes the data we gathered and sends the register_token request
     try{
       // read answers at call time, before reset
@@ -44,19 +49,14 @@ export default function Page() {
       // takes verification_id, phone_number, display_name, pin, accepted_terms, accepted_privacy,
       // device_id, track_health (optional), health (optional)
       const result = await register_token(answers);
-      console.log('register result:', JSON.stringify(result)); 
-
       completeOnboarding(result.token); // saves token first
-      console.log('stored:', JSON.stringify(useAppStore.getState()));
-
       resetOnboarding();
-      console.log('calling refreshUserType');
-      
       await refreshUserType(); // now apiMyRole() can authenticate
       //on success,we go to the landing page (tabs)
       // RootNavigator moves to (tabs) when userType becomes defined
     } catch (error){
       console.error('register token failed:', error)
+      setFailed(true);
     }
   }
 
@@ -68,22 +68,48 @@ export default function Page() {
   }, []);
 
   return (
-    <SafeAreaView style={theme.screen}>
-      <View style={[theme.header, styles.title]}>
+    <ScrollView style={theme.screen}>
+
+      {failed ? (
+  <>
+    <View style={[theme.header, styles.title]}>
+      <Text style={styles.heading}>We couldn't create your account</Text>
+    </View>
+    <View style={theme.clearContainer}>
+      <Text style={styles.subheading}>
+        If you already have an account with this number, sign in instead.
+      </Text>
+      <Button
+        label="Go to Sign In"
+        onPress={() => {
+          resetOnboarding();
+          router.replace('/(onboarding)/signIn/signIn');
+        }}
+        buttonType="roundButton"
+      />
+      <Button
+        label="Start again"
+        onPress={() => {
+          resetOnboarding();
+          router.replace('/(onboarding)');
+        }}
+        buttonType="roundButton"
+      />
+    </View>
+  </>
+) : (
+  /* existing "Registering..." block */
+  <View style={styles.bottomBar}>
+    <View style={[theme.header, styles.title]}>
         <Text style={styles.subheading}>Done!</Text>
         <Text style={styles.heading}>Registering...</Text>
       </View>
 
-      <View style={styles.bottomBar}>
-
         <Text style={styles.subheading}>Hold tight while we process this...</Text>
       </View>
+)}
 
-
-      {/**resend or change phone number code is sent to */}
-
-
-    </SafeAreaView>
+    </ScrollView>
   );
 }
 

@@ -1,124 +1,122 @@
 /**
- * First page of patient onboarding.
- * asks for phone field
- * sends API request for sms code. Does not proceed until success
- * FIX LATER: add modal for terms of use and privacy policy.
+ * Phone number entry page
+ * -asks for phone field
+ * -sends API request for sms code. Does not proceed until success
  */
 
-import { useRouter } from 'expo-router';
-import { PhoneField } from '../../../../components/onboarding/PhoneField';
-import { useOnboardingStore } from '../../../store/onboardingStorage';
-import {request_code} from '../../../api/django-API'
+import { useRouter } from "expo-router";
+import { PhoneField } from "../../../../components/onboarding/PhoneField";
+import { useOnboardingStore } from "../../../store/onboardingStorage";
+import { request_code, ApiError } from "../../../api/django-API";
 
-import { Text, StyleSheet, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { lineThickness } from '../../../../constants/layout';
-import { useTheme, ColourSet } from '../../../../context/ThemeContext';
-import { Typography } from '../../../../constants/textSize';
-import React from 'react';
-
-
-
+import { Text, StyleSheet, View, ScrollView } from "react-native";
+import {
+  SafeAreaView,
+  useSafeAreaInsets
+} from "react-native-safe-area-context";
+import { lineThickness } from "../../../../constants/layout";
+import { useTheme, ColourSet } from "../../../../context/ThemeContext";
+import { Typography } from "../../../../constants/textSize";
+import React, { useState } from "react";
+import { HelperText } from "react-native-paper";
 
 export default function Page() {
   const { colours, theme } = useTheme();
   const insets = useSafeAreaInsets();
   const styles = createStyles(colours, theme, insets.bottom);
   const router = useRouter();
-  const setUserOnboaring = useOnboardingStore((s)=> s.set);
+  const setUserOnboaring = useOnboardingStore((s) => s.set);
 
-  async function setPhone(phone_number: string){
-    setUserOnboaring({phone_number});
-    try
-    {
+  // catch if an account has already been made with this number
+  const [accountExists, setAccountExists] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function setPhone(phone_number: string) {
+    if (sending) return; // stop double-submits from sending two SMS codes
+    setSending(true);
+    setError(null);
+    setAccountExists(false);
+    setUserOnboaring({ phone_number });
+    try {
       await request_code(phone_number);
-      router.navigate('/(onboarding)/userOnboarding/verifyPhone');
+      router.navigate("/(onboarding)/userOnboarding/verifyPhone");
+    } catch (error) {
+      console.error("Failed to send SMS", error);
+      setError(
+        "We couldn't send a code to that number. Check it and try again."
+      );
+      if (error instanceof ApiError && error.status === 409) {
+        // number already registered
+        setAccountExists(true);
+        setError("An account is already registered with this number.");
+      }
+    } finally {
+      setSending(false);
     }
-    catch(error)
-    {
-      console.error('Failed to send SMS', error);
-      //FIX: show user an error message of some sort
-    }
-
-
-    
   }
 
   return (
-    <SafeAreaView style={theme.screen}>
-      <View style={[theme.header, styles.title]}>
-        <Text style={styles.subheading}>Cool!</Text>
-        <Text style={styles.heading}>Add your mobile</Text>
-      </View>
-      <View style = {styles.bottomBar}>
-        <PhoneField
-        onSubmit={setPhone}
-        />
-        <View style={styles.label}> 
-          <Text style={styles.subheading}>Must be an Australian mobile phone number, starting in 04</Text>
+    <ScrollView stickyHeaderIndices={[0]}>
+      <View>
+        <View style={[theme.header, theme.leftText]}>
+          <Text style={[theme.h5, { color: colours.onSurface }]}>
+            Add your mobile
+          </Text>
         </View>
-      </View>
 
-      
-    </SafeAreaView>
+        <View style={[theme.clearContainer, theme.centerItems]}>
+          <Text style={[theme.small, { color: colours.onSurface }]}>
+            Please enter an Australian phone number
+          </Text>
+        </View>
+
+        <PhoneField onSubmit={setPhone} />
+
+        <HelperText type="error" visible={!!error} style={theme.centerText}>
+          {error}
+        </HelperText>
+      </View>
+    </ScrollView>
   );
 }
 
-function createStyles(colours: ColourSet, text: Typography, bottomInset: number) {
+function createStyles(
+  colours: ColourSet,
+  text: Typography,
+  bottomInset: number
+) {
   return StyleSheet.create({
     screen: {
       flex: 1,
-      backgroundColor: colours.background,
+      backgroundColor: colours.background
     },
 
     content: {
       paddingBottom: 200 + bottomInset,
-      gap: 38,
+      gap: 38
     },
 
     title: {
-      marginBottom: -19,
+      marginBottom: -19
     },
 
     card: {
-      gap: 12,
+      gap: 12
     },
 
     cardContent: {
-      paddingHorizontal: '5%',
-      paddingBottom: 5,
+      paddingHorizontal: "5%",
+      paddingBottom: 5
     },
 
     bottomBar: {
-      position: 'absolute',
-      left: '7.5%',
-      width: '85%',
+      position: "absolute",
+      left: "7.5%",
+      width: "85%",
       bottom: 120 + bottomInset,
-      gap: 8,
+      gap: 8
     },
-
-    heading: {
-      ...text.h6,
-      color: colours.onSurface,
-      paddingHorizontal: '5%',
-    },
-
-    subheading: {
-      ...text.small,
-      color: colours.onBackground,
-      paddingHorizontal: '5%',
-      marginTop: 4,
-    },
-
-    label: {
-      marginTop: 29,
-      marginBottom: 19,
-    },
-
-    firstLabel: {
-      marginTop: 5,
-    },
-
     field: {
       height: 40,
       paddingVertical: 5,
@@ -126,12 +124,12 @@ function createStyles(colours: ColourSet, text: Typography, bottomInset: number)
       marginHorizontal: 8,
       borderWidth: 1,
       borderColor: colours.onSurface,
-      justifyContent: 'center',
+      justifyContent: "center"
     },
 
     input: {
       ...text.body,
-      color: colours.onSurface,
+      color: colours.onSurface
     },
 
     error: {
@@ -141,40 +139,7 @@ function createStyles(colours: ColourSet, text: Typography, bottomInset: number)
       paddingVertical: 6,
       paddingHorizontal: 12,
       backgroundColor: colours.background,
-      overflow: 'hidden',
-    },
-
-    dropdown: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-
-    optionList: {
-      marginTop: 8,
-      marginHorizontal: 8,
-      borderWidth: 1,
-      borderColor: colours.onSurface,
-      overflow: 'hidden',
-    },
-
-    optionRow: {
-      paddingVertical: 10,
-      paddingHorizontal: 12,
-    },
-
-    divider: {
-      borderTopWidth: lineThickness,
-      borderTopColor: colours.ex2,
-    },
-
-    selectedRow: {
-      backgroundColor: colours.secondary,
-    },
-
-    selectedText: {
-      color: colours.onSecondary,
-    },
+      overflow: "hidden"
+    }
   });
 }
-

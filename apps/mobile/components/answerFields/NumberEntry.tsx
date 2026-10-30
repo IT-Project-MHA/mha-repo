@@ -73,7 +73,7 @@ function NumberEntry({ onSubmit, MAX_lENGTH_NUM, LOWER_BOUND, UPPER_BOUND }: Num
   };
 
   return (
-    <View style={[theme.sectionContainer, styles.content]}>
+    <View style={[theme.clearContainer, styles.content]}>
       <TextInput
         style={[styles.field, styles.subheading]}
         onChangeText={handleChange}
@@ -88,7 +88,7 @@ function NumberEntry({ onSubmit, MAX_lENGTH_NUM, LOWER_BOUND, UPPER_BOUND }: Num
         <Button
         label="submit"
         onPress={handleSubmit}
-        buttonType="primaryButton"
+        buttonType="roundButton"
         />
       </View>
     </View>
@@ -155,13 +155,14 @@ function createStyles(colours: ColourSet, text: Typography, bottomInset: number)
     },
 
     field: {
-      height: 40,
-      paddingVertical: 5,
-      paddingHorizontal: 10,
-      marginHorizontal: 8,
-      borderWidth: 1,
-      borderColor: colours.onSurface,
+      height: 60,
+      paddingVertical: 3,
+      paddingHorizontal: 40,
+      borderRadius:100,
+      borderWidth: 2,
+      borderColor: colours.secondary,
       justifyContent: 'center',
+      textAlign: 'center',
     },
 
     input: {
@@ -196,11 +197,6 @@ function createStyles(colours: ColourSet, text: Typography, bottomInset: number)
     optionRow: {
       paddingVertical: 10,
       paddingHorizontal: 12,
-    },
-
-    divider: {
-      borderTopWidth: lineThickness,
-      borderTopColor: colours.secondary2,
     },
 
     selectedRow: {

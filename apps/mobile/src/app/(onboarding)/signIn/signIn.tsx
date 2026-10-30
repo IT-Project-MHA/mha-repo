@@ -21,9 +21,7 @@ import { lineThickness } from '../../../../constants/layout';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { Typography } from '../../../../constants/textSize';
 import React from 'react';
-
-
-
+import { useLocalSearchParams } from 'expo-router';
 
 export default function Page() {
   const { colours, theme } = useTheme();
@@ -31,6 +29,9 @@ export default function Page() {
   const styles = createStyles(colours, theme, insets.bottom);
   const router = useRouter();
   const setUserOnboaring = useOnboardingStore((s)=> s.set);
+
+  // for when user is flagged in create mode
+  const { notice } = useLocalSearchParams<{ notice?: string }>();
 
   function setPhone(phone_number: string){
     setUserOnboaring({phone_number});
@@ -44,6 +45,13 @@ export default function Page() {
         <Text style={styles.heading}>Add your mobile</Text>
       </View>
       <View style = {styles.bottomBar}>
+
+        {notice === 'accountExists' && (
+          <Text style={styles.subheading}>
+            You already have an account with this number. Sign in below.
+          </Text>
+        )}
+
         <PhoneField
         onSubmit={setPhone}
         />
