@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import React from 'react';
 import { useTheme } from '../../../../context/ThemeContext';
 import { AppointmentProvider } from '../../../../context/AppointmentContext';
 

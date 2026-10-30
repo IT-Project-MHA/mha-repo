@@ -3,7 +3,7 @@
  * patient's doctor in a shared appointment or add their own. The patient's questions aren't shown
  * as only the patient can change them.
  */
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -188,7 +188,7 @@ export default function Screen() {
     <View style={styles.screen}>
       <ScrollView stickyHeaderIndices={[0]} contentContainerStyle={styles.content}>
         <View style={[theme.header, styles.title]}>
-          <Text style={[theme.h4, theme.leftText, theme.fontOnSurface, styles.titleText]}>
+          <Text style={[theme.h4, theme.leftText, styles.titleText]}>
             Add Questions to the Appointment
           </Text>
           <Text style={[styles.body, styles.intro, theme.leftText]}>
