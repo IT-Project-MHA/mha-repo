@@ -6,6 +6,9 @@ import { assessmentPainIntensityText } from "../../../../constants/resultDisplay
 
 const SECTION_NAME = "My Pain"
 
+// most characters the "Other" details can have
+const OTHER_DETAILS_LIMIT = 100;
+
 // highest value on the pain intensity sliders
 const PAIN_SLIDER_MAX = 10;
 
@@ -56,13 +59,19 @@ export default function PainSection() {
             title: "Pain location", 
             detail: "I have had pain in these areas last week.", 
             questionType: "MultiSelect", 
-            questionOptions: painLocations},
+            questionOptions: painLocations,
+            minSelections: 1,
+            otherAttribute: true,
+            otherAttributeSizeLimit: OTHER_DETAILS_LIMIT},
         {
             section: SECTION_NAME,
             title: "Pain characteristics",
             detail: "My pain felt like this last week.",
             questionType: "MultiSelect",
-            questionOptions: painCharacteristics},
+            questionOptions: painCharacteristics,
+            minSelections: 1,
+            otherAttribute: true,
+            otherAttributeSizeLimit: OTHER_DETAILS_LIMIT},
         {
             section: SECTION_NAME,
             title: "Pain intensity:",

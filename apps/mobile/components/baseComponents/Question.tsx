@@ -7,6 +7,7 @@ import { StyleSheet, Text } from "react-native";
 import ENTRY_COMPONENTS, { ENTRY_TYPE } from "../answerFields/EntryRegistry";
 import { InvalidQuestionTypeError } from "@/customErrors/QuestionErrors";
 import { useTheme, ColourSet } from '../../context/ThemeContext';
+import { MultiSelectAnswer } from "../answerFields/MultiSelect";
 
 type QuestionProps = {
   section: string;
@@ -19,6 +20,9 @@ type QuestionProps = {
   // text shown under a slider for each value, by index
   sliderDescriptions?: string[];
   questionOptions?: string[];
+  minSelections?: number; // multiselect only
+  otherAttribute?: boolean; // multiselect only
+  otherAttributeSizeLimit?: number; // multiselect only
 }
 
 // include assessment props
@@ -27,7 +31,7 @@ type QuestionScreenProps = QuestionProps & {
   progress?: string;
 }
 
-export default function Question({section, title, detail, questionType, sliderMax, sliderLabel, sliderDescriptions, questionOptions, onSubmit, progress}:  QuestionScreenProps) {
+export default function Question({section, title, detail, questionType, sliderMax, sliderLabel, sliderDescriptions, questionOptions, minSelections, otherAttribute, otherAttributeSizeLimit, onSubmit, progress}:  QuestionScreenProps) {
   const { theme } = useTheme();
 
   const EntryComponent = ENTRY_COMPONENTS[questionType];
@@ -35,6 +39,16 @@ export default function Question({section, title, detail, questionType, sliderMa
   if (!EntryComponent) {
     throw new InvalidQuestionTypeError(questionType + ' is not a valid question type');
   }
+
+  const submit = (value: any, other?: string) => {
+    if (!onSubmit) return;
+    if (questionType === "MultiSelect") {
+      const answer: MultiSelectAnswer = { selected: value, other: other ?? "" };
+      onSubmit(answer);
+    } else {
+      onSubmit(value);
+    }
+  };
   return (
     <View style={{flex: 1}}>
       <View style={[{flexDirection: "column", marginHorizontal: 5, marginVertical: 20}]}>
@@ -46,14 +60,16 @@ export default function Question({section, title, detail, questionType, sliderMa
         <Text style={[theme.fontOnBackground, theme.h6, theme.leftText]}>{detail}</Text>
       </View>
         <EntryComponent
-          onSubmit={onSubmit ?? (() => {})}
+          onSubmit={submit}
           upperBound={sliderMax}
           scoreLabel={sliderLabel}
           descriptions={sliderDescriptions}
           questionOptions={questionOptions ?? []}
           headingText=""
-          MIN_SELECTIONS={0}
+          MIN_SELECTIONS={minSelections ?? 0}
           MAX_SELECTIONS={questionOptions?.length ?? 0}
+          otherAttribute={otherAttribute}
+          otherAttributeSizeLimit={otherAttributeSizeLimit}
         />
     </View>
   );
