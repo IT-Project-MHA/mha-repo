@@ -102,7 +102,7 @@ export const lightHcColours: ColourSet = {
  */
 export const darkHcColours: ColourSet = {
   background: '#121114',
-  surface: '#262429',
+  surface: '#121114',
   primary: '#ff7466',
   secondary: '#ffd23f',
   tertiary: '#48cbff',
@@ -114,7 +114,7 @@ export const darkHcColours: ColourSet = {
   ex1: '#ff968c',
   ex2: '#e0bb68',
   ex3: '#9bcbdc', 
-  onEx1: '#FFF9F9',
-  onEx2: '#FFF9F9',
-  onEx3: '#FFF9F9',
+  onEx1: '#080808',
+  onEx2: '#080808',
+  onEx3: '#080808',
 };

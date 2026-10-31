@@ -110,6 +110,9 @@ const createTheme = (colours: ColourSet) =>
       padding: 10,
       borderRadius: 10,
     },
+    sectionSeparation: {
+      marginVertical: 30,
+    },
 
     /**
      * Within Containers, layout stuff, etc.

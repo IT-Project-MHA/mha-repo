@@ -18,6 +18,7 @@ import {
 } from "react-native";
 import { useTheme, ColourSet } from "../../context/ThemeContext";
 import { validateAboutMe, apiErrorMessage } from "@/api/settings_api_helpers";
+import { useUser } from "@/context/AuthorisationContext";
 
 export type UserDetails = {
   name: string;
@@ -48,6 +49,7 @@ const AboutMeModal = ({
   onCancel
 }: AboutMeModalProps) => {
   const { theme, colours } = useTheme();
+  const { isPatient } = useUser();
   const styles = createStyles(colours);
   const [draft, setDraft] = useState<UserDetails>(initialValues);
   const [error, setError] = useState<string | null>(null);
@@ -104,10 +106,9 @@ const AboutMeModal = ({
     keyboardType: "default" | "email-address" | "phone-pad" = "default"
   ) => (
     <View style={styles.field}>
-      <Text style={[theme.h6, theme.leftItems, {color: colours.onSurface}]}>
+      <Text style={[theme.h6, theme.leftText, {color: colours.onSurface, marginVertical: 10}]}>
         {label}
       </Text>
-      <Text> </Text>
       <TextInput
         value={draft[field]}
         onChangeText={updateHandler(field)}
@@ -132,7 +133,6 @@ const AboutMeModal = ({
   const renderSexField = () => (
     <View style={styles.field}>
       <Text style={[theme.h6, theme.leftItems, {color: colours.onSurface}]}>Sex</Text>
-      <Text> </Text>
       <Pressable
         style={[styles.dropdown, { borderColor: colours.onSurface }]}
         onPress={() => setSexOpen((open) => !open)}
@@ -196,15 +196,18 @@ const AboutMeModal = ({
               <Text style={[theme.h4, theme.leftItems, {color: colours.onSurface}]}>
                 Edit My Details
               </Text>
-              <Text> </Text>
               
               {renderField("Name", "name", "default")}
-              <Text> </Text>
-              {renderSexField()}
-              <Text> </Text>
-              {renderField("Birth Year", "birthYear", "phone-pad")}
+              
+
+              {isPatient && (
+                <>
+                {renderSexField()}
+                {renderField("Birth Year", "birthYear", "phone-pad")}
+                </>
+              )}
+              
               {renderField("Phone Number", "phone", "phone-pad")}
-              <Text> </Text>
               {renderField("Email", "email", "email-address")}
 
               {error && (

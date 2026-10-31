@@ -12,7 +12,7 @@ import {
   ActivityIndicator,
   Alert
 } from "react-native";
-import { useTheme, ColourSet } from "../../../../context/ThemeContext";
+import { useTheme } from "../../../../context/ThemeContext";
 import ButtonWithIcon from "../../../../components/atomicUI/ButtonWithIcon";
 import React, { useState, useEffect } from "react";
 import TextButton from "../../../../components/atomicUI/TextButton";
@@ -65,7 +65,7 @@ export default function Screen() {
     relationship: Relationship;
   } | null>(null);
   const [adding, setAdding] = useState(false); // add support person modal visibility
-  const { refreshUserType, isPatient, isSupport } = useUser();
+  const { refreshUserType, isPatient } = useUser();
 
   const handleAccept = async (id: string) => {
     try {
@@ -215,7 +215,6 @@ export default function Screen() {
         {loadError ? (
           <>
             <Text style={[theme.body, {color: colours.onSurface}]}>{loadError}</Text>
-            <Text> </Text>
             <TextButton label="Try again" onPress={load} fontColour={colours.onSurface} />
           </>
         ) : (
@@ -239,18 +238,14 @@ export default function Screen() {
           My Support Links
         </Text>
       </View>
-      <Text> </Text>
-
+  
       {connections.invitations.length > 0 && (
         <>
           <View style={theme.sectionContainer}>
-            <Text> </Text>
             <Text style={[theme.h5, theme.leftText, {color: colours.onSurface}]}>
               Invitations
             </Text>
-            <Text> </Text>
             <View style={theme.line}></View>
-            <Text> </Text>
             {connections.invitations.map((inv) => (
               <View key={inv.id} style={theme.layoutContainer}>
                 <Text style={[theme.body, theme.leftText, {color: colours.onSurface}]}>
@@ -271,21 +266,18 @@ export default function Screen() {
               </View>
             ))}
           </View>
-          <Text> </Text>
-          <Text> </Text>
         </>
       )}
 
       {isPatient && (
         <>
-          <View style={[theme.sectionContainer]}>
+          <View style={[theme.sectionContainer, theme.sectionSeparation]}>
   
             <Text style={[theme.h5, theme.leftText, {color: colours.onSurface, marginVertical: 15 }]}>
               My Support People
             </Text>
   
             <View style={theme.line}></View>
-
 
             {renderSection(
               connections.supportPeople,
@@ -300,14 +292,12 @@ export default function Screen() {
                 fontColour={colours.onSurface}
               />
             </View>
-          </View>
 
-          <Text> </Text>
-          <Text> </Text>
+          </View>
         </>
       )}
 
-      <View style={theme.sectionContainer}>
+      <View style={[theme.sectionContainer]}>
 
         <Text style={[theme.h5, theme.leftText, {color: colours.onSurface, marginVertical: 15 }]}>
           My Connections{" "}
@@ -345,8 +335,4 @@ export default function Screen() {
       
     </ScrollView>
   );
-}
-
-function createStyles(colours: ColourSet) {
-  return StyleSheet.create({});
 }
