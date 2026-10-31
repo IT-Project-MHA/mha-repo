@@ -1,5 +1,4 @@
 //basically straight from here: https://dev.to/davelearns/building-a-basic-quiz-app-with-react-native-and-expo-go-a-complete-guide-11o
-
 import React, { useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";

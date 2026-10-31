@@ -199,6 +199,7 @@ export default function Screen() {
               onPress={() => setSelected({ person, relationship })}
               buttonType="transparentButton"
               name="chevron-forward-outline"
+              textStyle={{color: colours.onSurface}}
             />
           </View>
         ))}

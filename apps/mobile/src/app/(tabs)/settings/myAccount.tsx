@@ -331,6 +331,7 @@ export default function Screen() {
                 label="Yes, I do"
                 onPress={() => setPending("editMyConditions")}
                 buttonType="roundButton"
+                textStyle={{color: colours.onTertiary}}
               />
             </View>
           </>
@@ -354,6 +355,7 @@ export default function Screen() {
           onPress={() => setPending("logout")}
           buttonType="transparentButton"
           name="person-outline"
+          textStyle={{color: colours.onSurface}}
         />
 
         <View style={theme.line}></View>
@@ -363,6 +365,7 @@ export default function Screen() {
           onPress={() => {}}
           buttonType="transparentButton"
           name="lock-closed-outline"
+          textStyle={{color: colours.onSurface}}
         />
         </View>
      

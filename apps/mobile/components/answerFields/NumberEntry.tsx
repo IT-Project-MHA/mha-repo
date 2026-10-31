@@ -73,7 +73,7 @@ function NumberEntry({ onSubmit, MAX_lENGTH_NUM, LOWER_BOUND, UPPER_BOUND }: Num
   return (
     <View style={[theme.clearContainer, styles.content]}>
       <TextInput
-        style={[styles.field, theme.body, {color: colours.onBackground}]}
+        style={[theme.h6, styles.field, {color:colours.onSurface}]}
         onChangeText={handleChange}
         value={value}
         placeholder="input number only"
