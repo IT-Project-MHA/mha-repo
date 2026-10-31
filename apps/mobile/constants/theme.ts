@@ -1,6 +1,6 @@
 import { StyleSheet } from "react-native";
 import { lightColours, darkColours, lightHcColours, darkHcColours, ColourSet } from "./colourScheme";
-import { primaryButtonLayout, buttonLayout, textLayout, transparentButtonLayout, textButtonLayout, roundButtonLayout, lineThickness } from "./layout";
+import { primaryButtonLayout, buttonLayout, textLayout, transparentButtonLayout, roundedTertiaryButtonLayout, textButtonLayout, roundButtonLayout, lineThickness } from "./layout";
 
 /**
  * Builds a style sheet for each theme, using colour schemes defined in colourScheme.ts
@@ -50,6 +50,10 @@ const createTheme = (colours: ColourSet) =>
       backgroundColor: 'transparent',
       ...transparentButtonLayout,
     },
+    roundedTertiaryButton: {
+      backgroundColor: colours.tertiary,
+      ...roundedTertiaryButtonLayout,
+    },
     textButton:{
       backgroundColor: 'transparent',
       ...textButtonLayout,
@@ -61,6 +65,37 @@ const createTheme = (colours: ColourSet) =>
     screen: {
       flex: 1,
       backgroundColor: colours.background,
+    },
+    outlinedContainer: {
+      justifyContent: 'center',
+      paddingBlock: '6%',
+      margin: 3,
+      alignSelf: 'center',
+      width: '70%',
+      paddingHorizontal: '3%',
+      borderRadius: 10,
+      borderColor: colours.onSurface,
+      borderWidth: 2
+    },
+
+    // divider
+    line: {
+      height: lineThickness,
+      backgroundColor: colours.onSurface,
+      width: '90%',
+      borderRadius: 300,
+      alignSelf: 'center',
+
+    },
+
+    lineWithMargin: {
+      height: 1,
+      backgroundColor: colours.onSurface,
+      width: '90%',
+      borderRadius: 300,
+      alignSelf: 'center',
+      margin: 10
+
     },
     // clear container with padding
     clearContainer: {
@@ -132,6 +167,16 @@ const createTheme = (colours: ColourSet) =>
     rightText: {
       textAlign: 'right',
       paddingHorizontal: '5%',
+    },
+    // for use within a container
+    topText: {
+      textAlignVertical: 'top',
+      paddingVertical: '5%',
+    },
+    // for use within a container
+    bottomText: {
+      textAlignVertical: 'bottom',
+      paddingVertical: '5%',
     },
     // for use within a container
     centerItems: {
@@ -210,14 +255,6 @@ const createTheme = (colours: ColourSet) =>
      * Extra things
      */
 
-    // divider
-    line: {
-      height: 1,
-      backgroundColor: colours.onSurface,
-      width: '90%',
-      borderRadius: 300,
-      alignSelf: 'center',
-    },
     // gap at the bottom of the screen, so nav bar doesnt cover it
     bottomGap: {
       height: 120,
@@ -239,6 +276,9 @@ const createTheme = (colours: ColourSet) =>
      */
     fontOnSurface: {
       color: colours.onSurface,
+    },
+    fontOnSurfaceDull: {
+      color: colours.tertiary2
     },
     fontOnBackground: {
       color: colours.onBackground,

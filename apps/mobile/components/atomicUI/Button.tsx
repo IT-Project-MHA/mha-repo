@@ -2,7 +2,7 @@ import React from "react";
 import { StyleProp, StyleSheet, Text, TextStyle, TouchableOpacity, ViewStyle } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 
-type ButtonType = "primaryButton" | "secondaryButton" | "transparentButton" | "textButton" | "roundButton" ;
+type ButtonType = "primaryButton" | "secondaryButton" | "roundButton" | "roundSecondaryButton" | "transparentButton" | "roundedTertiaryButton" | "textButton";
 
 
 /**
