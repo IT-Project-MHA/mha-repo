@@ -2,6 +2,8 @@
   "question_options": [
     {"app_section": "onboarding", "question_key": "pain_type", "options": ["Osteoarthritis", "Chronic back or neck pain", "Nerve pain", 
                                                                                   "Migraine or headache", "Other"]},
+    {"app_section": "onboarding", "question_key": "assigned_gender_at_birth", "options": ["Female", "Male", "Intersex", "Prefer not to say"]},
+    
     {"app_section": "my_pain", "question_key": "pain_location", "options": ["Head", "Neck", "Shoulders", "Upper back", "Lower back", 
                                                                                   "Wrists", "Hands", "Knees", "Ankles", "Hips", "All over", "Other"]},
    {"app_section": "my_pain", "question_key": "pain_characteristic", "options": ["Aching", "Throbbing", "Shooting", "Stabbing", "Sharp", "Burning", "Cramping", 

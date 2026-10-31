@@ -1,6 +1,6 @@
 import { StyleSheet } from "react-native";
 import { lightColours, darkColours, lightHcColours, darkHcColours, ColourSet } from "./colourScheme";
-import { primaryButtonLayout, buttonLayout, textLayout, squareButtonWithLineLayout, transparentButtonLayout, roundedTertiaryButtonLayout, textButtonLayout, roundButtonLayout, lineThickness } from "./layout";
+import { primaryButtonLayout, buttonLayout, textLayout, transparentButtonLayout, roundedTertiaryButtonLayout, textButtonLayout, roundButtonLayout, lineThickness } from "./layout";
 
 /**
  * Builds a style sheet for each theme, using colour schemes defined in colourScheme.ts
@@ -23,6 +23,9 @@ import { primaryButtonLayout, buttonLayout, textLayout, squareButtonWithLineLayo
 
 const createTheme = (colours: ColourSet) =>
   StyleSheet.create({
+    /**
+     * Button Styles
+     */
     primaryButton: {
       backgroundColor: colours.primary,
       ...primaryButtonLayout,
@@ -43,15 +46,6 @@ const createTheme = (colours: ColourSet) =>
       borderBottomWidth: 1,
       borderColor: colours.onSurface,
     },
-    screen: {
-      flex: 1,
-      backgroundColor: colours.background,
-    },
-    squareButtonWithLine:{
-      backgroundColor: colours.secondary,
-      borderColor: colours.primary,
-      ...squareButtonWithLineLayout,
-    },
     transparentButton:{
       backgroundColor: 'transparent',
       ...transparentButtonLayout,
@@ -64,18 +58,13 @@ const createTheme = (colours: ColourSet) =>
       backgroundColor: 'transparent',
       ...textButtonLayout,
     },
-    sectionContainer: {
-      justifyContent: 'center',
-      backgroundColor: colours.surface,
-      paddingBlock: '6%',
-      alignSelf: 'center',
-      width: '85%',
-      paddingHorizontal: '3%',
-      borderRadius: 28,
 
-      shadowColor: colours.primary,
-      shadowOpacity: 0.15,
-      shadowRadius: 7,
+    /**
+     * Screen Design
+     */
+    screen: {
+      flex: 1,
+      backgroundColor: colours.background,
     },
     outlinedContainer: {
       justifyContent: 'center',
@@ -108,7 +97,7 @@ const createTheme = (colours: ColourSet) =>
       margin: 10
 
     },
-    // clear container with pa
+    // clear container with padding
     clearContainer: {
       justifyContent: 'center',
       backgroundColor:'transparent',
@@ -120,7 +109,24 @@ const createTheme = (colours: ColourSet) =>
       borderBottomWidth: 0, 
       overflow: 'hidden',
     },
-    
+    sectionContainer: {
+      justifyContent: 'center',
+      backgroundColor: colours.surface,
+      paddingBlock: '6%',
+      alignSelf: 'center',
+      width: '85%',
+      paddingHorizontal: '3%',
+      borderRadius: 28,
+
+      shadowColor: colours.primary,
+      shadowOpacity: .15,
+      shadowRadius: 7,
+      shadowOffset: {
+          width: 0,
+          height: 0, 
+    },
+    },
+        
     /**
      * use only for manipulating layouts within a container as it
      * has no padding.
@@ -143,6 +149,11 @@ const createTheme = (colours: ColourSet) =>
       padding: 10,
       borderRadius: 10,
     },
+
+    /**
+     * Within Containers, layout stuff, etc.
+     */
+
     // for use within a container
     centerText: {
       textAlign: 'center',
@@ -188,6 +199,62 @@ const createTheme = (colours: ColourSet) =>
       justifyContent: 'space-between',
       alignSelf: 'stretch',
     },
+
+    /**
+     * Modals
+     */
+    modalView: {
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: 15,
+        },
+        card: {
+          width: '100%',
+          maxWidth: 500,
+          borderRadius: 28,
+          padding: 24,
+          maxHeight: '80%'
+        },
+        modalButtons: {
+          flexDirection: 'row',
+          justifyContent: 'center',
+          flexWrap: 'wrap',
+          gap: 10,
+          marginTop: 24,
+          paddingHorizontal: 15,
+        },
+        modalButton: {
+          paddingVertical: 12,
+          paddingHorizontal: 20,
+          borderRadius: 50,
+          minHeight: 44,
+          justifyContent: 'center',
+          alignItems: 'center',
+        },
+        modalBackgroundColour: {
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.6)'
+        },
+        field : {
+          width: '100%',
+          borderRadius: 28,
+          padding: 5,
+        },
+        textInput : {
+          height: 40,
+            padding: 5,
+            marginHorizontal: 8,
+            borderWidth: 1,
+        },
+    /**
+     * Extra things
+     */
+
     // gap at the bottom of the screen, so nav bar doesnt cover it
     bottomGap: {
       height: 120,
@@ -203,9 +270,9 @@ const createTheme = (colours: ColourSet) =>
       borderColor: colours.background,
       borderWidth: 3,
     },
-
+    
     /**
-     * the following are styles for font details (colour, underline, etc)
+     * Styles for font details (colour, underline, etc)
      */
     fontOnSurface: {
       color: colours.onSurface,
@@ -220,19 +287,23 @@ const createTheme = (colours: ColourSet) =>
       textDecorationLine: 'underline',
     },
 
-    //EmojiSelect
+    /**
+     * Emoji Select
+     */
     container: {
       flex: 1,
       paddingVertical: 12, 
       paddingHorizontal: 80, 
       borderRadius: 8,
       backgroundColor: colours.background,
+      alignItems: 'center' as const,
     },
     option: {
       backgroundColor: colours.surface,
-      padding: 15,
+      paddingVertical: 12, 
+      paddingHorizontal: 80, 
       borderRadius: 8,
-      marginBottom: 15,
+      alignItems: 'center' as const,
     },
     selectedOption: {
       backgroundColor: colours.secondary,
@@ -247,6 +318,13 @@ const createTheme = (colours: ColourSet) =>
       color: colours.onSecondary,
       ...textLayout,
     },
+    /*optionSpacing: {
+      backgroundColor: 'transparent',
+      paddingVertical: 12, 
+      paddingHorizontal: 80, 
+      borderRadius: 8,
+      alignItems: 'center' as const,
+    },*/
     //emoji
     emojiContainer: {
       paddingVertical: 12, 
@@ -261,6 +339,18 @@ const createTheme = (colours: ColourSet) =>
       borderRadius: 8,
     }
   });
+
+  
+
+
+
+
+
+
+
+
+
+
 
 /**
  * Building the available themes by passing the corresponding colour palette to createTheme()

@@ -8,7 +8,10 @@
     "scheme": "mobile",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "infoPlist": {
+        "UIBackgroundModes": ["audio"] // recording continues in background (e.g. when the phone locks)
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -38,13 +41,29 @@
       "expo-secure-store",
       "@react-native-vector-icons/ionicons",
       "@react-native-vector-icons/material-design-icons",
-      "expo-audio",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow $(PRODUCT_NAME) to use your microphone to record your appointments, so you can listen back and remember what was said. Recording only starts when you choose to start it."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+
+          "color": "#208AEF"
+        }
+      ],
       [
         "expo-contacts",
         {
           "contactsPermission": "Allow $(PRODUCT_NAME) to choose a support person from your contacts."
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker",
+      "expo-sharing",
+      "expo-image",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true,

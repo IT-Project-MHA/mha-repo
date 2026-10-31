@@ -9,6 +9,7 @@ export const UserType = {
     admin: 'Admin',
     both: 'SupportPersonPatient',
     undefined: 'Undefined', // for onboarding
+    noRole: 'NoRole', // onboarded, but no profile and no active links
 } as const;
 
 /**
