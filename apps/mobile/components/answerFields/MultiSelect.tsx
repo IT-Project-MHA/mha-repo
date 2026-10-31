@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Checkbox } from "react-native-paper";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme, ColourSet } from "../../context/ThemeContext";
 import { Typography } from "../../constants/textSize";
 import Button from "../atomicUI/Button";
@@ -17,8 +16,7 @@ type MultiSelectProps ={
 
 function MultiSelect({ questionOptions, onSubmit, headingText, MIN_SELECTIONS, MAX_SELECTIONS }: MultiSelectProps) {
   const { colours, theme } = useTheme();
-  const insets = useSafeAreaInsets();
-  const styles = createStyles(colours, theme, insets.bottom);
+  const styles = createStyles(colours, theme);
 
   const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]); // Tracks the currently selected answers
 
@@ -44,9 +42,12 @@ function MultiSelect({ questionOptions, onSubmit, headingText, MIN_SELECTIONS, M
       onSubmit(selectedAnswers);
   };
   return (
+    <View style={styles.screen}>
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
       <View style={[theme.sectionContainer, styles.card]}>
         <View style={styles.cardContent}>
+          <Text style={[theme.fontOnBackground, theme.small, {marginBottom: 10, marginLeft: 10}]}>
+            Scroll down for more options</Text>
           {!!headingText && <Text style={[styles.heading, styles.label]}>{headingText}</Text>}
           <View style={styles.checkboxList}>
             {questionOptions.map((option, index) => (
@@ -56,8 +57,8 @@ function MultiSelect({ questionOptions, onSubmit, headingText, MIN_SELECTIONS, M
                 status={selectedAnswers.includes(option) ? 'checked' : 'unchecked'}
                 onPress={() => handleSelect(option)}
                 rippleColor="transparent"
-                color={colours.onEx3}
-                uncheckedColor={colours.onEx3}
+                color={colours.ex2}
+                uncheckedColor={colours.ex2}
                 labelStyle={[styles.input, selectedAnswers.includes(option) && styles.selectedText]}
                 style={[
                   styles.checkboxItem,
@@ -68,26 +69,32 @@ function MultiSelect({ questionOptions, onSubmit, headingText, MIN_SELECTIONS, M
           </View>
         </View>
       </View>
-
-      <View style={styles.button}>
-        <Button
-        label= "Continue"
-        onPress={handleSubmit}
-        buttonType='roundButton'
-        />
-      </View>
     </ScrollView>
+
+    <View style={styles.button}>
+      <Button
+      label= "Continue"
+      onPress={handleSubmit}
+      buttonType='roundButton'
+      />
+    </View>
+    </View>
   );
 }
 
-function createStyles(colours: ColourSet, text: Typography, bottomInset: number) {
+function createStyles(colours: ColourSet, text: Typography) {
   return StyleSheet.create({
+    screen: {
+      flex: 1,
+    },
+
     scroll: {
       flex: 1,
     },
 
     content: {
-      paddingBottom: 0 + bottomInset,
+      // room for the last options to scroll up clear of the floating button
+      paddingBottom: 80,
       gap: 19,
     },
 
@@ -112,9 +119,10 @@ function createStyles(colours: ColourSet, text: Typography, bottomInset: number)
     },
 
     button: {
-      width: '85%',
+      position: 'absolute',
+      bottom: 10,
+      width: '90%',
       alignSelf: 'center',
-      marginTop: 10,
     },
 
     input: {
@@ -129,11 +137,11 @@ function createStyles(colours: ColourSet, text: Typography, bottomInset: number)
     },
 
     selectedOption: {
-      backgroundColor: colours.tertiary,
+      backgroundColor: colours.secondary,
     },
 
     selectedText: {
-      color: colours.onTertiary,
+      color: colours.onSecondary,
     },
 
     checkboxItem: {

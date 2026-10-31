@@ -1,14 +1,12 @@
 import type React from "react";
 import { useState } from "react";
-import { Text, View, StyleSheet} from "react-native";
+import { Text, View, StyleSheet, Pressable } from "react-native";
+import { Ionicons } from "@react-native-vector-icons/ionicons";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { useRouter } from 'expo-router';
-import Button from "../atomicUI/Button";
-import TextWithLeftIconButton from "../atomicUI/TextWithLeftIconButton";
 import { Question, QuestionProps } from "../../components/baseComponents/Question";
 import {EmptyQuestionArrayError} from "../../src/customErrors/QuestionErrors";
 import { useTheme, ColourSet } from '../../context/ThemeContext';
-
 
 type AssessmentProps = {
   title: String;
@@ -18,9 +16,11 @@ type AssessmentProps = {
 export default function Assessment({title, questions}: AssessmentProps) {
   const router = useRouter();
 
-  const { theme } = useTheme();
+  const { colours, theme } = useTheme();
+  const styles = createStyles(colours);
 
   const [currIndex, setNumber] = useState(0);
+  const [answers, setAnswers] = useState<any[]>([]);
 
   if (questions == null) {
     throw new EmptyQuestionArrayError("properties.questions is null");
@@ -32,36 +32,59 @@ export default function Assessment({title, questions}: AssessmentProps) {
     router.navigate('/(tabs)/myPain');
   }
 
+  const submitAnswer = (answer: any) => {
+    const updated = [...answers];
+    updated[currIndex] = answer;
+    setAnswers(updated);
+    if (currIndex >= questions.length - 1) {
+      // submit assessment
+      returnRoute();
+    } else {
+      setNumber(currIndex + 1);
+    }
+  }
+
   return (
     <SafeAreaView style={{flex: 1}}>
-      <View style={[{flexDirection: "row", alignContent: "flex-start"}]}>
-        <TextWithLeftIconButton
-	        label="Assessments"
-	        onPress={() => {
+      <Pressable
+        style={styles.backButton}
+        onPress={() => {
           if (currIndex == 0) {
             returnRoute();
           } else {
             setNumber(currIndex - 1);
           }
-          returnRoute}}
-          iconName="chevron-back-outline"
-        />
-      </View>
-      <Question key={currIndex} title={questions[currIndex].title}
-      detail={questions[currIndex].detail} questionType={questions[currIndex].questionType}
-      sliderMax={questions[currIndex].sliderMax} questionOptions={questions[currIndex].questionOptions} />
-      <View style={[{flexDirection: "column", alignItems: "center", justifyContent: "space-between", gap: 20}]}>
-        <Text style={[theme.fontOnBackground, theme.h6, theme.centerText]}>{'Progress: ' + (currIndex+1) + '/' + questions.length}</Text>
-        <Button label="Record" onPress={() => {
-          if (currIndex >= questions.length-1) {
-             // submit assessment
-              returnRoute();
-            } else {
-              setNumber(currIndex + 1);
-            }}} buttonType="primaryButton"></Button>
+        }}
+        accessibilityRole="button"
+        hitSlop={8}
+      >
+        <Ionicons name="arrow-back" size={28} color={colours.onBackground} />
+        <Text style={[theme.h6, theme.fontOnBackground]}> Back</Text>
+      </Pressable>
+      <View style={[{flex: 1}, styles.footer]}>
+        <Question key={currIndex} section={questions[currIndex].section} title={questions[currIndex].title}
+        detail={questions[currIndex].detail} questionType={questions[currIndex].questionType}
+        sliderMax={questions[currIndex].sliderMax} questionOptions={questions[currIndex].questionOptions}
+        onSubmit={submitAnswer} progress={'Progress: ' + (currIndex+1) + '/' + questions.length} />
       </View>
     </SafeAreaView>
   )
+}
+
+function createStyles(colours: ColourSet) {
+  return StyleSheet.create({
+    footer: {
+      paddingBottom: 83,
+    },
+
+    backButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+    },
+  });
 }
 
 export { Assessment, AssessmentProps };
