@@ -1,10 +1,10 @@
 //built on NumberEntry and uses community slider
 
 import React, { useState } from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, View } from "react-native";
 import Slider from "@react-native-community/slider";
 import { useTheme } from "../../context/ThemeContext";
+import Button from "../atomicUI/Button";
 import { themes } from "../../constants/theme";
 
 
@@ -16,71 +16,61 @@ function sanitizeNumberInput(text: string) {
   return t;
 }
 
-function validateNumberInput(numText: string, upperBound: number) {
-  //checking if it's something we should accept, i.e. within range
-  if (numText == "") return "enter a number"; //what it prints if submitted
+// function validateNumberInput(numText: string, upperBound: number) {
+//   //checking if it's something we should accept, i.e. within range
+//   if (numText == "") return "enter a number"; //what it prints if submitted
+//
+//   const num = Number(numText);
+//   if (!Number.isInteger(num) || num < LOWER_BOUND || num > upperBound) {
+//     return "enter a number between 0 and 10";
+//   }
+//   return null;
+// }
 
-  const num = Number(numText);
-  if (!Number.isInteger(num) || num < LOWER_BOUND || num > upperBound) {
-    return "enter a number between 0 and 10";
-  }
-  return null;
-}
-const description = [
-  "Pain does not impact my mood at all",
-  "Pain slightly effects my mood",
-  "etc3",
-  "etc3",
-  "etc3",
-  "etc3",
-  "etc3",
-  "etc3",
-  "etc3",
-  "etc3",
-  "etc3",
-];
 
-function SliderEntry({ onSubmit , upperBound }: { onSubmit: (v: string) => void }, upperBound: number) {
+// scoreLabel is what's being scored, shown as 'My <scoreLabel> is <value>'. descriptions holds the
+// text shown under the slider for each value, by index
+function SliderEntry({ onSubmit, upperBound = 10, scoreLabel = "score", descriptions = [] }: { onSubmit: (v: string) => void; upperBound?: number; scoreLabel?: string; descriptions?: string[] }) {
 
-  const { theme } = useTheme();
+  const { colours, theme } = useTheme();
 
-  const [value, setValue] = useState<string>("");
-  const [error, setError] = useState<string | null>(null);
+  // starts at the lowest score, so it can be submitted without moving the slider
+  const [value, setValue] = useState<string>(String(LOWER_BOUND));
 
   const handleChange = (num: number) => {
     // slider gives a number; convert to string and sanitize/limit
     const text = sanitizeNumberInput(String(Math.round(num)));
     setValue(text);
-    if (error) setError(null);
   };
 
   const handleSubmit = () => {
-    const err = validateNumberInput(value, upperBound);
-    if (err) {
-      setError(err);
-      return;
-    }
     onSubmit(value);
   };
 
   return (
-    <SafeAreaView>
-      <View style={theme.option}>
-        <Text style={[theme.text, {textAlign: 'center'}]}>My score is {value}</Text>
+    <View>
+      {/* slider padding */}
+      <View style={[theme.sectionContainer, { paddingHorizontal: 40 }]}>
+        <Text style={[theme.h6, theme.fontOnSurface, theme.centerText]}>My {scoreLabel} is 
+          <Text style={{fontWeight: 'bold'}}> {value}</Text>
+        </Text>
         <Slider
-          style={theme.slider}
+          style={[theme.slider, { alignSelf: 'stretch', height: 40 }]}
           minimumValue={LOWER_BOUND}
           maximumValue={upperBound}
           step={1}
-          value={value === "" ? LOWER_BOUND : Number(value)}
+          value={Number(value)}
           onValueChange={handleChange}
-          minimumTrackTintColor={theme.primaryButton.backgroundColor}  //should be based on theme
-          maximumTrackTintColor={theme.secondaryButton.backgroundColor}  //ditto
-          thumbTintColor={theme.primaryButton.backgroundColor}            //ditto
+          minimumTrackTintColor={colours.primary}
+          maximumTrackTintColor={colours.tertiary}
+          thumbTintColor={colours.primary}
         />
-        <Text style={theme.text}>{description[Number(value)]}</Text>
+        <Text style={[theme.body, theme.fontOnSurface, theme.centerText, {fontStyle: 'italic'}]}>{descriptions[Number(value)]}</Text>
       </View>
-    </SafeAreaView>
+      <View style={{ width: '85%', alignSelf: 'center', marginTop: 20 }}>
+        <Button label="Continue" onPress={handleSubmit} buttonType="roundButton" />
+      </View>
+    </View>
   );
 }
 

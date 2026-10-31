@@ -14,6 +14,10 @@ type QuestionProps = {
   detail: String;
   questionType: ENTRY_TYPE;
   sliderMax?: number;
+  // what a slider question scores e.g. 'pain level', shown as 'My pain level is 3'
+  sliderLabel?: string;
+  // text shown under a slider for each value, by index
+  sliderDescriptions?: string[];
   questionOptions?: string[];
 }
 
@@ -23,7 +27,7 @@ type QuestionScreenProps = QuestionProps & {
   progress?: string;
 }
 
-export default function Question({section, title, detail, questionType, sliderMax, questionOptions, onSubmit, progress}:  QuestionScreenProps) {
+export default function Question({section, title, detail, questionType, sliderMax, sliderLabel, sliderDescriptions, questionOptions, onSubmit, progress}:  QuestionScreenProps) {
   const { theme } = useTheme();
 
   const EntryComponent = ENTRY_COMPONENTS[questionType];
@@ -35,7 +39,7 @@ export default function Question({section, title, detail, questionType, sliderMa
     <View style={{flex: 1}}>
       <View style={[{flexDirection: "column", marginHorizontal: 5, marginVertical: 20}]}>
         <View style={styles.sectionRow}>
-          <Text style={[theme.fontOnBackground, theme.h6, theme.leftText, {fontWeight: 'bold'}]}>{section}:</Text>
+          <Text style={[theme.fontOnBackground, theme.h6, theme.leftText, {fontWeight: 'bold'}]}>{section}</Text>
           {!!progress && <Text style={[theme.fontOnBackground, theme.body, theme.rightText]}>{progress}</Text>}
         </View>
         <Text style={[theme.fontOnBackground, theme.h4, theme.leftText, {marginTop: 10}]}>{title}</Text>
@@ -44,6 +48,8 @@ export default function Question({section, title, detail, questionType, sliderMa
         <EntryComponent
           onSubmit={onSubmit ?? (() => {})}
           upperBound={sliderMax}
+          scoreLabel={sliderLabel}
+          descriptions={sliderDescriptions}
           questionOptions={questionOptions ?? []}
           headingText=""
           MIN_SELECTIONS={0}

@@ -2,8 +2,18 @@ import { useEffect, useState } from "react";
 import Assessment from "../../../../components/baseComponents/Assessment";
 import { QuestionProps } from "../../../../components/baseComponents/Question";
 import { apiQuestionOption } from "@/api/django-API";
+import { assessmentPainIntensityText } from "../../../../constants/resultDisplayText";
 
 const SECTION_NAME = "My Pain"
+
+// highest value on the pain intensity sliders
+const PAIN_SLIDER_MAX = 10;
+
+// the text for every pain intensity slider value 0 to PAIN_SLIDER_MAX
+const PAIN_INTENSITY_DESCRIPTIONS = Array.from(
+    { length: PAIN_SLIDER_MAX + 1 },
+    (_, value) => assessmentPainIntensityText(value),
+);
 
 // load options for multiple choice from backend
 async function loadOptions(questionKey: string) {
@@ -53,6 +63,34 @@ export default function PainSection() {
             detail: "My pain felt like this last week.",
             questionType: "MultiSelect",
             questionOptions: painCharacteristics},
+        {
+            section: SECTION_NAME,
+            title: "Pain intensity:",
+            detail: "current",
+            questionType: "SliderEntry",
+            sliderLabel: "current pain",
+            sliderDescriptions: PAIN_INTENSITY_DESCRIPTIONS},
+        {
+            section: SECTION_NAME,
+            title: "Pain intensity:",
+            detail: "mildest",
+            questionType: "SliderEntry",
+            sliderLabel: "mildest pain",
+            sliderDescriptions: PAIN_INTENSITY_DESCRIPTIONS},
+        {
+            section: SECTION_NAME,
+            title: "Pain intensity:",
+            detail: "worst",
+            questionType: "SliderEntry",
+            sliderLabel: "worst pain",
+            sliderDescriptions: PAIN_INTENSITY_DESCRIPTIONS},
+        {
+            section: SECTION_NAME,
+            title: "Pain intensity:",
+            detail: "average",
+            questionType: "SliderEntry",
+            sliderLabel: "average pain",
+            sliderDescriptions: PAIN_INTENSITY_DESCRIPTIONS},
     ];
 
     return(

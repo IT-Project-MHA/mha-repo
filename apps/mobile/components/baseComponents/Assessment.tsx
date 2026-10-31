@@ -64,7 +64,7 @@ export default function Assessment({title, questions}: AssessmentProps) {
       <View style={[{flex: 1}, styles.footer]}>
         <Question key={currIndex} section={questions[currIndex].section} title={questions[currIndex].title}
         detail={questions[currIndex].detail} questionType={questions[currIndex].questionType}
-        sliderMax={questions[currIndex].sliderMax} questionOptions={questions[currIndex].questionOptions}
+        sliderMax={questions[currIndex].sliderMax} sliderLabel={questions[currIndex].sliderLabel} sliderDescriptions={questions[currIndex].sliderDescriptions} questionOptions={questions[currIndex].questionOptions}
         onSubmit={submitAnswer} progress={'Progress: ' + (currIndex+1) + '/' + questions.length} />
       </View>
     </SafeAreaView>
