@@ -14,9 +14,10 @@ type QuestionProps = {
   detail: String;
   questionType: ENTRY_TYPE;
   sliderMax?: number;
+  questionOptions?: string[];
 }
 
-export default function Question({title, detail, questionType}:  QuestionProps) {
+export default function Question({title, detail, questionType, sliderMax, questionOptions}:  QuestionProps) {
   const { theme } = useTheme();
 
   const EntryComponent = ENTRY_COMPONENTS[questionType];
@@ -25,13 +26,19 @@ export default function Question({title, detail, questionType}:  QuestionProps) 
     throw new InvalidQuestionTypeError(questionType + ' is not a valid question type');
   }
   return (
-    <SafeAreaView> 
+    <SafeAreaView style={{flex: 1}}>
       <View style={[{flexDirection: "column", margin: 15}]}>
         <Text style={[theme.fontOnBackground, theme.h2, theme.leftText]}>{title}</Text>
-        {/*divider*/}
         <Text style={[theme.fontOnBackground, theme.h6, theme.leftText]}>{detail}</Text>
       </View>
-        <EntryComponent onSubmit={() => {}} />
+        <EntryComponent
+          onSubmit={() => {}}
+          upperBound={sliderMax}
+          questionOptions={questionOptions ?? []}
+          headingText=""
+          MIN_SELECTIONS={0}
+          MAX_SELECTIONS={questionOptions?.length ?? 0}
+        />
     </SafeAreaView>
   );
 }

@@ -23,7 +23,15 @@ export default function MyPainLayout() {
       <Stack.Screen 
       name="index"
         options={{
-            headerShown: false,
+          headerStyle: { backgroundColor: colours.background },
+          headerShadowVisible: false,
+          title: '',
+        }}
+      />
+      <Stack.Screen 
+      name="painSection"
+        options={{
+          headerShown: false,
         }}
       />
       <Stack.Screen 

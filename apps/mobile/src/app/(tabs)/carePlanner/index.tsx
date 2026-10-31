@@ -81,7 +81,7 @@ export default function Screen() {
       <ScrollView stickyHeaderIndices={[0]} contentContainerStyle={styles.content}>
         <View style={[theme.header, styles.title]}>
           <Text style={[theme.h4, theme.leftText, theme.fontOnSurface, styles.titleText]}>
-            Your Care Planner
+            My Care Planner
           </Text>
           <Text style={[styles.body, theme.leftText]}>
             Prepare for your appointments with confidence.

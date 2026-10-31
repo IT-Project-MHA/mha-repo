@@ -28,14 +28,12 @@ export default function Assessment({title, questions}: AssessmentProps) {
     throw new EmptyQuestionArrayError("properties.questions has length " + questions.length);
   }
 
-  let currQuestion: QuestionProps = questions[currIndex];
-
   let returnRoute = () => {
     router.navigate('/(tabs)/myPain');
   }
 
   return (
-    <SafeAreaView>
+    <SafeAreaView style={{flex: 1}}>
       <View style={[{flexDirection: "row", alignContent: "flex-start"}]}>
         <TextWithLeftIconButton
 	        label="Assessments"
@@ -49,8 +47,9 @@ export default function Assessment({title, questions}: AssessmentProps) {
           iconName="chevron-back-outline"
         />
       </View>
-      <Question title={questions[currIndex].title} 
-      detail={questions[currIndex].detail} questionType={questions[currIndex].questionType} />
+      <Question key={currIndex} title={questions[currIndex].title}
+      detail={questions[currIndex].detail} questionType={questions[currIndex].questionType}
+      sliderMax={questions[currIndex].sliderMax} questionOptions={questions[currIndex].questionOptions} />
       <View style={[{flexDirection: "column", alignItems: "center", justifyContent: "space-between", gap: 20}]}>
         <Text style={[theme.fontOnBackground, theme.h6, theme.centerText]}>{'Progress: ' + (currIndex+1) + '/' + questions.length}</Text>
         <Button label="Record" onPress={() => {
