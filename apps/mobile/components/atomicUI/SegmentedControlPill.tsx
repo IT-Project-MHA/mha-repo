@@ -1,7 +1,7 @@
 /**
  * Segmented control component in pill shape
  */
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { View, Text, Pressable, Animated, StyleProp, ViewStyle, LayoutChangeEvent } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 
@@ -22,7 +22,7 @@ const INSET = 3;
  * - segments share the track width equally, so any number of values works
  */
 export default function SegmentedPill({ values, selectedIndex, onChange, style, radius = 80,}: Props) {
-    const { theme, colours } = useTheme();
+    const { theme, colours, fontScale } = useTheme();
     const innerRadius = Math.max(0, radius - INSET); // the highlight sits inside the track, so its radius is smaller by the inset
     const [trackWidth, setTrackWidth] = useState(0);
     const segmentWidth = trackWidth > 0 ? (trackWidth - INSET * 2) / values.length : 0;
@@ -53,7 +53,18 @@ export default function SegmentedPill({ values, selectedIndex, onChange, style, 
         <View
             accessibilityRole="tablist"
             onLayout={onLayout}
-            style={[style, {flexDirection: "row", padding: INSET, borderRadius: radius, backgroundColor: colours.tertiary,},
+            style={[style, {
+                flexDirection: "row", 
+                padding: INSET, 
+                borderRadius: 
+                radius, 
+                backgroundColor: colours.tertiary,
+                minHeight: 40 * fontScale,
+                paddingVertical: 8 * fontScale,
+                alignItems: "center",
+                justifyContent: "center",
+            },
+               
             ]}
         >
             {/* 
@@ -71,6 +82,8 @@ export default function SegmentedPill({ values, selectedIndex, onChange, style, 
                         borderRadius: innerRadius,
                         backgroundColor: colours.ex3,
                         transform: [{ translateX }],
+                        minHeight: 30 * fontScale,
+                        paddingVertical: 8 * fontScale,
                     }}
                 />
             )}
@@ -90,14 +103,15 @@ export default function SegmentedPill({ values, selectedIndex, onChange, style, 
                             flex: 1,
                             alignItems: "center",
                             justifyContent: "center",
-                            paddingVertical: 8,
+                            minHeight: 40 * fontScale,
+                            paddingVertical: 8 * fontScale,
                         }}
                     >
                         <Text
                             numberOfLines={1}
                             style={[
                                 theme.small,
-                                theme.fontOnBackground,
+                                {color: colours.onSurface, textAlign: 'center'},
                                 { fontWeight: active ? "600" : "400" },
                             ]}
                         >
