@@ -72,11 +72,11 @@ const AddSupportPersonModal = ({visible, onConfirm, onCancel} : Props) => {
           onPress={() => {}}
         >
           
-          <Text style={[theme.h4, theme.leftItems, theme.fontOnSurface]}>Add Support Person</Text>
+          <Text style={[theme.h4, theme.leftItems, {color: colours.onSurface}]}>Add Support Person</Text>
           <Text> </Text>
 
           <View style={styles.field}>
-            <Text style={[theme.h6, theme.leftItems, theme.fontOnSurface]}>Phone Number</Text>
+            <Text style={[theme.h6, theme.leftItems, {color: colours.onSurface}]}>Phone Number</Text>
             <Text> </Text>
             <TextInput
               value={phone}
@@ -97,7 +97,7 @@ const AddSupportPersonModal = ({visible, onConfirm, onCancel} : Props) => {
               disabled={saving}
               accessibilityRole="button"
             >
-              <Text style={[theme.body, theme.fontOnSurface]}>Go Back</Text>
+              <Text style={[theme.body, {color: colours.onSurface}]}>Go Back</Text>
             </Pressable>
 
             <Pressable

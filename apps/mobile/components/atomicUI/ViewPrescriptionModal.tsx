@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal, View, Text, Pressable, ScrollView } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { formatDate } from '../../constants/date';

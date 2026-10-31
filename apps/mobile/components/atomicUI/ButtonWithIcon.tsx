@@ -1,7 +1,7 @@
 /**
  * Button with an icon
  */
-import { StyleProp, ViewStyle, TextStyle, Text, View, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { StyleProp, ViewStyle, TextStyle, Text, View, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import {Ionicons, IoniconsIconName} from '@react-native-vector-icons/ionicons'
 

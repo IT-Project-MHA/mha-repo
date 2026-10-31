@@ -104,7 +104,7 @@ const AboutMeModal = ({
     keyboardType: "default" | "email-address" | "phone-pad" = "default"
   ) => (
     <View style={styles.field}>
-      <Text style={[theme.h6, theme.leftItems, theme.fontOnSurface]}>
+      <Text style={[theme.h6, theme.leftItems, {color: colours.onSurface}]}>
         {label}
       </Text>
       <Text> </Text>
@@ -131,7 +131,7 @@ const AboutMeModal = ({
    */
   const renderSexField = () => (
     <View style={styles.field}>
-      <Text style={[theme.h6, theme.leftItems, theme.fontOnSurface]}>Sex</Text>
+      <Text style={[theme.h6, theme.leftItems, {color: colours.onSurface}]}>Sex</Text>
       <Text> </Text>
       <Pressable
         style={[styles.dropdown, { borderColor: colours.onSurface }]}
@@ -139,7 +139,7 @@ const AboutMeModal = ({
         accessibilityRole="button"
         accessibilityState={{ expanded: sexOpen }}
       >
-        <Text style={[theme.body, theme.fontOnSurface]}>
+        <Text style={[theme.body, {color: colours.onSurface}]}>
           {sexOptions.find((option) => option.value === draft.sex)?.label ??
             "Select"}
         </Text>
@@ -193,7 +193,7 @@ const AboutMeModal = ({
               style={[styles.card, { backgroundColor: colours.surface }]}
               onPress={() => {}}
             >
-              <Text style={[theme.h4, theme.leftItems, theme.fontOnSurface]}>
+              <Text style={[theme.h4, theme.leftItems, {color: colours.onSurface}]}>
                 Edit My Details
               </Text>
               <Text> </Text>

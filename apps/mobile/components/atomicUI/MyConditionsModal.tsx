@@ -8,7 +8,7 @@
  *
  * On confirm, input is checked for validity and saved to backend.
  */
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Modal,
   View,
@@ -241,7 +241,7 @@ const MyConditionsModal = ({
           onPress={() => addItem(key, text, () => setText(""))}
           accessibilityRole="button"
         >
-          <Text style={[theme.body, theme.fontOnSurface]}>Add</Text>
+          <Text style={[theme.body, {color: colours.onSurface}]}>Add</Text>
         </Pressable>
       </View>
     </View>
@@ -259,9 +259,9 @@ const MyConditionsModal = ({
       )
     ) : (
       <View style={styles.field}>
-        <Text style={[theme.h6, theme.leftItems, theme.fontOnSurface]}>
+        <Text style={[theme.h6, theme.leftItems, {color: colours.onSurface}]}>
           Diagnosis:{" "}
-          <Text style={[theme.body, theme.fontOnSurface]}>
+          <Text style={[theme.body, {color: colours.onSurface}]}>
             {(draft.diagnoses ?? []).join(", ")}
           </Text>
         </Text>
@@ -272,7 +272,7 @@ const MyConditionsModal = ({
           hitSlop={8}
           style={styles.editLink}
         >
-          <Text style={[theme.body, theme.fontOnSurface]}>Edit</Text>
+          <Text style={[theme.body, {color: colours.onSurface}]}>Edit</Text>
         </Pressable>
       </View>
     );
@@ -300,7 +300,7 @@ const MyConditionsModal = ({
             style={[styles.card, { backgroundColor: colours.surface }]}
             onPress={() => {}}
           >
-            <Text style={[theme.h4, theme.leftItems, theme.fontOnSurface]}>
+            <Text style={[theme.h4, theme.leftItems, {color: colours.onSurface}]}>
               Edit My Details
             </Text>
             <Text> </Text>
@@ -365,7 +365,7 @@ const MyConditionsModal = ({
                 disabled={saving}
                 accessibilityRole="button"
               >
-                <Text style={[theme.body, theme.fontOnSurface]}>Go Back</Text>
+                <Text style={[theme.body, {color: colours.onSurface}]}>Go Back</Text>
               </Pressable>
 
               <Pressable

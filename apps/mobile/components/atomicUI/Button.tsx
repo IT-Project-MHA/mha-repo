@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleProp, StyleSheet, Text, TextStyle, TouchableOpacity, ViewStyle } from "react-native";
+import { StyleProp, Text, TextStyle, TouchableOpacity, ViewStyle } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 
 type ButtonType = "primaryButton" | "secondaryButton" | "transparentButton" | "textButton" | "roundButton" ;
@@ -20,6 +20,9 @@ type ButtonProps = {
   label: string;
   onPress: () => void;
   buttonType: ButtonType;
+  style?: StyleProp<ViewStyle>; // optional, added on top of the button type's style, e.g. for layout
+  textStyle?: StyleProp<TextStyle>; // optional, added on top of the label's style, e.g. to centre lines
+  disabled?: boolean; // optional, when true the button is dimmed and ignores presses
 };
 
 /**
@@ -31,13 +34,14 @@ type ButtonProps = {
  * @param buttonType string that maps to a button type, defined in theme.ts
  * @returns a styled button component, which performs some funtion when pressed
  */
-const Button = ({ label, onPress, buttonType, style, textStyle }: ButtonProps) => {
+const Button = ({ label, onPress, buttonType, style, textStyle, disabled }: ButtonProps) => {
   const { theme } = useTheme();
 
   return (
     <TouchableOpacity
       activeOpacity={0.7}
       style={[theme[buttonType], style]}
+      disabled={disabled}
       onPress={onPress}
     >
       <Text style={[textStyle, theme.body]}>{label}</Text>

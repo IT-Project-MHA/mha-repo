@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import React, {useEffect, useState} from "react";
 import {Modal, View, Text, Pressable, TextInput, ScrollView, Platform} from 'react-native'
 import { useTheme } from "../../context/ThemeContext";
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -79,6 +79,7 @@ const AddPrescriptionModal = ({visible, title, initialValues, submitLabel, onCon
     .catch((e) => console.log('failed to load forms', e?.message, e?.status));
 }, []);
 
+
   /**
    * clears form to emptyDraft whenever 'visible' changes (modal is closed)
    */
@@ -122,7 +123,7 @@ const AddPrescriptionModal = ({visible, title, initialValues, submitLabel, onCon
         onPress={() => setPickerField(pickerField === field ? null : field)}
       >
         <Text style={[theme.body, { color: colours.onSurface }]}>
-          {draft[field] ? formatDate(draft[field]) : 'Select date'}
+          {draft[field] ? formatDate(parseApiDate(draft[field])) : 'Select date'}
         </Text>
       </Pressable>
 
