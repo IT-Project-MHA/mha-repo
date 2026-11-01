@@ -45,9 +45,9 @@ import {
   apiSaveConditions,
   apiDeleteMyAccount,
   apiErrorMessage,
-  unpackConditions
+  unpackConditions,
 } from "@/api/settings_api_helpers";
-import { apiLogOut, apiChangePhone, apiChangePin } from "@/api/django-API";
+import { apiLogOut, apiChangePhone, apiChangePin, apiLogOutEverywhere } from "@/api/django-API";
 import GetDeviceId from "../../../../components/onboarding/GetDeviceID";
 import { useAppStore } from "../../../store/appStore";
 
@@ -81,6 +81,7 @@ export default function Screen() {
     | "editMyConditions"
     | "editPhoneNumber"
     | "changePin"
+    | "logoutAll"
     | null
   >(null); // modal visibility triggered by pending state
   const [account, setAccount] = useState<Account | null>(null);
@@ -182,6 +183,9 @@ export default function Screen() {
       }
     } else if (pending === "logout") {
       await apiLogOut();
+      setUserType(UserType.undefined);
+    } else if (pending === "logoutAll") {
+      await apiLogOutEverywhere();
       setUserType(UserType.undefined);
     }
     setPending(null);
@@ -441,6 +445,16 @@ export default function Screen() {
             name="lock-closed-outline"
             textStyle={{ color: colours.onSurface }}
           />
+
+          <View style={theme.line}></View>
+
+          <ButtonWithIcon
+            label="Log Out Everywhere"
+            onPress={() => setPending("logoutAll")}
+            buttonType="transparentButton"
+            name="lock-closed-outline"
+            textStyle={{ color: colours.onSurface }}
+          />
         </View>
       </View>
 
@@ -476,6 +490,16 @@ export default function Screen() {
           visible={pending === "logout"}
           title="Are you sure you want to log out?"
           message="You'll need to sign in again to access your account."
+          confirmLabel="Log out"
+          cancelLabel="go back"
+          onConfirm={handleConfirmations}
+          onCancel={() => setPending(null)}
+        />
+
+        <ConfirmModal
+          visible={pending === "logoutAll"}
+          title="Are you sure you want to log out everywhere?"
+          message="You'll need to sign in again to access your account on all your devices."
           confirmLabel="Log out"
           cancelLabel="go back"
           onConfirm={handleConfirmations}

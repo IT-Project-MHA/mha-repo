@@ -9,7 +9,7 @@ const devHost = Constants.expoConfig?.hostUri?.split(':')[0];
 
 const SERVER_URL = process.env.EXPO_PUBLIC_SERVER_URL ?? (devHost ? `http://${devHost}:8000`: "http://localhost:8000")
 const BASE_URL = `${SERVER_URL}/api`;
-const PUBLIC_PATHS = ['auth/request-code', 'auth/verify-code', 'auth/register', 'auth/login']; // used before user has a token
+const PUBLIC_PATHS = ['auth/request-code', 'auth/verify-code', 'auth/register', 'auth/login', 'auth/reset-pin']; // used before user has a token
 
 // DEV ONLY until login is built: token of a local test user from apps/mobile/.env, sent with
 // every request
@@ -603,6 +603,13 @@ export async function apiChangePhone(phone_number, verification_id) {
 /**
  * Change pin
  */
-export async function apiChangePin(current_pin, new_pin) {
-    return request('POST', 'auth/change-pin', { current_pin, new_pin }, SERVER_URL);
+export async function apiChangePin(values = {}) {
+    return request('POST', 'auth/reset-pin', values, SERVER_URL);
+}
+
+/**
+ * Logout everywhere
+ */
+export async function apiLogOutEverywhere(values = {}) {
+    return request('POST', 'auth/logout-everywhere', values, SERVER_URL);
 }
