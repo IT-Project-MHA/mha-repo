@@ -561,7 +561,13 @@ export async function apiPainProfile(operation, values) {
     return operate('painProfile', operation, values);
 }
 
-//added by Xavier. 
+/**
+ * Logs user out of their account
+ */
+export async function apiLogOut() {
+    return request('POST', 'auth/logout', undefined, SERVER_URL);
+}
+
 export async function request_code(phone_number){
     // request(method, path, body, baseUrl = BASE_URL)
     return request('POST', '/auth/request-code',  {phone_number}, SERVER_URL);

@@ -44,6 +44,7 @@ import {
   apiErrorMessage,
   unpackConditions
 } from "@/api/settings_api_helpers";
+import { apiLogOut } from "@/api/django-API";
 
 // the saved details of the user, from apiMyAccount
 type Account = {
@@ -141,7 +142,8 @@ export default function Screen() {
         );
       }
     } else if (pending === "logout") {
-      setUserType(UserType.undefined); // should trigger log in / onboarding
+      await apiLogOut();
+      setUserType(UserType.undefined); 
     }
     setPending(null);
   };
