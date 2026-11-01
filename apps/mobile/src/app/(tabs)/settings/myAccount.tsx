@@ -2,7 +2,7 @@
  * My account page.
  *
  * About me section:
- *  - user can change their personal details
+ *  - user can change their personal details including phone number, which is verified with a code.
  *
  * My Conditions:
  *  - a support person can select 'yes I experiece MSK symptoms' and switch to a patient profile
@@ -11,6 +11,8 @@
  *
  * Log Out:
  *  - user is logged out and redirected to sign in
+ *  - user can log out of all accounts
+ *  - user can change their pin
  *
  * Delete my account
  *  - users account is deleted
@@ -32,6 +34,7 @@ import AboutMeModal, {
   type Choice,
   type UserDetails
 } from "../../../../components/atomicUI/AboutMeModal";
+import ChangePinModal from "../../../../components/atomicUI/ChangePinModal";
 import MyConditionsModal, {
   type userDetails
 } from "../../../../components/atomicUI/MyConditionsModal";
@@ -42,9 +45,11 @@ import {
   apiSaveConditions,
   apiDeleteMyAccount,
   apiErrorMessage,
-  unpackConditions,
+  unpackConditions
 } from "@/api/settings_api_helpers";
-import { apiLogOut, apiChangePhone } from "@/api/django-API";
+import { apiLogOut, apiChangePhone, apiChangePin } from "@/api/django-API";
+import GetDeviceId from "../../../../components/onboarding/GetDeviceID";
+import { useAppStore } from "../../../store/appStore";
 
 // the saved details of the user, from apiMyAccount
 type Account = {
@@ -70,7 +75,13 @@ type Account = {
 export default function Screen() {
   const { theme, colours } = useTheme();
   const [pending, setPending] = useState<
-    "logout" | "delete" | "editAboutMe" | "editMyConditions" | "editPhoneNumber" | null
+    | "logout"
+    | "delete"
+    | "editAboutMe"
+    | "editMyConditions"
+    | "editPhoneNumber"
+    | "changePin"
+    | null
   >(null); // modal visibility triggered by pending state
   const [account, setAccount] = useState<Account | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -128,13 +139,31 @@ export default function Screen() {
   };
 
   /**
-   * Chnage phone number and confirm with server.
+   * Changes users phone number and confirm with server.
    */
   const handleSavePhone = async (phone: string, verification_id: string) => {
     if (!account) return;
-      await apiChangePhone(phone, verification_id);
-      setAccount({ ...account, user: { ...account.user, phone_number: phone } });
-      setPending(null);
+    await apiChangePhone(phone, verification_id);
+    setAccount({ ...account, user: { ...account.user, phone_number: phone } });
+    setPending(null);
+  };
+
+  /**
+   * Resets the PIN after the modal has verified the user's phone by SMS.
+   * Throws on failure so the modal can show the error and stay open.
+   */
+  const handleChangePin = async (verification_id: string, pin: string) => {
+    if (!account) return;
+    const device_id = await GetDeviceId();
+    const { token } = await apiChangePin({
+      phone_number: account.user.phone_number,
+      verification_id,
+      pin,
+      device_id
+    });
+    useAppStore.getState().setToken(token); // use your store's actual setter
+    setPending(null);
+    Alert.alert("PIN changed", "Your PIN has been updated.");
   };
 
   /**
@@ -299,7 +328,6 @@ export default function Screen() {
         </View>
       </View>
 
-      
       {/** My Conditions */}
       <View style={[theme.sectionContainer, theme.sectionSeparation]}>
         <Text
@@ -351,7 +379,6 @@ export default function Screen() {
                 >
                   {otherConditions}
                 </Text>
-
               </View>
             )}
 
@@ -409,7 +436,7 @@ export default function Screen() {
 
           <ButtonWithIcon
             label="Change My Pin"
-            onPress={() => {}}
+            onPress={() => setPending("changePin")}
             buttonType="transparentButton"
             name="lock-closed-outline"
             textStyle={{ color: colours.onSurface }}
@@ -477,7 +504,13 @@ export default function Screen() {
           onConfirm={handleSavePhone}
           onCancel={() => setPending(null)}
         />
-        
+
+        <ChangePinModal
+          visible={pending === "changePin"}
+          phone={user.phone_number}
+          onConfirm={handleChangePin}
+          onCancel={() => setPending(null)}
+        />
       </View>
 
       <View style={{ margin: 20 }} />

@@ -13,57 +13,41 @@
   */
 
 import React, { useState } from "react";
-import { Text, TextInput, View, StyleSheet, Pressable, ScrollView, SafeAreaView } from "react-native";
+import { Text, TextInput, View, StyleSheet, Pressable } from "react-native";
 
-import { useTheme, ColourSet } from '../../context/ThemeContext';
-import { Typography } from '../../constants/textSize';
+import { useTheme, ColourSet } from "../../context/ThemeContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 //numberInput variables
 
-type NumberProps ={
-  onSubmit: (v: any) => void;
-  MAX_lENGTH_NUM: number;
-  LOWER_BOUND: number;
-  UPPER_BOUND: number;
-}
-
+type NumberEntryProps = {
+  onSubmit: (digits: string) => void;
+  length: number; // exact number of digits required
+  secure?: boolean; // hide the digits, e.g. for pins
+  placeholder?: string;
+};
 
 //NumberEntry
-function NumberEntry({ onSubmit, MAX_lENGTH_NUM, LOWER_BOUND, UPPER_BOUND }: NumberProps) {
+export function NumberEntry({
+  onSubmit,
+  length,
+  secure = false,
+  placeholder = "Enter digits"
+}: NumberEntryProps) {
   const { colours, theme } = useTheme();
   const insets = useSafeAreaInsets();
-  const styles = createStyles(colours, theme, insets.bottom);
+  const styles = createStyles(colours);
 
   const [value, setValue] = useState<string>("");
   const [error, setError] = useState<string>("");
 
-
-  function sanitizeNumberInput(text: string) {
-    let t = text.replace(/[^0-9]/g, ""); //removes any non-number
-    t = t.slice(0, MAX_lENGTH_NUM); //cuts down to our max length
-    return t;
-  }
-
-  function validateNumberInput(numText: string) {
-    //checking if it's something we should accept, i.e. within range
-    if (numText == "") return "Please enter your six digit pin."; //what it prints if submitted
-
-    const num = Number(numText);
-    if (!Number.isInteger(num) || num < LOWER_BOUND || num > UPPER_BOUND) {
-      return 'enter a number between '+LOWER_BOUND+' and '+UPPER_BOUND;
-    }
-    return null;
-  }
-
   const handleChange = (text: string) => {
-    setValue(sanitizeNumberInput(text));
-    if (error) setError("");
+    setValue(text.replace(/\D/g, "").slice(0, length)); // capped at length
+    setError("");
   };
 
   const handleSubmit = () => {
-    const err = validateNumberInput(value);
-    if (err) {
-      setError(err);
+    if (value.length !== length) {
+      setError(`Please enter all ${length} digits.`);
       return;
     }
     onSubmit(value);
@@ -72,58 +56,51 @@ function NumberEntry({ onSubmit, MAX_lENGTH_NUM, LOWER_BOUND, UPPER_BOUND }: Num
   return (
     <View style={[theme.clearContainer, styles.content, theme.centerItems]}>
       <TextInput
-        style={[theme.h6, styles.field, {color:colours.onSurface}]}
-        onChangeText={handleChange}
+        style={[theme.h6, styles.field, { color: colours.onSurface }]}
         value={value}
-        placeholder="input number only"
-        keyboardType="numeric"
-        maxLength={MAX_lENGTH_NUM}
+        onChangeText={handleChange}
+        onSubmitEditing={handleSubmit}
+        placeholder={placeholder}
+        keyboardType="number-pad"
+        secureTextEntry={secure}
+        maxLength={length}
       />
-    
-        {!!error && <Text style={ [theme.body, {color: colours.onBackground}]}>{error}</Text>}
 
-          <Pressable
-            onPress={handleSubmit}
-            style={styles.button}
-          >
-            <Text style={[theme.h6, {color: colours.onSurface}, styles.text]}>Submit</Text>
-          </Pressable>
+      {!!error && (
+        <Text style={[theme.body, { color: colours.onBackground }]}>
+          {error}
+        </Text>
+      )}
+
+      <Pressable onPress={handleSubmit} style={styles.button}>
+        <Text
+          style={[theme.h6, styles.buttonText, { color: colours.onSurface }]}
+        >
+          Submit
+        </Text>
+      </Pressable>
     </View>
   );
 }
 
-export { NumberEntry };
+function createStyles(colours: ColourSet) {
+  const pill = {
+    height: 60,
+    width: "80%" as const,
+    borderRadius: 100,
+    justifyContent: "center" as const
+  };
 
-function createStyles(colours: ColourSet, text: Typography, bottomInset: number) {
   return StyleSheet.create({
-    content: {
-      paddingBottom: 100 + bottomInset,
-      gap: 40,
-    },
+    content: { gap: 24 },
     field: {
-      height: 60,
-      paddingVertical: 3,
-      width: '80%',
+      ...pill,
       paddingHorizontal: 40,
-      borderRadius:100,
       borderWidth: 2,
       borderColor: colours.secondary,
-      justifyContent: 'center',
-      textAlign: 'center',
+      textAlign: "center"
     },
-    button: {
-      height: 60,
-      width: '80%',
-      paddingVertical: 3,
-      paddingHorizontal: 40,
-      borderRadius:100,
-      backgroundColor: colours.primary,
-      justifyContent: 'center',
-      textAlign: 'center',
-    },
-    text:{
-      justifyContent: 'center',
-      textAlign: 'center',
-    }
+    button: { ...pill, backgroundColor: colours.primary },
+    buttonText: { textAlign: "center" }
   });
 }
