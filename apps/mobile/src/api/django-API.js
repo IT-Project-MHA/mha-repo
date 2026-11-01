@@ -98,9 +98,10 @@ async function request(method, path, body, baseUrl = BASE_URL) {
     // parse response
     const text = await response.text();
     const data = text ? JSON.parse(text) : null;
-    if (!response.ok!==401) {
-        console.log('401 on', method, path, new Error().stack);
+    if (!response.ok) {
+        if (response.status !== 401 && response.status !== 429) {
         console.error('API error', method, path, response.status, text);
+        }
         throw new ApiError(response.status, data);
     }
     return data;
@@ -590,4 +591,18 @@ export async function register_token(values = {}){
 export async function login(values = {}){
     //values include phone_number, pin, device_id, verification_id (new device only)
     return request('POST', 'auth/login', values, SERVER_URL);
+}
+
+/**
+ * Change phone number
+ */
+export async function apiChangePhone(phone_number, verification_id) {
+    return request('POST', 'auth/change-phone', { phone_number, verification_id }, SERVER_URL);
+}
+
+/**
+ * Change pin
+ */
+export async function apiChangePin(current_pin, new_pin) {
+    return request('POST', 'auth/change-pin', { current_pin, new_pin }, SERVER_URL);
 }
