@@ -48,8 +48,16 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export const UserProvider = ({children} : {children:React.ReactNode}) => {
     const [userType, setUserType] =useState<UserType>(UserType.undefined);
     const [isLoading, setIsLoading] = useState(true);
+    const token = useAppStore(s => s.token);
 
     const refreshUserType = useCallback(async () => {
+        // no token = signed out, which is a normal state, so don't call the server
+        if (!useAppStore.getState().token) {
+            setUserType(UserType.undefined);
+            setIsLoading(false);
+            return;
+        }
+
         try {
             const { hasProfile, isSupporter, onboarded } = await apiMyRole();
             if (hasProfile && isSupporter) setUserType(UserType.both);
@@ -72,7 +80,8 @@ export const UserProvider = ({children} : {children:React.ReactNode}) => {
     }, []);
 
     // checks user type on app start
-    useEffect(() => { refreshUserType(); }, [refreshUserType]);
+    // re run when token changes
+    useEffect(() => { refreshUserType(); }, [refreshUserType, token]);
 
     // useMemo rebuilds value when user type changes, to avoid unnecesary re-renders
     const value = useMemo<UserContextType>(

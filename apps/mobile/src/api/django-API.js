@@ -9,6 +9,7 @@ const devHost = Constants.expoConfig?.hostUri?.split(':')[0];
 
 const SERVER_URL = process.env.EXPO_PUBLIC_SERVER_URL ?? (devHost ? `http://${devHost}:8000`: "http://localhost:8000")
 const BASE_URL = `${SERVER_URL}/api`;
+const PUBLIC_PATHS = ['auth/request-code', 'auth/verify-code', 'auth/register', 'auth/login']; // used before user has a token
 
 // DEV ONLY until login is built: token of a local test user from apps/mobile/.env, sent with
 // every request
@@ -86,6 +87,7 @@ async function request(method, path, body, baseUrl = BASE_URL) {
         method: method,
         headers: {
             ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+            ...(PUBLIC_PATHS.includes(path) ? {} : authHeaders()), 
             ...authHeaders(),
             Accept: 'application/json',
         },
@@ -96,7 +98,8 @@ async function request(method, path, body, baseUrl = BASE_URL) {
     // parse response
     const text = await response.text();
     const data = text ? JSON.parse(text) : null;
-    if (!response.ok) {
+    if (!response.ok!==401) {
+        console.log('401 on', method, path, new Error().stack);
         console.error('API error', method, path, response.status, text);
         throw new ApiError(response.status, data);
     }
@@ -570,18 +573,18 @@ export async function apiLogOut() {
 
 export async function request_code(phone_number){
     // request(method, path, body, baseUrl = BASE_URL)
-    return request('POST', '/auth/request-code',  {phone_number}, SERVER_URL);
+    return request('POST', 'auth/request-code',  {phone_number}, SERVER_URL);
 }
 
 export async function verify_code(phone_number, otp){
     // request(method, path, body, baseUrl = BASE_URL)
-    return request('POST', '/auth/verify-code',  {phone_number, otp}, SERVER_URL);
+    return request('POST', 'auth/verify-code',  {phone_number, otp}, SERVER_URL);
 }
 
 export async function register_token(values = {}){
     // request(method, path, body, baseUrl = BASE_URL)
     //takes verification_id, phone_number, display_name, pin, accepted_terms, accepted_privacy, device_id, track_health (optional), health (optional)
-    return request('POST', '/auth/register',  values, SERVER_URL);
+    return request('POST', 'auth/register',  values, SERVER_URL);
 }
 
 export async function login(values = {}){
