@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import StickyButtonWithIcon, { STICKY_BUTTON_GAP } from '../../../../components/atomicUI/StickyButtonWithIcon';
 import { useRouter } from 'expo-router';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { apiAboutMe, apiMyConditions, apiMyPainSummary, apiMovementSummary, apiPersonalCareSummary,
   apiSocialHealthSummary, apiManagementSummary } from '@/api/my_health_api_helpers';
 import { currentPainIntensityText, averagePainIntensityText, worstPainIntensityText, 

@@ -239,6 +239,12 @@ const createTheme = (colours: ColourSet) =>
     fontUnderlined: {
       textDecorationLine: 'underline',
     },
+    fontOnSurface: {
+      color: colours.onSurface,
+    },
+    fontOnBackground: {
+      color: colours.onBackground,
+    },
 
     /**
      * Emoji Select

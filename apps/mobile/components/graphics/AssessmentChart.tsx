@@ -143,7 +143,7 @@ function Chip({
         backgroundColor: active ? colours.ex3 : colours.tertiary
       }}
     >
-      <Text style={[theme.small, {color: colours.onBackground}]}>{label}</Text>
+      <Text style={[theme.small, {color: colours.onTertiary}]}>{label}</Text>
     </Pressable>
   );
 }
