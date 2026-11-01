@@ -1,6 +1,7 @@
 import { Stack} from 'expo-router'
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { StyleSheet,  } from 'react-native';
+import React from 'react';
 
 /**
  * Defines the structure of the screens within the my health page.
@@ -14,6 +15,8 @@ export default function ScreenLayout() {
   return (
     <Stack 
       screenOptions={{
+        animation: 'none',
+
         headerStyle: styles.headerStyle,
         headerShadowVisible: false, // no line 
         headerTitleAlign: 'left', // text to left
@@ -35,7 +38,7 @@ export default function ScreenLayout() {
           fontSize: theme.h6.fontSize,
         },
         headerBackButtonDisplayMode: 'default',
-        headerBackTitle: 'My Health',
+        headerBackTitle: 'Back',
       }}
     >
       <Stack.Screen 

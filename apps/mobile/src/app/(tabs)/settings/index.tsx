@@ -14,9 +14,12 @@ export default function Screen() {
     <ScrollView stickyHeaderIndices={[0]}>
       <View style={theme.header}>
         <Text style={[theme.h4, theme.leftText, {color: colours.onSurface}]}>Settings</Text>
+        <Text style={[theme.leftText, theme.small, {color: colours.onBackground, marginVertical: 10}]}>
+            Manage your account, privacy and support.
+        </Text>
       </View>
+      
 
-      <Text> </Text>
       <View style={[theme.sectionContainer, theme.centerItems]}>
         
         <ButtonWithIcon

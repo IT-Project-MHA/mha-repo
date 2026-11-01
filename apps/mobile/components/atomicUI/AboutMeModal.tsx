@@ -207,9 +207,6 @@ const AboutMeModal = ({
                 </>
               )}
               
-              {renderField("Phone Number", "phone", "phone-pad")}
-              {renderField("Email", "email", "email-address")}
-
               {error && (
                 <Text
                   style={[theme.body, styles.errorText]}

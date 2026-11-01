@@ -101,7 +101,6 @@ export default function Screen() {
   );
 
   return (
-    <View style={styles.screen}>
       <ScrollView
         stickyHeaderIndices={[0]}
         contentContainerStyle={styles.content}
@@ -121,8 +120,15 @@ export default function Screen() {
           </Text>
         </View>
 
-        <View style={[theme.sectionContainer, styles.filledCard]}>
-          <Text style={[styles.textColour, theme.leftItems, theme.h5]}>
+        {/* My Appointments */}
+      <View style={[theme.sectionContainer]}>
+          <Text
+          style={[
+            theme.h5,
+            theme.leftText,
+            { color: colours.onSurface, marginVertical: 15 }
+          ]}
+        >
             My Appointments
           </Text>
           <View style={theme.line} />
@@ -205,7 +211,6 @@ export default function Screen() {
           </View>
         </View>
       </ScrollView>
-    </View>
   );
 }
 

@@ -15,6 +15,8 @@ export default function ScreenLayout() {
   return (
     <Stack 
       screenOptions={{
+        animation: 'none',
+
         headerStyle: styles.headerStyle,
         headerShadowVisible: false, // no line 
         headerTitleAlign: 'left', // text to left
@@ -36,7 +38,7 @@ export default function ScreenLayout() {
           fontSize: theme.h6.fontSize,
         },
         headerBackButtonDisplayMode: 'default',
-        headerBackTitle: 'Settings',
+        headerBackTitle: 'Back',
       }}
     >
       <Stack.Screen 

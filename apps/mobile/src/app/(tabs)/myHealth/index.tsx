@@ -1,6 +1,6 @@
 /**
  * 'Patients' and 'Both' users can access this screen (exclusive support people can not)
- * 
+ *
  * My Heath index should include:
  *  - My Records
  *      – includes: chart & history section
@@ -9,11 +9,11 @@
  *  – My Prescriptions
  *  – My Pain Profile
  */
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import ButtonWithIcon from '../../../../components/atomicUI/ButtonWithIcon';
-import { useRouter } from 'expo-router';
-import { useTheme, ColourSet } from '../../../../context/ThemeContext';
-import AveragePainChart from '../../../../components/graphics/averagePainChart';
+import React, { View, Text, StyleSheet, ScrollView } from "react-native";
+import ButtonWithIcon from "../../../../components/atomicUI/ButtonWithIcon";
+import { useRouter } from "expo-router";
+import { useTheme, ColourSet } from "../../../../context/ThemeContext";
+import AveragePainChart from "../../../../components/graphics/averagePainChart";
 
 export default function Screen() {
   const router = useRouter();
@@ -22,83 +22,133 @@ export default function Screen() {
   return (
     <ScrollView stickyHeaderIndices={[0]}>
       <View style={theme.header}>
-        <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>My Health</Text>
+        <Text
+          style={[theme.h4, theme.leftText, { color: colours.onBackground }]}
+        >
+          My Health
+        </Text>
+        <Text style={[theme.leftText, theme.small, {color: colours.onBackground, marginVertical: 10}]}>
+          Your progress, in one place.
+        </Text>
       </View>
 
-      <Text> </Text>
+      {/** My Pain summary */}
+      <View style={[theme.sectionContainer]}>
+        <Text
+          style={[
+            theme.h5,
+            theme.leftText,
+            { color: colours.onSurface, marginVertical: 15 }
+          ]}
+        >
+          My Pain Summary
+        </Text>
+        <View style={theme.line} />
 
-      <View style={theme.leftItems}>
+        <View style={{ padding: 15 }}>
+          <AveragePainChart />
+        </View>
 
-      <Text style={[theme.h5, theme.fontOnBackground]}>My Pain Summary </Text>
-      <Text> </Text>
-      <AveragePainChart/>
-
-      <View style={[theme.layoutContainer, theme.centerItems]}>      
-      <ButtonWithIcon
-	        label="My Pain Profile"
-	        onPress={() => router.navigate('/myHealth/painProfile')}
-          buttonType="roundButton"
-          name="chevron-forward-outline"
-          textStyle={{color: colours.onTertiary}}
-        />
+        <View
+          style={[
+            theme.layoutContainer,
+            theme.centerItems,
+            { marginBottom: 15 }
+          ]}
+        >
+          <ButtonWithIcon
+            label="My Pain Profile"
+            onPress={() => router.navigate("/myHealth/painProfile")}
+            buttonType="roundButton"
+            name="chevron-forward-outline"
+            textStyle={{ color: colours.onTertiary }}
+          />
+        </View>
       </View>
+
+      {/* My Health Tracking History */}
+      <View style={theme.sectionSeparation}/>
+      <View style={[theme.sectionContainer]}>
+        <Text
+          style={[
+            theme.h5,
+            theme.leftText,
+            { color: colours.onSurface, marginVertical: 15 }
+          ]}
+        >
+          My Health Tracking History
+        </Text>
+        <View style={theme.line} />
+
+        <View style={{ padding: 15 }}>
+          <Text style={[theme.small, { color: colours.onSurface }]}>
+            View your assessment history and generate a graph of your pain over
+            time.
+          </Text>
+        </View>
+
+        <View
+          style={[
+            theme.layoutContainer,
+            theme.centerItems,
+            { marginBottom: 15 }
+          ]}
+        >
+          <ButtonWithIcon
+            label="My Assessment Records"
+            onPress={() => router.navigate("/myHealth/healthTracking")}
+            buttonType="roundButton"
+            name="chevron-forward-outline"
+            textStyle={{ color: colours.onTertiary }}
+          />
+        </View>
       </View>
 
-      <Text> </Text>
-      <Text> </Text>
-      <Text> </Text>
+      
 
-      <View style={[theme.layoutContainer, theme.leftItems]}>
-        <Text style={[theme.h5, theme.fontOnBackground]}>My Health Tracking History </Text>
-        <Text style={[theme.small, theme.fontOnBackground]}>View your assessment history and generate a graph of your pain over time.</Text>
-        <Text> </Text>
-        <Text> </Text>
-        <Text> </Text>
+      {/* My Prescriptions */}
+      <View style={theme.sectionSeparation}/>
+      <View style={[theme.sectionContainer]}>
+        <Text
+          style={[
+            theme.h5,
+            theme.leftText,
+            { color: colours.onSurface, marginVertical: 15 }
+          ]}
+        >
+          My Prescriptions
+        </Text>
+        <View style={theme.line} />
 
-      <View style={[theme.layoutContainer, theme.centerItems]}>
-        <ButtonWithIcon
-	        label="My Assessment Records"
-	        onPress={() => router.navigate('/myHealth/healthTracking')}
-          buttonType="roundButton"
-          name="chevron-forward-outline"
-          textStyle={{color: colours.onTertiary}}
-        />
+        <View style={{ padding: 15 }}>
+          <Text style={[theme.small, { color: colours.onSurface }]}>
+            View your active prescriptions and recommended dosages.
+          </Text>
+        </View>
+
+        <View
+          style={[
+            theme.layoutContainer,
+            theme.centerItems,
+            { marginBottom: 15 }
+          ]}
+        >
+          <ButtonWithIcon
+            label="My Prescriptions"
+            onPress={() => router.navigate("/myHealth/prescriptions")}
+            buttonType="roundButton"
+            name="chevron-forward-outline"
+            textStyle={{ color: colours.onTertiary }}
+          />
+        </View>
       </View>
-      </View>
-    
-      <Text> </Text>
-      <Text> </Text>
-      <Text> </Text>
-
-      <View style={[theme.layoutContainer, theme.leftItems]}>
-        <Text style={[theme.h5, theme.fontOnBackground]}>My Prescriptions </Text>
-        <Text style={[theme.small, theme.fontOnBackground]}>View your active prescriptions and recommended dosages.</Text>
-        <Text> </Text>
-        <Text> </Text>
-        <Text> </Text>
-
-      <View style={[theme.layoutContainer, theme.centerItems]}>
-        <ButtonWithIcon
-	        label="My Prescriptions"
-	        onPress={() => router.navigate('/myHealth/prescriptions')}
-          buttonType="roundButton"
-          name="chevron-forward-outline"
-          textStyle={{color: colours.onTertiary}}
-        />
-      </View>
-      </View>
-      {/**
-       * This page should have a summary chart of pain over months
-       */}
-      <View style={theme.bottomGap}/>
-      <View style={theme.bottomGap}/>
-
+ 
+      <View style={theme.bottomGap} />
+      <View style={theme.bottomGap} />
     </ScrollView>
-
   );
 }
 
-function createStyles(colours: ColourSet){
-    return StyleSheet.create({
-})
-};
+function createStyles(colours: ColourSet) {
+  return StyleSheet.create({});
+}
