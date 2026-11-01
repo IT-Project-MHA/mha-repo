@@ -3,7 +3,7 @@
  * person page, or from an appointment's details to add them to that appointment. Pressing a person
  * on the add a support person page opens this screen again to edit them.
  */
-import { useCallback, useEffect, useState } from 'react';
+import  React,{ useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';

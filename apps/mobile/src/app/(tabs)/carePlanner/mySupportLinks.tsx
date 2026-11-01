@@ -2,7 +2,7 @@
  * Patients choose a support person from their saved support links on this screen, opened from the
  * new support person page. Invites the support person hasn't accepted yet are shown too.
  */
-import { Fragment, useEffect, useState } from 'react';
+import  React,{ Fragment, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';

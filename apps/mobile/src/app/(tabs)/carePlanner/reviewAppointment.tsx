@@ -2,7 +2,7 @@
  * Patients check the details of their new appointment plan before submitting it.
  * Opened after addQuestions screen.
  */
-import { Fragment } from 'react';
+import React,{ Fragment } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';

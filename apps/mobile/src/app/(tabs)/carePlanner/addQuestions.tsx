@@ -184,7 +184,7 @@ export default function Screen() {
           <Text style={[theme.h4, theme.leftText, {color: colours.onSurface}]}>
             Add Questions to Your Appointment
           </Text>
-          <Text style={[theme.small, styles.intro, theme.leftText]}>
+          <Text style={[theme.small, styles.intro, theme.leftText, {color: colours.onSurface}]}>
             Based on your answers to the four impact sections, we have provided some suggested
             questions to ask your healthcare professional/s.
           </Text>
@@ -196,7 +196,7 @@ export default function Screen() {
             <View style={[styles.cardContent, styles.suggestionSections]}>
               {suggestions.map(({ key, heading, questions }) => (
                 <View key={key}>
-                  <Text style={[styles.heading, styles.label]}>{heading}</Text>
+                  <Text style={[styles.heading, styles.label, {color: colours.onSurface}]}>{heading}</Text>
                   <View style={styles.checkboxList}>
                     {questions.map(({ checkboxId, text }, index) => (
                       <Checkbox.Item

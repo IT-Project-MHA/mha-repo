@@ -2,7 +2,7 @@
  * Patients change the access of a support person of an appointment, or remove them, from this
  * screen, opened by pressing their card on the appointment details page.
  */
-import { useEffect, useState } from 'react';
+import  React,{ useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -170,7 +170,7 @@ export default function Screen() {
         <Button
           label="Delete support person"
           onPress={() => setConfirmingDelete(true)}
-          buttonType="roundSecondaryButton"
+          buttonType="roundButton"
         />
         <Button label={saving ? 'Saving...' : 'Save'} onPress={save} buttonType="roundButton" />
       </View>

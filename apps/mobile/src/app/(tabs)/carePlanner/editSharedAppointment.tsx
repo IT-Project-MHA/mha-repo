@@ -3,7 +3,7 @@
  * on the care planner or the all shared appointments page. Questions can only be added or edited,
  * and answers added or edited, if the patient has given this user permission.
  */
-import { Fragment, useCallback, useState } from 'react';
+import  React,{ Fragment, useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -128,6 +128,7 @@ export default function Screen() {
                     params: { appointmentId: appointment.id },
                   })
                 }
+                fontColour={colours.onSurface}
               />
             </View>
           )}

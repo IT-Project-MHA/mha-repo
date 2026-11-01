@@ -2,7 +2,7 @@
  * Patients change the details of a submitted appointment from this screen, opened from the
  * appointment details page.
  */
-import { useState } from 'react';
+import  React,{ useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';

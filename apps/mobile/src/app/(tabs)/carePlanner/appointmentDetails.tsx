@@ -2,7 +2,7 @@
  * Shows a summary of the details of an appointment, opened by pressing an appointment on the
  * care planner.
  */
-import { Fragment, useCallback, useState } from 'react';
+import  React,{ Fragment, useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -116,6 +116,7 @@ export default function Screen() {
                   params: { id: appointment.id },
                 })
               }
+              fontColour={colours.onSurface}
             />
           </View>
         </View>
@@ -219,6 +220,7 @@ export default function Screen() {
                   params: { appointmentId: appointment.id },
                 })
               }
+              fontColour={colours.onSurface}
             />
           </View>
         </View>
@@ -230,7 +232,7 @@ export default function Screen() {
           <Button
             label={deleting ? 'Deleting...' : 'Delete appointment'}
             onPress={() => setConfirmingDelete(true)}
-            buttonType="roundSecondaryButton"
+            buttonType="roundButton"
           />
         </View>
       </ScrollView>

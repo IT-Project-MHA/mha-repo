@@ -1,7 +1,7 @@
 /**
  * All user types have access to this screen
  */
-import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
+import  { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import React, { Fragment, useCallback, useState } from "react";
 import { useFocusEffect, useRouter } from "expo-router";

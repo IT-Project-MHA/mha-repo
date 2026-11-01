@@ -2,7 +2,7 @@
  * Patients can add a support person to an appointment from this screen, opened after saving a new
  * appointment.
  */
-import { Fragment, useState } from 'react';
+import React, { Fragment, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -69,9 +69,9 @@ export default function Screen() {
           }
         >
           <View style={styles.personInfo}>
-            <Text style={styles.personName}>{person.name || 'Pending invite'}</Text>
-            <Text style={styles.personDetails}>{person.phone}</Text>
-            <Text style={styles.personDetails}>
+            <Text style={[styles.personName, {color: colours.onSurface}]}>{person.name || 'Pending invite'}</Text>
+            <Text style={[styles.personDetails, {color: colours.onSurface}]}>{person.phone}</Text>
+            <Text style={[styles.personDetails,{color: colours.onSurface}]}>
               Access: {access.length > 0 ? access.join(', ') : 'None'}
             </Text>
           </View>
@@ -99,7 +99,7 @@ export default function Screen() {
           <Text style={[theme.h4, theme.leftText, theme.fontOnSurface, styles.titleText]}>
             Add a Support Person
           </Text>
-          <Text style={[styles.body, styles.intro, theme.leftText]}>
+          <Text style={[styles.body, styles.intro, theme.leftText, {color: colours.onSurface}]}>
             You can nominate someone to help you prepare for your appointment or you can skip below.
           </Text>
         </View>
@@ -114,7 +114,7 @@ export default function Screen() {
                 buttonType="roundButton"
               />
             </View>
-            <Text style={[styles.body, styles.cardItem]}>
+            <Text style={[styles.body, styles.cardItem, {color: colours.onSurface}]}>
               We recommend to assign a maximum of 2 support people to ensure the conduciveness of the
               appointment.
             </Text>
