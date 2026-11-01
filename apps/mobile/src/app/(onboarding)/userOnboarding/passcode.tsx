@@ -10,7 +10,7 @@ import { useRouter } from 'expo-router';
 import { NumberEntry } from '../../../../components/answerFields/NumberEntry';
 import { useOnboardingStore } from '../../../store/onboardingStorage';
 
-import { Text, View, ScrollView } from 'react-native';
+import { Text, View, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { useTheme } from '../../../../context/ThemeContext';
 import React from 'react';
 
@@ -28,21 +28,25 @@ export default function Page() {
   }
 
   return (
-    <ScrollView stickyHeaderIndices={[0]}>
+    <View>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View>
    
       <View style={[theme.header, theme.leftText]}>
         <Text style={[theme.h5, {color: colours.onSurface}]}>Pick your six digit pin</Text>
       </View>
 
+      <KeyboardAvoidingView>
       <NumberEntry 
         onSubmit={saveCode}
         UPPER_BOUND={999999}
         LOWER_BOUND={0}
         MAX_lENGTH_NUM={NUM_DIGITS}
       />
- 
+      </KeyboardAvoidingView>
+      </View>
+
+      </TouchableWithoutFeedback>
     </View>
-    </ScrollView>
   );
 }

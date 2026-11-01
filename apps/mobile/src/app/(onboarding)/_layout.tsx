@@ -154,7 +154,7 @@ export default function OnboardingLayout() {
         }}
       />
 
-      {/* ---------- Final screen: no going back mid-registration ---------- */}
+      {/* ---------- Final screen ---------- */}
       <Stack.Screen
         name="accountCreatedSplashScreen"
         options={{

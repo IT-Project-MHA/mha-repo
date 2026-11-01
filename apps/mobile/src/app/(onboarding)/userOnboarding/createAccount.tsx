@@ -8,7 +8,7 @@ import { useRouter } from 'expo-router';
 import { useOnboardingStore } from '../../../store/onboardingStorage';
 
 import ButtonWithIcon from '../../../../components/atomicUI/ButtonWithIcon';
-import { Text, View, ScrollView } from 'react-native';
+import { Text, View, ScrollView, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import * as WebBrowser from 'expo-web-browser';
@@ -39,15 +39,24 @@ export default function Page() {
 
   return (
     <ScrollView stickyHeaderIndices={[0]}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View>
+          
       <View style={[theme.header, theme.leftText] }>
         <Text style={[theme.h5, {color: colours.onSurface}]}>Enter Your Name</Text>
       </View>
+
+        <KeyboardAvoidingView>
+        <View>
         <TextEntry 
         onSubmit={setDisplayName}
         placeholder='Type here'
         keyboardType='default'
         />
+        </View>
+        </KeyboardAvoidingView>
+
+
         <View style={[theme.centerItems, theme.clearContainer]}>
             <Text style={[theme.xSmall, {color: colours.onSurface}]}>By signing up, you agree to MPowered's Terms of Use and Privacy Policy</Text>
         </View>
@@ -67,7 +76,9 @@ export default function Page() {
             textStyle={{color: colours.onSurface}}
           />
         </View>
+        
       </View>
+      </TouchableWithoutFeedback>
     </ScrollView>
   );
 }

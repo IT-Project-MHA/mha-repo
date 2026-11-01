@@ -2,7 +2,6 @@
  * Initial sign in / create account page for onboarding.
  */
 import { Text, StyleSheet, Modal, View } from "react-native";
-import { SignInButton } from "../../../components/onboarding/SignInButton";
 
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -13,7 +12,6 @@ import {
   SafeAreaView,
   useSafeAreaInsets
 } from "react-native-safe-area-context";
-import { lineThickness } from "../../../constants/layout";
 import { useTheme, ColourSet } from "../../../context/ThemeContext";
 import { Typography } from "../../../constants/textSize";
 import React from "react";

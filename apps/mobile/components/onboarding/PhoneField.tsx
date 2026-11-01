@@ -1,9 +1,7 @@
-import { useState } from "react";
-import Button from "../atomicUI/Button";
-import { TextInput } from "react-native-paper";
-import { Text, View, StyleSheet } from 'react-native';
+import React, { useState } from "react";
+import { Text, View, StyleSheet, TextInput, Pressable} from 'react-native';
 import { useTheme, ColourSet } from '../../context/ThemeContext';
-import React from 'react';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 //Input variables
 const MAX_lENGTH_NUM = 10; //aus phone numbers are 10 characters, including the "04"
@@ -20,6 +18,7 @@ function validateTextInput(text: string) {
   //checking input is within range
   //if (text == "") return "enter text"; //what it prints if submitted
   const length = text.length;
+
   if (length > MAX_lENGTH_NUM) {
     return "phone number is too long";
   }else if(length < MAX_lENGTH_NUM){
@@ -37,7 +36,8 @@ type PhoneFieldProps ={
 
 function PhoneField({onSubmit}: PhoneFieldProps) {
   const { theme, colours } = useTheme();
-  const  styles = createStyles(colours);
+  const insets = useSafeAreaInsets();
+  const styles = createStyles(colours, insets.bottom);
 
   const [value, setValue] = useState<string>(AREA_CODE);
   const [error, setError] = useState<string>("");
@@ -57,8 +57,7 @@ function PhoneField({onSubmit}: PhoneFieldProps) {
   };
 
   return (
-    <View>
-      <View style= {theme.clearContainer}>
+        <View style={styles.container}>
         <TextInput
           style={[styles.field]}
           onChangeText={handleChange}
@@ -67,37 +66,58 @@ function PhoneField({onSubmit}: PhoneFieldProps) {
           maxLength={MAX_lENGTH_NUM}
           textContentType="telephoneNumber"
         />
-
-        {!!error && <Text style={theme.small}>{error}</Text>}
-        </View>
-        <View style = {{marginBottom: 16}}>
-        <Button
-          label="Submit"
-          onPress={handleSubmit}
-          buttonType="roundButton"
-        />
-        </View>
-    </View>
+    
+          {!!error && <Text style={[theme.body, {color: colours.onSurface}]}>{error}</Text>}
+           <Pressable
+                      onPress={handleSubmit}
+                      style={styles.button}
+                    >
+                      <Text style={[theme.h6, {color: colours.onSurface}, styles.text]}>Submit</Text>
+                    </Pressable>
+      </View>
   );
 }
 
-export { PhoneField }; //add the new component here
+export { PhoneField };
 
-function createStyles(colours: ColourSet) {
+function createStyles(
+  colours: ColourSet,
+  bottomInset: number
+) {
   return StyleSheet.create({
-    field: {
-      height: 40,
-      paddingVertical: 5,
-      paddingHorizontal: 10,
-      borderStartStartRadius:100,
-      
-      marginHorizontal: 8,
-      borderWidth: 2,
-      borderColor: colours.onSurface,
-      justifyContent: 'center',
-      textAlign: 'center',
+    content: {
+      paddingBottom: 100 + bottomInset,
+      gap: 40
     },
+    field: {
+      height: 60,
+      paddingVertical: 3,
+      width: "80%",
+      paddingHorizontal: 40,
+      borderRadius: 100,
+      borderWidth: 2,
+      borderColor: colours.secondary,
+      justifyContent: "center",
+      textAlign: "center"
+    },
+    button: {
+      height: 60,
+      width: "80%",
+      alignSelf: "center",
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 100,
+      backgroundColor: colours.primary
+    },
+    text: {
+      justifyContent: "center",
+      textAlign: "center"
+    },
+    container: {
+      width: "100%",
+      alignItems: "center",
+      gap: 40,
+      paddingBottom: 100 + bottomInset
+    }
   });
 }
-
-

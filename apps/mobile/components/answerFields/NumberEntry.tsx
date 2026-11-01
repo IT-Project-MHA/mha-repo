@@ -13,8 +13,7 @@
   */
 
 import React, { useState } from "react";
-import { Text, TextInput, View, StyleSheet } from "react-native";
-import Button from "../atomicUI/Button";
+import { Text, TextInput, View, StyleSheet, Pressable, ScrollView, SafeAreaView } from "react-native";
 
 import { useTheme, ColourSet } from '../../context/ThemeContext';
 import { Typography } from '../../constants/textSize';
@@ -47,7 +46,7 @@ function NumberEntry({ onSubmit, MAX_lENGTH_NUM, LOWER_BOUND, UPPER_BOUND }: Num
 
   function validateNumberInput(numText: string) {
     //checking if it's something we should accept, i.e. within range
-    if (numText == "") return "enter a number"; //what it prints if submitted
+    if (numText == "") return "Please enter your six digit pin."; //what it prints if submitted
 
     const num = Number(numText);
     if (!Number.isInteger(num) || num < LOWER_BOUND || num > UPPER_BOUND) {
@@ -71,7 +70,7 @@ function NumberEntry({ onSubmit, MAX_lENGTH_NUM, LOWER_BOUND, UPPER_BOUND }: Num
   };
 
   return (
-    <View style={[theme.clearContainer, styles.content]}>
+    <View style={[theme.clearContainer, styles.content, theme.centerItems]}>
       <TextInput
         style={[theme.h6, styles.field, {color:colours.onSurface}]}
         onChangeText={handleChange}
@@ -80,15 +79,15 @@ function NumberEntry({ onSubmit, MAX_lENGTH_NUM, LOWER_BOUND, UPPER_BOUND }: Num
         keyboardType="numeric"
         maxLength={MAX_lENGTH_NUM}
       />
-      <View>
+    
         {!!error && <Text style={ [theme.body, {color: colours.onBackground}]}>{error}</Text>}
 
-        <Button
-        label="submit"
-        onPress={handleSubmit}
-        buttonType="roundButton"
-        />
-      </View>
+          <Pressable
+            onPress={handleSubmit}
+            style={styles.button}
+          >
+            <Text style={[theme.h6, {color: colours.onSurface}, styles.text]}>Submit</Text>
+          </Pressable>
     </View>
   );
 }
@@ -104,6 +103,7 @@ function createStyles(colours: ColourSet, text: Typography, bottomInset: number)
     field: {
       height: 60,
       paddingVertical: 3,
+      width: '80%',
       paddingHorizontal: 40,
       borderRadius:100,
       borderWidth: 2,
@@ -111,5 +111,19 @@ function createStyles(colours: ColourSet, text: Typography, bottomInset: number)
       justifyContent: 'center',
       textAlign: 'center',
     },
+    button: {
+      height: 60,
+      width: '80%',
+      paddingVertical: 3,
+      paddingHorizontal: 40,
+      borderRadius:100,
+      backgroundColor: colours.primary,
+      justifyContent: 'center',
+      textAlign: 'center',
+    },
+    text:{
+      justifyContent: 'center',
+      textAlign: 'center',
+    }
   });
 }

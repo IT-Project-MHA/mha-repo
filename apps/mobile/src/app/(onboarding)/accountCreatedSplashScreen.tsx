@@ -98,7 +98,6 @@ export default function Page() {
     </View>
   </>
 ) : (
-  /* existing "Registering..." block */
   <View style={styles.bottomBar}>
     <View style={[theme.header, styles.title]}>
         <Text style={styles.subheading}>Done!</Text>
