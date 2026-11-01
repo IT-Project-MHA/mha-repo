@@ -10,7 +10,7 @@ import { request_code, ApiError } from "../../../api/django-API";
 
 import { Text, View, ScrollView } from "react-native";
 import { useTheme } from "../../../../context/ThemeContext";
-import React, { useState } from "react";
+import React, { useState , useRef } from "react";
 import { HelperText } from "react-native-paper";
 
 export default function Page() {
@@ -22,8 +22,12 @@ export default function Page() {
   const [accountExists, setAccountExists] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const sendingRef = useRef(false);
 
   async function setPhone(phone_number: string) {
+    if (sendingRef.current) return;
+    sendingRef.current = true;
+    setSending(true);
     if (sending) return; // stop double-submits from sending two SMS codes
     setSending(true);
     setError(null);
@@ -43,6 +47,7 @@ export default function Page() {
         setError("An account is already registered with this number.");
       }
     } finally {
+      sendingRef.current = false;
       setSending(false);
     }
   }

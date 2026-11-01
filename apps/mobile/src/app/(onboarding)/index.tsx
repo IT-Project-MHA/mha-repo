@@ -5,7 +5,7 @@ import { Text, StyleSheet, Modal, View } from "react-native";
 
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import OnboardingSplashScreen from "./splashScreen";
+import OnboardingSplashScreen from "./splashScreenMHA";
 import Button from "../../../components/atomicUI/Button";
 
 import {

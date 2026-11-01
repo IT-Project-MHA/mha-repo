@@ -56,21 +56,6 @@ export default function Page() {
     </SafeAreaView>
   );
 }
-/*
-      <View style={[theme.header, styles.title]}>
-        <Text style={styles.subheading}>Start making that account!</Text>
-        <Text style={styles.heading}>Choose a username</Text>
-      </View>
-      <View style={styles.bottomBar}>
-        <TextEntry 
-        onSubmit={setDisplayName}
-        placeholder='Type here'
-        keyboardType='default'
-        />
-        <View style={styles.label}>
-          <Text style={styles.subheading}>By signing up, you agree to MPowered's Terms of Use and Privacy Policy</Text>
-        </View>*/
-
       
 function createStyles(colours: ColourSet, text: Typography, bottomInset: number) {
   return StyleSheet.create({

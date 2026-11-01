@@ -7,6 +7,7 @@
  * clickable text for resending code
  */
 import React, { useState } from 'react';
+import { HelperText } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { NumberEntry } from '../../../../components/answerFields/NumberEntry';
 import Button from '../../../../components/atomicUI/Button';
@@ -15,10 +16,9 @@ import { useAppStore } from '../../../store/appStore';
 import { verify_code, request_code, login, ApiError } from '../../../api/django-API';
 import { useUser } from '@/context/AuthorisationContext';
 
-import { Text, StyleSheet, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme, ColourSet } from '../../../../context/ThemeContext';
-import { Typography } from '../../../../constants/textSize';
+import { useTheme, } from '../../../../context/ThemeContext';
 import GetDeviceId from '../../../../components/onboarding/GetDeviceID';
 
 const NUM_DIGITS = 6;
@@ -36,6 +36,8 @@ export default function Page() {
   const setUserOnboaring = useOnboardingStore((s)=> s.set);
 
   const [error, setError] = useState<string | null>(null);
+  const [resent, setResent] = useState(false);
+
 
   async function attemptLogIn(verification_number: string){
     setError(null);
@@ -59,64 +61,34 @@ export default function Page() {
     
   }
 
-  async function smsVerifier(code: string){
-    //on success,we go to the userType selection page
+  async function resendCode() {
+  setError(null);
+  try { await request_code(phone_number); setResent(true); }
+  catch { setError("Couldn't resend the code. Try again shortly."); }
+}
 
-    //and send the API request
-    //fields: phone_number, display_name, email
-    try{
-      //verify code
-      const result = await verify_code(phone_number, code);
-      const verification_id = result.verification_id;
-      setUserOnboaring({verification_id});
-
-    }catch (error){
-      //wrong code or some such
-      console.error('SMS verification failed', error)
-    }
-  }
-
-  async function resendCode(){
-    try
-    {
-      await request_code(phone_number);
-      router.navigate('/(onboarding)/signIn/phoneVerification');
-    }
-    catch(error)
-    {
-      console.error('Failed to send SMS', error);
-      //FIX: show user an error message of some sort
-    }
-
-  }
-
-  return (
+ return (
     <SafeAreaView style={theme.screen}>
-      <View style={[theme.header]}>
-        <Text style={[theme.h6]}>SMS incoming...</Text>
-        <Text style={[theme.h6]}>If there's a problem check your number and resend</Text>
+      <View style={theme.header}>
+        <Text style={theme.h6}>SMS incoming...</Text>
+        <Text style={theme.h6}>If there's a problem check your number and resend</Text>
       </View>
 
-      <View style={[theme.h6]}>
-        <NumberEntry 
+      <NumberEntry
         onSubmit={attemptLogIn}
-        UPPER_BOUND={999999}
-        LOWER_BOUND={0}
-        MAX_lENGTH_NUM={NUM_DIGITS}
-        />
-        <Button
-        label="Resend Code"
-        onPress={resendCode}
-        buttonType='roundButton'
-        />
-        <Text style={[theme.body, {color: colours.onBackground}]}>We've sent a code to {answers.phone_number}</Text>
-      </View>
+        length={NUM_DIGITS}
+        placeholder="6-digit code"
+      />
 
+      <HelperText type={error ? 'error' : 'info'} visible={!!error || resent}>
+        {error ?? 'New code sent.'}
+      </HelperText>
 
-      {/**resend or change phone number code is sent to */}
+      <Button label="Resend Code" onPress={resendCode} buttonType="roundButton" />
 
-
+      <Text style={[theme.body, { color: colours.onBackground }]}>
+        We've sent a code to {phone_number}
+      </Text>
     </SafeAreaView>
   );
 }
-

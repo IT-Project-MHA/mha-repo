@@ -79,11 +79,10 @@ export default function Page() {
 
       <View>
         <NumberEntry
-          onSubmit={smsVerifier}
-          UPPER_BOUND={999999}
-          LOWER_BOUND={0}
-          MAX_lENGTH_NUM={NUM_DIGITS}
-        />
+                      onSubmit={smsVerifier}
+                      length={NUM_DIGITS}
+                      placeholder="Enter 6-digit code"
+                  />
         
         <View style={[theme.header, theme.rightItems, theme.clearContainer]}>
 

@@ -22,9 +22,9 @@ export default function Page() {
   const setUserOnboaring = useOnboardingStore((s)=> s.set);
 
 
-  function saveCode(pin: number){
-    setUserOnboaring({pin});
-    router.navigate('/(onboarding)/userOnboarding/initialPhoneEntry')
+  function saveCode(pin: string) {
+    setUserOnboaring({ pin });
+    router.navigate('/(onboarding)/userOnboarding/initialPhoneEntry');
   }
 
   return (
@@ -37,12 +37,12 @@ export default function Page() {
       </View>
 
       <KeyboardAvoidingView>
-      <NumberEntry 
-        onSubmit={saveCode}
-        UPPER_BOUND={999999}
-        LOWER_BOUND={0}
-        MAX_lENGTH_NUM={NUM_DIGITS}
-      />
+      <NumberEntry
+              onSubmit={saveCode}
+              length={NUM_DIGITS}
+              secure
+              placeholder="Enter 6-digit PIN"
+          />
       </KeyboardAvoidingView>
       </View>
 

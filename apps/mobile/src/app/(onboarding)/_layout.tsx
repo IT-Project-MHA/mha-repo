@@ -9,7 +9,7 @@ export default function OnboardingLayout() {
 
   return (
     <Stack
-      screenOptions={{
+      screenOptions={{        
         headerStyle: styles.headerStyle,
         headerShadowVisible: false, // no line
         headerTitleAlign: 'left', // text to left

@@ -25,7 +25,7 @@ export default function Page() {
   const insets = useSafeAreaInsets();
   const styles = createStyles(colours, theme, insets.bottom);
   const setUserOnboaring = useOnboardingStore((s)=> s.set);
-  const USER_TYPES = ["For myself","To help someone else"]; //patient equivalent text, support person equivalent text
+  const USER_TYPES = ["For myself","To support someone else"]; //patient equivalent text, support person equivalent text
 
   function setUserType(selection: string){
     //this function sets the user type based on selection, and navigates to the appropriate page
@@ -47,19 +47,24 @@ export default function Page() {
 
   }
   return (
-    <SafeAreaView style={theme.screen}>
-      <View style={theme.header}>
-        <Text style={styles.heading}>How do you plan to use the app?</Text>
+    <ScrollView stickyHeaderIndices={[0]}>
+      <View style={[theme.header, theme.leftText]}>
+        <Text style={[theme.h5, { color: colours.onSurface }]}>
+          How do you plan to use the app?
+        </Text>
       </View>
-      <ScrollView
-      showsVerticalScrollIndicator={false}
-      >
-        <MultipleChoice
-        questionOptions={USER_TYPES}
-        onSubmit={setUserType}
-        />
+
+      <View style={[theme.layoutContainer, theme.leftItems]}>
+        <Text style={[theme.body, { color: colours.onSurface }]}>
+          You can change this later.
+        </Text>
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <MultipleChoice questionOptions={USER_TYPES} onSubmit={setUserType} />
       </ScrollView>
-    </SafeAreaView>
+
+    </ScrollView>
   );
 }
 

@@ -9,7 +9,7 @@ import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { NumberEntry } from '../../../../components/answerFields/NumberEntry';
 import { useOnboardingStore } from '../../../store/onboardingStorage';
-import { ApiError, login } from '../../../api/django-API';
+import { ApiError, login, request_code } from '../../../api/django-API';
 import { HelperText } from "react-native-paper";
 
 
@@ -35,40 +35,41 @@ export default function Page() {
   const setUserOnboaring = useOnboardingStore((s)=> s.set);
   const [error, setError] = useState<string | null>(null);
 
-  async function attemptLogIn(pin: number){
+  async function attemptLogIn(pin: string) {
     setError(null);
-    setUserOnboaring({pin});
+    setUserOnboaring({ pin }); // kept so phoneVerification can reuse it on a new device
 
     // read at call time to always get the current phone number
     const { phone_number } = useOnboardingStore.getState();
-    const device_id = await GetDeviceId();
 
-    try{
+    try {
+      const device_id = await GetDeviceId(); // inside try so a failure shows an error
       const result = await login({ phone_number, pin, device_id });
-      const token = result.token;
 
-      //set the onboarded flag
-      completeOnboarding(token); // token first so next call authenticated
+      completeOnboarding(result.token); // token first so the next call is authenticated
       resetOnboarding();
       await refreshUserType(); // RootNavigator moves to (tabs) once userType is defined
-
-    } catch (error){
-      
-      if(error instanceof ApiError){
-    
-        if(error.status==403){
-          //if 403 continue to verification (new device)
-          router.navigate('/(onboarding)/signIn/phoneVerification')
+    } catch (e) {
+      if (e instanceof ApiError) {
+        if (e.status === 403) {
+          // new device: send the SMS, then continue to verification
+          try {
+            await request_code(phone_number);
+          } catch (smsError) {
+            console.error('Failed to send SMS', smsError);
+            setError("We couldn't send a verification code. Try again shortly.");
+            return;
+          }
+          router.navigate('/(onboarding)/signIn/phoneVerification');
           return;
         }
-        if(error.status == 401){
-          //401 tell user invalid credentials
-          setError('Invalid phone number or PIN')
+        if (e.status === 401) {
+          setError('Invalid phone number or PIN');
           return;
         }
       }
-      console.error('login failed', error);
-      setError('Something went wrong, please try again.')
+      console.error('login failed', e);
+      setError('Something went wrong, please try again.');
     }
   }
 
@@ -86,12 +87,13 @@ export default function Page() {
           {error}
         </HelperText>
        
-        <NumberEntry 
-        onSubmit={attemptLogIn}
-        UPPER_BOUND={999999}
-        LOWER_BOUND={0}
-        MAX_lENGTH_NUM={NUM_DIGITS}
+        <NumberEntry
+          onSubmit={attemptLogIn}
+          length={NUM_DIGITS}
+          secure
+          placeholder="Enter 6-digit PIN"
         />
+        
       </View>
     </ScrollView>
   );

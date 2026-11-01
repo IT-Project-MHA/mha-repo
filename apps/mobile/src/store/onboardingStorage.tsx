@@ -4,7 +4,7 @@ import { create } from 'zustand';
 //needs verification_id, phone_number, display_name, pin, accepted_terms, accepted_privacy, 
 // device_id, track_health (optional), health (optional)
 
-type Health = {
+export type Health = {
   has_diagnosis: boolean;
   other_conditions: string;
   assigned_gender_at_birth: string;
@@ -16,7 +16,7 @@ type OnboardingStorage = {
   verification_id: string;
   phone_number: string;
   display_name: string;
-  pin: number;
+  pin: string;
   accepted_terms: boolean;
   accepted_privacy: boolean;
   device_id: string;
@@ -29,7 +29,7 @@ type OnboardingStorage = {
 
 
 
-const initialUser = {verification_id: '', phone_number: '', display_name: '', pin: 0,
+const initialUser = {verification_id: '', phone_number: '', display_name: '', pin: '',
    accepted_terms: true,   accepted_privacy: true, device_id: '', }
 
 
@@ -37,5 +37,5 @@ export const useOnboardingStore = create<OnboardingStorage>((set) => ({
   ...initialUser,
   set: (patch) =>set(patch),
   reset: () => set({...initialUser, track_health: undefined, 
-    health: {has_diagnosis: false, other_conditions: '', assigned_gender_at_birth: '', birth_year: 0, pain_types: ['']}}),
+    health: {has_diagnosis: false, other_conditions: '', assigned_gender_at_birth: '', birth_year: 0, pain_types: []}}),
 }))
