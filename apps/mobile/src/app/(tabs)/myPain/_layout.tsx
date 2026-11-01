@@ -41,6 +41,12 @@ export default function MyPainLayout() {
         }}
       />
       <Stack.Screen
+      name="personalCareSection"
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
       name="AssessmentTemp"
         options={{
           headerShown: false,

@@ -92,7 +92,16 @@ export default function Assessment({title, questions, onSubmit, initialAnswers, 
       case "My Movement":
         scoreText = (
           <Text style={[theme.body, theme.fontOnSurface]}>
-            Your answers indicate that <Text style={{fontWeight: 'bold'}}>{scoreDescription}</Text> With the right support and treatment, your movement and mobility can improve.
+            Your answers indicate that <Text style={{fontWeight: 'bold'}}>{scoreDescription} </Text> 
+            With the right support and treatment, your movement and mobility can improve.
+          </Text>
+        );
+        break;
+      case "Personal Care":
+        scoreText = (
+          <Text style={[theme.body, theme.fontOnSurface]}>
+            Your answers indicate that <Text style={{fontWeight: 'bold'}}>{scoreDescription} </Text> 
+             With the right support and treatment, these tasks can become more manageable over time.
           </Text>
         );
         break;
@@ -104,6 +113,10 @@ export default function Assessment({title, questions, onSubmit, initialAnswers, 
     switch (title) {
       case "My Movement":
         scoreLink = { label: "Explore tips on managing movement", url: "https://muscha.org/exercise" };
+        break;
+      case "Personal Care":
+        scoreLink = { label: "Explore tips on daily living", 
+          url: "https://muscha.org/living-well-with-a-musculoskeletal-condition" };
         break;
     }
   }

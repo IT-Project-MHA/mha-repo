@@ -51,7 +51,9 @@
     {"app_section": "my_personal_care", "question_key": "care_general_impacts", "question_number": 1, "options": [
       ["I am not doing any jobs that I usually do around the house because of my pain", 1],
       ["I get dressed more slowly than usual because of my pain", 1],
-      ["I sleep less well because of my pain", 1]]},
+      ["I sleep less well because of my pain", 1],
+      ["I am more irritable and bad tempered with people than usual", 1],
+      ["I try to get other people to do things for me because of my pain", 1]]},
     {"app_section": "my_personal_care", "question_key": "care_personal_care", "question_number": 2, "options": [
       ["I can look after myself normally without causing extra pain", 0],
       ["I can look after myself normally but it causes extra pain", 1],

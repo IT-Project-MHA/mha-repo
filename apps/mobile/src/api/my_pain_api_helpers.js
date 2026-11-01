@@ -1,4 +1,4 @@
-import { apiMyPain, apiMyMovement } from './django-API';
+import { apiMyPain, apiMyMovement, apiMyPersonalCare } from './django-API';
 
 // returns the assessment's saved MyPain, or null if the section hasn't been done yet
 export async function apiLoadMyPain(assessmentId) {
@@ -32,4 +32,21 @@ export async function apiSaveMyMovement(assessmentId, details) {
         return apiMyMovement('update', { id: existing.id, ...values });
     }
     return apiMyMovement('create', { assessment: assessmentId, ...values });
+}
+
+// returns the assessment's saved MyPersonalCare, or null if the section hasn't been done yet
+export async function apiLoadMyPersonalCare(assessmentId) {
+    const [existing] = await apiMyPersonalCare('select', { assessment: assessmentId });
+    return existing ?? null;
+}
+
+/* Create/update a finished My Personal Care section to its assessment
+- completed_at is set to now */
+export async function apiSaveMyPersonalCare(assessmentId, details) {
+    const values = { ...details, completed_at: new Date().toISOString() };
+    const [existing] = await apiMyPersonalCare('select', { assessment: assessmentId });
+    if (existing) {
+        return apiMyPersonalCare('update', { id: existing.id, ...values });
+    }
+    return apiMyPersonalCare('create', { assessment: assessmentId, ...values });
 }
