@@ -2,46 +2,48 @@
  * entry page for year of birth
  * 
  */
-
-
-import { View, Text } from 'react-native';
-import { PhoneField } from '../../../../components/onboarding/PhoneField';
+import { View, Text, ScrollView } from 'react-native';
 import { useTheme } from "../../../../context/ThemeContext";
 import { NumberEntry } from '../../../../components/answerFields/NumberEntry';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import React from 'react';
+import type { Health } from '../../../store/onboardingStorage';
 
 import { useOnboardingStore } from '../../../store/onboardingStorage';
 
 export default function Page() {
   const router = useRouter();
-  const { theme } = useTheme();
+  const { theme, colours } = useTheme();
   const setUserOnboaring = useOnboardingStore((s)=> s.set);
   const {set, reset, ...answers} = useOnboardingStore.getState();
 
-  function setAge(birthYear: number){
-    //append option to health list
-    let health = answers.health;
-    if(health!=undefined)
-      health.birth_year = birthYear;
-    
-    setUserOnboaring({health})
-    //on success, next page
-    router.navigate('/(onboarding)/patientOnboarding/diagnosis')
+  const NUM_DIGITS = 4;
+  const CURRENT_YEAR = 2026;
+
+  function setAge(birthYear: string) {
+    const { health, set } = useOnboardingStore.getState();
+    set({ health: { ...(health ?? {}), birth_year: Number(birthYear) } as Health });
+    router.navigate('/(onboarding)/patientOnboarding/diagnosis');
   }
+
   return (
-    <SafeAreaView style={theme.screen}>
-      <Text style={theme.fontOnBackground}> Your year of birth</Text>
-      <View style={theme.container}>
-        <NumberEntry 
-        onSubmit={setAge}
-        UPPER_BOUND={2025}
-        LOWER_BOUND={1900}
-        MAX_lENGTH_NUM={4}
+    <ScrollView stickyHeaderIndices={[0]}>
+      <View style={[theme.header, theme.leftText]}>
+        <Text style={[theme.h5, { color: colours.onSurface }]}>
+          What is your assigned gender at birth?
+        </Text>
+        <NumberEntry
+                  onSubmit={setAge}
+                  length={NUM_DIGITS}
+                  placeholder="e.g. 1985"
+                  validate={(v) =>
+            Number(v) >= 1900 && Number(v) <= CURRENT_YEAR
+              ? null
+              : `Enter a year between 1900 and ${CURRENT_YEAR}.`
+          }
         />
-      </View>
-    </SafeAreaView>
+    </View>
+    </ScrollView>
   );
 }
 

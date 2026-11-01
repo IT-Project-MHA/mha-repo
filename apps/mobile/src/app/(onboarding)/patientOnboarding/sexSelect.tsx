@@ -5,88 +5,78 @@
  * continue takes us to yearOfBirth page
  */
 
-
 import { useRouter } from 'expo-router';
-import { Text, View } from 'react-native';
+import { Text, View, ScrollView } from 'react-native';
 import { MultipleChoice } from '../../../../components/answerFields/MultipleChoice';
 import { useTheme } from "../../../../context/ThemeContext";
 import { useOnboardingStore } from '../../../store/onboardingStorage';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import React from 'react';
+import type { Health } from '../../../store/onboardingStorage';
 
-import {apiQuestionOption, apiQuestionOptionOrdered} from '../../../api/django-API'
+import { apiAssignedGender } from '../../../api/django-API'
 import { useState, useEffect } from 'react';
+
+type Choice = { value: string; label: string };
 
 export default function Page() {
   const router = useRouter();
-  const { theme } = useTheme();
+  const { theme, colours } = useTheme();
   const setUserOnboaring = useOnboardingStore((s)=> s.set);
 
   const {set, reset, ...answers} = useOnboardingStore.getState();
   
-
+  const [choices, setChoices] = useState<Choice[]>([]);
   const [questionOptions, setQuestionOptions] = useState<string[]>([]);
-
-
+  const [idByText, setIdByText] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(()=>{
+  useEffect(() => {
     let cancelled = false;
-    async function loadOptions(){
-      try{
-        const options = await apiQuestionOption('select', {
-          app_section: 'onboarding',
-          question_key: 'assigned_gender_at_birth',
-        });
-        console.log('options', JSON.stringify(options))
-
-        const mapped = options
-          .filter((o: any) => o.is_active)
-          .sort((a: any, b: any) => a.sort_order - b.sort_order)
-          .map((o: any) => o.text)
-          
-        console.log('questionOptions', mapped)
-
-        if(!cancelled) setQuestionOptions(mapped);
-      }catch(error){
-        console.error('Failed to load options', error);
-        if(!cancelled) setError('could not load options')
-      }finally{
+    async function load() {
+      try {
+        const result = await apiAssignedGender();
+        if (!cancelled) setChoices(result);
+      } catch (e) {
+        console.error('Failed to load options', e);
+        if (!cancelled) setError("Couldn't load options. Check your connection and try again.");
+      } finally {
         if (!cancelled) setLoading(false);
       }
     }
-    loadOptions();
-    return () => {cancelled = true;};
+    load();
+    return () => { cancelled = true; };
   }, []);
 
-  function setSex(sex: string){
-    //append option to health list
-    let health = answers.health;
-    if(health!=undefined)
-      health.assigned_gender_at_birth = sex;
-    
-    setUserOnboaring({health})
-    //on success, next page
-    router.navigate('/(onboarding)/patientOnboarding/ageEntry')
+  function setSex(label: string) {
+    const choice = choices.find((c) => c.label === label);
+    if (!choice) return;
+
+    const { health, set } = useOnboardingStore.getState();
+    set({ health: { ...(health ?? {}), assigned_gender_at_birth: choice.value } as Health });
+    router.navigate('/(onboarding)/patientOnboarding/ageEntry');
   }
 
 
   return (
-    <SafeAreaView style={theme.screen}>
-      <Text style={theme.fontOnBackground}>Cool!</Text>
-      <Text style={theme.fontOnBackground}>What's your assigned gender at birth?</Text>
-
-
-        {loading ? (
-          <Text style={theme.fontOnBackground}>Loading...</Text>
-        ) : error ? (
-          <Text style={theme.fontOnBackground}>{error}</Text>
-        ) : (
-          <MultipleChoice questionOptions={questionOptions} onSubmit={setSex} />
-        )}
-
-    </SafeAreaView>
+    <ScrollView stickyHeaderIndices={[0]}>
+      <View style={[theme.header, theme.leftText]}>
+        <Text style={[theme.h5, { color: colours.onSurface }]}>
+          What is your assigned gender at birth?
+        </Text>
+      </View>
+      {loading && (
+        <Text style={[theme.body, { color: colours.onSurface }]}>Loading...</Text>
+      )}
+      {!!error && (
+        <Text style={[theme.body, { color: colours.onSurface }]} accessibilityRole="alert">
+          {error}
+        </Text>
+      )}
+      {!loading && !error && (
+        <MultipleChoice questionOptions={choices.map((c) => c.label)} onSubmit={setSex} />
+      )}
+    </ScrollView>
   );
 }
 

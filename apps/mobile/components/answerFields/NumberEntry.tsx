@@ -24,6 +24,7 @@ type NumberEntryProps = {
   length: number; // exact number of digits required
   secure?: boolean; // hide the digits, e.g. for pins
   placeholder?: string;
+  validate?: (value: string) => string | null; 
 };
 
 //NumberEntry
@@ -31,10 +32,10 @@ export function NumberEntry({
   onSubmit,
   length,
   secure = false,
-  placeholder = "Enter digits"
+  placeholder = "Enter digits",
+  validate
 }: NumberEntryProps) {
   const { colours, theme } = useTheme();
-  const insets = useSafeAreaInsets();
   const styles = createStyles(colours);
 
   const [value, setValue] = useState<string>("");
@@ -50,8 +51,15 @@ export function NumberEntry({
       setError(`Please enter all ${length} digits.`);
       return;
     }
+    const problem = validate?.(value);
+    if (problem) {
+      setError(problem);
+      return;
+    }
     onSubmit(value);
   };
+
+ 
 
   return (
     <View style={[theme.clearContainer, styles.content, theme.centerItems]}>
