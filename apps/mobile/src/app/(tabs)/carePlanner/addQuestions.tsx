@@ -392,7 +392,7 @@ function createStyles(colours: ColourSet, text: Typography, bottomInset: number)
 
     divider: {
       borderTopWidth: lineThickness,
-      borderTopColor: colours.ex3,
+      borderTopColor: colours.ex2,
     },
 
     checkboxItem: {
