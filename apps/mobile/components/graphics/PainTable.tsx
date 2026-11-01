@@ -6,7 +6,7 @@
  * This component only displays data. It makes no api calls and calculates nothing, 
  * 'weeks' and 'stats' are passed in
  */
-import { useMemo, useState } from "react";
+import React,{ useMemo, useState } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { useTheme, ColourSet } from "../../context/ThemeContext";
 
@@ -68,7 +68,7 @@ function TableRow({cells, bold = false, isFirst = false }: {cells: string[], bol
                     <Text
                         style={[
                             theme.small,
-                            theme.fontOnBackground,
+                            {color: colours.onBackground},
                             {
                                 textAlign: i === 0 ? "left" : "center",
                                 fontWeight: bold ? "700" : "400",
@@ -138,7 +138,7 @@ export default function PainSummaryTable({weeks, stats, collapsedRows = 5, radiu
                     accessibilityRole="button"
                     style={{ paddingVertical: 25 }}
                 >
-                    <Text style={[theme.small, theme.centerText, theme.fontOnBackground, theme.fontUnderlined]}>
+                    <Text style={[theme.small, theme.centerText, {color: colours.onBackground}, theme.fontUnderlined]}>
                         {showAll ? "Show fewer" : `Show all ${rows.length} weeks`}
                     </Text>
                 </Pressable>

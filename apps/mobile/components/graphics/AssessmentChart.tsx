@@ -21,7 +21,7 @@ import {
   apiPainDetailHistory,
   apiPainLocations
 } from "../../src/api/my_health_api_helpers.js";
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import PainSummaryTable from "./PainTable";
 import {
   parseApiDate,
@@ -143,7 +143,7 @@ function Chip({
         backgroundColor: active ? colours.ex3 : colours.tertiary
       }}
     >
-      <Text style={[theme.small, theme.fontOnBackground]}>{label}</Text>
+      <Text style={[theme.small, {color: colours.onBackground}]}>{label}</Text>
     </Pressable>
   );
 }
@@ -421,13 +421,13 @@ const AssessmentChart = ({
          * Error message if no history in total/over specific periods
          */}
         {noHistory && (
-          <Text style={[theme.small, theme.fontOnBackground, { margin: 10 }]}>
+          <Text style={[theme.small, {color: colours.onBackground}, { margin: 10 }]}>
             Complete assessments to see your {area.label.toLowerCase()} over
             time
           </Text>
         )}
         {noDataInRange && (
-          <Text style={[theme.small, theme.fontOnBackground]}>
+          <Text style={[theme.small, {color: colours.onBackground}]}>
             {activeLocation
               ? `No assessments with pain in ${activeLocation.toLowerCase()} in this period`
               : "No assessments in this period"}
@@ -444,7 +444,7 @@ const AssessmentChart = ({
             periodLabel={`${selected.days === null ? "All time" : `Last ${selected.label}`}${
               activeLocation ? ` · ${activeLocation}` : ""
             }`}
-            formatDate={formatDate}
+            formatDate={(iso: string) => formatDate(parseApiDate(iso))}
           />
         )}
       </View>
