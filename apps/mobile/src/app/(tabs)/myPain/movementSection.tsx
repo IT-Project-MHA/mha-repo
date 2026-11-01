@@ -4,6 +4,7 @@ import Assessment from "../../../../components/baseComponents/Assessment";
 import { QuestionProps } from "../../../../components/baseComponents/Question";
 import { apiAssessment, apiQuestionOptionOrdered } from "@/api/django-API";
 import { apiLoadMyMovement, apiSaveMyMovement } from "@/api/my_pain_api_helpers";
+import { movementScore } from "../../../../constants/resultDisplayText";
 import { weekRangeLabel } from "../../../../constants/date";
 import { fieldsFor, titles } from "../../../healthInfo/sectionSummaryFields";
 
@@ -21,7 +22,10 @@ const CHOICE_QUESTIONS = [
     { key: "standing", title: "Standing Impacts" },
 ];
 
-type MovementOption = { id: string; text: string };
+// lowest score of each range for movement score
+const MOVEMENT_SCORE_STARTS = [0, 6, 11, 16];
+
+type MovementOption = { id: string; text: string; score: number };
 
 async function loadOptions(questionKey: string): Promise<MovementOption[]> {
     const options = await apiQuestionOptionOrdered('select', {
@@ -31,7 +35,7 @@ async function loadOptions(questionKey: string): Promise<MovementOption[]> {
     return options
         .filter((o: any) => o.is_active)
         .sort((a: any, b: any) => a.option_number - b.option_number)
-        .map((o: any) => ({ id: o.id, text: o.text }));
+        .map((o: any) => ({ id: o.id, text: o.text, score: o.score }));
 }
 
 const idsOf = (options: MovementOption[], selected: string[] = []) =>
@@ -118,6 +122,7 @@ driving, doing house chores, meeting with people, et cetera"},
             detail: "Select all relevant statements:",
             questionType: "MultiSelect",
             questionOptions: options.general_impacts.map((option) => option.text),
+            optionScores: options.general_impacts.map((option) => option.score),
             minSelections: 1},
         ...CHOICE_QUESTIONS.map((q): QuestionProps => ({
             section: SECTION_NAME,
@@ -125,7 +130,8 @@ driving, doing house chores, meeting with people, et cetera"},
             title: q.title,
             detail: "Select the most relevant statement:",
             questionType: "MultipleChoice",
-            questionOptions: options[q.key].map((option) => option.text)})),
+            questionOptions: options[q.key].map((option) => option.text),
+            optionScores: options[q.key].map((option) => option.score)})),
         {
             section: SECTION_NAME,
             answerKey: "reflection",
@@ -157,6 +163,7 @@ driving, doing house chores, meeting with people, et cetera"},
     const review = {
         title: titles.my_movement,
         period: weekStarting ? weekRangeLabel(weekStarting) : undefined,
+        score: Object.fromEntries(MOVEMENT_SCORE_STARTS.map((lower) => [lower, movementScore(lower)])),
         fields: (answers: Record<string, any>): [string, string][] => {
             const rows = fieldsFor("my_movement", {
                 activeHours: answers.activeHours == null ? null : Number(answers.activeHours),
@@ -171,7 +178,7 @@ driving, doing house chores, meeting with people, et cetera"},
     };
 
     return(
-        <Assessment title="Assessment_title" questions={questions} onSubmit={saveMyMovement}
+        <Assessment title={SECTION_NAME} questions={questions} onSubmit={saveMyMovement}
             initialAnswers={savedAnswers ?? undefined} review={review}></Assessment>
     );
 }

@@ -28,6 +28,7 @@ type QuestionProps = Pick<MultiSelectProps, "otherAttribute" | "otherAttributeSi
   // text shown under a slider for each value, by index
   sliderDescriptions?: string[];
   questionOptions?: string[];
+  optionScores?: number[]; // score of each questionOptions entry by index
   description?: string;
   minSelections?: number; // multiselect only, given to MultiSelect as MIN_SELECTIONS
   /// extra validation for specific questions

@@ -6,7 +6,9 @@ import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { useRouter } from 'expo-router';
 import { useTheme as usePaperTheme } from "react-native-paper";
 import { apiErrorMessage } from "../../src/api/care_planner_api_helpers";
+import * as WebBrowser from "expo-web-browser";
 import Button from "../atomicUI/Button";
+import TextButton from "../atomicUI/TextButton";
 import { Question, QuestionProps } from "../../components/baseComponents/Question";
 import {EmptyQuestionArrayError} from "../../src/customErrors/QuestionErrors";
 import { useTheme, ColourSet } from '../../context/ThemeContext';
@@ -21,11 +23,27 @@ type AssessmentProps = {
     title: string;
     period?: string;
     fields: (answers: Record<string, any>) => [string, string][];
+    // lowest score of each range: the text shown for it, e.g. {0: "Mild", 6: "Moderate"}
+    score?: Record<number, string>;
   };
 }
 
 // the name a question's answer is stored under
 const keyOf = (question: QuestionProps, index: number) => question.answerKey ?? String(index);
+
+// the score of a question's answer, from the optionScores of the options picked
+const scoreOf = (question: QuestionProps, answer: any) => {
+  if (!question.optionScores || !question.questionOptions || answer == null) return 0;
+  // [answer] if multiple choice, answer.selected if multiselect
+  const picked: string[] = typeof answer === "string" ? [answer] : answer.selected ?? [];
+  // sum up the score of picked answers
+  return picked.reduce(
+    (sum, text) => sum + (question.optionScores?.
+      // option's position in list, get index -1 if doesn't exist
+      [question.questionOptions?.indexOf(text) ?? -1]
+       ?? 0), // if index is -1, add 0
+       0); // starting sum is 0
+};
 
 export default function Assessment({title, questions, onSubmit, initialAnswers, review}: AssessmentProps) {
   const router = useRouter();
@@ -59,6 +77,36 @@ export default function Assessment({title, questions, onSubmit, initialAnswers, 
     Object.fromEntries(questions.map((question, index) => [keyOf(question, index), list[index]]));
 
   const reviewFields: [string, string][] = review.fields(answersByKey(answers));
+
+  const totalScore = questions.reduce((sum, question, index) => sum + scoreOf(question, answers[index]), 0);
+  // sort review.score & only get the numbers
+  const scoreRanges = Object.keys(review.score ?? {}).map(Number).sort((a, b) => a - b);
+  // remove score texts where the score value is higher than totalScore, and get highest value out of it
+  const rangeStart = scoreRanges.filter((lower) => lower <= totalScore).pop();
+  const scoreDescription = rangeStart == null ? undefined : review.score?.[rangeStart];
+  let scoreText: React.ReactNode;
+  let scoreLink: { label: string; url: string } | undefined;
+  // set score & link text 
+  if (review.score != null && scoreDescription != null) {
+    switch (title) {
+      case "My Movement":
+        scoreText = (
+          <Text style={[theme.body, theme.fontOnSurface]}>
+            Your answers indicate that <Text style={{fontWeight: 'bold'}}>{scoreDescription}</Text> With the right support and treatment, your movement and mobility can improve.
+          </Text>
+        );
+        break;
+      default:
+        scoreText = (
+          <Text style={[theme.body, theme.fontOnSurface]}>N/A</Text>
+        );
+    }
+    switch (title) {
+      case "My Movement":
+        scoreLink = { label: "Explore tips on managing movement", url: "https://muscha.org/exercise" };
+        break;
+    }
+  }
 
   const goTo = (index: number) => {
     setQuestionError(null);
@@ -123,7 +171,21 @@ export default function Assessment({title, questions, onSubmit, initialAnswers, 
                   <Text style={[theme.h4, theme.fontOnSurface]}>{review.title}</Text>
                   <Text style={[theme.body, theme.fontOnSurface]}>{review.period ?? ''}</Text>
                 </View>
-                <View style={theme.line} />
+                <View style={[theme.line, review.score != null && {marginVertical: 12}]} />
+                {scoreText != null && (
+                  <>
+                    <View style={{width: '85%', alignSelf: 'center'}}>
+                      {scoreText}
+                      {scoreLink && (
+                        <View style={{alignSelf: 'flex-end', marginTop: 20}}>
+                          <TextButton label={scoreLink.label} fontColour={colours.onSurface}
+                            onPress={() => WebBrowser.openBrowserAsync(scoreLink.url)} />
+                        </View>
+                      )}
+                    </View>
+                    <View style={[theme.line, {marginVertical: 12}]} />
+                  </>
+                )}
                 {reviewFields.map(([label, value]) => (
                   <View key={label} style={{width: '85%', alignSelf: 'center'}}>
                     <Text style={[theme.h6, theme.fontOnSurface]}>{label}</Text>
