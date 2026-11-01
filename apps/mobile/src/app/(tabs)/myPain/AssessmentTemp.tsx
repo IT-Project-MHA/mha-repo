@@ -3,6 +3,7 @@ import { GenerateAssessmentProps } from "@/testSupport/AssessmentTestHelpers";
 
 export default function Destination() {
     return(
-        <Assessment title="This is a title" questions={GenerateAssessmentProps()}></Assessment>
+        <Assessment title="This is a title" questions={GenerateAssessmentProps()}
+            review={{ title: "This is a title", fields: () => [] }}></Assessment>
     );
 }

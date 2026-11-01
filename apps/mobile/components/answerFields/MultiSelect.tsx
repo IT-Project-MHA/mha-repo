@@ -22,15 +22,17 @@ type MultiSelectProps ={
   MAX_SELECTIONS: number;
   otherAttribute?: boolean; // shows a text box under the "Other" option while it's ticked
   otherAttributeSizeLimit?: number;
+  initialSelected?: string[];
+  initialOther?: string;
 }
 
 function MultiSelect({ questionOptions, onSubmit, headingText, MIN_SELECTIONS, MAX_SELECTIONS, 
-  otherAttribute = false, otherAttributeSizeLimit = 100 }: MultiSelectProps) {
+  otherAttribute = false, otherAttributeSizeLimit = 100, initialSelected = [], initialOther = "" }: MultiSelectProps) {
   const { colours, theme } = useTheme();
   const styles = createStyles(colours, theme);
 
-  const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]); // Tracks the currently selected answers
-  const [otherText, setOtherText] = useState("");
+  const [selectedAnswers, setSelectedAnswers] = useState<string[]>(initialSelected); // Tracks the currently selected answers
+  const [otherText, setOtherText] = useState(initialOther);
   // when Continue is pressed with Other ticked and empty answer
   const [otherError, setOtherError] = useState(false); 
   const { colors: paperColours } = usePaperTheme();
@@ -245,4 +247,4 @@ function createStyles(colours: ColourSet, text: Typography) {
   });
 }
 
-export { MultiSelect, MultiSelectAnswer };
+export { MultiSelect, MultiSelectAnswer, MultiSelectProps };

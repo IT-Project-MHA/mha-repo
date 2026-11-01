@@ -30,12 +30,13 @@ function sanitizeNumberInput(text: string) {
 
 // scoreLabel is what's being scored, shown as 'My <scoreLabel> is <value>'. descriptions holds the
 // text shown under the slider for each value, by index
-function SliderEntry({ onSubmit, upperBound = 10, scoreLabel = "score", descriptions = [] }: { onSubmit: (v: string) => void; upperBound?: number; scoreLabel?: string; descriptions?: string[] }) {
+// initialValue is the value to start at, e.g. from a saved answer
+function SliderEntry({ onSubmit, upperBound = 10, scoreLabel = "score", descriptions = [], initialValue }: { onSubmit: (v: string) => void; upperBound?: number; scoreLabel?: string; descriptions?: string[]; initialValue?: string }) {
 
   const { colours, theme } = useTheme();
 
   // starts at the lowest score, so it can be submitted without moving the slider
-  const [value, setValue] = useState<string>(String(LOWER_BOUND));
+  const [value, setValue] = useState<string>(initialValue ?? String(LOWER_BOUND));
 
   const handleChange = (num: number) => {
     // slider gives a number; convert to string and sanitize/limit
