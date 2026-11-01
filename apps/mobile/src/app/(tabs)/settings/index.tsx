@@ -5,13 +5,19 @@ import React, { View, Text, StyleSheet, ScrollView } from 'react-native';
 import ButtonWithIcon from '../../../../components/atomicUI/ButtonWithIcon';
 import { useRouter } from 'expo-router';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Screen() {
   const router = useRouter();
   const { theme, colours } = useTheme();
+  const insets = useSafeAreaInsets();
+  const styles = createStyles(colours, insets.bottom);
 
   return (
-    <ScrollView stickyHeaderIndices={[0]}>
+    <ScrollView
+            stickyHeaderIndices={[0]}
+            contentContainerStyle={styles.content}
+          >
       <View style={theme.header}>
         <Text style={[theme.h4, theme.leftText, {color: colours.onSurface}]}>Settings</Text>
         <Text style={[theme.leftText, theme.small, {color: colours.onBackground, marginVertical: 10}]}>
@@ -76,8 +82,6 @@ export default function Screen() {
 
       </View>
 
-      <Text> </Text>
-      <Text> </Text>
 
       <View style={[theme.sectionContainer, theme.centerItems]}>
           <ButtonWithIcon
@@ -100,8 +104,18 @@ export default function Screen() {
           />
       </View>
 
-      <View style={theme.bottomGap}/>
-
     </ScrollView>
   );
+}
+
+function createStyles(
+  colours: ColourSet,
+  bottomInset: number
+) {
+  return StyleSheet.create({
+    content: {
+      paddingBottom: 120 + bottomInset,
+      gap: 30
+    },
+  });
 }

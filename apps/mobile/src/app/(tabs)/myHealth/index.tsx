@@ -14,13 +14,19 @@ import ButtonWithIcon from "../../../../components/atomicUI/ButtonWithIcon";
 import { useRouter } from "expo-router";
 import { useTheme, ColourSet } from "../../../../context/ThemeContext";
 import AveragePainChart from "../../../../components/graphics/averagePainChart";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Screen() {
   const router = useRouter();
   const { theme, colours } = useTheme();
+  const insets = useSafeAreaInsets();
+  const styles = createStyles(colours, insets.bottom);
 
   return (
-    <ScrollView stickyHeaderIndices={[0]}>
+    <ScrollView
+            stickyHeaderIndices={[0]}
+            contentContainerStyle={styles.content}
+          >
       <View style={theme.header}>
         <Text
           style={[theme.h4, theme.leftText, { color: colours.onBackground }]}
@@ -67,7 +73,6 @@ export default function Screen() {
       </View>
 
       {/* My Health Tracking History */}
-      <View style={theme.sectionSeparation}/>
       <View style={[theme.sectionContainer]}>
         <Text
           style={[
@@ -107,7 +112,6 @@ export default function Screen() {
       
 
       {/* My Prescriptions */}
-      <View style={theme.sectionSeparation}/>
       <View style={[theme.sectionContainer]}>
         <Text
           style={[
@@ -142,13 +146,18 @@ export default function Screen() {
           />
         </View>
       </View>
- 
-      <View style={theme.bottomGap} />
-      <View style={theme.bottomGap} />
     </ScrollView>
   );
 }
 
-function createStyles(colours: ColourSet) {
-  return StyleSheet.create({});
+function createStyles(
+  colours: ColourSet,
+  bottomInset: number
+) {
+  return StyleSheet.create({
+    content: {
+      paddingBottom: 120 + bottomInset,
+      gap: 30
+    },
+  });
 }

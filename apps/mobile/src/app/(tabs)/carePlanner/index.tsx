@@ -105,7 +105,7 @@ export default function Screen() {
         stickyHeaderIndices={[0]}
         contentContainerStyle={styles.content}
       >
-        <View style={[theme.header, styles.title]}>
+        <View style={[theme.header]}>
           <Text
             style={[
               theme.h4,
@@ -227,7 +227,7 @@ function createStyles(
 
     content: {
       paddingBottom: 120 + bottomInset,
-      gap: 38
+      gap: 30
     },
 
     title: {
