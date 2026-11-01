@@ -1,8 +1,8 @@
-//basically straight from here: https://dev.to/davelearns/building-a-basic-quiz-app-with-react-native-and-expo-go-a-complete-guide-11o
-
 import React, { useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
-import { useTheme } from "../../context/ThemeContext";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { RadioButton, useTheme as usePaperTheme } from "react-native-paper";
+import { useTheme, ColourSet } from "../../context/ThemeContext";
+import { Typography } from "../../constants/textSize";
 import Button from "../atomicUI/Button";
 
 
@@ -10,52 +10,146 @@ import Button from "../atomicUI/Button";
 type MultipleChoiceProps ={
   questionOptions: string[];
   onSubmit: (v: string) => void;
+  initialValue?: string; // the option to start selected, e.g. from a saved answer
 }
 
-function MultipleChoice({ questionOptions, onSubmit }: MultipleChoiceProps) {
-  const { theme } = useTheme();
+function MultipleChoice({ questionOptions, onSubmit, initialValue }: MultipleChoiceProps) {
+  const { colours, theme } = useTheme();
+  const styles = createStyles(colours, theme);
+  const { colors: paperColours } = usePaperTheme();
 
-  const [selectedAnswer, setSelectedAnswer] = useState<string >(""); // Tracks the currently selected answer
+  const [selectedAnswer, setSelectedAnswer] = useState<string >(initialValue ?? "");
+  const [selectionError, setSelectionError] = useState(false);
 
   const handleSelect = (answer: string) => {
-    // Called when a user selects an answer
+    setSelectionError(false);
     setSelectedAnswer(answer);
   };
 
   const handleSubmit = () => {
-    // Save the current answer result
-    if(selectedAnswer!=null)
-      onSubmit(selectedAnswer);
+    if (selectedAnswer === "") {
+      setSelectionError(true);
+      return;
+    }
+    onSubmit(selectedAnswer);
   };
   return (
-    <View style={theme.container}>
-
-      {questionOptions.map((option, index) => (
-        <TouchableOpacity
-          key={index}
-          style={[
-            theme.option,
-            selectedAnswer.includes(option) && theme.selectedOption, // Highlights selected options
-          ]}
-          onPress={() => handleSelect(option)}
-        >
-          <Text style={[
-            theme.fontOnBackground,
-            selectedAnswer.includes(option) && theme.fontOnSurface, // Highlights selected option
-          ]}>{option}</Text>
-        </TouchableOpacity>
-      ))}
-
-      {/* display current selections */}
-      <View style={{ marginTop: 10}}>
-        <Text style={theme.fontOnSurface}>Selected: {selectedAnswer}</Text>
+    <View style={styles.screen}>
+    <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      <View style={[theme.sectionContainer, styles.card]}>
+        <View style={styles.cardContent}>
+          <Text style={[theme.fontOnBackground, theme.small, {marginBottom: 10, marginLeft: 10}]}>
+            Scroll down for more options</Text>
+          <View style={styles.radioList}>
+            {questionOptions.map((option, index) => (
+              <RadioButton.Item
+                key={index}
+                label={option}
+                value={option}
+                status={selectedAnswer === option ? 'checked' : 'unchecked'}
+                onPress={() => handleSelect(option)}
+                rippleColor="transparent"
+                color={colours.ex2}
+                uncheckedColor={colours.ex2}
+                labelStyle={[styles.input, selectedAnswer === option && styles.selectedText]}
+                style={[
+                  styles.radioItem,
+                  selectedAnswer === option && styles.selectedOption,
+                ]}
+              />
+            ))}
+          </View>
+        </View>
       </View>
+    </ScrollView>
+
+    <View style={styles.button}>
+      {selectionError && (
+        <Text style={[theme.small, theme.centerText, styles.selectionError,
+        { color: paperColours.error, borderColor: paperColours.error }]}>
+          Please select 1 option
+        </Text>
+      )}
       <Button
       label= "Continue"
       onPress={handleSubmit}
-      buttonType='primaryButton'
+      buttonType='roundButton'
       />
+    </View>
     </View>
   );
 }
+
+function createStyles(colours: ColourSet, text: Typography) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+    },
+
+    scroll: {
+      flex: 1,
+    },
+
+    content: {
+      paddingBottom: 80,
+      gap: 19,
+    },
+
+    card: {
+      gap: 12,
+    },
+
+    cardContent: {
+      paddingHorizontal: '5%',
+      paddingBottom: 5,
+    },
+
+    button: {
+      position: 'absolute',
+      bottom: 10,
+      width: '90%',
+      alignSelf: 'center',
+    },
+
+    selectionError: {
+      alignSelf: 'stretch',
+      marginBottom: 10,
+      marginHorizontal: 30,
+      paddingVertical: 4,
+      paddingHorizontal: 12,
+      borderWidth: 1,
+      borderRadius: 20,
+      backgroundColor: colours.background,
+      overflow: 'hidden',
+    },
+
+    input: {
+      ...text.body,
+      color: colours.onSurface,
+      marginRight: 14,
+    },
+
+    radioList: {
+      marginVertical: 5,
+      marginHorizontal: 3,
+      gap: 10,
+    },
+
+    selectedOption: {
+      backgroundColor: colours.secondary,
+    },
+
+    selectedText: {
+      color: colours.onSecondary,
+    },
+
+    radioItem: {
+      backgroundColor: colours.background,
+      paddingLeft: 20,
+      paddingRight: 15,
+      borderRadius: 15,
+    },
+  });
+}
+
 export { MultipleChoice }; //add the new component here

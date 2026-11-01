@@ -62,6 +62,8 @@ export default function Tab() {
   let buttonFunction = () => openAssessment('/(tabs)/myPain/AssessmentTemp');
   let painSectionFunction = () => openAssessment('/(tabs)/myPain/painSection');
 
+  let movementSectionFunction = () => openAssessment('/(tabs)/myPain/movementSection');
+
   let welcomeString = "Good " + timeMessage + ", " + userName;
   let nCompleted = 0; //backend call
   let weekLabel = weekRangeLabel(toApiDate(lastMonday));
@@ -80,7 +82,7 @@ export default function Tab() {
           {weekLabel}
         </Text>
         <AssessmentEntryTab onButtonPress={painSectionFunction} /*</View>assessment={currAssessment}*/ assessmentCall={apiMyPain}>My Pain</AssessmentEntryTab>
-        <AssessmentEntryTab onButtonPress={buttonFunction} /*assessment={currAssessment}*/ assessmentCall={apiMyMovement}></AssessmentEntryTab>
+        <AssessmentEntryTab onButtonPress={movementSectionFunction} /*assessment={currAssessment}*/ assessmentCall={apiMyMovement}></AssessmentEntryTab>
         <AssessmentEntryTab onButtonPress={buttonFunction} /*assessment={currAssessment}*/ assessmentCall={apiMyPersonalCare}></AssessmentEntryTab>
         <AssessmentEntryTab onButtonPress={buttonFunction} /*assessment={currAssessment}*/ assessmentCall={apiMySocialHealth}></AssessmentEntryTab>
         <AssessmentEntryTab onButtonPress={buttonFunction} /*assessment={currAssessment}*/ assessmentCall={apiMyManagement}></AssessmentEntryTab>

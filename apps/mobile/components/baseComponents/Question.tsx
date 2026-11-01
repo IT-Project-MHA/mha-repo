@@ -18,11 +18,17 @@ type QuestionProps = Pick<MultiSelectProps, "otherAttribute" | "otherAttributeSi
   detail: String;
   questionType: ENTRY_TYPE;
   sliderMax?: number;
+  numberMax?: number;
+  textMax?: number;
+  textLines?: number;
+  optional?: boolean;
+  placeholder?: string;
   // what a slider question scores e.g. 'pain level', shown as 'My pain level is 3'
   sliderLabel?: string;
   // text shown under a slider for each value, by index
   sliderDescriptions?: string[];
   questionOptions?: string[];
+  description?: string;
   minSelections?: number; // multiselect only, given to MultiSelect as MIN_SELECTIONS
   /// extra validation for specific questions
   validate?: (answers: Record<string, any>) => string | null;
@@ -36,7 +42,7 @@ type QuestionScreenProps = QuestionProps & {
   error?: string | null;
 }
 
-export default function Question({section, title, detail, questionType, sliderMax, sliderLabel, sliderDescriptions, questionOptions, minSelections, otherAttribute, otherAttributeSizeLimit, onSubmit, progress, initialAnswer, error}:  QuestionScreenProps) {
+export default function Question({section, title, detail, questionType, sliderMax, numberMax, textMax, textLines, optional, placeholder, sliderLabel, sliderDescriptions, questionOptions, description, minSelections, otherAttribute, otherAttributeSizeLimit, onSubmit, progress, initialAnswer, error}:  QuestionScreenProps) {
   const { theme, colours } = useTheme();
   const { colors: paperColours } = usePaperTheme();
 
@@ -74,6 +80,12 @@ export default function Question({section, title, detail, questionType, sliderMa
         <EntryComponent
           onSubmit={submit}
           upperBound={sliderMax}
+          UPPER_BOUND={numberMax}
+          maxLength={textMax}
+          numberOfLines={textLines}
+          optional={optional}
+          placeholder={placeholder}
+          description={description}
           scoreLabel={sliderLabel}
           descriptions={sliderDescriptions}
           questionOptions={questionOptions ?? []}

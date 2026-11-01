@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 
 import { Text, TextInput, View, StyleSheet, KeyboardTypeOptions } from "react-native";
+import { useTheme as usePaperTheme } from "react-native-paper";
 import Button from "../atomicUI/Button";
 
 
@@ -9,13 +10,12 @@ import { lineThickness } from '../../constants/layout';
 import { useTheme, ColourSet } from '../../context/ThemeContext';
 import { Typography } from '../../constants/textSize';
 
-//Input variables
 const MAX_LENGTH_TEXT = 200;
 
 type TextProps ={
   onSubmit: (v: string) => void;
-  placeholder: string;
-  keyboardType: KeyboardTypeOptions
+  placeholder?: string;
+  keyboardType?: KeyboardTypeOptions
   textContentType?:
     | 'none'
     | 'URL'
@@ -64,36 +64,45 @@ type TextProps ={
     | 'flightNumber'
     | 'shipmentTrackingNumber'
     | undefined;
-  //height: number;
+  initialValue?: string; // the text to start with, e.g. from a saved answer
+  maxLength?: number;
+  numberOfLines?: number;
+  optional?: boolean;
 }
 
 
-function validateTextInput(text: string) {
+function validateTextInput(text: string, maxLength: number, optional: boolean) {
   //checking if it's something we should accept, i.e. within range
   //if (text == "") return "enter text"; //what it prints if submitted
-  if(text.trim()=="") return "Empty entry, please enter some text";
-  if (text.length > MAX_LENGTH_TEXT) {
-    return 'enter no more than '+ MAX_LENGTH_TEXT + 'characters';
+  if(!optional && text.trim()=="") return "Empty entry, please enter some text";
+  if (text.length > maxLength) {
+    return 'enter no more than '+ maxLength + ' characters';
   }
   return null;
 }
 
-function TextEntry({ onSubmit, placeholder, keyboardType, textContentType }: TextProps) {
+function TextEntry({ onSubmit, placeholder = 'Type here', keyboardType = 'default', textContentType, initialValue, maxLength = MAX_LENGTH_TEXT, numberOfLines = 1, optional = false }: TextProps) {
   const { colours, theme } = useTheme();
+  const { colors: paperColours } = usePaperTheme();
   const insets = useSafeAreaInsets();
   const styles = createStyles(colours, theme, insets.bottom);
 
-  const [value, setValue] = useState<string>("");
+  const [value, setValue] = useState<string>(initialValue ?? "");
   const [error, setError] = useState<string>("");
 
 
   const handleChange = (text: string) => {
+    if (text.length > maxLength) {
+      setValue(text.slice(0, maxLength));
+      setError('Enter no more than ' + maxLength + ' characters');
+      return;
+    }
     setValue(text);
     if (error) setError("");
   };
 
   const handleSubmit = () => {
-    const err = validateTextInput(value);
+    const err = validateTextInput(value, maxLength, optional);
     if (err) {
       setError(err);
       return;
@@ -101,27 +110,32 @@ function TextEntry({ onSubmit, placeholder, keyboardType, textContentType }: Tex
     onSubmit(value.trim()); //also gets rid of trailing white space
   };
 
+  const fieldHeight = numberOfLines * Number(theme.body.lineHeight) + 10;
+
   return (
-      <View style={[theme.sectionContainer, styles.content]}>
+    <View>
+      <View style={theme.sectionContainer}>
         <TextInput
-          style={[ styles.subheading, styles.field]}
+          style={[styles.input, styles.field, numberOfLines > 1 && { height: fieldHeight, textAlignVertical: 'top' }]}
           onChangeText={handleChange}
           value={value}
           placeholder={placeholder}
+          placeholderTextColor={colours.onBackground + '99'}
           keyboardType= {keyboardType}
           textContentType = {textContentType}
-          maxLength={MAX_LENGTH_TEXT}
+          multiline={numberOfLines > 1}
+          numberOfLines={numberOfLines}
           onSubmitEditing={handleSubmit}
         />
-        <View style={styles.bottomBar}>
-          {!!error && <Text style={styles.subheading}>{error}</Text>}
-          <Button
-            label="submit"
-            onPress={handleSubmit}
-            buttonType="roundButton"
-          />
+        <View style={styles.messageRow}>
+          <Text style={[theme.small, { color: paperColours.error, flex: 1 }]}>{error}</Text>
+          <Text style={[theme.small, theme.fontOnSurface]}>{value.length}/{maxLength}</Text>
         </View>
       </View>
+      <View style={{ width: '85%', alignSelf: 'center', marginTop: 25 }}>
+        <Button label="Continue" onPress={handleSubmit} buttonType="roundButton" />
+      </View>
+    </View>
   );
 }
 
@@ -182,11 +196,19 @@ function createStyles(colours: ColourSet, text: Typography, bottomInset: number)
       marginTop: 5,
     },
 
+    messageRow: {
+      flexDirection: 'row',
+      marginHorizontal: 35,
+      marginTop: -10,
+    },
+
     field: {
       height: 40,
       paddingVertical: 5,
       paddingHorizontal: 10,
-      marginHorizontal: 8,
+      marginHorizontal: 35,
+      marginTop: 15,
+      marginBottom: 20,
       borderWidth: 1,
       borderColor: colours.onSurface,
       justifyContent: 'center',
@@ -194,7 +216,7 @@ function createStyles(colours: ColourSet, text: Typography, bottomInset: number)
 
     input: {
       ...text.body,
-      color: colours.onSurface,
+      color: colours.onBackground,
     },
 
     error: {

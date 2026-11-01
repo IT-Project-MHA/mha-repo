@@ -34,7 +34,13 @@ export default function MyPainLayout() {
           headerShown: false,
         }}
       />
-      <Stack.Screen 
+      <Stack.Screen
+      name="movementSection"
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
       name="AssessmentTemp"
         options={{
           headerShown: false,
