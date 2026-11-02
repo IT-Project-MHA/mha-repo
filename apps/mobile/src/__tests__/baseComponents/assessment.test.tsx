@@ -14,6 +14,7 @@
  */
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { press } from '../../testHelpers/testHelpers';
 
 const mockNavigate = jest.fn();
 jest.mock('expo-router', () => ({
@@ -46,9 +47,9 @@ const review = (extra: object = {}) => ({
 // answers both questions
 const answerAll = async () => {
   await fireEvent.changeText(screen.getByPlaceholderText('Placeholder notes'), 'Placeholder answer');
-  await fireEvent.press(screen.getByText('Continue'));
-  await fireEvent.press(screen.getByText('Option 2'));
-  await fireEvent.press(screen.getByText('Continue'));
+  await press('Continue');
+  await press('Option 2');
+  await press('Continue');
 };
 
 afterEach(() => jest.clearAllMocks());
@@ -67,7 +68,7 @@ test('Submit saves every answer by its answerKey and returns to My Pain', async 
   const onSubmit = jest.fn().mockResolvedValue(undefined);
   await render(<Assessment title="S" questions={QUESTIONS} review={review()} onSubmit={onSubmit} />);
   await answerAll();
-  await fireEvent.press(screen.getByText('Submit'));
+  await press('Submit');
   await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/(tabs)/myPain'));
   expect(onSubmit).toHaveBeenCalledWith({ q1: 'Placeholder answer', q2: 'Option 2' });
 });
@@ -77,7 +78,7 @@ test('a failed save shows an error and stays on the review page', async () => {
   const onSubmit = jest.fn().mockRejectedValue(new Error('network'));
   await render(<Assessment title="S" questions={QUESTIONS} review={review()} onSubmit={onSubmit} />);
   await answerAll();
-  await fireEvent.press(screen.getByText('Submit'));
+  await press('Submit');
   expect(await screen.findByText('Your answers could not be saved, please try again')).toBeTruthy();
   expect(mockNavigate).not.toHaveBeenCalled();
   consoleError.mockRestore();
@@ -86,12 +87,12 @@ test('a failed save shows an error and stays on the review page', async () => {
 test('Back goes to the previous question, and from the first question leaves', async () => {
   await render(<Assessment title="S" questions={QUESTIONS} review={review()} />);
   await fireEvent.changeText(screen.getByPlaceholderText('Placeholder notes'), 'Placeholder answer');
-  await fireEvent.press(screen.getByText('Continue'));
+  await press('Continue');
   expect(screen.getByText('Progress: 2/2')).toBeTruthy();
-  await fireEvent.press(screen.getByText('Back'));
+  await press('Back');
   expect(screen.getByText('Progress: 1/2')).toBeTruthy();
   expect(mockNavigate).not.toHaveBeenCalled();
-  await fireEvent.press(screen.getByText('Back'));
+  await press('Back');
   expect(mockNavigate).toHaveBeenCalledWith('/(tabs)/myPain');
 });
 
@@ -102,7 +103,7 @@ test('a validate message blocks moving on', async () => {
   ];
   await render(<Assessment title="S" questions={questions} review={review()} />);
   await fireEvent.changeText(screen.getByPlaceholderText('Placeholder notes'), 'invalid');
-  await fireEvent.press(screen.getByText('Continue'));
+  await press('Continue');
   expect(screen.getByText('Not allowed')).toBeTruthy();
   expect(screen.getByText('Progress: 1/2')).toBeTruthy();
 });
@@ -127,9 +128,9 @@ describe('score and summary', () => {
   test('a lower score gets the lower range text', async () => {
     await render(<Assessment title="My Movement" questions={QUESTIONS} review={review(scored)} />);
     await fireEvent.changeText(screen.getByPlaceholderText('Placeholder notes'), 'Placeholder answer 2');
-    await fireEvent.press(screen.getByText('Continue'));
-    await fireEvent.press(screen.getByText('Option 1')); // Option 1 scores 1
-    await fireEvent.press(screen.getByText('Continue'));
+    await press('Continue');
+    await press('Option 1'); // Option 1 scores 1
+    await press('Continue');
     expect(screen.getByText(/low score text\./)).toBeTruthy();
   });
 

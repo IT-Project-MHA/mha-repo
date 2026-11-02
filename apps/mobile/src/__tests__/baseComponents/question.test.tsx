@@ -8,6 +8,7 @@
  */
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
+import { press, pressLabel } from '../../testHelpers/testHelpers';
 
 jest.mock('@/api/django-API', () => ({}));
 jest.mock('react-native-safe-area-context', () => require('react-native-safe-area-context/jest/mock').default);
@@ -38,7 +39,7 @@ test('a text answer is passed to onSubmit as it is', async () => {
   const onSubmit = jest.fn();
   await render(<Question {...BASE} questionType="TextEntry" placeholder="Placeholder notes" onSubmit={onSubmit} />);
   await fireEvent.changeText(screen.getByPlaceholderText('Placeholder notes'), 'Placeholder answer');
-  await fireEvent.press(screen.getByText('Continue'));
+  await press('Continue');
   expect(onSubmit).toHaveBeenCalledWith('Placeholder answer');
 });
 
@@ -48,8 +49,8 @@ test('a multiselect answer is passed as {selected, other}', async () => {
     <Question {...BASE} questionType="MultiSelect" questionOptions={['Option 1', 'Option 2']} MIN_SELECTIONS={1}
       onSubmit={onSubmit} />,
   );
-  await fireEvent.press(screen.getByLabelText('Option 2'));
-  await fireEvent.press(screen.getByText('Continue'));
+  await pressLabel('Option 2');
+  await press('Continue');
   expect(onSubmit).toHaveBeenCalledWith({ selected: ['Option 2'], other: '' });
 });
 

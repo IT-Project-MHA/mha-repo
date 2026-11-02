@@ -8,7 +8,8 @@
  *    - the exercise examples only show when exercise is on
  */
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react-native';
+import { render, screen } from '@testing-library/react-native';
+import { press } from '../../testHelpers/testHelpers';
 
 jest.mock('@/api/django-API', () => ({}));
 import { MultipleChoice } from '../../../components/answerFields/MultipleChoice';
@@ -20,7 +21,7 @@ test('renders every option and nothing is selected at the start', async () => {
   const onSubmit = jest.fn();
   await render(<MultipleChoice questionOptions={OPTIONS} onSubmit={onSubmit} />);
   OPTIONS.forEach((option) => expect(screen.getByText(option)).toBeTruthy());
-  await fireEvent.press(screen.getByText('Continue'));
+  await press('Continue');
   expect(screen.getByText('Please select 1 option')).toBeTruthy();
   expect(onSubmit).not.toHaveBeenCalled();
 });
@@ -28,15 +29,15 @@ test('renders every option and nothing is selected at the start', async () => {
 test('Continue submits the selected option', async () => {
   const onSubmit = jest.fn();
   await render(<MultipleChoice questionOptions={OPTIONS} onSubmit={onSubmit} />);
-  await fireEvent.press(screen.getByText('o1'));
-  await fireEvent.press(screen.getByText('Continue'));
+  await press('o1');
+  await press('Continue');
   expect(onSubmit).toHaveBeenCalledWith('o1');
 });
 
 test('a saved initialValue starts selected', async () => {
   const onSubmit = jest.fn();
   await render(<MultipleChoice questionOptions={OPTIONS} onSubmit={onSubmit} initialValue="o2" />);
-  await fireEvent.press(screen.getByText('Continue'));
+  await press('Continue');
   expect(onSubmit).toHaveBeenCalledWith('o2');
 });
 

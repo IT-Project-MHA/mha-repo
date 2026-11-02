@@ -7,6 +7,7 @@
  */
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
+import { press, pressLabel } from '../../testHelpers/testHelpers';
 
 jest.mock('@/api/django-API', () => ({}));
 import { MultiSelect } from '../../../components/answerFields/MultiSelect';
@@ -24,43 +25,43 @@ const renderSelect = async (props: any = {}) => {
 
 test('ticked options are submitted together', async () => {
   const onSubmit = await renderSelect();
-  await fireEvent.press(screen.getByLabelText('o1'));
-  await fireEvent.press(screen.getByLabelText('o2'));
-  await fireEvent.press(screen.getByText('Continue'));
+  await pressLabel('o1');
+  await pressLabel('o2');
+  await press('Continue');
   expect(onSubmit).toHaveBeenCalledWith(['o1', 'o2'], '');
 });
 
 test('unticking an option removes it', async () => {
   const onSubmit = await renderSelect();
-  await fireEvent.press(screen.getByLabelText('o1'));
-  await fireEvent.press(screen.getByLabelText('o2'));
-  await fireEvent.press(screen.getByLabelText('o1'));
-  await fireEvent.press(screen.getByText('Continue'));
+  await pressLabel('o1');
+  await pressLabel('o2');
+  await pressLabel('o1');
+  await press('Continue');
   expect(onSubmit).toHaveBeenCalledWith(['o2'], '');
 });
 
 test('too few selections shows an error and does not submit', async () => {
   const onSubmit = await renderSelect();
-  await fireEvent.press(screen.getByText('Continue'));
+  await press('Continue');
   expect(screen.getByText('Select at least 1 option')).toBeTruthy();
   expect(onSubmit).not.toHaveBeenCalled();
 });
 
 test('a minimum of 0 lets Continue through with nothing ticked', async () => {
   const onSubmit = await renderSelect({ MIN_SELECTIONS: 0 });
-  await fireEvent.press(screen.getByText('Continue'));
+  await press('Continue');
   expect(onSubmit).toHaveBeenCalledWith([], '');
 });
 
 test('Other needs its details filled in, which are submitted with the selection', async () => {
   const onSubmit = await renderSelect({ otherAttribute: true });
-  await fireEvent.press(screen.getByLabelText('Other'));
-  await fireEvent.press(screen.getByText('Continue'));
+  await pressLabel('Other');
+  await press('Continue');
   expect(screen.getByText('Field cannot be empty, uncheck Other instead')).toBeTruthy();
   expect(onSubmit).not.toHaveBeenCalled();
 
   await fireEvent.changeText(screen.getByPlaceholderText('Enter other details'), ' other field ');
-  await fireEvent.press(screen.getByText('Continue'));
+  await press('Continue');
   expect(onSubmit).toHaveBeenCalledWith(['Other'], 'other field');
 });
 

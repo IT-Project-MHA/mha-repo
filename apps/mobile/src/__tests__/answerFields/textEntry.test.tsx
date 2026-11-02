@@ -7,6 +7,7 @@
  */
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
+import { press } from '../../testHelpers/testHelpers';
 
 jest.mock('@/api/django-API', () => ({}));
 import { TextEntry } from '../../../components/answerFields/TextEntry';
@@ -15,19 +16,19 @@ test('text is trimmed and submitted', async () => {
   const onSubmit = jest.fn();
   await render(<TextEntry onSubmit={onSubmit} placeholder="Notes" />);
   await fireEvent.changeText(screen.getByPlaceholderText('Notes'), '  placeholder text ');
-  await fireEvent.press(screen.getByText('Continue'));
+  await press('Continue');
   expect(onSubmit).toHaveBeenCalledWith('placeholder text');
 });
 
 test('empty text is an error unless the question is optional', async () => {
   const onSubmit = jest.fn();
   const { rerender } = await render(<TextEntry onSubmit={onSubmit} />);
-  await fireEvent.press(screen.getByText('Continue'));
+  await press('Continue');
   expect(screen.getByText('Empty entry, please enter some text')).toBeTruthy();
   expect(onSubmit).not.toHaveBeenCalled();
 
   await rerender(<TextEntry onSubmit={onSubmit} optional />);
-  await fireEvent.press(screen.getByText('Continue'));
+  await press('Continue');
   expect(onSubmit).toHaveBeenCalledWith('');
 });
 
