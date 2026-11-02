@@ -4,14 +4,7 @@
  * - Support people can view their connections
  * - Patients can invite support people and adjust their permissions
  */
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  ActivityIndicator,
-  Alert
-} from "react-native";
+import { View, Text, ScrollView, ActivityIndicator, Alert } from "react-native";
 import { useTheme } from "../../../../context/ThemeContext";
 import ButtonWithIcon from "../../../../components/atomicUI/ButtonWithIcon";
 import React, { useState, useEffect } from "react";
@@ -70,7 +63,7 @@ export default function Screen() {
   const handleAccept = async (id: string) => {
     try {
       await apiAcceptInvitation(id);
-      await refreshUserType(); // noRole -> supportPerson (or patient -> both)
+      await refreshUserType(); // (patient -> both)
       await load(); // reload the connections lists
     } catch (e) {
       Alert.alert("Could not accept invitation", apiErrorMessage(e));
@@ -183,7 +176,13 @@ export default function Screen() {
   ) => (
     <View style={theme.layoutContainer}>
       {list.length === 0 && (
-        <Text style={[theme.body, theme.leftText, {color: colours.onSurface, marginVertical: 15 }]}>
+        <Text
+          style={[
+            theme.body,
+            theme.leftText,
+            { color: colours.onSurface, marginVertical: 15 }
+          ]}
+        >
           {emptyMessage}
         </Text>
       )}
@@ -199,7 +198,7 @@ export default function Screen() {
               onPress={() => setSelected({ person, relationship })}
               buttonType="transparentButton"
               name="chevron-forward-outline"
-              textStyle={{color: colours.onSurface}}
+              textStyle={{ color: colours.onSurface }}
             />
           </View>
         ))}
@@ -215,8 +214,14 @@ export default function Screen() {
       <View style={[theme.centerItems, { flex: 1, padding: 24 }]}>
         {loadError ? (
           <>
-            <Text style={[theme.body, {color: colours.onSurface}]}>{loadError}</Text>
-            <TextButton label="Try again" onPress={load} fontColour={colours.onSurface} />
+            <Text style={[theme.body, { color: colours.onSurface }]}>
+              {loadError}
+            </Text>
+            <TextButton
+              label="Try again"
+              onPress={load}
+              fontColour={colours.onSurface}
+            />
           </>
         ) : (
           <ActivityIndicator size="small" />
@@ -235,21 +240,29 @@ export default function Screen() {
   return (
     <ScrollView stickyHeaderIndices={[0]}>
       <View style={theme.header}>
-        <Text style={[theme.h4, theme.leftText, {color: colours.onSurface}]}>
+        <Text style={[theme.h4, theme.leftText, { color: colours.onSurface }]}>
           My Support Links
         </Text>
       </View>
-  
+
       {connections.invitations.length > 0 && (
         <>
           <View style={theme.sectionContainer}>
-            <Text style={[theme.h5, theme.leftText, {color: colours.onSurface}]}>
+            <Text
+              style={[theme.h5, theme.leftText, { color: colours.onSurface }]}
+            >
               Invitations
             </Text>
             <View style={theme.line}></View>
             {connections.invitations.map((inv) => (
               <View key={inv.id} style={theme.layoutContainer}>
-                <Text style={[theme.body, theme.leftText, {color: colours.onSurface}]}>
+                <Text
+                  style={[
+                    theme.body,
+                    theme.leftText,
+                    { color: colours.onSurface }
+                  ]}
+                >
                   {inv.name} invited you to support them
                 </Text>
                 <View style={[theme.rightItems, theme.row]}>
@@ -273,11 +286,16 @@ export default function Screen() {
       {isPatient && (
         <>
           <View style={[theme.sectionContainer, theme.sectionSeparation]}>
-  
-            <Text style={[theme.h5, theme.leftText, {color: colours.onSurface, marginVertical: 15 }]}>
+            <Text
+              style={[
+                theme.h5,
+                theme.leftText,
+                { color: colours.onSurface, marginVertical: 15 }
+              ]}
+            >
               My Support People
             </Text>
-  
+
             <View style={theme.line}></View>
 
             {renderSection(
@@ -293,22 +311,26 @@ export default function Screen() {
                 fontColour={colours.onSurface}
               />
             </View>
-
           </View>
         </>
       )}
 
       <View style={[theme.sectionContainer]}>
-
-        <Text style={[theme.h5, theme.leftText, {color: colours.onSurface, marginVertical: 15 }]}>
+        <Text
+          style={[
+            theme.h5,
+            theme.leftText,
+            { color: colours.onSurface, marginVertical: 15 }
+          ]}
+        >
           My Connections{" "}
         </Text>
         <View style={theme.line}></View>
-          {renderSection(
-            connections.supporting,
-            "imSupporting",
-            "You are not supporting anyone yet."
-          )}
+        {renderSection(
+          connections.supporting,
+          "imSupporting",
+          "You are not supporting anyone yet."
+        )}
       </View>
 
       <PeopleModal
@@ -333,7 +355,6 @@ export default function Screen() {
       />
 
       <View style={theme.bottomGap} />
-      
     </ScrollView>
   );
 }

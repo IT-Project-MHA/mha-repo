@@ -1,7 +1,7 @@
 /**
  * All user types have access to this screen
  */
-import  { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import React, { Fragment, useCallback, useState } from "react";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -11,6 +11,7 @@ import TextButton from "../../../../components/atomicUI/TextButton";
 import { useTheme, ColourSet } from "../../../../context/ThemeContext";
 import { Typography } from "../../../../constants/textSize";
 import { formatDateTime } from "../../../../constants/date";
+import { useUser } from "@/context/AuthorisationContext";
 import {
   ApiAppointment,
   useAppointment
@@ -39,6 +40,7 @@ export default function Screen() {
   const [sharedAppointments, setSharedAppointments] = useState<
     ApiSharedAppointment[]
   >([]);
+  const { refreshUserType, isPatient } = useUser();
 
   // reloads every appointment where the user is the patient or support person when the screen is
   // shown, so ones added or changed on other screens appear
@@ -101,116 +103,132 @@ export default function Screen() {
   );
 
   return (
-      <ScrollView
-        stickyHeaderIndices={[0]}
-        contentContainerStyle={styles.content}
-      >
-        <View style={[theme.header]}>
-          <Text
-            style={[
-              theme.h4,
-              theme.leftText,
-              styles.textColour, 
-            ]}
-          >
-            Your Care Planner
-          </Text>
-          <Text style={[theme.leftText, styles.textColour, theme.small, {marginVertical: 10}]}>
-            Prepare for your appointments with confidence.
-          </Text>
-        </View>
-
-        {/* My Appointments */}
-      <View style={[theme.sectionContainer]}>
-          <Text
+    <ScrollView
+      stickyHeaderIndices={[0]}
+      contentContainerStyle={styles.content}
+    >
+      <View style={[theme.header]}>
+        <Text style={[theme.h4, theme.leftText, styles.textColour]}>
+          Your Care Planner
+        </Text>
+        <Text
           style={[
-            theme.h5,
             theme.leftText,
-            { color: colours.onSurface, marginVertical: 15 }
+            styles.textColour,
+            theme.small,
+            { marginVertical: 10 }
           ]}
         >
-            My Appointments
-          </Text>
-          <View style={theme.line} />
+          Prepare for your appointments with confidence.
+        </Text>
+      </View>
 
-          <Text style={[styles.textColour, theme.leftItems, theme.body, {marginVertical: 15}]}>
-            {appointments.length > 0
-              ? "Recently added:"
-              : "You have no appointments."}
-          </Text>
+      {isPatient && (
+        <>
+          {/* My Appointments */}
+          <View style={[theme.sectionContainer]}>
+            <Text
+              style={[
+                theme.h5,
+                theme.leftText,
+                { color: colours.onSurface, marginVertical: 15 }
+              ]}
+            >
+              My Appointments
+            </Text>
+            <View style={theme.line} />
 
+            <Text
+              style={[
+                styles.textColour,
+                theme.leftItems,
+                theme.body,
+                { marginVertical: 15 }
+              ]}
+            >
+              {appointments.length > 0
+                ? "Recently added:"
+                : "You have no appointments."}
+            </Text>
 
-          <View style={[styles.cardItem, styles.createButton]}>
-            <Button
-              label="Create new appointment"
-              onPress={() => {
-                // starts a new appointment without details left from a previous one
-                resetDraft();
-                router.push("/carePlanner/createAppointment");
-              }}
-              buttonType="roundButton"
-            />
-          </View>
-
-          {/* wrapped so the card's gap isn't added between the rows & dividers */}
-          {appointments.length > 0 && (
-            <View>
-              {mostRecent(appointments).map((appointment, index) =>
-                renderAppointmentRow(appointment, index, () =>
-                  router.push({
-                    pathname: "/carePlanner/appointmentDetails",
-                    params: { id: appointment.id }
-                  })
-                )
-              )}
+            <View style={[styles.cardItem, styles.createButton]}>
+              <Button
+                label="Create new appointment"
+                onPress={() => {
+                  // starts a new appointment without details left from a previous one
+                  resetDraft();
+                  router.push("/carePlanner/createAppointment");
+                }}
+                buttonType="roundButton"
+              />
             </View>
-          )}
 
-          <View style={[styles.linkRow, {marginTop : 15}]}>
-            <TextButton
-              label="See all appointments"
-              onPress={() => router.push("/carePlanner/allAppointments")}
-              fontColour={colours.onSurface}
-            />
-          </View>
-
-        </View>
-
-        <View style={[theme.sectionContainer, styles.filledCard]}>
-          <Text style={[styles.textColour, theme.leftItems, theme.h5]}>
-            Shared With You
-          </Text>
-          <View style={theme.line} />
-          <Text style={[styles.textColour, theme.leftItems, theme.body, {marginVertical: 15}]}>
-            {sharedAppointments.length > 0
-              ? "Recently added:"
-              : "No appointments have been shared with you"}
-          </Text>
-          {sharedAppointments.length > 0 && (
-            <View>
-              {mostRecent(sharedAppointments).map((appointment, index) =>
-                renderAppointmentRow(
-                  appointment,
-                  index,
-                  () =>
+            {/* wrapped so the card's gap isn't added between the rows & dividers */}
+            {appointments.length > 0 && (
+              <View>
+                {mostRecent(appointments).map((appointment, index) =>
+                  renderAppointmentRow(appointment, index, () =>
                     router.push({
-                      pathname: "/carePlanner/editSharedAppointment",
+                      pathname: "/carePlanner/appointmentDetails",
                       params: { id: appointment.id }
-                    }),
-                  appointment.patientName
-                )
-              )}
+                    })
+                  )
+                )}
+              </View>
+            )}
+            <View style={[styles.linkRow, { marginTop: 15 }]}>
+              <TextButton
+                label="See all appointments"
+                onPress={() => router.push("/carePlanner/allAppointments")}
+                fontColour={colours.onSurface}
+              />
             </View>
-          )}
-          <View style={styles.linkRow}>
-            <TextButton
-              label="See all shared appointments"
-              onPress={() => router.push("/carePlanner/allSharedAppointments")}
-              fontColour={colours.onSurface}
-            />
           </View>
+        </>
+      )}
+
+      <View style={[theme.sectionContainer, styles.filledCard]}>
+        <Text style={[styles.textColour, theme.leftItems, theme.h5]}>
+          Shared With You
+        </Text>
+        <View style={theme.line} />
+        <Text
+          style={[
+            styles.textColour,
+            theme.leftItems,
+            theme.body,
+            { marginVertical: 15 }
+          ]}
+        >
+          {sharedAppointments.length > 0
+            ? "Recently added:"
+            : "No appointments have been shared with you"}
+        </Text>
+        {sharedAppointments.length > 0 && (
+          <View>
+            {mostRecent(sharedAppointments).map((appointment, index) =>
+              renderAppointmentRow(
+                appointment,
+                index,
+                () =>
+                  router.push({
+                    pathname: "/carePlanner/editSharedAppointment",
+                    params: { id: appointment.id }
+                  }),
+                appointment.patientName
+              )
+            )}
+          </View>
+        )}
+        <View style={styles.linkRow}>
+          <TextButton
+            label="See all shared appointments"
+            onPress={() => router.push("/carePlanner/allSharedAppointments")}
+            fontColour={colours.onSurface}
+          />
         </View>
-      </ScrollView>
+      </View>
+    </ScrollView>
   );
 }
 
