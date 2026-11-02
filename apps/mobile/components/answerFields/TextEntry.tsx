@@ -265,5 +265,5 @@ function createStyles(colours: ColourSet, text: Typography, bottomInset: number)
 
 
 
-export { TextEntry }; //add the new component here
+export { TextEntry, TextProps }; //add the new component here
 

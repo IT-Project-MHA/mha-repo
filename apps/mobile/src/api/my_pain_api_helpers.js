@@ -1,4 +1,4 @@
-import { apiMyPain, apiMyMovement, apiMyPersonalCare } from './django-API';
+import { apiMyPain, apiMyMovement, apiMyPersonalCare, apiMySocialHealth, apiMyManagement } from './django-API';
 
 // returns the assessment's saved MyPain, or null if the section hasn't been done yet
 export async function apiLoadMyPain(assessmentId) {
@@ -49,4 +49,38 @@ export async function apiSaveMyPersonalCare(assessmentId, details) {
         return apiMyPersonalCare('update', { id: existing.id, ...values });
     }
     return apiMyPersonalCare('create', { assessment: assessmentId, ...values });
+}
+
+// returns the assessment's saved MySocialHealth, or null if the section hasn't been done yet
+export async function apiLoadMySocialHealth(assessmentId) {
+    const [existing] = await apiMySocialHealth('select', { assessment: assessmentId });
+    return existing ?? null;
+}
+
+/* Create/update a finished My Social Health section to its assessment
+- completed_at is set to now */
+export async function apiSaveMySocialHealth(assessmentId, details) {
+    const values = { ...details, completed_at: new Date().toISOString() };
+    const [existing] = await apiMySocialHealth('select', { assessment: assessmentId });
+    if (existing) {
+        return apiMySocialHealth('update', { id: existing.id, ...values });
+    }
+    return apiMySocialHealth('create', { assessment: assessmentId, ...values });
+}
+
+// returns the assessment's saved MyManagement, or null if the section hasn't been done yet
+export async function apiLoadMyManagement(assessmentId) {
+    const [existing] = await apiMyManagement('select', { assessment: assessmentId });
+    return existing ?? null;
+}
+
+/* Create/update a finished My Management section to its assessment
+- completed_at is set to now */
+export async function apiSaveMyManagement(assessmentId, details) {
+    const values = { ...details, completed_at: new Date().toISOString() };
+    const [existing] = await apiMyManagement('select', { assessment: assessmentId });
+    if (existing) {
+        return apiMyManagement('update', { id: existing.id, ...values });
+    }
+    return apiMyManagement('create', { assessment: assessmentId, ...values });
 }

@@ -5,15 +5,17 @@ import { useTheme, ColourSet } from "../../context/ThemeContext";
 import { Typography } from "../../constants/textSize";
 import Button from "../atomicUI/Button";
 
+// fewest options that need the "Scroll down for more options" hint
+const SCROLL_HINT_MIN_OPTIONS = 6;
 
-
-type MultipleChoiceProps ={
+export type MultipleChoiceProps ={
   questionOptions: string[];
   onSubmit: (v: string) => void;
-  initialValue?: string; // the option to start selected, e.g. from a saved answer
+  initialValue?: string;
+  exercise?: boolean; // show extra text for the exercise option
 }
 
-function MultipleChoice({ questionOptions, onSubmit, initialValue }: MultipleChoiceProps) {
+function MultipleChoice({ questionOptions, onSubmit, initialValue, exercise = false }: MultipleChoiceProps) {
   const { colours, theme } = useTheme();
   const styles = createStyles(colours, theme);
   const { colors: paperColours } = usePaperTheme();
@@ -38,8 +40,14 @@ function MultipleChoice({ questionOptions, onSubmit, initialValue }: MultipleCho
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
       <View style={[theme.sectionContainer, styles.card]}>
         <View style={styles.cardContent}>
-          <Text style={[theme.fontOnBackground, theme.small, {marginBottom: 10, marginLeft: 10}]}>
-            Scroll down for more options</Text>
+          {exercise && (
+            <Text style={[theme.fontOnSurface, theme.body, {marginBottom: 10, marginLeft: 10}]}>
+              Examples: walking, stretching, strengthening, yoga, resistance band work, or balance exercises.</Text>
+          )}
+          {questionOptions.length >= SCROLL_HINT_MIN_OPTIONS && (
+            <Text style={[theme.fontOnBackground, theme.small, {marginBottom: 10, marginLeft: 10}]}>
+              Scroll down for more options</Text>
+          )}
           <View style={styles.radioList}>
             {questionOptions.map((option, index) => (
               <RadioButton.Item

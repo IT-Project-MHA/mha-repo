@@ -31,7 +31,15 @@ function sanitizeNumberInput(text: string) {
 // scoreLabel is what's being scored, shown as 'My <scoreLabel> is <value>'. descriptions holds the
 // text shown under the slider for each value, by index
 // initialValue is the value to start at, e.g. from a saved answer
-function SliderEntry({ onSubmit, upperBound = 10, scoreLabel = "score", descriptions = [], initialValue }: { onSubmit: (v: string) => void; upperBound?: number; scoreLabel?: string; descriptions?: string[]; initialValue?: string }) {
+type SliderProps = {
+  onSubmit: (v: string) => void;
+  upperBound?: number;
+  scoreLabel?: string;
+  descriptions?: string[];
+  initialValue?: string;
+}
+
+function SliderEntry({ onSubmit, upperBound = 10, scoreLabel = "score", descriptions = [], initialValue }: SliderProps) {
 
   const { colours, theme } = useTheme();
 
@@ -75,4 +83,4 @@ function SliderEntry({ onSubmit, upperBound = 10, scoreLabel = "score", descript
   );
 }
 
-export { SliderEntry }; //add the new component here
+export { SliderEntry, SliderProps }; //add the new component here

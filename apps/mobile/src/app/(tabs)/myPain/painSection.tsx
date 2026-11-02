@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
 import Assessment from "../../../../components/baseComponents/Assessment";
-import { QuestionProps } from "../../../../components/baseComponents/Question";
+import { QuestionProps, idsOf, textsOf } from "../../../../components/baseComponents/Question";
 import { apiAssessment, apiQuestionOption } from "@/api/django-API";
 import { apiLoadMyPain, apiSaveMyPain } from "@/api/my_pain_api_helpers";
 import { assessmentPainIntensityText } from "../../../../constants/resultDisplayText";
@@ -34,12 +34,6 @@ async function loadOptions(questionKey: string): Promise<PainOption[]> {
         .sort((a: any, b: any) => a.sort_order - b.sort_order)
         .map((o: any) => ({ id: o.id, text: o.text }));
 }
-
-const idsOf = (options: PainOption[], selected: string[] = []) =>
-    options.filter((option) => selected.includes(option.text)).map((option) => option.id);
-
-const textsOf = (options: PainOption[], ids: string[] = []) =>
-    options.filter((option) => ids.includes(option.id)).map((option) => option.text);
 
 // a saved "other" text means Other was ticked, so it is shown ticked even if its option isn't saved
 const withOther = (selected: string[], other?: string | null) =>
@@ -140,7 +134,7 @@ export default function PainSection() {
             detail: "I have had pain in these areas last week.", 
             questionType: "MultiSelect", 
             questionOptions: painLocations.map((option) => option.text),
-            minSelections: 1,
+            MIN_SELECTIONS: 1,
             otherAttribute: true,
             otherAttributeSizeLimit: OTHER_DETAILS_LIMIT},
         {
@@ -150,7 +144,7 @@ export default function PainSection() {
             detail: "My pain felt like this last week.",
             questionType: "MultiSelect",
             questionOptions: painCharacteristics.map((option) => option.text),
-            minSelections: 1,
+            MIN_SELECTIONS: 1,
             otherAttribute: true,
             otherAttributeSizeLimit: OTHER_DETAILS_LIMIT},
         {
@@ -159,36 +153,36 @@ export default function PainSection() {
             answerKey: "current",
             detail: "current",
             questionType: "SliderEntry",
-            sliderLabel: "current pain",
+            scoreLabel: "current pain",
             validate: painScoreCheck("current"),
-            sliderDescriptions: PAIN_INTENSITY_DESCRIPTIONS},
+            descriptions: PAIN_INTENSITY_DESCRIPTIONS},
         {
             section: SECTION_NAME,
             title: "Pain intensity:",
             answerKey: "mildest",
             detail: "mildest",
             questionType: "SliderEntry",
-            sliderLabel: "mildest pain",
+            scoreLabel: "mildest pain",
             validate: painScoreCheck("mildest"),
-            sliderDescriptions: PAIN_INTENSITY_DESCRIPTIONS},
+            descriptions: PAIN_INTENSITY_DESCRIPTIONS},
         {
             section: SECTION_NAME,
             title: "Pain intensity:",
             answerKey: "worst",
             detail: "worst",
             questionType: "SliderEntry",
-            sliderLabel: "worst pain",
+            scoreLabel: "worst pain",
             validate: painScoreCheck("worst"),
-            sliderDescriptions: PAIN_INTENSITY_DESCRIPTIONS},
+            descriptions: PAIN_INTENSITY_DESCRIPTIONS},
         {
             section: SECTION_NAME,
             title: "Pain intensity:",
             answerKey: "average",
             detail: "average",
             questionType: "SliderEntry",
-            sliderLabel: "average pain",
+            scoreLabel: "average pain",
             validate: painScoreCheck("average"),
-            sliderDescriptions: PAIN_INTENSITY_DESCRIPTIONS},
+            descriptions: PAIN_INTENSITY_DESCRIPTIONS},
     ];
 
     // create or update My Pain record

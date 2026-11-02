@@ -25,6 +25,8 @@ type AssessmentProps = {
     fields: (answers: Record<string, any>) => [string, string][];
     // lowest score of each range: the text shown for it, e.g. {0: "Mild", 6: "Moderate"}
     score?: Record<number, string>;
+    // a sentence shown where the score would be, for sections without a score i.e. My Management
+    summary?: (answers: Record<string, any>) => string;
   };
 }
 
@@ -33,6 +35,7 @@ const keyOf = (question: QuestionProps, index: number) => question.answerKey ?? 
 
 // the score of a question's answer, from the optionScores of the options picked
 const scoreOf = (question: QuestionProps, answer: any) => {
+  if (question.scoreFromValue) return Number(answer) || 0; // slider value is added
   if (!question.optionScores || !question.questionOptions || answer == null) return 0;
   // [answer] if multiple choice, answer.selected if multiselect
   const picked: string[] = typeof answer === "string" ? [answer] : answer.selected ?? [];
@@ -105,6 +108,14 @@ export default function Assessment({title, questions, onSubmit, initialAnswers, 
           </Text>
         );
         break;
+      case "My Social Health":
+        scoreText = (
+          <Text style={[theme.body, theme.fontOnSurface]}>
+            Your answers indicate that <Text style={{fontWeight: 'bold'}}>{scoreDescription} </Text>
+            With the right treatment and support, you can stay more active and connected.
+          </Text>
+        );
+        break;
       default:
         scoreText = (
           <Text style={[theme.body, theme.fontOnSurface]}>N/A</Text>
@@ -118,7 +129,18 @@ export default function Assessment({title, questions, onSubmit, initialAnswers, 
         scoreLink = { label: "Explore tips on daily living", 
           url: "https://muscha.org/living-well-with-a-musculoskeletal-condition" };
         break;
+      case "My Social Health":
+        scoreLink = { label: "Explore tips on managing emotions", 
+          url: "https://muscha.org/relaxation" };
+        break;
     }
+  }
+  if (review.summary) {
+    scoreText = (
+      <Text style={[theme.body, theme.fontOnSurface]}>{review.summary(answersByKey(answers))}</Text>
+    );
+    scoreLink = { label: "Explore tips on managing pain", 
+      url: "https://muscha.org" };
   }
 
   const goTo = (index: number) => {

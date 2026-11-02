@@ -99,7 +99,7 @@ function NumberEntry({ onSubmit, LOWER_BOUND = 0, UPPER_BOUND = 10, MAX_lENGTH_N
   );
 }
 
-export { NumberEntry };
+export { NumberEntry, NumberProps };
 
 
 

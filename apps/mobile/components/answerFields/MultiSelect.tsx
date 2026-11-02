@@ -5,6 +5,8 @@ import { useTheme, ColourSet } from "../../context/ThemeContext";
 import { Typography } from "../../constants/textSize";
 import Button from "../atomicUI/Button";
 
+// fewest options that need the "Scroll down for more options" hint
+const SCROLL_HINT_MIN_OPTIONS = 6;
 
 // the option that opens a text box for the user's own details, when otherAttribute is on
 const OTHER_OPTION = "Other";
@@ -24,10 +26,13 @@ type MultiSelectProps ={
   otherAttributeSizeLimit?: number;
   initialSelected?: string[];
   initialOther?: string;
+  // different component logic if it is medication question (medication?, optionDetails?)
+  medication?: boolean;
+  optionDetails?: { name: string; dose?: string; subtitle: string }[];
 }
 
 function MultiSelect({ questionOptions, onSubmit, headingText, MIN_SELECTIONS, MAX_SELECTIONS, 
-  otherAttribute = false, otherAttributeSizeLimit = 100, initialSelected = [], initialOther = "" }: MultiSelectProps) {
+  otherAttribute = false, otherAttributeSizeLimit = 100, initialSelected = [], initialOther = "", medication = false, optionDetails }: MultiSelectProps) {
   const { colours, theme } = useTheme();
   const styles = createStyles(colours, theme);
 
@@ -73,16 +78,36 @@ function MultiSelect({ questionOptions, onSubmit, headingText, MIN_SELECTIONS, M
   return (
     <View style={styles.screen}>
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      {medication && (
+        <View style={styles.notice}>
+          <Text style={[theme.body, theme.fontOnBackground]}>Not taking medications? Just press continue.</Text>
+        </View>
+      )}
       <View style={[theme.sectionContainer, styles.card]}>
         <View style={styles.cardContent}>
-          <Text style={[theme.fontOnBackground, theme.small, {marginBottom: 10, marginLeft: 10}]}>
-            Scroll down for more options</Text>
+          {medication && questionOptions.length === 0 ? (
+            <Text style={[theme.fontOnSurface, theme.body, {marginTop: 5, marginLeft: 10}]}>
+              You don't have any active prescriptions in the app. 
+              Go to My Prescriptions in My Health to record your prescriptions.</Text>
+          ) : (medication || questionOptions.length >= SCROLL_HINT_MIN_OPTIONS) && (
+            <Text style={[theme.fontOnBackground, theme.small, {marginBottom: 10, marginLeft: 10}]}>
+              {medication ? "Generated based on your medication scripts" : "Scroll down for more options"}</Text>
+          )}
           {!!headingText && <Text style={[styles.heading, styles.label]}>{headingText}</Text>}
           <View style={styles.checkboxList}>
             {questionOptions.map((option, index) => (
               <View key={index}>
               <Checkbox.Item
-                label={option}
+                // "as unknown as string" overrides the label type to allow <Text>
+                label={optionDetails?.[index] ? (
+                  <Text>
+                    <Text style={theme.h6}>{optionDetails[index].name}</Text>
+                    {!!optionDetails[index].dose && <Text style={theme.h6}> {optionDetails[index].dose}</Text>}
+                    {"\n"}
+                    <Text style={theme.body}>{optionDetails[index].subtitle}</Text>
+                  </Text>
+                ) as unknown as string : option}
+                accessibilityLabel={option}
                 status={selectedAnswers.includes(option) ? 'checked' : 'unchecked'}
                 onPress={() => handleSelect(option)}
                 rippleColor="transparent"
@@ -160,6 +185,11 @@ function createStyles(colours: ColourSet, text: Typography) {
 
     card: {
       gap: 12,
+    },
+
+    notice: {
+      gap: 8,
+      paddingHorizontal: '5%',
     },
 
     cardContent: {

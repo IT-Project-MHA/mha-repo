@@ -1,47 +1,43 @@
 import React from "react";
-import { Text, View, StyleSheet} from "react-native";
-import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
+import { Text, View, StyleSheet, Pressable } from "react-native";
+import { Ionicons } from "@react-native-vector-icons/ionicons";
 import { useTheme } from "../../context/ThemeContext";
-import Button from "../atomicUI/Button";
-import { AssessmentProps } from "../baseComponents/Assessment";
+import { formatDate } from "../../constants/date";
 
 type AssessmentEntryProps = {
+    title: string;
     onButtonPress: () => void;
-    assessment: Promise<any>;
-    assessmentCall: (operation: any, values: any) => Promise<any>;
-    props?: AssessmentProps;
+    completedAt?: string | null; // ISO datetime
 }
 
-async function loadAssessmentCategory(assessmentEnter: any, assessmentCall: (operation: any, values: any) => Promise<any>) {
-  let temp = assessmentCall('select', {assessment: assessmentEnter});
-  if (temp == null) {
-    return assessmentCall('create', {assessment: assessmentEnter})
-  } else {
-    return temp;
-  }
-}
-
-export default function AssessmentEntryTab({onButtonPress, assessment, assessmentCall, props}: AssessmentEntryProps) {
-    const { theme } = useTheme();
-    const category = loadAssessmentCategory(assessment, assessmentCall);
-    let completeString;
-    if (completeString == null) {
-        // nothing
-    } else {
-        completeString = "Updated on " + "19" + " " + "October" + " " + "2026"; // split up into backend call
-    }
+export default function AssessmentEntryTab({title, onButtonPress, completedAt}: AssessmentEntryProps) {
+    const { theme, colours } = useTheme();
     return(
-        <SafeAreaView style={[theme.outlinedContainer, {flexDirection: "row", padding: 5, width: '70%', justifyContent: "space-between"}]}>
-            <View>
-                {/* build the box in here, around everything else */}
-                <Text style={[theme.h6, theme.fontOnSurface]}>{props?.title}</Text>
-                <Text style={[theme.fontOnSurfaceDull]}>{completeString}</Text>
+        <Pressable style={styles.row} onPress={onButtonPress} accessibilityRole="button">
+            <View style={styles.info}>
+                <Text style={[theme.h6, theme.fontOnSurface]}>{title}</Text>
+                {!!completedAt && (
+                    <Text style={[theme.body, theme.fontOnSurface]}>Updated on {formatDate(new Date(completedAt))}</Text>
+                )}
             </View>
-            <View>
-                <Button label="Record" onPress={onButtonPress} buttonType="roundedTertiaryButton"/>
-            </View>
-        </SafeAreaView>
+            <Ionicons name="chevron-forward-outline" size={16} color={colours.onSurface} />
+        </Pressable>
     )
 }
+
+const styles = StyleSheet.create({
+    row: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        paddingBlock: 18,
+        width: "85%",
+        alignSelf: "center",
+    },
+    info: {
+        flex: 1,
+        gap: 4,
+    },
+});
 
 export {AssessmentEntryTab}

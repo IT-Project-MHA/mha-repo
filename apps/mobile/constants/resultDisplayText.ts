@@ -138,3 +138,17 @@ export const medicationText = (value: string | null | undefined): string=> {
   if (!value) return 'You did not consume any medication this week';
   return `You consumed ${value} this week.`;
 };
+
+export const exerciseFrequencyWord = (score: number | null | undefined): string => {
+  if (score == null) return NA;
+  if (score <= 1) return 'mainly';
+  if (score <= 2) return 'often';
+  if (score <= 3) return 'rarely';
+  return 'never';
+};
+
+// --- summary sentence, from the medication list and exercise word ---
+export const managementSummary = (medication: string[], exerciseWord: string): string => {
+  const taken = medication.length > 0 ? `You consume ${medication.join(', ')}` : 'You do not consume any medication';
+  return `${taken} and ${exerciseWord} perform exercises to manage your pain.`;
+};

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
 import Assessment from "../../../../components/baseComponents/Assessment";
-import { QuestionProps } from "../../../../components/baseComponents/Question";
-import { apiAssessment, apiQuestionOptionOrdered } from "@/api/django-API";
+import { QuestionProps, QuestionOption, loadOptions, idsOf, textsOf, idOf, textOf } from "../../../../components/baseComponents/Question";
+import { apiAssessment } from "@/api/django-API";
 import { apiLoadMyMovement, apiSaveMyMovement } from "@/api/my_pain_api_helpers";
 import { movementScore } from "../../../../constants/resultDisplayText";
 import { weekRangeLabel } from "../../../../constants/date";
@@ -25,36 +25,11 @@ const CHOICE_QUESTIONS = [
 // lowest score of each range for movement score
 const MOVEMENT_SCORE_STARTS = [0, 6, 11, 16];
 
-type MovementOption = { id: string; text: string; score: number };
-
-async function loadOptions(questionKey: string): Promise<MovementOption[]> {
-    const options = await apiQuestionOptionOrdered('select', {
-        app_section: 'my_movement',
-        question_key: questionKey,
-    });
-    return options
-        .filter((o: any) => o.is_active)
-        .sort((a: any, b: any) => a.option_number - b.option_number)
-        .map((o: any) => ({ id: o.id, text: o.text, score: o.score }));
-}
-
-const idsOf = (options: MovementOption[], selected: string[] = []) =>
-    options.filter((option) => selected.includes(option.text)).map((option) => option.id);
-
-const textsOf = (options: MovementOption[], ids: string[] = []) =>
-    options.filter((option) => ids.includes(option.id)).map((option) => option.text);
-
-const idOf = (options: MovementOption[], text?: string) =>
-    options.find((option) => option.text === text)?.id ?? null;
-
-const textOf = (options: MovementOption[], id?: string | null) =>
-    options.find((option) => option.id === id)?.text;
-
 export default function MovementSection() {
     const { assessmentId } = useLocalSearchParams<{ assessmentId?: string }>();
 
     // each question's options as {id, text}, by question key
-    const [options, setOptions] = useState<Record<string, MovementOption[]> | null>(null);
+    const [options, setOptions] = useState<Record<string, QuestionOption[]> | null>(null);
     const [saved, setSaved] = useState<any | null | undefined>(undefined); // saved answers
     const [weekStarting, setWeekStarting] = useState<string | null | undefined>(undefined);
 
@@ -70,7 +45,7 @@ export default function MovementSection() {
             setWeekStarting(null);
         }
         const keys = ["general_impacts", ...CHOICE_QUESTIONS.map((q) => q.key)];
-        Promise.all(keys.map((key) => loadOptions(`movement_${key}`)))
+        Promise.all(keys.map((key) => loadOptions('my_movement', `movement_${key}`)))
             // stores option text as Object { general_impacts: [...], walking: [...], etc. }
             .then((loaded) => setOptions(Object.fromEntries(keys.map((key, i) => [key, loaded[i]]))))
             .catch((e) => {
@@ -112,7 +87,7 @@ export default function MovementSection() {
             detail: "On average, how many hours per day were you able to stay \
 active or mobile this week?",
             questionType: "NumberEntry",
-            numberMax: MAX_ACTIVE_HOURS,
+            UPPER_BOUND: MAX_ACTIVE_HOURS,
             description: "Staying active could mean doing your typical activities like working, \
 driving, doing house chores, meeting with people, et cetera"},
         {
@@ -123,7 +98,7 @@ driving, doing house chores, meeting with people, et cetera"},
             questionType: "MultiSelect",
             questionOptions: options.general_impacts.map((option) => option.text),
             optionScores: options.general_impacts.map((option) => option.score),
-            minSelections: 1},
+            MIN_SELECTIONS: 1},
         ...CHOICE_QUESTIONS.map((q): QuestionProps => ({
             section: SECTION_NAME,
             answerKey: q.key,
@@ -138,8 +113,8 @@ driving, doing house chores, meeting with people, et cetera"},
             title: "Reflection on your movement",
             detail: "Write any reflections of pain impacts on your mobility.",
             questionType: "TextEntry",
-            textMax: MAX_REFLECTION_LENGTH,
-            textLines: 5,
+            maxLength: MAX_REFLECTION_LENGTH,
+            numberOfLines: 5,
             optional: true,
             placeholder: "For instance, when the pain occured, you lie down for the whole day"},
     ];

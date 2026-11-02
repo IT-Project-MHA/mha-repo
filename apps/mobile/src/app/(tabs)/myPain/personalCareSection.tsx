@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
 import Assessment from "../../../../components/baseComponents/Assessment";
-import { QuestionProps } from "../../../../components/baseComponents/Question";
-import { apiAssessment, apiQuestionOptionOrdered } from "@/api/django-API";
+import { QuestionProps, QuestionOption, loadOptions, idsOf, textsOf, idOf, textOf } from "../../../../components/baseComponents/Question";
+import { apiAssessment } from "@/api/django-API";
 import { apiLoadMyPersonalCare, apiSaveMyPersonalCare } from "@/api/my_pain_api_helpers";
 import { personalCareScore } from "../../../../constants/resultDisplayText";
 import { weekRangeLabel } from "../../../../constants/date";
@@ -21,36 +21,11 @@ const CHOICE_QUESTIONS = [
 // lowest score of each range for personal care score
 const PERSONAL_CARE_SCORE_STARTS = [0, 4, 6, 11];
 
-type CareOption = { id: string; text: string; score: number };
-
-async function loadOptions(questionKey: string): Promise<CareOption[]> {
-    const options = await apiQuestionOptionOrdered('select', {
-        app_section: 'my_personal_care',
-        question_key: questionKey,
-    });
-    return options
-        .filter((o: any) => o.is_active)
-        .sort((a: any, b: any) => a.option_number - b.option_number)
-        .map((o: any) => ({ id: o.id, text: o.text, score: o.score }));
-}
-
-const idsOf = (options: CareOption[], selected: string[] = []) =>
-    options.filter((option) => selected.includes(option.text)).map((option) => option.id);
-
-const textsOf = (options: CareOption[], ids: string[] = []) =>
-    options.filter((option) => ids.includes(option.id)).map((option) => option.text);
-
-const idOf = (options: CareOption[], text?: string) =>
-    options.find((option) => option.text === text)?.id ?? null;
-
-const textOf = (options: CareOption[], id?: string | null) =>
-    options.find((option) => option.id === id)?.text;
-
 export default function PersonalCareSection() {
     const { assessmentId } = useLocalSearchParams<{ assessmentId?: string }>();
 
     // each question's options as {id, text, score}, by question key
-    const [options, setOptions] = useState<Record<string, CareOption[]> | null>(null);
+    const [options, setOptions] = useState<Record<string, QuestionOption[]> | null>(null);
     const [saved, setSaved] = useState<any | null | undefined>(undefined); // saved answers
     const [weekStarting, setWeekStarting] = useState<string | null | undefined>(undefined);
 
@@ -66,7 +41,7 @@ export default function PersonalCareSection() {
             setWeekStarting(null);
         }
         const keys = ["general_impacts", ...CHOICE_QUESTIONS.map((q) => q.key)];
-        Promise.all(keys.map((key) => loadOptions(`care_${key}`)))
+        Promise.all(keys.map((key) => loadOptions('my_personal_care', `care_${key}`)))
             .then((loaded) => setOptions(Object.fromEntries(keys.map((key, i) => [key, loaded[i]]))))
             .catch((e) => {
                 console.warn("Could not load personal care options", e);
@@ -104,7 +79,7 @@ export default function PersonalCareSection() {
             questionType: "MultiSelect",
             questionOptions: options.general_impacts.map((option) => option.text),
             optionScores: options.general_impacts.map((option) => option.score),
-            minSelections: 1},
+            MIN_SELECTIONS: 1},
         ...CHOICE_QUESTIONS.map((q): QuestionProps => ({
             section: SECTION_NAME,
             answerKey: q.key,
@@ -119,8 +94,8 @@ export default function PersonalCareSection() {
             title: "Reflection on your personal care",
             detail: "Write any reflections of pain impacts on your daily life.",
             questionType: "TextEntry",
-            textMax: MAX_REFLECTION_LENGTH,
-            textLines: 5,
+            maxLength: MAX_REFLECTION_LENGTH,
+            numberOfLines: 5,
             optional: true,
             placeholder: "For instance, this week, I felt that I could not do everything at all, \
 I felt hopeless, even doing the laundry felt miserable"},
