@@ -8,29 +8,58 @@ import ENTRY_COMPONENTS, { ENTRY_TYPE } from "../answerFields/EntryRegistry";
 import { InvalidQuestionTypeError } from "@/customErrors/QuestionErrors";
 import { useTheme, ColourSet } from '../../context/ThemeContext';
 import { MultiSelectAnswer, MultiSelectProps } from "../answerFields/MultiSelect";
+import { MultipleChoiceProps } from "../answerFields/MultipleChoice";
+import { NumberProps } from "../answerFields/NumberEntry";
+import { TextProps } from "../answerFields/TextEntry";
+import { SliderProps } from "../answerFields/SliderEntry";
 import { useTheme as usePaperTheme } from "react-native-paper";
+import { apiQuestionOptionOrdered } from "@/api/django-API";
 
-// otherAttribute & otherAttributeSizeLimit are multiselect only, so they're defined there
-type QuestionProps = Pick<MultiSelectProps, "otherAttribute" | "otherAttributeSizeLimit"> & {
+type QuestionOption = { id: string; text: string; score: number };
+
+// the active options of a question, in order
+async function loadOptions(appSection: string, questionKey: string): Promise<QuestionOption[]> {
+  const options = await apiQuestionOptionOrdered('select', {
+    app_section: appSection,
+    question_key: questionKey,
+  });
+  return options
+    .filter((o: any) => o.is_active)
+    .sort((a: any, b: any) => a.option_number - b.option_number)
+    .map((o: any) => ({ id: o.id, text: o.text, score: o.score }));
+}
+
+// options picked by their text -> their ids, and back
+const idsOf = <T extends { id: string; text: string }>(options: T[], selected: string[] = []) =>
+  options.filter((option) => selected.includes(option.text)).map((option) => option.id);
+
+const textsOf = <T extends { id: string; text: string }>(options: T[], ids: string[] = []) =>
+  options.filter((option) => ids.includes(option.id)).map((option) => option.text);
+
+// the one option picked by its text -> its id, and back
+const idOf = <T extends { id: string; text: string }>(options: T[], text?: string) =>
+  options.find((option) => option.text === text)?.id ?? null;
+
+const textOf = <T extends { id: string; text: string }>(options: T[], id?: string | null) =>
+  options.find((option) => option.id === id)?.text;
+
+type QuestionProps = 
+  // answerField-specific props
+  Pick<MultiSelectProps, "otherAttribute" | "otherAttributeSizeLimit" | "medication" | "optionDetails"> & 
+  Pick<MultipleChoiceProps, "exercise"> &
+  Pick<NumberProps, "description"> &
+  Pick<TextProps, "placeholder" | "optional" | "maxLength" | "numberOfLines"> &
+  Pick<SliderProps, "upperBound" | "scoreLabel" | "descriptions"> &
+  Pick<NumberProps, "UPPER_BOUND"> &
+  Partial<Pick<MultiSelectProps, "MIN_SELECTIONS">> & {
+  scoreFromValue?: boolean;
   answerKey?: string; // attribute as named in backend
   section: string;
   title: String;
   detail: String;
   questionType: ENTRY_TYPE;
-  sliderMax?: number;
-  numberMax?: number;
-  textMax?: number;
-  textLines?: number;
-  optional?: boolean;
-  placeholder?: string;
-  // what a slider question scores e.g. 'pain level', shown as 'My pain level is 3'
-  sliderLabel?: string;
-  // text shown under a slider for each value, by index
-  sliderDescriptions?: string[];
   questionOptions?: string[];
   optionScores?: number[]; // score of each questionOptions entry by index
-  description?: string;
-  minSelections?: number; // multiselect only, given to MultiSelect as MIN_SELECTIONS
   /// extra validation for specific questions
   validate?: (answers: Record<string, any>) => string | null;
 }
@@ -43,7 +72,7 @@ type QuestionScreenProps = QuestionProps & {
   error?: string | null;
 }
 
-export default function Question({section, title, detail, questionType, sliderMax, numberMax, textMax, textLines, optional, placeholder, sliderLabel, sliderDescriptions, questionOptions, description, minSelections, otherAttribute, otherAttributeSizeLimit, onSubmit, progress, initialAnswer, error}:  QuestionScreenProps) {
+export default function Question({section, title, detail, questionType, upperBound, UPPER_BOUND, maxLength, numberOfLines, optional, placeholder, scoreLabel, descriptions, questionOptions, description, MIN_SELECTIONS, otherAttribute, otherAttributeSizeLimit, medication, optionDetails, exercise, onSubmit, progress, initialAnswer, error}:  QuestionScreenProps) {
   const { theme, colours } = useTheme();
   const { colors: paperColours } = usePaperTheme();
 
@@ -80,21 +109,24 @@ export default function Question({section, title, detail, questionType, sliderMa
       </View>
         <EntryComponent
           onSubmit={submit}
-          upperBound={sliderMax}
-          UPPER_BOUND={numberMax}
-          maxLength={textMax}
-          numberOfLines={textLines}
+          upperBound={upperBound}
+          UPPER_BOUND={UPPER_BOUND}
+          maxLength={maxLength}
+          numberOfLines={numberOfLines}
           optional={optional}
           placeholder={placeholder}
           description={description}
-          scoreLabel={sliderLabel}
-          descriptions={sliderDescriptions}
+          scoreLabel={scoreLabel}
+          descriptions={descriptions}
           questionOptions={questionOptions ?? []}
           headingText=""
-          MIN_SELECTIONS={minSelections ?? 0}
+          MIN_SELECTIONS={MIN_SELECTIONS ?? 0}
           MAX_SELECTIONS={questionOptions?.length ?? 0}
           otherAttribute={otherAttribute}
           otherAttributeSizeLimit={otherAttributeSizeLimit}
+          medication={medication}
+          optionDetails={optionDetails}
+          exercise={exercise}
           initialValue={initialAnswer}
           initialSelected={initialAnswer?.selected}
           initialOther={initialAnswer?.other}
@@ -120,4 +152,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export { Question, QuestionProps};
+export { Question, QuestionProps, QuestionOption, loadOptions, idsOf, textsOf, idOf, textOf };
