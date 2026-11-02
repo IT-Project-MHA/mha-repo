@@ -3,7 +3,7 @@
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext'
-import {useState, useEffect} from 'react';
+import React, {useState, useEffect} from 'react';
 import {apiAssessment} from '@/api/django-API';
 import {ownPatientProfileId} from '@/api/care_planner_api_helpers';
 import {apiAnsweredSections} from '@/api/my_health_api_helpers';
@@ -19,8 +19,6 @@ const SECTIONS = [
   {key: 'social_health', label: 'My Social Health'},
   {key: 'management', label: 'My Management'},
 ] as const;
-
-
 
 export default function Screen() {
 
@@ -43,7 +41,6 @@ export default function Screen() {
         </View>
       </View>
       
-      
        {index === 0 ? <ChartPage/> : <RecordPage /> }
       <View style={theme.bottomGap}/>
 
@@ -57,9 +54,8 @@ function ChartPage(){
 
   return (
     <View>
-      <View style={[theme.layoutContainer]}>
+      <View style={[theme.sectionContainer]}>
         <AssessmentChart/>
-        <View style={theme.bottomGap}/>
       </View>
     </View>
   );

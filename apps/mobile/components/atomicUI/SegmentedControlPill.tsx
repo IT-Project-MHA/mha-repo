@@ -111,8 +111,8 @@ export default function SegmentedPill({ values, selectedIndex, onChange, style, 
                             numberOfLines={1}
                             style={[
                                 theme.small,
-                                {color: colours.onEx3, textAlign: 'center'},
-                                { fontWeight: active ? "600" : "400" },
+                                {color: active ? colours.onEx3 : colours.onTertiary, textAlign: 'center'},
+                                { fontWeight: active ? "600" : "500" },
                             ]}
                         >
                             {label}

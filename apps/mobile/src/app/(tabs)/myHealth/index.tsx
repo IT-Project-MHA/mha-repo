@@ -51,7 +51,7 @@ export default function Screen() {
         </Text>
         <View style={theme.line} />
 
-        <View style={{ padding: 15 }}>
+        <View style={[theme.centerItems]}>
           <AveragePainChart />
         </View>
 

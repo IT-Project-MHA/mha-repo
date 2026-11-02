@@ -91,7 +91,7 @@ export default function PainSummaryTable({weeks, stats, collapsedRows = 5, radiu
     const visible = showAll ? rows : rows.slice(0, collapsedRows);
 
     return (
-        <View style={{ width: "90%", marginTop: 12 }}>
+        <View style={{ width: "95%", marginTop: 12 }}>
             {/* 
             * outer border with rounded corners. overflow hidden clips the inner lines to the curve 
             */}

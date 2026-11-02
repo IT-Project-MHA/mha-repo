@@ -4,8 +4,9 @@
 import { LineChart } from "react-native-gifted-charts";
 import { View, ActivityIndicator, Text, StyleSheet, useWindowDimensions } from "react-native";
 import { useTheme, ColourSet } from "../../context/ThemeContext";
+import { Typography } from "../../constants/textSize";
 import { apiPainDetailHistory } from "../../src/api/my_health_api_helpers.js";
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { formatShortDate } from "../../constants/date";
 
 // one week of data from the api helper
@@ -91,7 +92,7 @@ const buildInsight = (history: HistoryPoint[]): string => {
  */
 const AssessmentChart = ({ patientProfileId }: { patientProfileId?: number | string | null }) => {
     const { theme, colours } = useTheme();
-    const styles = useMemo(() => createStyles(colours), [colours]);
+    const styles = createStyles(colours, theme);
     const { width } = useWindowDimensions();
     const [history, setHistory] = useState<HistoryPoint[] | null>(null); // null while loading
 
@@ -137,8 +138,12 @@ const AssessmentChart = ({ patientProfileId }: { patientProfileId?: number | str
     if (history === null) return <ActivityIndicator style={styles.loader} />;
 
     return (
-        <View style={styles.container}>
-            <Text style={[theme.small, styles.insight]}>{insight}</Text>
+        <View style={[theme.layoutContainer, theme.centerItems]}>
+            <View style={{padding: 15}}>
+                <Text style={[theme.small, styles.insight]}>{insight}</Text>
+            </View>
+
+            <View style={{overflow: "hidden", width: '95%', right:6}}>
             <LineChart
                 data={data}
                 maxValue={MAX_PAIN}
@@ -159,7 +164,10 @@ const AssessmentChart = ({ patientProfileId }: { patientProfileId?: number | str
                 yAxisColor={colours.tertiary}
                 dataPointsColor={colours.primary}
                 yAxisTextStyle={styles.axisText}
+                adjustToWidth={true}
             />
+            </View>
+
             <Text style={[theme.xSmall, theme.centerText, {margin : 30, color: colours.onBackground}]}>See more and print as PDF in My Pain Profile</Text>
         </View>
     );
@@ -168,7 +176,7 @@ const AssessmentChart = ({ patientProfileId }: { patientProfileId?: number | str
 export default AssessmentChart;
 
 
-function createStyles(colours: ColourSet) {
+function createStyles(colours: ColourSet, theme: Typography) {
     return StyleSheet.create({
         loader: {
             height: 160,
@@ -188,7 +196,7 @@ function createStyles(colours: ColourSet) {
             width: LABEL_WIDTH,
         },
         labelText: {
-            fontSize: 10,
+            fontSize: theme.xSmall.fontSize,
             textAlign: "center",
             color: colours.onBackground,
         },

@@ -305,7 +305,7 @@ const AssessmentChart = ({
   const axisTextStyle = { color: colours.onBackground, fontSize: 10 };
 
   return (
-    <View style={[styles.container, { marginVertical: 30 }]}>
+    <View style={[theme.layoutContainer]}>
       <Text
         style={[
           theme.h5,
@@ -456,14 +456,6 @@ export default AssessmentChart;
 
 function createStyles(colours: ColourSet) {
   return StyleSheet.create({
-    container: {
-      width: "90%",
-      alignSelf: "center",
-      backgroundColor: colours.surface,
-      paddingHorizontal: 10,
-      paddingVertical: 20,
-      borderRadius: 28
-    },
     chipRowStyle: {
       gap: 8,
       paddingHorizontal: 12,
