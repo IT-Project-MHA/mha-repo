@@ -18,10 +18,8 @@ import Button from "../atomicUI/Button";
 import { useTheme as usePaperTheme } from "react-native-paper";
 
 
-import { lineThickness } from '../../constants/layout';
 import { useTheme, ColourSet } from '../../context/ThemeContext';
 import { Typography } from '../../constants/textSize';
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 //numberInput variables
 
 type NumberProps ={
@@ -38,8 +36,7 @@ type NumberProps ={
 function NumberEntry({ onSubmit, LOWER_BOUND = 0, UPPER_BOUND = 10, MAX_lENGTH_NUM = String(UPPER_BOUND).length, initialValue, description }: NumberProps) {
   const { colours, theme } = useTheme();
   const { colors: paperColours } = usePaperTheme();
-  const insets = useSafeAreaInsets();
-  const styles = createStyles(colours, theme, insets.bottom);
+  const styles = createStyles(colours, theme);
 
   const [value, setValue] = useState<string>(initialValue ?? "");
   const [error, setError] = useState<string>("");
@@ -103,56 +100,14 @@ export { NumberEntry, NumberProps };
 
 
 
-function createStyles(colours: ColourSet, text: Typography, bottomInset: number) {
+function createStyles(colours: ColourSet, text: Typography) {
   return StyleSheet.create({
-    screen: {
-      flex: 1,
-      backgroundColor: colours.background,
-    },
-
-    content: {
-      paddingBottom: 200 + bottomInset,
-      gap: 38,
-    },
-
-    title: {
-      marginBottom: -19,
-    },
-
-    card: {
-      gap: 12,
-    },
-
-    cardContent: {
-      paddingHorizontal: '5%',
-      paddingBottom: 5,
-    },
-
-    bottomBar: {
-      position: 'absolute',
-      left: '7.5%',
-      width: '85%',
-      bottom: 120 + bottomInset,
-      gap: 8,
-    },
-
-    heading: {
-      ...text.h6,
-      color: colours.onSurface,
-      paddingHorizontal: '5%',
-    },
-
     subheading: {
       ...text.small,
       color: colours.onBackground,
       paddingHorizontal: '5%',
       marginTop: 4,
       marginHorizontal: 20,
-    },
-
-    label: {
-      marginTop: 29,
-      marginBottom: 19,
     },
 
     errorText: {
@@ -168,10 +123,6 @@ function createStyles(colours: ColourSet, text: Typography, bottomInset: number)
       fontStyle: 'italic',
     },
 
-    firstLabel: {
-      marginTop: 5,
-    },
-
     field: {
       height: 40,
       paddingVertical: 5,
@@ -182,53 +133,6 @@ function createStyles(colours: ColourSet, text: Typography, bottomInset: number)
       borderWidth: 1,
       borderColor: colours.onSurface,
       justifyContent: 'center',
-    },
-
-    input: {
-      ...text.body,
-      color: colours.onSurface,
-    },
-
-    error: {
-      ...text.small,
-      borderWidth: 1,
-      borderRadius: 8,
-      paddingVertical: 6,
-      paddingHorizontal: 12,
-      backgroundColor: colours.background,
-      overflow: 'hidden',
-    },
-
-    dropdown: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-
-    optionList: {
-      marginTop: 8,
-      marginHorizontal: 8,
-      borderWidth: 1,
-      borderColor: colours.onSurface,
-      overflow: 'hidden',
-    },
-
-    optionRow: {
-      paddingVertical: 10,
-      paddingHorizontal: 12,
-    },
-
-    divider: {
-      borderTopWidth: lineThickness,
-      borderTopColor: colours.secondary2,
-    },
-
-    selectedRow: {
-      backgroundColor: colours.secondary,
-    },
-
-    selectedText: {
-      color: colours.onSecondary,
     },
   });
 }
