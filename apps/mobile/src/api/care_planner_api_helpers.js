@@ -278,7 +278,7 @@ export async function apiMySupportLinks() {
 
 // helper function: returns an Australian mobile number in the format the server saves it in, e.g.
 // '0412 345 678' -> '+61412345678', or the number as typed if it isn't one
-function toServerPhone(phone) {
+export function toServerPhone(phone) {
     return normalisePhoneNumber(phone) ?? phone;
 }
 

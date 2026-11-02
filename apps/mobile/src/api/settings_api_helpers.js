@@ -10,7 +10,7 @@ import {
     apiAppointment, apiAssessment, apiMyPain, apiMyMovement, apiMyPersonalCare,
     apiMySocialHealth, apiMyManagement, apiPrescription,
 } from './django-API';
-import { apiErrorMessage, normalisePhoneNumber } from './care_planner_api_helpers';
+import { apiErrorMessage, normalisePhoneNumber, toServerPhone } from './care_planner_api_helpers';
 export { apiErrorMessage };
 
 /*--------------------My Account------------------------------------------------------*/
@@ -236,9 +236,9 @@ export async function apiAcceptInvitation(linkId) {
 
 /* Invites a support person:
 - takes the phone number as typed and returns the new SupportLink, with status invited
-- the phone number is saved in the normalised format*/
+- the phone number is saved in the format the server accepts format*/
 export async function apiInviteSupportPerson(phone) {
-    return apiSupportLink('create', { invited_phone_number: normalisePhoneNumber(phone) });
+    return apiSupportLink('create', { invited_phone_number: toServerPhone(phone)});
 }
 
 /* Declines an invitation, as the support person */

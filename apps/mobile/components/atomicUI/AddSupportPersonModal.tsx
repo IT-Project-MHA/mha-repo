@@ -8,7 +8,8 @@ import React, { useEffect } from "react";
 import {Modal, View, Text, Pressable, StyleSheet, TextInput, ActivityIndicator} from 'react-native'
 import { useState } from "react";
 import { useTheme, ColourSet } from "../../context/ThemeContext";
-import { validateSupportPhone, apiErrorMessage } from "@/api/settings_api_helpers"
+import { validateSupportPhone, apiErrorMessage } from "@/api/settings_api_helpers";
+import {toServerPhone} from "@/api/care_planner_api_helpers";
 
 type Props = {
     visible: boolean;
@@ -46,7 +47,7 @@ const AddSupportPersonModal = ({visible, onConfirm, onCancel} : Props) => {
       setSaving(true);
       setError(null);
       try {
-        await onConfirm(phone);
+        await onConfirm(toServerPhone(phone));
       } catch (error) {
         setError(apiErrorMessage(error, "Couldn't send the invite. Please try again."));
       } finally {
