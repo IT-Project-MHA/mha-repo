@@ -81,7 +81,9 @@ function RootNavigator() {
   if (isLoading) return null;
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack screenOptions={{ 
+      headerShown: false, 
+      }}>
       <Stack.Protected guard={isUndefined}>
         <Stack.Screen name="(onboarding)" />
       </Stack.Protected>
@@ -107,17 +109,15 @@ export default function RootLayout() {
     return unsub;
   }, []);
 
-  useEffect(()=> {
-    if (hydrated) SplashScreen.hideAsync();
-  }, [hydrated]);
-
   if(!hydrated) return null;
 
   return(
     <ThemeProvider>
+      <PaperThemeProvider>
         <UserProvider>
           <RootNavigator />
         </UserProvider>
+      </PaperThemeProvider>
     </ThemeProvider>
   )
 }
