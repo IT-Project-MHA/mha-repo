@@ -5,8 +5,8 @@
  * - a patient edits their saved answers, e.g. to fix a typo
  * - a support person who has said they experience musculoskeletal symptoms fills it in for the
  *   first time (creating = true), which makes them a patient
- *
- * On confirm, input is checked for validity and saved to backend.
+ * - Primary condition is the user's selected pain types, other conditions is free text, which is broken into a list.
+ * - On confirm, input is checked for validity and saved to backend.
  */
 import React, { useEffect, useState } from "react";
 import {
@@ -15,27 +15,28 @@ import {
   Text,
   Pressable,
   StyleSheet,
-  TextInput,
   ActivityIndicator,
   ScrollView,
   KeyboardAvoidingView,
   Platform
 } from "react-native";
-import { Checkbox } from "react-native-paper";
+import { Checkbox, TextInput, List, IconButton } from "react-native-paper";
 
 import { useTheme, ColourSet } from "../../context/ThemeContext";
 import { apiErrorMessage } from "@/api/settings_api_helpers";
 
 export type userDetails = {
-  hasDiagnosis: boolean | null;
-  diagnoses: string[]; // entered by a support person when they become a patient, hasDiagnosis is locked after save
-  conditions: string[]; // other conditions / symptoms
+  painTypes: string[]; // QuestionOption ids (pain_type)
+  otherConditions: string;
 };
+
+export type PainTypeOption = { id: string; text: string };
 
 type Props = {
   visible: boolean;
   creating?: boolean; // true when a support person is becoming a patient
   initialValues: userDetails;
+  painTypeOptions: PainTypeOption[];
   onConfirm: (values: userDetails) => Promise<void>; // saves to the backend, throws if it fails
   onCancel: () => void;
 };
@@ -51,78 +52,76 @@ const MyConditionsModal = ({
   visible,
   creating,
   initialValues,
+  painTypeOptions,
   onConfirm,
   onCancel
 }: Props) => {
   const { theme, colours } = useTheme();
   const styles = createStyles(colours);
 
-  const [draft, setDraft] = useState<userDetails>(initialValues);
-  const [newCondition, setNewCondition] = useState("");
+  const [painTypes, setPainTypes] = useState<string[]>(initialValues.painTypes);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [newDiagnosis, setNewDiagnosis] = useState("");
-  const [editingDiagnosis, setEditingDiagnosis] = useState(false);
+
+  /**
+   * Splitting other_conditions into a list separated by \n
+   */
+  const splitConditions = (s: string) =>
+    s
+      .split("\n")
+      .map((c) => c.trim())
+      .filter(Boolean);
+  const hasCondition = (list: string[], text: string) =>
+    list.some((c) => c.toLowerCase() === text.toLowerCase());
+
+  const [conditions, setConditions] = useState<string[]>(
+    splitConditions(initialValues.otherConditions)
+  );
+  const [newCondition, setNewCondition] = useState("");
 
   /**
    * resets modal to saved values (initialValues) when it opens
    */
   useEffect(() => {
     if (visible) {
-      setDraft(initialValues);
+      setPainTypes(initialValues.painTypes);
+      setConditions(splitConditions(initialValues.otherConditions));
       setNewCondition("");
-      setNewDiagnosis("");
-      setEditingDiagnosis(false);
       setError(null);
     }
   }, [visible]);
 
-  const hasCondition = (conditions: string[], text: string) =>
-    conditions.some((c) => c.toLowerCase() === text.toLowerCase());
+  // ticks or unticks a pain type
+  const togglePainType = (id: string) =>
+    setPainTypes((prev) =>
+      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
+    );
 
-  // for adding items to conditions
-  const addItem = (
-    key: "diagnoses" | "conditions",
-    text: string,
-    clear: () => void
-  ) => {
-    const value = text.trim();
+  // appends the typed condition to the list
+  const addCondition = () => {
+    const value = newCondition.trim();
     if (!value) return;
-    if (!hasCondition(draft[key] ?? [], value)) {
-      setDraft((prev) => ({ ...prev, [key]: [...(prev[key] ?? []), value] }));
+    if (!hasCondition(conditions, value)) {
+      setConditions((prev) => [...prev, value]);
     }
-    clear();
+    setNewCondition("");
   };
 
-  // for removing items from conditions
-  const removeItem = (key: "diagnoses" | "conditions", index: number) =>
-    setDraft((prev) => ({
-      ...prev,
-      [key]: (prev[key] ?? []).filter((_, i) => i !== index)
-    }));
-
-  const withPending = (list: string[], pending: string) => {
-    const text = pending.trim();
-    return text && !hasCondition(list, text) ? [...list, text] : list;
-  };
+  const removeCondition = (index: number) =>
+    setConditions((prev) => prev.filter((_, i) => i !== index));
 
   // saves input data when 'Save Changes' is pressed
   const handleSave = async () => {
-    // never called because clicking nothign and
-    // pressing saves gives the user a patient profile
+    // include anything typed but not yet added
+    const pending = newCondition.trim();
+    const finalConditions =
+      pending && !hasCondition(conditions, pending)
+        ? [...conditions, pending]
+        : conditions;
 
-    if (!creating && draft.hasDiagnosis === null) {
-      setError("Please specify whether you have a diagnosis.");
-      return;
-    }
-
-    const diagnoses = draft.hasDiagnosis
-      ? withPending(draft.diagnoses ?? [], newDiagnosis)
-      : [];
-    let conditions = withPending(draft.conditions ?? [], newCondition);
-
-    if (draft.hasDiagnosis && diagnoses.length === 0) {
-      setError("Please add your diagnosis.");
+    // a support person becoming a patient needs to give something
+    if (creating && painTypes.length === 0 && finalConditions.length === 0) {
+      setError("Please select a condition or describe your symptoms.");
       return;
     }
 
@@ -130,9 +129,8 @@ const MyConditionsModal = ({
     setError(null);
     try {
       await onConfirm({
-        hasDiagnosis: creating ? !!draft.hasDiagnosis : draft.hasDiagnosis,
-        diagnoses,
-        conditions
+        painTypes,
+        otherConditions: finalConditions.join("\n")
       });
     } catch (e) {
       setError(
@@ -143,144 +141,9 @@ const MyConditionsModal = ({
     }
   };
 
-  const renderDiagnosisCheckbox = () => {
-    const locked = !creating && initialValues.hasDiagnosis === true;
-
-    return (
-      <View style={styles.checkboxField}>
-        <Checkbox.Item
-          label="I have a diagnosis"
-          status={draft.hasDiagnosis ? "checked" : "unchecked"}
-          disabled={locked}
-          onPress={() => {
-            if (locked) return;
-            setDraft((prev) => ({ ...prev, hasDiagnosis: !prev.hasDiagnosis }));
-          }}
-          labelStyle={[theme.body, { color: colours.onSurface }]}
-          style={styles.checkboxItem}
-        />
-      </View>
-    );
-  };
-
-  const renderDiagnosisQuestion = () => (
-    <View style={styles.field}>
-      <Text
-        style={[
-          theme.h6,
-          theme.leftItems,
-          { color: colours.onSurface, marginBottom: 20 }
-        ]}
-      >
-        Do you have a diagnosis?
-      </Text>
-      {renderDiagnosisCheckbox()}
-    </View>
-  );
-
-  const renderList = (
-    title: string,
-    placeholder: string,
-    key: "diagnoses" | "conditions",
-    text: string,
-    setText: (t: string) => void
-  ) => (
-    <View style={styles.field}>
-      <Text
-        style={[
-          theme.h6,
-          theme.leftItems,
-          { color: colours.onSurface, marginVertical: 10 }
-        ]}
-      >
-        {title}
-      </Text>
-      <Text> </Text>
-
-      {(draft[key] ?? []).map((item, index) => (
-        <View key={`${item}-${index}`} style={styles.conditionRow}>
-          <Text style={[theme.body, { color: colours.onSurface }, { flex: 1 }]}>
-            {item}
-          </Text>
-          <Pressable
-            onPress={() => removeItem(key, index)}
-            accessibilityRole="button"
-            accessibilityLabel={`Remove ${item}`}
-            hitSlop={8}
-          >
-            <Text style={[theme.body, { color: colours.onSurface }]}>
-              Remove
-            </Text>
-          </Pressable>
-        </View>
-      ))}
-
-      <View style={styles.addRow}>
-        <TextInput
-          value={text}
-          onChangeText={setText}
-          onSubmitEditing={() => addItem(key, text, () => setText(""))}
-          returnKeyType="done"
-          autoCapitalize="sentences"
-          placeholder={placeholder}
-          placeholderTextColor={colours.onSurface}
-          style={[
-            styles.textInput,
-            {
-              flex: 1,
-              color: colours.onSurface,
-              borderColor: colours.onSurface
-            }
-          ]}
-        />
-        <Pressable
-          style={[
-            styles.button,
-            { borderColor: colours.onSurface, borderWidth: 1 }
-          ]}
-          onPress={() => addItem(key, text, () => setText(""))}
-          accessibilityRole="button"
-        >
-          <Text style={[theme.body, {color: colours.onSurface}]}>Add</Text>
-        </Pressable>
-      </View>
-    </View>
-  );
-
-  // shown once a diagnosis has been saved
-  const renderDiagnosisSummary = () =>
-    editingDiagnosis || (draft.diagnoses ?? []).length === 0 ? (
-      renderList(
-        "Diagnosis",
-        "e.g. rheumatoid arthritis",
-        "diagnoses",
-        newDiagnosis,
-        setNewDiagnosis
-      )
-    ) : (
-      <View style={styles.field}>
-        <Text style={[theme.h6, theme.leftItems, {color: colours.onSurface}]}>
-          Diagnosis:{" "}
-          <Text style={[theme.body, {color: colours.onSurface}]}>
-            {(draft.diagnoses ?? []).join(", ")}
-          </Text>
-        </Text>
-        <Pressable
-          onPress={() => setEditingDiagnosis(true)}
-          accessibilityRole="button"
-          accessibilityLabel="Edit diagnosis"
-          hitSlop={8}
-          style={styles.editLink}
-        >
-          <Text style={[theme.body, {color: colours.onSurface}]}>Edit</Text>
-        </Pressable>
-      </View>
-    );
-
   /**
    * returns the modal which renders text input fields to condition and other conditions/s where the
    * user can change/add conditions.
-   *
    */
   return (
     <Modal
@@ -300,93 +163,146 @@ const MyConditionsModal = ({
             style={[styles.card, { backgroundColor: colours.surface }]}
             onPress={() => {}}
           >
-            <Text style={[theme.h4, theme.leftItems, {color: colours.onSurface}]}>
-              Edit My Details
-            </Text>
-            <Text> </Text>
-
-            <Text> </Text>
-
-            {creating ? (
-              <>
-                {renderDiagnosisCheckbox()}
-                {draft.hasDiagnosis && (
-                  <>
-                    <Text> </Text>
-                    {renderList(
-                      "Your diagnosis",
-                      "e.g. rheumatoid arthritis",
-                      "diagnoses",
-                      newDiagnosis,
-                      setNewDiagnosis
-                    )}
-                  </>
-                )}
-                <Text> </Text>
-                {renderList(
-                  "Other conditions or symptoms",
-                  "e.g. lower back pain",
-                  "conditions",
-                  newCondition,
-                  setNewCondition
-                )}
-              </>
-            ) : (
-              <>
-                {renderDiagnosisQuestion()}
-                {draft.hasDiagnosis && renderDiagnosisSummary()}
-                <Text> </Text>
-                {renderList(
-                  "Other conditions or symptoms",
-                  "e.g. lower back pain",
-                  "conditions",
-                  newCondition,
-                  setNewCondition
-                )}
-              </>
-            )}
-
-            {error && (
+            <ScrollView keyboardShouldPersistTaps="handled">
               <Text
-                style={[theme.body, styles.errorText]}
-                accessibilityRole="alert"
+                style={[
+                  theme.h4,
+                  theme.leftItems,
+                  { color: colours.onSurface }
+                ]}
               >
-                {error}
+                Edit My Conditions
               </Text>
-            )}
 
-            <View style={[styles.buttons, theme.centerItems, theme.row]}>
-              <Pressable
-                style={[
-                  styles.button,
-                  { borderColor: colours.onSurface, borderWidth: 1 }
-                ]}
-                onPress={onCancel}
-                disabled={saving}
-                accessibilityRole="button"
-              >
-                <Text style={[theme.body, {color: colours.onSurface}]}>Go Back</Text>
-              </Pressable>
+              {/* Primary condition: pain types */}
+              <View style={styles.field}>
+                <Text
+                  style={[
+                    theme.h6,
+                    theme.leftItems,
+                    { color: colours.onSurface, marginVertical: 10 }
+                  ]}
+                >
+                  Primary condition
+                </Text>
+                {painTypeOptions.map((option) => (
+                  <View key={option.id} style={{padding: 15}}>
+                  <Checkbox.Item
+                    key={option.id}
+                    label={option.text}
+                    status={
+                      painTypes.includes(option.id) ? "checked" : "unchecked"
+                    }
+                    onPress={() => togglePainType(option.id)}
+                    labelStyle={[theme.body, { color: colours.onSurface }]}
+                    style={styles.checkboxItem}
+                  />
+                  </View>
+                ))}
+              </View>
 
-              <Pressable
-                style={[
-                  styles.button,
-                  { backgroundColor: colours.primary },
-                  saving && { opacity: 0.6 }
-                ]}
-                onPress={handleSave}
-                disabled={saving}
-                accessibilityRole="button"
-              >
-                {saving ? (
-                  <ActivityIndicator />
-                ) : (
-                  <Text style={theme.body}>
-                    {creating ? "Change to patient profile" : "Save Changes"}
+              {/* Other conditions: a list to add to */}
+              <View style={styles.field}>
+                <Text
+                  style={[
+                    theme.h6,
+                    theme.leftItems,
+                    { color: colours.onSurface, marginVertical: 10 }
+                  ]}
+                >
+                  Other conditions or symptoms
+                </Text>
+
+                <TextInput
+                  mode="outlined"
+                  label="Add a condition"
+                  placeholder="e.g. lower back pain"
+                  value={newCondition}
+                  onChangeText={setNewCondition}
+                  onSubmitEditing={addCondition}
+                  returnKeyType="done"
+                  autoCapitalize="sentences"
+                  outlineColor={colours.onSurface}
+                  activeOutlineColor={colours.onSurface}
+                  textColor={colours.onSurface}
+                  style={styles.paperInput}
+                  right={
+                    <TextInput.Icon
+                      icon="plus"
+                      onPress={addCondition}
+                      accessibilityLabel="Add condition"
+                    />
+                  }
+                />
+
+                {conditions.map((item, index) => (
+                  <View key={index} style={{padding: 15}}>
+                  <List.Item
+                    key={`${item}-${index}`}
+                    title={item}
+                    titleNumberOfLines={0}
+                    titleStyle={[theme.body, { color: colours.onSurface }]}
+                    style={styles.conditionItem}
+                    right={() => (
+                      <View style={{left: 27}}>
+                      <IconButton
+                        icon="close"
+                        iconColor={colours.onSurface}
+                        onPress={() => removeCondition(index)}
+                        accessibilityLabel={`Remove ${item}`}
+                        size={20}
+                      />
+                      </View>
+                    )}
+                  />
+                  </View>
+                ))}
+              </View>
+
+              {error && (
+                <Text
+                  style={[theme.body, styles.errorText]}
+                  accessibilityRole="alert"
+                >
+                  {error}
+                </Text>
+              )}
+
+              <View style={[styles.buttons, theme.centerItems, theme.row]}>
+                <Pressable
+                  style={[
+                    styles.button,
+                    { borderColor: colours.onSurface, borderWidth: 1 }
+                  ]}
+                  onPress={onCancel}
+                  disabled={saving}
+                  accessibilityRole="button"
+                >
+                  <Text style={[theme.body, { color: colours.onSurface }]}>
+                    Go Back
                   </Text>
-                )}
-              </Pressable>
-            </View>
+                </Pressable>
+
+                <Pressable
+                  style={[
+                    styles.button,
+                    { backgroundColor: colours.primary },
+                    saving && { opacity: 0.6 }
+                  ]}
+                  onPress={handleSave}
+                  disabled={saving}
+                  accessibilityRole="button"
+                >
+                  {saving ? (
+                    <ActivityIndicator />
+                  ) : (
+                    <Text style={theme.body}>
+                      {creating ? "Change to patient profile" : "Save Changes"}
+                    </Text>
+                  )}
+                </Pressable>
+              </View>
+            </ScrollView>
           </Pressable>
         </Pressable>
       </KeyboardAvoidingView>
@@ -407,6 +323,7 @@ function createStyles(colours: ColourSet) {
     card: {
       width: "100%",
       maxWidth: 420,
+      maxHeight: "90%",
       borderRadius: 28,
       padding: 24
     },
@@ -435,7 +352,6 @@ function createStyles(colours: ColourSet) {
       backgroundColor: "rgba(0,0,0,0.6)"
     },
     textInput: {
-      height: 40,
       padding: 5,
       marginHorizontal: 8,
       borderWidth: 1
@@ -484,6 +400,15 @@ function createStyles(colours: ColourSet) {
       gap: 8,
       marginHorizontal: 8,
       marginTop: 8
+    },
+    paperInput: {
+      marginHorizontal: 8,
+      backgroundColor: colours.surface
+    },
+    conditionItem: {
+      paddingVertical: 0,
+      borderBottomWidth: 1,
+      borderBottomColor: colours.ex3
     }
   });
 }

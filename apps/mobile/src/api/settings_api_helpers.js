@@ -6,7 +6,7 @@ import {
     apiAppointment, apiAppointmentQuestion, apiAppointmentAnswer,
     apiAppointmentDoctorPermission, apiAppointmentAccess,
     apiPrescription, apiSupportLink, apiTermsAndPrivacy, apiAssignedGender,
-    apiUserSettings,
+    apiUserSettings, apiQuestionOption
 } from './django-API';
 import { apiErrorMessage, normalisePhoneNumber, toServerPhone } from './care_planner_api_helpers';
 export { apiErrorMessage };
@@ -28,13 +28,19 @@ function toLocalPhone(phone) {
     - user: the user's userId
     - profile: the user's PatientProfile, or null if they don't have one yet (it is created
       the first time they save a field that belongs to it)
-    - sexOptions: the choices for assigned_gender_at_birth, each { value, label } */
+    - sexOptions: the choices for assigned_gender_at_birth, each { value, label } 
+    - painTypeOptions */
 export async function apiMyAccount() {
-    const [[user], sexOptions] = await Promise.all([apiUser('select'), apiAssignedGender()]);
+    const [[user], sexOptions, painTypeOptions] = await Promise.all([
+        apiUser('select'),
+        apiAssignedGender(),
+        apiQuestionOption('select', { app_section: 'onboarding', question_key: 'pain_type' }),
+    ]);
 
     // filtering by user, as select also returns the profiles of patients the user supports
     const [profile] = await apiPatientProfile('select', { user: user.id });
-    return { user, profile: profile ?? null, sexOptions };
+
+    return { user, profile: profile ?? null, sexOptions, painTypeOptions };
 }
 
 /* Saves the About Me details, from the edit details modal:
@@ -120,10 +126,10 @@ export async function apiMyRole() {
    patientProfile is created. The only way back to a support person is apiDeleteMyData.
 - hasDiagnosis is boolean
 - conditions is an array */
-export async function apiSaveConditions(profileId, { hasDiagnosis, diagnoses, conditions }) {
+export async function apiSaveConditions(profileId, {  painTypes, otherConditions }) {
     const details = {
-        has_diagnosis: hasDiagnosis,
-        other_conditions: packConditions(diagnoses, conditions),
+        pain_types: painTypes,
+        other_conditions: otherConditions.trim(),
     };
     if (profileId) {
         return apiPatientProfile('update', { id: profileId, ...details });

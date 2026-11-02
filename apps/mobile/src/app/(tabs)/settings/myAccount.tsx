@@ -44,10 +44,14 @@ import {
   apiSaveAboutMe,
   apiSaveConditions,
   apiDeleteMyAccount,
-  apiErrorMessage,
-  unpackConditions,
+  apiErrorMessage
 } from "@/api/settings_api_helpers";
-import { apiLogOut, apiChangePhone, apiChangePin, apiLogOutEverywhere } from "@/api/django-API";
+import {
+  apiLogOut,
+  apiChangePhone,
+  apiChangePin,
+  apiLogOutEverywhere
+} from "@/api/django-API";
 import GetDeviceId from "../../../../components/onboarding/GetDeviceID";
 import { useAppStore } from "../../../store/appStore";
 
@@ -59,17 +63,17 @@ type Account = {
     phone_number: string;
     email: string | null;
   };
-
   // null if the user is a support person as having a profile is what makes them a patient ('patientProfile' in api)
   profile: {
     id: string;
     assigned_gender_at_birth: string | null;
     birth_year: number | null;
     has_diagnosis: boolean | null;
-    diagnoses: string | null; // newline separated like other_conditions
+    pain_types: string[];
     other_conditions: string | null;
   } | null; // null until the user has a PatientProfile
   sexOptions: Choice[];
+  painTypeOptions: { id: string; text: string }[];
 };
 
 export default function Screen() {
@@ -130,10 +134,10 @@ export default function Screen() {
    */
   const handleSaveConditions = async (values: userDetails) => {
     if (!account) return;
-    const profile = await apiSaveConditions(
-      account.profile?.id ?? null,
-      values
-    );
+    const profile = await apiSaveConditions(account.profile?.id ?? null, {
+      painTypes: values.painTypes,
+      otherConditions: values.otherConditions
+    });
     setAccount((prev) => prev && { ...prev, profile });
     await refreshUserType();
     setPending(null);
@@ -217,7 +221,7 @@ export default function Screen() {
   }
 
   /**---------Labels--------------*/
-  const { user, profile, sexOptions } = account;
+  const { user, profile, sexOptions, painTypeOptions } = account;
 
   const sexLabel =
     sexOptions.find(
@@ -233,21 +237,20 @@ export default function Screen() {
     email: user.email ?? ""
   };
 
-  const { diagnoses, conditions } = unpackConditions(profile?.other_conditions);
+  const painTypeNames = new Map(
+    painTypeOptions.map((option) => [option.id, option.text])
+  );
 
-  const diagnosisLabel =
-    profile?.has_diagnosis == null
-      ? "Not set"
-      : profile.has_diagnosis
-        ? diagnoses.join(", ") || "Yes"
-        : "No Diagnosis";
+  const primaryCondition = (profile?.pain_types ?? [])
+    .map((id) => painTypeNames.get(id))
+    .filter(Boolean)
+    .join(", ");
 
-  const otherConditions = conditions.join("\n");
+  const otherConditions = profile?.other_conditions?.trim() ?? "";
 
-  const conditionsValues: userDetails = {
-    hasDiagnosis: profile?.has_diagnosis ?? null,
-    diagnoses,
-    conditions
+  const conditionsValues = {
+    painTypes: profile?.pain_types ?? [],
+    otherConditions: profile?.other_conditions ?? ""
   };
 
   /**
@@ -261,7 +264,13 @@ export default function Screen() {
         { justifyContent: "space-between", alignItems: "flex-start" }
       ]}
     >
-      <Text style={[theme.body, theme.leftText, { color: colours.onSurface, marginVertical: 5 }]}>
+      <Text
+        style={[
+          theme.body,
+          theme.leftText,
+          { color: colours.onSurface, marginVertical: 5 }
+        ]}
+      >
         {label}
       </Text>
       <Text
@@ -269,7 +278,12 @@ export default function Screen() {
           theme.body,
           theme.rightText,
           { color: colours.onSurface },
-          { flexShrink: 1, textAlign: "right", marginLeft: 16, marginVertical: 5 }
+          {
+            flexShrink: 1,
+            textAlign: "right",
+            marginLeft: 16,
+            marginVertical: 5
+          }
         ]}
       >
         {value}
@@ -285,13 +299,7 @@ export default function Screen() {
   return (
     <ScrollView stickyHeaderIndices={[0]}>
       <View style={theme.header}>
-        <Text
-          style={[
-            theme.h4,
-            theme.leftText,
-            { color: colours.onSurface}
-          ]}
-        >
+        <Text style={[theme.h4, theme.leftText, { color: colours.onSurface }]}>
           My Account
         </Text>
       </View>
@@ -349,14 +357,18 @@ export default function Screen() {
           // patient: show their answers, with the option to correct them
           <>
             <Text
-              style={[theme.h6, theme.leftText, { color: colours.onSurface, marginVertical: 15 }]}
+              style={[
+                theme.h6,
+                theme.leftText,
+                { color: colours.onSurface, marginVertical: 15 }
+              ]}
             >
-              Diagnosis
+              Primary Condition
             </Text>
             <Text
               style={[theme.body, theme.leftText, { color: colours.onSurface }]}
             >
-              {diagnosisLabel}
+              {primaryCondition || "Not set"}
             </Text>
 
             {!!otherConditions && (
@@ -515,6 +527,7 @@ export default function Screen() {
           visible={pending === "editMyConditions"}
           creating={!profile}
           initialValues={conditionsValues}
+          painTypeOptions={painTypeOptions}
           onConfirm={handleSaveConditions}
           onCancel={() => setPending(null)}
         />
