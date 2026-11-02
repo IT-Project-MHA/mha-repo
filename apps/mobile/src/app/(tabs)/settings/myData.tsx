@@ -92,6 +92,7 @@ export default function Screen() {
           onPress={() => setPending("delete")}
           buttonType="transparentButton"
           name="trash-bin-outline"
+          textStyle={{color: colours.onBackground}}
         />
       </View>
 
@@ -114,6 +115,7 @@ export default function Screen() {
           onPress={openPrivacy}
           buttonType="transparentButton"
           name="arrow-up-right-box-outline"
+          textStyle={{color: colours.onBackground}}
         />
 
       </View>

@@ -6,6 +6,7 @@ import {
     apiAppointment, apiAppointmentQuestion, apiAppointmentAnswer,
     apiAppointmentDoctorPermission, apiAppointmentAccess,
     apiPrescription, apiSupportLink, apiTermsAndPrivacy, apiAssignedGender,
+    apiUserSettings,
 } from './django-API';
 import { apiErrorMessage, normalisePhoneNumber, toServerPhone } from './care_planner_api_helpers';
 export { apiErrorMessage };

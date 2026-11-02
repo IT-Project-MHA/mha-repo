@@ -24,7 +24,7 @@ export default function Screen() {
   const openPrivacy = () => WebBrowser.openBrowserAsync(PRIVACY_URL);
   
   return (
-    <ScrollView stickyHeaderIndices={[0]}>
+    <ScrollView stickyHeaderIndices={[0]} contentContainerStyle={theme.sectionSeparation}>
       <View style={theme.header}>
         <Text style={[theme.h4, theme.leftText, {color: colours.onSurface}]}>Legal</Text>
       </View>
@@ -37,6 +37,7 @@ export default function Screen() {
 	          onPress={openPrivacy}
             buttonType="transparentButton"
             name="arrow-up-right-box-outline"
+            textStyle={{color: colours.onBackground}}
           />
 
       <View style ={theme.line}/>
@@ -45,6 +46,7 @@ export default function Screen() {
 	          onPress={openTerms}
             buttonType="transparentButton"
             name="arrow-up-right-box-outline"
+            textStyle={{color: colours.onBackground}}
           />
       </View>
     <View style={theme.bottomGap}/>

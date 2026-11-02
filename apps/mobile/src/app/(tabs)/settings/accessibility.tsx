@@ -37,36 +37,31 @@ export default function Tab() {
         </Text>
       </View>
 
-      <Text> </Text>
       <View style={theme.sectionContainer}>
         <View style={theme.row}>
-          <Text style={[theme.body, theme.leftText, {color: colours.onSurface}]}>
+          <Text style={[theme.body, theme.leftText, {color: colours.onSurface, marginVertical: 15}]}>
             Dark Mode
           </Text>
           <Toggle onToggle={toggleColour} switchOn={isDark} />
         </View>
 
-        <Text> </Text>
         <View style={theme.line} />
-        <Text> </Text>
-
+    
         <View style={theme.row}>
-          <Text style={[theme.body, theme.leftText, {color: colours.onSurface}]}>
+          <Text style={[theme.body, theme.leftText, {color: colours.onSurface, marginVertical: 15}]}>
             High Contrast
           </Text>
           <Toggle onToggle={toggleContrast} switchOn={isHC} />
         </View>
 
-        <Text> </Text>
         <View style={theme.line} />
 
-        <Text> </Text>
 
-        <Text style={[theme.body, theme.leftText, {color: colours.onSurface}]}>
+        <Text style={[theme.body, theme.leftText, {color: colours.onSurface, marginTop: 15}]}>
           Adjust Text Size
         </Text>
 
-        <View style={theme.centerItems}>
+        <View style={[theme.centerItems, theme.layoutContainer, {marginVertical: 15}]}>
           <TextDropdown />
         </View>
       </View>

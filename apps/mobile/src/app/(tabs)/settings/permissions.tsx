@@ -171,7 +171,9 @@ export default function Screen() {
       <View style={[theme.sectionContainer]}>
         <View style={theme.row}>
           <Text style={[theme.h6, theme.leftText, {color: colours.onSurface}]}>Microphone</Text>
+          <View style={{ flexShrink: 0 }}>
           <Toggle switchOn={isOn('microphone_access')} onToggle={() => setPermission('microphone_access', !isOn('microphone_access'))} />
+          </View>
         </View>
         {osHint('microphone_access')}
 
@@ -181,19 +183,24 @@ export default function Screen() {
 
         <View style={theme.row}>
           <Text style={[theme.h6, theme.leftText, {color: colours.onSurface}]}>Notifications</Text>
+          <View style={{ flexShrink: 0 }}>
           <Toggle switchOn={notificationsOn} onToggle={() => setPermission('notifications_enabled', !notificationsOn)} />
+          </View>
         </View>
         {osHint('notifications_enabled')}
         <Text> </Text>
 
         {/* sub-options only apply while notifications are on */}
         <View style={[theme.row, { opacity: notificationsOn ? 1 : 0.4 }]} pointerEvents={notificationsOn ? 'auto' : 'none'}>
-          <Text style={[theme.body, theme.leftText, {color: colours.onSurface}]}>Weekly Assessment Reminders</Text>
+          <Text style={[theme.body, theme.leftText, {color: colours.onSurface, flex: 1, flexShrink: 1, marginRight: 12}]}>Weekly Assessment Reminders</Text>
+          <View style={{ flexShrink: 0 }}></View>
           <Toggle switchOn={notificationsOn && assessmentReminders} onToggle={() => setAssessmentReminders(!assessmentReminders)} />
-        </View>
+          </View>
         <View style={[theme.row, { opacity: notificationsOn ? 1 : 0.4 }]} pointerEvents={notificationsOn ? 'auto' : 'none'}>
-          <Text style={[theme.body, theme.leftText, {color: colours.onSurface}]}>Appointment Reminders</Text>
+          <Text style={[theme.body, theme.leftText, {color: colours.onSurface, flex: 1, flexShrink: 1, marginRight: 12}]}>Appointment Reminders</Text>
+          <View style={{ flexShrink: 0 }}>
           <Toggle switchOn={notificationsOn && appointmentReminders} onToggle={() => setAppointmentReminders(!appointmentReminders)} />
+          </View>
         </View>
 
 

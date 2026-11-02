@@ -132,7 +132,7 @@ const AboutMeModal = ({
    */
   const renderSexField = () => (
     <View style={styles.field}>
-      <Text style={[theme.h6, theme.leftItems, {color: colours.onSurface}]}>Sex</Text>
+      <Text style={[theme.h6, theme.leftItems, {color: colours.onSurface, marginVertical: 10}]}>Sex</Text>
       <Pressable
         style={[styles.dropdown, { borderColor: colours.onSurface }]}
         onPress={() => setSexOpen((open) => !open)}

@@ -261,7 +261,7 @@ export default function Screen() {
         { justifyContent: "space-between", alignItems: "flex-start" }
       ]}
     >
-      <Text style={[theme.body, theme.leftText, { color: colours.onSurface }]}>
+      <Text style={[theme.body, theme.leftText, { color: colours.onSurface, marginVertical: 5 }]}>
         {label}
       </Text>
       <Text
@@ -269,7 +269,7 @@ export default function Screen() {
           theme.body,
           theme.rightText,
           { color: colours.onSurface },
-          { flexShrink: 1, textAlign: "right", marginLeft: 16 }
+          { flexShrink: 1, textAlign: "right", marginLeft: 16, marginVertical: 5 }
         ]}
       >
         {value}
@@ -287,9 +287,9 @@ export default function Screen() {
       <View style={theme.header}>
         <Text
           style={[
-            theme.h5,
+            theme.h4,
             theme.leftText,
-            { color: colours.onSurface, marginVertical: 15 }
+            { color: colours.onSurface}
           ]}
         >
           My Account
@@ -314,16 +314,16 @@ export default function Screen() {
           </>
         )}
 
-        <View style={[theme.rightItems, { marginVertical: 10 }]}>
+        <View style={[theme.rightItems, { marginVertical: 15 }]}>
           <TextButton
-            label="Edit Details"
+            label="Edit My Details"
             onPress={() => setPending("editAboutMe")}
             fontColour={colours.onSurface}
           />
         </View>
 
         {renderMyDetails("Phone Number:", user.phone_number)}
-        <View style={[theme.rightItems, { marginVertical: 10 }]}>
+        <View style={[theme.rightItems, { marginVertical: 15 }]}>
           <TextButton
             label="Change Phone Number"
             onPress={() => setPending("editPhoneNumber")}
@@ -344,23 +344,20 @@ export default function Screen() {
           My Conditions
         </Text>
         <View style={theme.line}></View>
-        <Text> </Text>
 
         {profile ? (
           // patient: show their answers, with the option to correct them
           <>
             <Text
-              style={[theme.h6, theme.leftText, { color: colours.onSurface }]}
+              style={[theme.h6, theme.leftText, { color: colours.onSurface, marginVertical: 15 }]}
             >
               Diagnosis
             </Text>
-            <Text style={theme.body}> </Text>
             <Text
               style={[theme.body, theme.leftText, { color: colours.onSurface }]}
             >
               {diagnosisLabel}
             </Text>
-            <Text> </Text>
 
             {!!otherConditions && (
               <View>
@@ -368,7 +365,7 @@ export default function Screen() {
                   style={[
                     theme.h6,
                     theme.leftText,
-                    { color: colours.onSurface }
+                    { color: colours.onSurface, marginVertical: 15 }
                   ]}
                 >
                   Other Conditions
@@ -415,7 +412,7 @@ export default function Screen() {
       </View>
 
       {/** My Login */}
-      <View style={[theme.sectionContainer, theme.sectionSeparation]}>
+      <View style={[theme.sectionContainer]}>
         <Text
           style={[
             theme.h5,
@@ -464,7 +461,7 @@ export default function Screen() {
         style={[
           theme.layoutContainer,
           theme.rightItems,
-          { marginTop: 60, paddingEnd: 40 }
+          { marginTop: 30, paddingEnd: 40 }
         ]}
       >
         <TextButton
