@@ -57,7 +57,7 @@ export default function TabLayout() {
         name="myPain"
         options={{
           title: 'Pain Tracker',
-          // href: isPatient ? undefined : null, // if isPatient is false, href = null (doesn't show tab)
+          href: isPatient ? undefined : null, // if isPatient is false, href = null (doesn't show tab)
           tabBarIcon: ({ color }) => (
             <Ionicons name ="body-outline" size={26} color={color} />
           ),
