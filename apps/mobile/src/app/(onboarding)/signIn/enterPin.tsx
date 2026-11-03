@@ -4,22 +4,19 @@
  * else, we use an SMS verification
  * - if phone number and pin can't be verified, user receives error message
  */
-import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { NumberEntry } from '../../../../components/onboarding/onboardingFields/NumberEntryOnboarding';
 import { useOnboardingStore } from '../../../store/onboardingStorage';
-import { ApiError, login, request_code } from '../../../api/django-API';
+import { ApiError, login, request_code, apiChangePin } from '../../../api/django-API';
 import { HelperText } from "react-native-paper";
-
-
+import ChangePinModal from '@/components/atomicUI/ChangePinModal';
 import { useUser } from '@/context/AuthorisationContext';
-
 import { Text, View, ScrollView, KeyboardAvoidingView, Platform} from 'react-native';
 import { useTheme } from '../../../../context/ThemeContext';
-import React from 'react';
+import React, { useState } from 'react';
 import {useAppStore} from '../../../store/appStore'
-
 import GetDeviceId from '../../../../components/onboarding/GetDeviceID';
+import TextButton from '@/components/atomicUI/TextButton';
 
 const NUM_DIGITS = 6;
 
@@ -31,6 +28,8 @@ export default function Page() {
   const completeOnboarding = useAppStore((s)=> s.completeOnboarding);
   const setUserOnboaring = useOnboardingStore((s)=> s.set);
   const [error, setError] = useState<string | null>(null);
+  const [changingPin, setChangingPin] = useState(false);
+  const phone_number = useOnboardingStore((s) => s.phone_number);
 
   async function attemptLogIn(pin: string) {
     setError(null);
@@ -70,6 +69,25 @@ export default function Page() {
     }
   }
 
+  /**
+   * Called by the modal once the SMS code is verified and the new PIN is chosen.
+   * Throws on failure so the modal can show the error and stay open.
+   * The new PIN signs the user in, the same way a successful login does.
+   */
+  async function handleChangePin(verification_id: string, pin: string) {
+    const device_id = await GetDeviceId();
+    const { token } = await apiChangePin({
+      phone_number,
+      verification_id,
+      pin,
+      device_id
+    });
+    setChangingPin(false);
+    completeOnboarding(token); // token first so the next call is authenticated
+    resetOnboarding();
+    await refreshUserType(); // RootNavigator moves to (tabs) once userType is defined
+  }
+
   return (
    <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -98,9 +116,26 @@ export default function Page() {
           secure
           placeholder="Enter 6-digit PIN"
         />
+
+        <View
+            style={[theme.rightItems, { marginVertical: 15, paddingEnd: 20 }]}
+          >
+            <TextButton
+              label="Forgot PIN?"
+              onPress={() => setChangingPin(true)}
+              fontColour={colours.onBackground}
+            />
+          </View>
         
       </View>
     </ScrollView>
+
+    <ChangePinModal
+        visible={changingPin}
+        phone={phone_number}
+        onConfirm={handleChangePin}
+        onCancel={() => setChangingPin(false)}
+      />
     </KeyboardAvoidingView>
   );
 }

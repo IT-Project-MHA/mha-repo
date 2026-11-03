@@ -188,11 +188,13 @@ export default function ChangePinModal({
           <HelperText type="error" visible={!!error}>
             {error}
           </HelperText>
+
           {info && (
-            <Text style={[theme.small, { color: colours.onSurface }]}>
+            <Text style={[theme.small, theme.centerText, { color: colours.onSurface }]}>
               {info}
             </Text>
           )}
+
           {busy && <ActivityIndicator />}
 
           <View style={styles.buttons}>
