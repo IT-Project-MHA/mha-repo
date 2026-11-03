@@ -12,11 +12,13 @@ import {
   Text,
   Pressable,
   StyleSheet,
-  ActivityIndicator
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { HelperText } from "react-native-paper";
 import { useTheme, ColourSet } from "../../context/ThemeContext";
-import { NumberEntry } from "@/components/answerFields/NumberEntry";
+import { NumberEntry } from "@/components/onboarding/onboardingFields/NumberEntryOnboarding";
 import TextButton from "@/components/atomicUI/TextButton";
 import { request_code, verify_code, ApiError } from "@/api/django-API";
 
@@ -154,7 +156,13 @@ export default function ChangePinModal({
       animationType="fade"
       onRequestClose={onCancel}
     >
-      <View style={styles.backdrop}>
+
+    <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >   
+       <View style={styles.backdrop}>
+
         <View style={[styles.card, { backgroundColor: colours.surface }]}>
           <Text
             style={[theme.h4, theme.leftItems, { color: colours.onSurface }]}
@@ -202,7 +210,8 @@ export default function ChangePinModal({
             </Pressable>
           </View>
         </View>
-      </View>
+        </View>
+        </KeyboardAvoidingView>
     </Modal>
   );
 }

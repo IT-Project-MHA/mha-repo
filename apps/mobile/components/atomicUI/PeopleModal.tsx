@@ -12,7 +12,9 @@ import {
   Text,
   Pressable,
   StyleSheet,
-  ScrollView
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useTheme, ColourSet } from "../../context/ThemeContext";
 import React, { useState, useEffect, useRef } from "react";
@@ -120,6 +122,11 @@ const PeopleModal = ({
       onRequestClose={onCancel} // considers tapping out of frame a 'cancel' scenario
     >
       <View style={styles.backgroundColour} />
+
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >   
 
       <Pressable
         style={styles.modalView}
@@ -302,6 +309,7 @@ const PeopleModal = ({
           onCancel={() => setPending(null)}
         />
       </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };

@@ -5,7 +5,7 @@
  * stays open and shows the error if the invite fails.
  */
 import React, { useEffect } from "react";
-import {Modal, View, Text, Pressable, StyleSheet, TextInput, ActivityIndicator} from 'react-native'
+import {Modal, View, Text, Pressable, StyleSheet, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform} from 'react-native'
 import { useState } from "react";
 import { useTheme, ColourSet } from "../../context/ThemeContext";
 import { validateSupportPhone, apiErrorMessage } from "@/api/settings_api_helpers";
@@ -64,7 +64,12 @@ const AddSupportPersonModal = ({visible, onConfirm, onCancel} : Props) => {
         onRequestClose={onCancel} // considers tapping out of frame a 'cancel' scenario
     > 
         
-    <View style={styles.backgroundColour}/>             
+    <View style={styles.backgroundColour}/>         
+
+    <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >    
     
     <Pressable style={styles.modalView} onPress={onCancel}> 
         
@@ -112,6 +117,7 @@ const AddSupportPersonModal = ({visible, onConfirm, onCancel} : Props) => {
           </View>
         </Pressable>
     </Pressable>
+    </KeyboardAvoidingView>
     </Modal>
   );
 }

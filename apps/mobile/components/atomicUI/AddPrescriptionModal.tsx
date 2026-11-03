@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {Modal, View, Text, Pressable, TextInput, ScrollView, Platform} from 'react-native'
+import {Modal, View, Text, Pressable, TextInput, ScrollView, Platform, KeyboardAvoidingView} from 'react-native'
 import { useTheme } from "../../context/ThemeContext";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { toApiDate, parseApiDate, formatDate } from '../../constants/date';
@@ -220,7 +220,13 @@ const AddPrescriptionModal = ({visible, title, initialValues, submitLabel, onCon
       animationType="fade"
       onRequestClose={onCancel} // considers tapping out of frame a 'cancel' scenario
     >
+      
       <View style={theme.modalBackgroundColour}/>
+
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
 
       <Pressable style={theme.modalView} onPress={onCancel}>
         <Pressable
@@ -341,6 +347,7 @@ const AddPrescriptionModal = ({visible, title, initialValues, submitLabel, onCon
           </View>
         </Pressable>
       </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
