@@ -18,7 +18,7 @@ export default function Page() {
   const {set, reset, ...answers} = useOnboardingStore.getState();
 
   const NUM_DIGITS = 4;
-  const CURRENT_YEAR = 2026;
+  const CURRENT_YEAR = new Date().getFullYear();
 
   function setAge(birthYear: string) {
     const { health, set } = useOnboardingStore.getState();
