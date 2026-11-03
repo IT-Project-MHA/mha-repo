@@ -99,7 +99,7 @@ export function NumberEntry({
 
       <Pressable onPress={handleSubmit} style={styles.button}>
         <Text
-          style={[theme.h6, styles.buttonText, { color: colours.onSurface }]}
+          style={[theme.h6, styles.buttonText, { color: colours.onPrimary }]}
         >
           Submit
         </Text>

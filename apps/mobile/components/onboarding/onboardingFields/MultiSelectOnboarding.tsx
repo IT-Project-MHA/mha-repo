@@ -77,7 +77,7 @@ function MultiSelect({ questionOptions, onSubmit, headingText, MIN_SELECTIONS, M
       </View>
 
       <Pressable onPress={handleSubmit} style={styles.button}>
-        <Text style={[theme.h6, { color: colours.onSurface }]}>Submit</Text>
+        <Text style={[theme.h6, { color: colours.onPrimary }]}>Submit</Text>
       </Pressable>
     </View>
 

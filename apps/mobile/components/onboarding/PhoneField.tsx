@@ -91,7 +91,7 @@ function PhoneField({onSubmit}: PhoneFieldProps) {
                       onPress={handleSubmit}
                       style={styles.button}
                     >
-                      <Text style={[theme.h6, styles.buttonText, {color: colours.onSurface}]}>Submit</Text>
+                      <Text style={[theme.h6, styles.buttonText, {color: colours.onPrimary}]}>Submit</Text>
                     </Pressable>
       </View>
   );

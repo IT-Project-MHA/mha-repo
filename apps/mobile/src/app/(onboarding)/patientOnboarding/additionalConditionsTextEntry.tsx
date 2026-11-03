@@ -130,7 +130,7 @@ export default function Page() {
           </View>
 
           <Pressable onPress={handleSubmit} style={styles.button}>
-            <Text style={[theme.h6, { color: colours.onSurface }]}>Submit</Text>
+            <Text style={[theme.h6, { color: colours.onPrimary }]}>Submit</Text>
           </Pressable>
         </View>
       </ScrollView>

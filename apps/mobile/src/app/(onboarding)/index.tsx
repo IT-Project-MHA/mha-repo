@@ -5,7 +5,7 @@ import { Text, StyleSheet, Modal, View, ScrollView, Platform, Pressable} from "r
 
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import OnboardingSplashScreen from "./splashScreenMHA";
+import OnboardingSplashScreen from "./splashScreen";
 
 import {
   useSafeAreaInsets
@@ -70,13 +70,13 @@ export default function Page() {
         <Pressable 
             onPress={() => {router.navigate("/(onboarding)/userOnboarding/createAccount");}}
             style={styles.button}>
-        <Text style={[theme.h6, styles.buttonText, { color: colours.onSurface }]}>Create Account</Text>
+        <Text style={[theme.h6, styles.buttonText, { color: colours.onPrimary }]}>Create Account</Text>
         </Pressable>
 
         <Pressable 
             onPress={() => {router.navigate("/(onboarding)/signIn/signIn");}} 
             style={styles.button}>
-        <Text style={[theme.h6, styles.buttonText, { color: colours.onSurface }]}>Sign In</Text>
+        <Text style={[theme.h6, styles.buttonText, { color: colours.onPrimary }]}>Sign In</Text>
 
       </Pressable>
 
@@ -98,6 +98,8 @@ function createStyles(
       justifyContent: "center",
       backgroundColor: colours.primary,
     },
-    buttonText: { textAlign: "center" },
+    buttonText: { 
+      textAlign: "center" 
+    },
   });
 }
