@@ -67,32 +67,58 @@ type Area = {
   label: string; // chip label
   title: string; // chart heading
   max: number; // y-axis cap
+  sections: number;
+  caption: string;
 };
 
 /**
- * assessment areas- key must match HISTORY_FIELDS in my_health_api_helpers.js
- * max is the top of the y-axis: CHECK the scale of each section's `score` on the server
+ * assessment areas, section max values are based on each assessment area
  */
 const AREAS: Area[] = [
-  { key: "pain", label: "Pain", title: "Your average pain", max: 10 },
-  { key: "movement", label: "Movement", title: "Impact to movement", max: 10 },
+  {
+    key: "pain",
+    label: "Pain",
+    title: "Your average pain",
+    max: 10,
+    sections: 5,
+    caption:
+      "Each point is the average pain reported for that week. A higher score means more pain."
+  },
+  {
+    key: "movement",
+    label: "Movement",
+    title: "Impact to movement",
+    max: 24,
+    sections: 6,
+    caption:
+      "Each point is the combined score for impacts to movement that week. A higher score means pain is affecting movement more."
+  },
   {
     key: "personalCare",
     label: "Personal care",
     title: "Impact to personal care",
-    max: 10
+    max: 18,
+    sections: 6,
+    caption:
+      "Each point is the combined score for personal care. A higher score means pain is affecting these more."
   },
   {
     key: "socialHealth",
     label: "Social health",
     title: "Impact to social health",
-    max: 10
+    max: 9,
+    sections: 3,
+    caption:
+      "Each point is the combined score for social life and mood that week. A higher score means pain is affecting these more."
   },
   {
     key: "management",
     label: "Management",
     title: "Your pain management",
-    max: 10
+    max: 3,
+    sections: 3,
+    caption:
+      "Each point is your score for your exercise that week. A higher score means you did less of your pain management exercises."
   }
 ];
 
@@ -143,7 +169,7 @@ function Chip({
         backgroundColor: active ? colours.ex3 : colours.tertiary
       }}
     >
-      <Text style={[theme.small, {color: colours.onTertiary}]}>{label}</Text>
+      <Text style={[theme.small, { color: colours.onTertiary }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -154,7 +180,7 @@ function Chip({
  *   pass a patient's id when a supporter is viewing it
  *
  * Data flow:
- * history (from server) -> filtered by range and location -> points 
+ * history (from server) -> filtered by range and location -> points
  */
 const AssessmentChart = ({
   patientProfileId
@@ -165,7 +191,9 @@ const AssessmentChart = ({
   const styles = createStyles(colours);
   const { width } = useWindowDimensions();
   const [areaKey, setAreaKey] = useState<string>(AREAS[0].key);
-  const [locations, setLocations] = useState<{ id: string; label: string }[]>([]);
+  const [locations, setLocations] = useState<{ id: string; label: string }[]>(
+    []
+  );
   const [locationFilter, setLocationFilter] = useState<string | null>(null); // option id, null = all
   const [rangeKey, setRangeKey] = useState<string>(ALL.key);
   const [history, setHistory] = useState<HistoryPoint[] | null>(null);
@@ -290,16 +318,16 @@ const AssessmentChart = ({
     }));
   }, [points, spacing, colours]);
 
-    const isFiltered = selected.days !== null || locationFilter !== null;
-    const noHistory = history !== null && history.length === 0 && !isFiltered;
+  const isFiltered = selected.days !== null || locationFilter !== null;
+  const noHistory = history !== null && history.length === 0 && !isFiltered;
 
   const noDataInRange = history !== null && !noHistory && points.length === 0;
   // draws empty chart if no history
   const showEmpty = noHistory || noDataInRange;
 
   // y-axis: 5 even sections from 0 to area.max
-  const step = area.max / 5;
-  const yLabels = Array.from({ length: 6 }, (_, i) =>
+  const step = area.max / area.sections;
+  const yLabels = Array.from({ length: area.sections + 1 }, (_, i) =>
     String(Math.round(i * step * 10) / 10)
   );
   const axisTextStyle = { color: colours.onBackground, fontSize: 10 };
@@ -311,12 +339,23 @@ const AssessmentChart = ({
           theme.h5,
           { color: colours.onBackground },
           theme.leftText,
-          { marginVertical: 15 }
+          { marginVertical: 10 }
         ]}
       >
         {area.title}
         {activeLocation ? ` (${activeLocation})` : ""} over time
       </Text>
+      {!showEmpty && history !== null && (
+          <Text
+            style={[
+              theme.small,
+              theme.leftText,
+              { color: colours.onBackground, marginBottom: 10}
+            ]}
+          >
+            {area.caption}
+          </Text>
+        )}
       <View style={[theme.line, { marginBottom: 20 }]} />
 
       <View style={[theme.centerItems]}>
@@ -333,7 +372,10 @@ const AssessmentChart = ({
               key={a.key}
               label={a.label}
               active={a.key === areaKey}
-              onPress={() => { setAreaKey(a.key); setLocationFilter(null); }}
+              onPress={() => {
+                setAreaKey(a.key);
+                setLocationFilter(null);
+              }}
             />
           ))}
         </ScrollView>
@@ -342,26 +384,26 @@ const AssessmentChart = ({
          * Location chips for pain with horizontal scroll
          */}
         {isPain && locations.length > 0 && (
-    <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chipRowStyle}
-    >
-        <Chip
-            label="All locations"
-            active={locationFilter === null}
-            onPress={() => setLocationFilter(null)}
-        />
-        {locations.map((loc) => (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipRowStyle}
+          >
             <Chip
+              label="All locations"
+              active={locationFilter === null}
+              onPress={() => setLocationFilter(null)}
+            />
+            {locations.map((loc) => (
+              <Chip
                 key={loc.id}
                 label={loc.label}
                 active={locationFilter === loc.id}
                 onPress={() => setLocationFilter(loc.id)}
-            />
-        ))}
-    </ScrollView>
-)}
+              />
+            ))}
+          </ScrollView>
+        )}
 
         {/**
          * Spinner while loading, otherwise line chart
@@ -391,7 +433,7 @@ const AssessmentChart = ({
               endSpacing={endSpacing}
               spacing={showEmpty ? 100 : spacing}
               scrollToEnd
-              curved
+              curved={false}
               thickness={showEmpty ? 0 : 3}
               color={showEmpty ? "transparent" : colours.secondary}
               hideDataPoints={showEmpty || points.length > 30}
@@ -408,26 +450,33 @@ const AssessmentChart = ({
          * Segmented control pill for selecting the time frame represented over the chart
          */}
         <View style={{ marginBottom: 20 }}>
-            <SegmentedPill
-                values={OPTIONS.map((o) => o.label)}
-                selectedIndex={selectedIndex}
-                onChange={(i) => setRangeKey(OPTIONS[i].key)}
-                radius={100}
-                style={{ width: "90%", marginVertical: 8 }}
-                />
-            </View>
+          <SegmentedPill
+            values={OPTIONS.map((o) => o.label)}
+            selectedIndex={selectedIndex}
+            onChange={(i) => setRangeKey(OPTIONS[i].key)}
+            radius={100}
+            style={{ width: "90%", marginVertical: 8 }}
+          />
+        </View>
 
         {/**
          * Error message if no history in total/over specific periods
          */}
         {noHistory && (
-          <Text style={[theme.small, {color: colours.onBackground}, { margin: 10 }]}>
+          <Text
+            style={[
+              theme.small,
+              { color: colours.onBackground },
+              { margin: 10 }
+            ]}
+          >
             Complete assessments to see your {area.label.toLowerCase()} over
             time
           </Text>
         )}
+
         {noDataInRange && (
-          <Text style={[theme.small, {color: colours.onBackground}]}>
+          <Text style={[theme.small, { color: colours.onBackground }]}>
             {activeLocation
               ? `No assessments with pain in ${activeLocation.toLowerCase()} in this period`
               : "No assessments in this period"}

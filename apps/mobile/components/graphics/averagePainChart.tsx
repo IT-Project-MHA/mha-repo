@@ -156,7 +156,7 @@ const AssessmentChart = ({ patientProfileId }: { patientProfileId?: number | str
                 endSpacing={edge}
                 spacing={spacing}
                 scrollToEnd
-                curved
+                curved={false}
                 thickness={3}
                 color={colours.secondary}
                 hideDataPoints={count > 30}
