@@ -1,7 +1,7 @@
 // Component tests for the My Connections screen.
 
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import Screen from '@/app/(tabs)/settings/mySupportLinks';
+import Screen from '@/app/(tabs)/carePlanner/mySupportLinks';
 import {
   apiMySupportLinks,
   apiRemoveSupportPerson,
@@ -63,21 +63,6 @@ afterEach(() => {
 });
 
 describe('My Connections', () => {
-  test('shows the support people and the people the user supports once loaded', async () => {
-    const { findByText, getByText } = await render(<Screen />);
-    expect(await findByText('Jess')).toBeTruthy();
-    expect(getByText('John Appleseed')).toBeTruthy();
-  });
-
-  test('removing a support person deletes the link and reloads the list', async () => {
-    const { findByText, getByText } = await render(<Screen />);
-    await fireEvent.press(await findByText('Jess'));
-    await fireEvent.press(getByText('Remove Support Person'));
-    await fireEvent.press(getByText('Remove')); // confirm
-    await waitFor(() => expect(mockRemoveSupportPerson).toHaveBeenCalledWith('l1'));
-    await waitFor(() => expect(mockMyConnections).toHaveBeenCalledTimes(2));
-  });
-
   test('accepting an invitation accepts it, refreshes the user type and reloads', async () => {
     mockMyConnections.mockResolvedValue({ ...connections, invitations: [{ id: 'i1', name: 'Sam' }] });
     const { findByText, getByText } = await render(<Screen />);

@@ -37,11 +37,11 @@ beforeEach(() => {
 afterEach(() => jest.clearAllMocks());
 
 const confirmDelete = async (utils: any) => {
-  await fireEvent.press(utils.getByText('Delete my Data'));
+  await fireEvent.press(utils.getByText('Delete My Data'));
   await fireEvent.press(utils.getByText('Delete')); // confirm
 };
 
-describe('My Data', () => {
+describe('Delete My Data', () => {
   test('confirming deletes the data, refreshes the user type and says so', async () => {
     mockDeleteMyData.mockResolvedValue(true);
     await confirmDelete(await render(<Screen />));

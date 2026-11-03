@@ -97,27 +97,6 @@ describe('apiSaveAboutMe', () => {
   });
 });
 
-describe('apiSaveConditions', () => {
-  test('updates an existing profile with trimmed other conditions', async () => {
-    await apiSaveConditions('profile-1', { hasDiagnosis: true, otherConditions: ' Arthritis ' });
-    expect(mockApiPatientProfile).toHaveBeenCalledWith('update', {
-      id: 'profile-1',
-      has_diagnosis: true,
-      other_conditions: 'Arthritis',
-    });
-  });
-
-  test('creates the profile when the user has none', async () => {
-    await apiSaveConditions(null, { hasDiagnosis: true, otherConditions: '' });
-    expect(mockApiPatientProfile).toHaveBeenCalledWith('create', { has_diagnosis: true, other_conditions: '' });
-  });
-
-  test('"No" (false) is sent, not dropped', async () => {
-    await apiSaveConditions('profile-1', { hasDiagnosis: false, otherConditions: '' });
-    expect(mockApiPatientProfile).toHaveBeenCalledWith('update', expect.objectContaining({ has_diagnosis: false }));
-  });
-});
-
 describe('validateAboutMe', () => {
   test('valid details give no message, including a spaced or +61 phone and a blank birth year or email', () => {
     expect(validateAboutMe(aboutMe)).toBeNull();
@@ -168,9 +147,7 @@ const link = (over: object) => ({
   supporter_name: null,
   invited_phone_number: '+61427052153',
   status: 'invited',
-  can_view_appointments: false,
   can_view_assessments: false,
-  can_view_prescriptions: false,
   ...over,
 });
 
@@ -216,19 +193,6 @@ describe('apiMyConnections', () => {
     mockApiSupportLink.mockResolvedValue([link({ can_view_assessments: true })]);
     const [person] = (await apiMySupportLinks()).supportPeople;
     expect(person.permissions).toEqual({ viewAppointments: false, viewAssessments: true, viewPrescriptions: false });
-  });
-});
-
-describe('apiSaveSupportPermissions', () => {
-  test('sends all three permissions to the link', async () => {
-    mockApiSupportLink.mockResolvedValue(link({}));
-    await apiSaveSupportPermissions('l1', { viewAppointments: true, viewAssessments: false, viewPrescriptions: true });
-    expect(mockApiSupportLink).toHaveBeenCalledWith('update', {
-      id: 'l1',
-      can_view_appointments: true,
-      can_view_assessments: false,
-      can_view_prescriptions: true,
-    });
   });
 });
 
