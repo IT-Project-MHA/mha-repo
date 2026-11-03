@@ -3,7 +3,6 @@
  * this is where user enters their pin. If their device ID is in storage, we send that, pin and phone number
  * else, we use an SMS verification
  * - if phone number and pin can't be verified, user receives error message
- * 
  */
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
@@ -15,20 +14,18 @@ import { HelperText } from "react-native-paper";
 
 import { useUser } from '@/context/AuthorisationContext';
 
-import { Text, View, ScrollView } from 'react-native';
+import { Text, View, ScrollView, KeyboardAvoidingView, Platform} from 'react-native';
 import { useTheme } from '../../../../context/ThemeContext';
 import React from 'react';
 import {useAppStore} from '../../../store/appStore'
 
 import GetDeviceId from '../../../../components/onboarding/GetDeviceID';
 
-
 const NUM_DIGITS = 6;
 
 export default function Page() {
   const { colours, theme } = useTheme();
   const router = useRouter();
-
   const { refreshUserType } = useUser();
   const resetOnboarding = useOnboardingStore((s)=> s.reset);
   const completeOnboarding = useAppStore((s)=> s.completeOnboarding);
@@ -74,7 +71,15 @@ export default function Page() {
   }
 
   return (
-    <ScrollView stickyHeaderIndices={[0]}>
+   <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+      >
       <View style={[theme.header, theme.leftText]}>
         <Text style={[theme.h5, { color: colours.onSurface }]}>
           Enter your six digit pin
@@ -96,6 +101,7 @@ export default function Page() {
         
       </View>
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

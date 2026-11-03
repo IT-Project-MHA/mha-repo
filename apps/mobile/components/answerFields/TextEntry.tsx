@@ -2,22 +2,14 @@ import React, { useState } from "react";
 
 import {
   Text,
-  TextInput,
   View,
   StyleSheet,
   KeyboardTypeOptions,
-  Pressable
+  Pressable,
 } from "react-native";
-import Button from "../atomicUI/Button";
 
-import {
-  SafeAreaView,
-  useSafeAreaInsets
-} from "react-native-safe-area-context";
-import { lineThickness } from "../../constants/layout";
 import { useTheme, ColourSet } from "../../context/ThemeContext";
-import { Typography } from "../../constants/textSize";
-import TextButton from "../atomicUI/TextWithIconButton";
+import { TextInput, HelperText } from "react-native-paper";
 
 //Input variables
 const MAX_LENGTH_TEXT = 200;
@@ -94,8 +86,7 @@ function TextEntry({
   textContentType
 }: TextProps) {
   const { colours, theme } = useTheme();
-  const insets = useSafeAreaInsets();
-  const styles = createStyles(colours, theme, insets.bottom);
+  const styles = createStyles(colours);
 
   const [value, setValue] = useState<string>("");
   const [error, setError] = useState<string>("");
@@ -115,70 +106,72 @@ function TextEntry({
   };
 
   return (
-    <View style={styles.container}>
-      <TextInput
-        style={[theme.h6, styles.field, { color: colours.onSurface }]}
-        onChangeText={handleChange}
-        value={value}
-        placeholder={placeholder} 
-        keyboardType={keyboardType}
-        textContentType={textContentType}
-        maxLength={MAX_LENGTH_TEXT}
-        onSubmitEditing={handleSubmit}
-      />
+    <View style={theme.clearContainer}>
 
-      {!!error && (
-        <Text style={[theme.body, { color: colours.onSurface }]}>{error}</Text>
-      )}
+      <View style={theme.layoutContainer}>
+      <TextInput
+          mode="outlined"
+          value={value}
+          onChangeText={handleChange}
+          onSubmitEditing={handleSubmit}
+          placeholder={placeholder}
+          keyboardType={keyboardType}
+          textContentType={textContentType}
+          maxLength={MAX_LENGTH_TEXT}
+          error={!!error}
+          textColor={colours.onSurface}
+          outlineColor={colours.secondary}
+          activeOutlineColor={colours.primary}
+          placeholderTextColor={colours.onSurface}
+          outlineStyle={styles.outline}
+          style={[styles.field, { fontSize: theme.h6.fontSize }]}
+          contentStyle={styles.fieldContent}
+        />
+
+      <HelperText type="error" visible={!!error} style={styles.helper}>
+          {error}
+      </HelperText>
+      </View>
 
       <Pressable onPress={handleSubmit} style={styles.button}>
-        <Text style={[theme.h6, { color: colours.onSurface }]}>Submit</Text>
+        <Text style={[theme.h6, styles.buttonText, { color: colours.onSurface }]}>Submit</Text>
       </Pressable>
+
     </View>
   );
 }
 
-function createStyles(
-  colours: ColourSet,
-  text: Typography,
-  bottomInset: number
-) {
+export { TextEntry };
+
+function createStyles(colours: ColourSet) {
   return StyleSheet.create({
-    content: {
-      paddingBottom: 100 + bottomInset,
-      gap: 40
-    },
-    field: {
-      height: 60,
-      paddingVertical: 3,
-      width: "80%",
-      paddingHorizontal: 40,
-      borderRadius: 100,
-      borderWidth: 2,
-      borderColor: colours.secondary,
-      justifyContent: "center",
-      textAlign: "center"
-    },
-    button: {
-      height: 60,
-      width: "80%",
-      alignSelf: "center",
-      alignItems: "center",
-      justifyContent: "center",
-      borderRadius: 100,
-      backgroundColor: colours.primary
-    },
-    text: {
-      justifyContent: "center",
-      textAlign: "center"
-    },
     container: {
       width: "100%",
       alignItems: "center",
       gap: 40,
-      paddingBottom: 100 + bottomInset
-    }
+    },
+    content: { gap: 24 },
+    fieldWrap: { width: "80%" },
+    field: {
+      height: 60,
+      backgroundColor: "transparent",
+    },
+    fieldContent: {
+      textAlign: "center",
+      paddingHorizontal: 40,
+    },
+    outline: {
+      borderRadius: 100,
+      borderWidth: 2,
+    },
+    helper: { textAlign: "center" },
+    button: {
+      height: 60,
+      width: "100%",
+      borderRadius: 100,
+      justifyContent: "center",
+      backgroundColor: colours.primary,
+    },
+    buttonText: { textAlign: "center" },
   });
 }
-
-export { TextEntry };

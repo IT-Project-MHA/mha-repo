@@ -7,12 +7,9 @@ import { TextEntry } from '../../../../components/answerFields/TextEntry';
 import { useRouter } from 'expo-router';
 import { useOnboardingStore } from '../../../store/onboardingStorage';
 
-import ButtonWithIcon from '../../../../components/atomicUI/ButtonWithIcon';
-import { Text, View, ScrollView, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Text, View, ScrollView, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform, StyleSheet} from 'react-native';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import * as WebBrowser from 'expo-web-browser';
-
 import React from 'react';
 
 /**
@@ -38,49 +35,61 @@ export default function Page() {
   }
 
   return (
-    <ScrollView stickyHeaderIndices={[0]}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <View>
-          
+    <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+
+    <ScrollView
+      contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+    >
       <View style={[theme.header, theme.leftText] }>
-        <Text style={[theme.h5, {color: colours.onSurface}]}>Enter Your Name</Text>
+        <Text style={[theme.h5, {color: colours.onSurface}]}>What's Your Name?</Text>
       </View>
 
-        <KeyboardAvoidingView>
+        
         <View>
         <TextEntry 
         onSubmit={setDisplayName}
-        placeholder='Type here'
+        placeholder='Enter Your Name'
         keyboardType='default'
         />
         </View>
-        </KeyboardAvoidingView>
+       
 
-
-        <View style={[theme.centerItems, theme.clearContainer]}>
+      {/**
+       * 
+       *  <View style={[theme.centerItems, theme.layoutContainer, {paddingHorizontal: 30}]}>
             <Text style={[theme.xSmall, {color: colours.onSurface}]}>By signing up, you agree to MPowered's Terms of Use and Privacy Policy</Text>
         </View>
-        <View style={theme.centerItems}>
-        <ButtonWithIcon
+
+        <View style={[theme.clearContainer]}>
+        <View style={{marginVertical: 10}}>
+        <TextWithIconButton
 	          label="Terms & Conditions"
 	          onPress={openTerms}
-            buttonType="transparentButton"
-            name="arrow-up-right-box-outline"
-            textStyle={{color: colours.onSurface}}
-          />
-          <ButtonWithIcon
-	          label="Privacy Policy"
-	          onPress={openPrivacy}
-            buttonType="transparentButton"
-            name="arrow-up-right-box-outline"
-            textStyle={{color: colours.onSurface}}
+            iconName="arrow-up-right-box-outline"
+            fontColour={colours.onBackground}
           />
         </View>
-        
-      </View>
-      </TouchableWithoutFeedback>
+        <View style={{marginVertical: 10}}>
+          <TextWithIconButton
+	          label="Privacy Policy"
+	          onPress={openPrivacy}
+            iconName="arrow-up-right-box-outline"
+            fontColour={colours.onBackground}
+          />
+         </View>
+         </View>
+       * 
+       */}
+
+
+
     </ScrollView>
+     </KeyboardAvoidingView>
   );
 }
-
 

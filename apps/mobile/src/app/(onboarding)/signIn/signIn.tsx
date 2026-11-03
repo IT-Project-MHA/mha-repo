@@ -8,12 +8,17 @@
  * submit / next button
  * back button
  */
-
 import { useRouter } from "expo-router";
 import { PhoneField } from "../../../../components/onboarding/PhoneField";
 import { useOnboardingStore } from "../../../store/onboardingStorage";
 
-import { Text, View, ScrollView } from "react-native";
+import {
+  Text,
+  View,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform
+} from "react-native";
 import { useTheme } from "../../../../context/ThemeContext";
 import React from "react";
 import { useLocalSearchParams } from "expo-router";
@@ -35,28 +40,36 @@ export default function Page() {
   }
 
   return (
-    <ScrollView stickyHeaderIndices={[0]}>
-      <View style={[theme.header, theme.leftText]}>
-        <Text style={[theme.h5, { color: colours.onSurface }]}>
-          Enter your mobile
-        </Text>
-      </View>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+      >
+        <View>
+          <View style={[theme.header, theme.leftText]}>
+            <Text style={[theme.h5, { color: colours.onSurface }]}>
+              Enter your mobile
+            </Text>
+            <Text style={[theme.small, { color: colours.onSurface }]}>
+              Please enter an Australian phone number
+            </Text>
+          </View>
 
-      <View>
-        {/** catches if user tried to create a new account with a registered number */}
-        {notice === "accountExists" && (
-          <Text style={[theme.h5, { color: colours.onSurface }]}>
-            You already have an account with this number. Sign in below.
-          </Text>
-        )}
-
-        <PhoneField onSubmit={setPhone} />
-        <View style={[theme.clearContainer, theme.centerItems]}>
-          <Text style={[theme.small, { color: colours.onSurface }]}>
-            Please enter an Australian phone number
-          </Text>
+          {/** catches if user tried to create a new account with a registered number */}
+          {notice === "accountExists" && (
+            <Text style={[theme.h5, { color: colours.onSurface }]}>
+              You already have an account with this number. Sign in below.
+            </Text>
+          )}
+          
+          <PhoneField onSubmit={setPhone} />
+        
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

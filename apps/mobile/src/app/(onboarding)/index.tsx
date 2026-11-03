@@ -1,7 +1,7 @@
 /**
  * Initial sign in / create account page for onboarding.
  */
-import { Text, StyleSheet, Modal, View } from "react-native";
+import { Text, StyleSheet, Modal, View, ScrollView, Platform} from "react-native";
 
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -41,7 +41,11 @@ export default function Page() {
   }
 
   return (
-    <SafeAreaView style={theme.screen}>
+    <ScrollView
+      contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+    >
       <View style={[theme.header, theme.leftItems]}>
         <Text style={[theme.h5, { color: colours.onSurface }]}>
           Lets get you started.
@@ -58,6 +62,7 @@ export default function Page() {
         onRequestClose={() => setShowOnboarding(false)}
       >
       <OnboardingSplashScreen onClose={onFirstLaunchClosed} />
+
       </Modal>
        
 
@@ -83,7 +88,7 @@ export default function Page() {
         />
 
       </View>
-    </SafeAreaView>
+    </ScrollView>
   );
 }
 

@@ -13,10 +13,10 @@
   */
 
 import React, { useState } from "react";
-import { Text, TextInput, View, StyleSheet, Pressable } from "react-native";
-
+import { Text, View, StyleSheet, Pressable } from "react-native";
+import { TextInput, HelperText } from "react-native-paper";
 import { useTheme, ColourSet } from "../../context/ThemeContext";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 //numberInput variables
 
 type NumberEntryProps = {
@@ -40,6 +40,7 @@ export function NumberEntry({
 
   const [value, setValue] = useState<string>("");
   const [error, setError] = useState<string>("");
+  const [hidden, setHidden] = useState(secure);
 
   const handleChange = (text: string) => {
     setValue(text.replace(/\D/g, "").slice(0, length)); // capped at length
@@ -59,26 +60,42 @@ export function NumberEntry({
     onSubmit(value);
   };
 
- 
-
   return (
-    <View style={[theme.clearContainer, styles.content, theme.centerItems]}>
+    <View style={theme.clearContainer}>
+      
+      <View style={theme.layoutContainer}>
       <TextInput
-        style={[theme.h6, styles.field, { color: colours.onSurface }]}
-        value={value}
-        onChangeText={handleChange}
-        onSubmitEditing={handleSubmit}
-        placeholder={placeholder}
-        keyboardType="number-pad"
-        secureTextEntry={secure}
-        maxLength={length}
-      />
+          mode="outlined"
+          value={value}
+          onChangeText={handleChange}
+          onSubmitEditing={handleSubmit}
+          placeholder={placeholder}
+          keyboardType="number-pad"
+          secureTextEntry={hidden}
+          maxLength={length}
+          error={!!error}
+          textColor={colours.onSurface}
+          outlineColor={colours.secondary}
+          activeOutlineColor={colours.primary}
+          placeholderTextColor={colours.onSurface}
+          outlineStyle={styles.outline}
+          style={[styles.field, { fontSize: theme.h6.fontSize }]}
+          contentStyle={styles.fieldContent}
+          // show/hide toggle for pins
+          right={
+            secure ? (
+              <TextInput.Icon
+                icon={hidden ? "eye-off" : "eye"}
+                onPress={() => setHidden((h) => !h)}
+              />
+            ) : undefined
+          }
+        />
 
-      {!!error && (
-        <Text style={[theme.body, { color: colours.onBackground }]}>
+      <HelperText type="error" visible={!!error} style={styles.helper}>
           {error}
-        </Text>
-      )}
+        </HelperText>
+      </View>
 
       <Pressable onPress={handleSubmit} style={styles.button}>
         <Text
@@ -86,29 +103,41 @@ export function NumberEntry({
         >
           Submit
         </Text>
+
       </Pressable>
-    </View>
+      </View>
   );
 }
 
 function createStyles(colours: ColourSet) {
-  const pill = {
-    height: 60,
-    width: "80%" as const,
-    borderRadius: 100,
-    justifyContent: "center" as const
-  };
-
   return StyleSheet.create({
-    content: { gap: 24 },
-    field: {
-      ...pill,
-      paddingHorizontal: 40,
-      borderWidth: 2,
-      borderColor: colours.secondary,
-      textAlign: "center"
+    container: {
+      width: "100%",
+      alignItems: "center",
+      gap: 40,
     },
-    button: { ...pill, backgroundColor: colours.primary },
-    buttonText: { textAlign: "center" }
+    content: { gap: 24 },
+    fieldWrap: { width: "80%" },
+    field: {
+      height: 60,
+      backgroundColor: "transparent",
+    },
+    fieldContent: {
+      textAlign: "center",
+      paddingHorizontal: 40,
+    },
+    outline: {
+      borderRadius: 100,
+      borderWidth: 2,
+    },
+    helper: { textAlign: "center" },
+    button: {
+      height: 60,
+      width: "100%",
+      borderRadius: 100,
+      justifyContent: "center",
+      backgroundColor: colours.primary,
+    },
+    buttonText: { textAlign: "center" },
   });
 }

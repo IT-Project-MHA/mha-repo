@@ -8,9 +8,15 @@ import { PhoneField } from "../../../../components/onboarding/PhoneField";
 import { useOnboardingStore } from "../../../store/onboardingStorage";
 import { request_code, ApiError } from "../../../api/django-API";
 
-import { Text, View, ScrollView } from "react-native";
+import {
+  Text,
+  View,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform
+} from "react-native";
 import { useTheme } from "../../../../context/ThemeContext";
-import React, { useState , useRef } from "react";
+import React, { useState, useRef } from "react";
 import { HelperText } from "react-native-paper";
 
 export default function Page() {
@@ -53,27 +59,33 @@ export default function Page() {
   }
 
   return (
-    <ScrollView stickyHeaderIndices={[0]}>
-      <View>
-        <View style={[theme.header, theme.leftText]}>
-          <Text style={[theme.h5, { color: colours.onSurface }]}>
-            Add your mobile
-          </Text>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+      >
+        <View>
+          <View style={[theme.header, theme.leftText]}>
+            <Text style={[theme.h5, { color: colours.onSurface }]}>
+              Add your mobile
+            </Text>
+            <Text style={[theme.small, { color: colours.onSurface }]}>
+              Please enter an Australian phone number
+            </Text>
+          </View>
+
+          <View>
+            <PhoneField onSubmit={setPhone} />
+            <HelperText type="error" visible={!!error} style={theme.centerText}>
+              {error}
+            </HelperText>
+          </View>
         </View>
-
-        <View style={[theme.clearContainer, theme.centerItems]}>
-          <Text style={[theme.small, { color: colours.onSurface }]}>
-            Please enter an Australian phone number
-          </Text>
-        </View>
-
-        <PhoneField onSubmit={setPhone} />
-
-        <HelperText type="error" visible={!!error} style={theme.centerText}>
-          {error}
-        </HelperText>
-
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

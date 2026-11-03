@@ -15,7 +15,7 @@ import TextButton from "@/components/atomicUI/TextButton";
 import { useOnboardingStore } from "../../../store/onboardingStorage";
 import { verify_code, request_code } from "../../../api/django-API";
 
-import { Text, StyleSheet, View, ScrollView } from "react-native";
+import { Text, KeyboardAvoidingView, Platform, View, ScrollView } from "react-native";
 import { useTheme, ColourSet } from "../../../../context/ThemeContext";
 import { Typography } from "../../../../constants/textSize";
 import React from "react";
@@ -63,37 +63,45 @@ export default function Page() {
   }
 
   return (
-    <ScrollView stickyHeaderIndices={[0]}>
+    <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+
+    <ScrollView
+      contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+    >
+
       <View style={[theme.header, theme.leftText]}>
         <Text style={[theme.h5, { color: colours.onSurface }]}>
           Verify your mobile
         </Text>
-      </View>
-
-       <View style={[theme.layoutContainer, theme.leftItems]}>
-          <Text style={[theme.body, { color: colours.onSurface }]}>
+          <Text style={[theme.small, { color: colours.onSurface }]}>
             We've sent a temporary verification code to {answers.phone_number}.
             It is valid for 5 minutes.
           </Text>
         </View>
-
       <View>
-        <NumberEntry
-                      onSubmit={smsVerifier}
-                      length={NUM_DIGITS}
-                      placeholder="Enter 6-digit code"
-                  />
-        
-        <View style={[theme.header, theme.rightItems, theme.clearContainer]}>
 
+      <NumberEntry
+        onSubmit={smsVerifier}
+        length={NUM_DIGITS}
+        placeholder="Enter 6-digit code"
+      />
+        
+      <View style={[theme.header, theme.rightItems, theme.clearContainer]}>
         <TextButton
           label="Resend Code"
           onPress={resendCode}
           fontColour={colours.onBackground}
         />
-        </View>
+      </View>
+      
       </View>
     </ScrollView>
+  </KeyboardAvoidingView>
   );
 }
 

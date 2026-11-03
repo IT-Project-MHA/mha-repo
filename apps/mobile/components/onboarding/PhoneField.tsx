@@ -1,7 +1,13 @@
 import React, { useState } from "react";
-import { Text, View, StyleSheet, TextInput, Pressable} from 'react-native';
+import {
+  Text,
+  View,
+  StyleSheet,
+  KeyboardTypeOptions,
+  Pressable,
+} from "react-native";
 import { useTheme, ColourSet } from '../../context/ThemeContext';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { TextInput, HelperText } from "react-native-paper";
 
 //Input variables
 const MAX_lENGTH_NUM = 10; //aus phone numbers are 10 characters, including the "04"
@@ -36,8 +42,7 @@ type PhoneFieldProps ={
 
 function PhoneField({onSubmit}: PhoneFieldProps) {
   const { theme, colours } = useTheme();
-  const insets = useSafeAreaInsets();
-  const styles = createStyles(colours, insets.bottom);
+  const styles = createStyles(colours);
 
   const [value, setValue] = useState<string>(AREA_CODE);
   const [error, setError] = useState<string>("");
@@ -57,22 +62,36 @@ function PhoneField({onSubmit}: PhoneFieldProps) {
   };
 
   return (
-        <View style={styles.container}>
+          <View style={theme.clearContainer}>
+      
+            <View style={theme.layoutContainer}></View>
+
         <TextInput
-          style={[styles.field]}
-          onChangeText={handleChange}
+          mode="outlined"
           value={value}
-          keyboardType="numeric"
-          maxLength={MAX_lENGTH_NUM}
+          onChangeText={handleChange}
+          onSubmitEditing={handleSubmit}
+          keyboardType="number-pad"
           textContentType="telephoneNumber"
+          maxLength={MAX_lENGTH_NUM}
+          error={!!error}
+          textColor={colours.onSurface}
+          outlineColor={colours.secondary}
+          activeOutlineColor={colours.primary}
+          outlineStyle={styles.outline}
+          style={[styles.field, { fontSize: theme.h6.fontSize }]}
+          contentStyle={styles.fieldContent}
         />
-    
-          {!!error && <Text style={[theme.body, {color: colours.onSurface}]}>{error}</Text>}
+  
+        <HelperText type="error" visible={!!error} style={styles.helper}>
+          {error}
+        </HelperText>
+
            <Pressable
                       onPress={handleSubmit}
                       style={styles.button}
                     >
-                      <Text style={[theme.h6, {color: colours.onSurface}, styles.text]}>Submit</Text>
+                      <Text style={[theme.h6, styles.buttonText, {color: colours.onSurface}]}>Submit</Text>
                     </Pressable>
       </View>
   );
@@ -80,44 +99,35 @@ function PhoneField({onSubmit}: PhoneFieldProps) {
 
 export { PhoneField };
 
-function createStyles(
-  colours: ColourSet,
-  bottomInset: number
-) {
+function createStyles(colours: ColourSet) {
   return StyleSheet.create({
-    content: {
-      paddingBottom: 100 + bottomInset,
-      gap: 40
-    },
-    field: {
-      height: 60,
-      paddingVertical: 3,
-      width: "80%",
-      paddingHorizontal: 40,
-      borderRadius: 100,
-      borderWidth: 2,
-      borderColor: colours.secondary,
-      justifyContent: "center",
-      textAlign: "center"
-    },
-    button: {
-      height: 60,
-      width: "80%",
-      alignSelf: "center",
-      alignItems: "center",
-      justifyContent: "center",
-      borderRadius: 100,
-      backgroundColor: colours.primary
-    },
-    text: {
-      justifyContent: "center",
-      textAlign: "center"
-    },
     container: {
       width: "100%",
       alignItems: "center",
       gap: 40,
-      paddingBottom: 100 + bottomInset
-    }
+    },
+    content: { gap: 24 },
+    fieldWrap: { width: "80%" },
+    field: {
+      height: 60,
+      backgroundColor: "transparent",
+    },
+    fieldContent: {
+      textAlign: "center",
+      paddingHorizontal: 40,
+    },
+    outline: {
+      borderRadius: 100,
+      borderWidth: 2,
+    },
+    helper: { textAlign: "center" },
+    button: {
+      height: 60,
+      width: "100%",
+      borderRadius: 100,
+      justifyContent: "center",
+      backgroundColor: colours.primary,
+    },
+    buttonText: { textAlign: "center" },
   });
 }
