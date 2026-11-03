@@ -355,13 +355,14 @@ export default function Screen() {
       <View style={{height: STICKY_BUTTON_GAP}}/>
 
     </ScrollView>
-
+    <View style={{marginVertical: 15}}>
     <StickyButtonWithIcon
       label={loading ? 'Loading…' : 'Share PDF'}
       onPress={handleExportPdf}
       name="share-outline"
       disabled={loading}
     />
+    </View>
     </>
   );
 }

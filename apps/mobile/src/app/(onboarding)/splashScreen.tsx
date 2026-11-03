@@ -19,7 +19,6 @@ import WaveHeader from "@/components/onboarding/WaveHeader";
 //splash screens are one large animated scroll view
 import {
   SafeAreaView,
-  useSafeAreaInsets
 } from "react-native-safe-area-context";
 import { useTheme } from "../../../context/ThemeContext";
 import React from "react";
@@ -67,7 +66,7 @@ export default function OnboardingSplashScreen({ onClose }: Props) {
         <View style={[styles.textBlock, { paddingTop: 24 }]}>
           <Text style={[theme.h6, { color: colours.primary }]}>Welcome to</Text>
           <Text style={[theme.h2, styles.title, { color: colours.primary }]}>
-            your Mpowered plan
+            MPowered Health
           </Text>
           <Text
             style={[
@@ -98,28 +97,26 @@ export default function OnboardingSplashScreen({ onClose }: Props) {
         >
           <OnboardingSplash1
             width={200}
-            source={require('../../../assets/onboardingVideos/assessments.mp4')}
+            source={require('../../../assets/onboardingVideos/myHealthCharts.mp4')}
             isActive={step == 1}
             caption="Track your pain and its impacts weekly"
           />
           <OnboardingSplash1
             width={200}
-            source={require('../../../assets/onboardingVideos/assessments.mp4')}
+            source={require('../../../assets/onboardingVideos/painProfile.mp4')}
             isActive={step == 2}
             caption="Easily share your pain logs to your healthcare professionals"
           />
 
           <OnboardingSplash1
             width={200}
-            source={require('../../../assets/onboardingVideos/assessments.mp4')}
+            source={require('../../../assets/onboardingVideos/carePlanner.mp4')}
             isActive={step == 2}
             caption="Share your plan with family, friends and carers"
           />
 
-
-
         </ScrollView>
-        <View style={{ marginVertical: 40 }}>
+        <View style={{ marginVertical: 100}}>
           <Button
             label="Next"
             onPress={onNextPressed}

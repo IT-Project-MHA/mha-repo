@@ -39,14 +39,13 @@ export function OnboardingSplash1({width, source, isActive, caption}: Props){
           style={{
             width: videoWidth,
             height: videoHeight,
-            borderRadius: 10,
             overflow: 'hidden',
           }}
           contentFit='contain'
           nativeControls={false}
         />
 
-        <Text style={[theme.small, {color: colours.onBackground,  flex: 1, flexShrink: 1}]}>
+        <Text style={[theme.xSmall, {color: colours.onBackground,  flex: 1, flexShrink: 1, padding: 5}]}>
         {caption}
         </Text>
 
