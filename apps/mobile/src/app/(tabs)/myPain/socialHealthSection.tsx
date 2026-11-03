@@ -92,8 +92,10 @@ export default function SocialHealthSection() {
         enjoyment: saved.enjoyment_of_life == null ? undefined : String(saved.enjoyment_of_life),
         overall_mood: textOf(options.overall_mood, saved.overall_mood),
         reflection: saved.reflection ?? undefined,
-    };
+    };  
 
+    console.log("overall_mood options", options.overall_mood);
+    
     const questions: QuestionProps[] = [
         ...CHOICE_QUESTIONS.map((q): QuestionProps => ({
             section: SECTION_NAME,

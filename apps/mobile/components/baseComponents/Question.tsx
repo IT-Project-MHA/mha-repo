@@ -2,7 +2,7 @@
 //heading
 // instruction text
 import type React from "react";
-import { View } from "react-native";
+import { View, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { StyleSheet, Text } from "react-native";
 import ENTRY_COMPONENTS, { ENTRY_TYPE } from "../answerFields/EntryRegistry";
 import { InvalidQuestionTypeError } from "@/customErrors/QuestionErrors";
@@ -92,6 +92,16 @@ export default function Question({section, title, detail, questionType, upperBou
     }
   };
   return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+      >
+
     <View style={{flex: 1}}>
       <View style={[{flexDirection: "column", marginHorizontal: 5, marginVertical: 20}]}>
         <View style={styles.sectionRow}>
@@ -132,6 +142,10 @@ export default function Question({section, title, detail, questionType, upperBou
           initialOther={initialAnswer?.other}
         />
     </View>
+
+    
+    </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

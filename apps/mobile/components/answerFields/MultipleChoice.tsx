@@ -160,4 +160,4 @@ function createStyles(colours: ColourSet, text: Typography) {
   });
 }
 
-export { MultipleChoice }; //add the new component here
+export { MultipleChoice };

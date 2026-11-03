@@ -1,9 +1,6 @@
 /**
- * Home screen for 'Patients' and 'Both' users (exclusive support people do not have this screen)
+ * Home screen for patients.
  */
-
-//we want some buttons in here that take us to assessments
-
 import { Fragment, useCallback, useState } from 'react';
 import { View, ScrollView, Text, StyleSheet } from 'react-native';
 import { ProgressBar } from 'react-native-paper';
@@ -13,6 +10,7 @@ import { RoutePath, useFocusEffect, useRouter } from 'expo-router';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { toApiDate, weekRangeLabel } from '../../../../constants/date';
 import { apiUser, apiAssessment, apiMyPain, apiMyMovement, apiMyPersonalCare, apiMySocialHealth, apiMyManagement} from '@/api/django-API';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 async function retrieveUserName() {
     const [user] = await apiUser('select');
@@ -43,6 +41,9 @@ async function GetOrCreateCurrAssessment() {
 export default function Tab() {
   const router = useRouter();
   const { theme, colours } = useTheme();
+  const insets = useSafeAreaInsets();
+  const styles = createStyles(colours, insets.bottom);
+  
 
   const lastMonday = new Date();
 
@@ -50,7 +51,7 @@ export default function Tab() {
 
   FindLastMonday(lastMonday);
 
-  const userName = "Fitz" //retrieveUserName();
+  const [userName, setUserName] = useState("");
   
   let openAssessment = async (pathname: RoutePath) => {
     try {
@@ -81,6 +82,7 @@ export default function Tab() {
   // sets completedAt
   useFocusEffect( // reload when page is accessed
     useCallback(() => {
+      retrieveUserName().then(setUserName).catch(e => console.warn("Could not load the user's name", e));
       const loadCompleted = async () => {
         try {
           const currAssessment = await FindCurrAssessment(toApiDate(lastMonday));
@@ -107,25 +109,38 @@ export default function Tab() {
     }, []),
   );
 
-  let welcomeString = "Good " + timeMessage + ", " + userName;
+  let welcomeString = "Good " + timeMessage + (userName ? ", " + userName : ""); // no comma when loading
   let nCompleted = Object.keys(completedAt).length;
   let weekLabel = weekRangeLabel(toApiDate(lastMonday));
 
   return (
-    <ScrollView>
-      <View style={[theme.header, theme.leftText]}>
-        <Text style={[theme.fontOnBackground, theme.h6]}>{welcomeString}</Text>
-        <Text style={[theme.fontOnBackground, theme.h4]}>Let's build your MPowered plan.</Text>
+    <ScrollView
+        stickyHeaderIndices={[0]}
+        contentContainerStyle={styles.content}
+  >
+          <View style={theme.header}>
+            <Text
+              style={[theme.h4, theme.leftText, { color: colours.onBackground }]}
+            >
+              {welcomeString}
+            </Text>
+            <Text style={[theme.leftText, theme.small, {color: colours.onBackground, marginTop: 10}]}>
+              Let's build your MPowered plan.
+            </Text>
+            <View style={{paddingHorizontal: 20}}>
         <ProgressBar
           progress={nCompleted / sections.length}
           color={colours.tertiary}
-          style={{ height: 10, borderRadius: 7, backgroundColor: colours.ex3, marginVertical: 16 }}
+          style={{ height: 15, borderRadius: 30, backgroundColor: colours.ex3, marginTop: 16 }}
         />
+        </View>
+          </View>
+
         <Text style={[theme.fontOnBackground, theme.body]}>
           You've completed {nCompleted}/{sections.length} assessments this week
           {nCompleted === sections.length ? "! 🔥" : "."}
         </Text>
-      </View>
+
       <View style={[theme.sectionContainer, theme.centerItems]}>
         <Text style={[theme.fontOnSurface, theme.h5]}>
           {weekLabel}
@@ -136,12 +151,11 @@ export default function Tab() {
             <AssessmentEntryTab title={section.title} onButtonPress={section.onPress} completedAt={completedAt[section.title]} />
           </Fragment>
         ))}
+        
         <View style={{ width: '85%', alignSelf: 'center', alignItems: 'flex-end', marginBottom: 20 }}>
           <TextButton label="Add a reflection for this week" fontColour={colours.onSurface} onPress={reflectionFunction} />
         </View>
-        <Text style={[theme.fontOnBackground, theme.small, theme.centerText]}>Supported by ABBVIE</Text>
       </View>
-      <View style={theme.bottomGap}/>
     </ScrollView>
   );
 }
@@ -164,7 +178,14 @@ export function SetTimeMessage(currTime: Date) {
   return timeMessage;
 }
 
-function createStyles(colours: ColourSet){
-    return StyleSheet.create({
-})
-};
+function createStyles(
+  colours: ColourSet,
+  bottomInset: number
+) {
+  return StyleSheet.create({
+    content: {
+      paddingBottom: 120 + bottomInset,
+      gap: 30
+    },
+  });
+}
