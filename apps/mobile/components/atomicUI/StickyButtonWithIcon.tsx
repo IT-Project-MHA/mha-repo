@@ -1,11 +1,12 @@
 /**
  * Button with an icon that stays fixed at the bottom of the screen, above the nav bar
  */
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ButtonWithIcon from './ButtonWithIcon';
 import { useTheme } from '../../context/ThemeContext';
 import { IoniconsIconName } from '@react-native-vector-icons/ionicons';
-import { TAB_BAR_HEIGHT, TAB_BAR_BOTTOM } from '../../src/app/(tabs)/_layout';
+import { TAB_BAR_HEIGHT, TAB_BAR_BOTTOM, TAB_BAR_ANDROID_ICON_LIFT } from '../../src/app/(tabs)/_layout';
 
 const SPACE_ABOVE_TAB_BAR = 30; // gap between button and nav bar
 
@@ -21,11 +22,14 @@ type Props = {
 
 export default function StickyButtonWithIcon({label, onPress, name, disabled}: Props) {
   const { colours } = useTheme();
+  const insets = useSafeAreaInsets();
+  const androidBottomReserve =
+    Platform.OS === 'android' && insets.bottom ? insets.bottom + TAB_BAR_ANDROID_ICON_LIFT : 0;
 
   return (
     <View
       pointerEvents="box-none"
-      style={styles.container}
+      style={[styles.container, { marginBottom: TAB_BAR_HEIGHT + SPACE_ABOVE_TAB_BAR + androidBottomReserve }]}
     >
       <ButtonWithIcon
         label={label}
@@ -43,7 +47,6 @@ const styles = StyleSheet.create({
   container: {
     position: 'absolute',
     bottom: TAB_BAR_BOTTOM,
-    marginBottom: TAB_BAR_HEIGHT + SPACE_ABOVE_TAB_BAR,
     left: 0,
     right: 0,
     alignItems: 'center',

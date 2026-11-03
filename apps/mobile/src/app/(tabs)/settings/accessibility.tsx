@@ -2,8 +2,7 @@
  * Accessibility page
  *
  * User can change colour themes and font size.
- * High contrast and text size are saved to the server (via ThemeContext),
- * Dark mode is device only.
+ * Dark mode, high contrast and text size are saved to the server (via ThemeContext).
  */
 import React, { View, Text, ScrollView } from "react-native";
 import { useTheme } from "../../../../context/ThemeContext";
@@ -11,16 +10,15 @@ import TextDropdown from "../../../../components/atomicUI/TextDropdown";
 import Toggle from "../../../../components/atomicUI/Toggle";
 
 export default function Tab() {
-  const { theme, setMode, setHighContrast, isDark, isHC, colours } = useTheme();
+  const { theme, setDarkMode, setHighContrast, isDark, isHC, colours } = useTheme();
 
   /**
    * Function that runs when the theme toggle is pressed
    * light mode -> dark mode
    *
-   * Dark mode is device only, and will change based on the phones settings.
+   * The dark mode preference is applied and saved to the server.
    */
-  const toggleColour = () =>
-    setMode(isDark ? (isHC ? "lightHC" : "light") : isHC ? "darkHC" : "dark");
+  const toggleColour = () => setDarkMode(!isDark);
 
   /**
    * Function that runs when the contrast toggle is pressed

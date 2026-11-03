@@ -10,7 +10,7 @@ interface Props{
   caption: string,
 }
 const VIDEO_ASPECT_RATIO = 9 / 16 
-const VIDEO_WIDTH_FRACTION = 0.5
+const VIDEO_WIDTH_FRACTION = 0.6
 
 export function OnboardingSplash1({width, source, isActive, caption}: Props){
   const {theme, colours } = useTheme();
