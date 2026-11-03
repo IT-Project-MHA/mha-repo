@@ -22,3 +22,6 @@ apps/api/media/
 
 # Local device DB
 *.db
+.DS_Store
+apps/.DS_Store
+coverage/
