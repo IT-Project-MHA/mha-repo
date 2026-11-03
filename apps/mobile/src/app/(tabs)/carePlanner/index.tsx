@@ -126,16 +126,12 @@ export default function Screen() {
       {isPatient && (
         <>
           {/* My Appointments */}
-          <View style={[theme.sectionContainer]}>
-            <Text
-              style={[
-                theme.h5,
-                theme.leftText,
-                { color: colours.onSurface, marginVertical: 15 }
-              ]}
-            >
+          <View style={[theme.sectionContainer, styles.filledCard]}>
+
+            <Text style={[styles.textColour, theme.leftItems, theme.h5]}>
               My Appointments
             </Text>
+
             <View style={theme.line} />
 
             <Text
@@ -191,7 +187,9 @@ export default function Screen() {
         <Text style={[styles.textColour, theme.leftItems, theme.h5]}>
           Shared With You
         </Text>
+
         <View style={theme.line} />
+
         <Text
           style={[
             styles.textColour,
@@ -228,6 +226,35 @@ export default function Screen() {
           />
         </View>
       </View>
+
+      <View style={[theme.sectionContainer, styles.filledCard]}>
+        <Text style={[styles.textColour, theme.leftItems, theme.h5]}>
+          My Support Links
+        </Text>
+        <View style={theme.line} />
+      <View>
+      <Text
+          style={[
+            styles.textColour,
+            theme.leftItems,
+            theme.body,
+            { marginVertical: 15 }
+          ]}
+        >Invite support people, choose their permissions, and view the people you support.
+        </Text>
+
+        <View style={[styles.cardItem, styles.createButton]}>
+              <Button
+                label="View My Support links"
+                onPress={() => {
+                  router.push("/carePlanner/mySupportLinksBase");
+                }}
+                buttonType="roundButton"
+              />
+        </View>
+      </View>
+      </View>
+
     </ScrollView>
   );
 }

@@ -40,17 +40,6 @@ export default function Screen() {
         />
 
         <ButtonWithIcon
-	        label="My Support Links"
-	        onPress={() => router.navigate('/settings/mySupportLinks')}
-          buttonType="transparentButton"
-          name="chevron-forward-outline"
-          textStyle={{color: colours.onSurface}}
-        />
-
-        <View style={theme.line}
-        />
-
-        <ButtonWithIcon
 	        label="Accessibility"
 	        onPress={() => router.navigate('/settings/accessibility')}
           buttonType="transparentButton"

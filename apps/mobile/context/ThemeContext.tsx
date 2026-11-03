@@ -80,7 +80,12 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
-  useEffect(() => { reloadSettings(); }, [reloadSettings]);
+  useEffect(() => { 
+    if (!token){
+      settingsId.current = null; // forget user prefs if signed out
+    }
+    reloadSettings(); 
+  }, [token, reloadSettings]);
 
   const setHighContrast = useCallback(async (on: boolean) => {
     setMode((m) => modeFor(isDarkMode(m), on));
