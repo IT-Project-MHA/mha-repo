@@ -14,7 +14,6 @@ import Button from "../atomicUI/Button";
  *    onSubmit={(option) => {...}}
  *  />
  */
-
 const EMOJIS = ["😄", "🙂", "😐", "🙁", "😢"];
 
 type EmojiSelectProps = {
@@ -50,7 +49,7 @@ function EmojiSelect({ questionOptions, onSubmit, initialValue }: EmojiSelectPro
           Select the emoji that best describes your mood
         </Text>
         <View style={styles.row}>
-          {questionOptions.map((option, index) => (
+          {EMOJIS.map((option, index) => (
             <TouchableOpacity
               key={option}
               style={[

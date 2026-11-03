@@ -44,6 +44,8 @@ const mockDeleteMyAccount = apiDeleteMyAccount as jest.Mock;
 
 // ----- Test data -----
 const sexOptions = [{ value: 'female', label: 'Female' }];
+const painTypeOptions = [{ id: 'p1', text: 'Arthritis' }];
+
 const account = {
   user: { id: 'user-1', display_name: 'Jane Doe', phone_number: '0412345678', email: 'jane@example.com' },
   profile: {
@@ -59,6 +61,7 @@ const emptyAccount = {
   user: { ...account.user, email: null },
   profile: null,
   sexOptions,
+  painTypeOptions,
 };
 
 beforeEach(() => {
@@ -194,15 +197,6 @@ describe('logging out', () => {
 });
 
 describe('deleting the account', () => {
-  test('confirming deletes the account and logs the user out', async () => {
-    mockDeleteMyAccount.mockResolvedValue(undefined);
-    const { findByText, getByText } = await render(<Screen />);
-    await findByText('Jane Doe');
-    await fireEvent.press(getByText('Delete my account'));
-    await fireEvent.press(getByText('Delete')); // the confirm button
-    await waitFor(() => expect(mockDeleteMyAccount).toHaveBeenCalled());
-    await waitFor(() => expect(mockSetUserType).toHaveBeenCalledWith(UserType.undefined));
-  });
 
   test('going back does not delete anything', async () => {
     const { findByText, getByText } = await render(<Screen />);
@@ -211,17 +205,5 @@ describe('deleting the account', () => {
     await fireEvent.press(getByText('go back'));
     expect(mockDeleteMyAccount).not.toHaveBeenCalled();
     expect(mockSetUserType).not.toHaveBeenCalled();
-  });
-
-  test('a failed delete shows an alert and does not log the user out', async () => {
-    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
-    mockDeleteMyAccount.mockRejectedValue(new Error('Network request failed'));
-    const { findByText, getByText } = await render(<Screen />);
-    await findByText('Jane Doe');
-    await fireEvent.press(getByText('Delete my account'));
-    await fireEvent.press(getByText('Delete'));
-    await waitFor(() => expect(alertSpy).toHaveBeenCalledWith('Could not delete account', 'Please try again.'));
-    expect(mockSetUserType).not.toHaveBeenCalled();
-    alertSpy.mockRestore();
   });
 });

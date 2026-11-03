@@ -2,7 +2,7 @@
  * My account page.
  *
  * About me section:
- *  - user can change their personal details
+ *  - user can change their personal details including phone number, which is verified with a code.
  *
  * My Conditions:
  *  - a support person can select 'yes I experiece MSK symptoms' and switch to a patient profile
@@ -11,12 +11,15 @@
  *
  * Log Out:
  *  - user is logged out and redirected to sign in
+ *  - user can log out of all accounts
+ *  - user can change their pin
  *
  * Delete my account
  *  - users account is deleted
  */
 import { View, Text, ScrollView, ActivityIndicator, Alert } from "react-native";
-import { useState, useEffect } from "react";
+import ChangePhoneModal from "../../../../components/atomicUI/ChangePhoneModal";
+import React, { useState, useEffect } from "react";
 
 import { useUser } from "../../../../context/AuthorisationContext";
 import { UserType } from "../../../../constants/userType";
@@ -31,6 +34,7 @@ import AboutMeModal, {
   type Choice,
   type UserDetails
 } from "../../../../components/atomicUI/AboutMeModal";
+import ChangePinModal from "../../../../components/atomicUI/ChangePinModal";
 import MyConditionsModal, {
   type userDetails
 } from "../../../../components/atomicUI/MyConditionsModal";
@@ -40,9 +44,16 @@ import {
   apiSaveAboutMe,
   apiSaveConditions,
   apiDeleteMyAccount,
-  apiErrorMessage,
-  unpackConditions
+  apiErrorMessage
 } from "@/api/settings_api_helpers";
+import {
+  apiLogOut,
+  apiChangePhone,
+  apiChangePin,
+  apiLogOutEverywhere
+} from "@/api/django-API";
+import GetDeviceId from "../../../../components/onboarding/GetDeviceID";
+import { useAppStore } from "../../../store/appStore";
 
 // the saved details of the user, from apiMyAccount
 type Account = {
@@ -52,23 +63,30 @@ type Account = {
     phone_number: string;
     email: string | null;
   };
-
   // null if the user is a support person as having a profile is what makes them a patient ('patientProfile' in api)
   profile: {
     id: string;
     assigned_gender_at_birth: string | null;
     birth_year: number | null;
     has_diagnosis: boolean | null;
-    diagnoses: string | null; // newline separated like other_conditions
+    pain_types: string[];
     other_conditions: string | null;
   } | null; // null until the user has a PatientProfile
   sexOptions: Choice[];
+  painTypeOptions: { id: string; text: string }[];
 };
 
 export default function Screen() {
   const { theme, colours } = useTheme();
   const [pending, setPending] = useState<
-    "logout" | "delete" | "editAboutMe" | "editMyConditions" | null
+    | "logout"
+    | "delete"
+    | "editAboutMe"
+    | "editMyConditions"
+    | "editPhoneNumber"
+    | "changePin"
+    | "logoutAll"
+    | null
   >(null); // modal visibility triggered by pending state
   const [account, setAccount] = useState<Account | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -116,13 +134,41 @@ export default function Screen() {
    */
   const handleSaveConditions = async (values: userDetails) => {
     if (!account) return;
-    const profile = await apiSaveConditions(
-      account.profile?.id ?? null,
-      values
-    );
+    const profile = await apiSaveConditions(account.profile?.id ?? null, {
+      painTypes: values.painTypes,
+      otherConditions: values.otherConditions
+    });
     setAccount((prev) => prev && { ...prev, profile });
     await refreshUserType();
     setPending(null);
+  };
+
+  /**
+   * Changes users phone number and confirm with server.
+   */
+  const handleSavePhone = async (phone: string, verification_id: string) => {
+    if (!account) return;
+    await apiChangePhone(phone, verification_id);
+    setAccount({ ...account, user: { ...account.user, phone_number: phone } });
+    setPending(null);
+  };
+
+  /**
+   * Resets the PIN after the modal has verified the user's phone by SMS.
+   * Throws on failure so the modal can show the error and stay open.
+   */
+  const handleChangePin = async (verification_id: string, pin: string) => {
+    if (!account) return;
+    const device_id = await GetDeviceId();
+    const { token } = await apiChangePin({
+      phone_number: account.user.phone_number,
+      verification_id,
+      pin,
+      device_id
+    });
+    useAppStore.getState().setToken(token); // use your store's actual setter
+    setPending(null);
+    Alert.alert("PIN changed", "Your PIN has been updated.");
   };
 
   /**
@@ -140,7 +186,11 @@ export default function Screen() {
         );
       }
     } else if (pending === "logout") {
-      setUserType(UserType.undefined); // should trigger log in / onboarding
+      await apiLogOut();
+      setUserType(UserType.undefined);
+    } else if (pending === "logoutAll") {
+      await apiLogOutEverywhere();
+      setUserType(UserType.undefined);
     }
     setPending(null);
   };
@@ -153,9 +203,15 @@ export default function Screen() {
       <View style={[theme.centerItems, { flex: 1, padding: 24 }]}>
         {loadError ? (
           <>
-            <Text style={[theme.body, theme.fontOnSurface]}>{loadError}</Text>
+            <Text style={[theme.body, { color: colours.onSurface }]}>
+              {loadError}
+            </Text>
             <Text> </Text>
-            <TextButton label="Try again" onPress={load} fontColour={colours.onSurface} />
+            <TextButton
+              label="Try again"
+              onPress={load}
+              fontColour={colours.onSurface}
+            />
           </>
         ) : (
           <ActivityIndicator />
@@ -165,7 +221,7 @@ export default function Screen() {
   }
 
   /**---------Labels--------------*/
-  const { user, profile, sexOptions } = account;
+  const { user, profile, sexOptions, painTypeOptions } = account;
 
   const sexLabel =
     sexOptions.find(
@@ -181,21 +237,20 @@ export default function Screen() {
     email: user.email ?? ""
   };
 
-  const { diagnoses, conditions } = unpackConditions(profile?.other_conditions);
+  const painTypeNames = new Map(
+    painTypeOptions.map((option) => [option.id, option.text])
+  );
 
-  const diagnosisLabel =
-    profile?.has_diagnosis == null
-      ? "Not set"
-      : profile.has_diagnosis
-        ? diagnoses.join(", ") || "Yes"
-        : "No Diagnosis";
+  const primaryCondition = (profile?.pain_types ?? [])
+    .map((id) => painTypeNames.get(id))
+    .filter(Boolean)
+    .join(", ");
 
-  const otherConditions = conditions.join("\n");
+  const otherConditions = profile?.other_conditions?.trim() ?? "";
 
-  const conditionsValues: userDetails = {
-    hasDiagnosis: profile?.has_diagnosis ?? null,
-    diagnoses,
-    conditions
+  const conditionsValues = {
+    painTypes: profile?.pain_types ?? [],
+    otherConditions: profile?.other_conditions ?? ""
   };
 
   /**
@@ -209,7 +264,13 @@ export default function Screen() {
         { justifyContent: "space-between", alignItems: "flex-start" }
       ]}
     >
-      <Text style={[theme.body, theme.leftText, { color: colours.onSurface }]}>
+      <Text
+        style={[
+          theme.body,
+          theme.leftText,
+          { color: colours.onSurface, marginVertical: 5 }
+        ]}
+      >
         {label}
       </Text>
       <Text
@@ -217,7 +278,12 @@ export default function Screen() {
           theme.body,
           theme.rightText,
           { color: colours.onSurface },
-          { flexShrink: 1, textAlign: "right", marginLeft: 16 }
+          {
+            flexShrink: 1,
+            textAlign: "right",
+            marginLeft: 16,
+            marginVertical: 5
+          }
         ]}
       >
         {value}
@@ -233,81 +299,99 @@ export default function Screen() {
   return (
     <ScrollView stickyHeaderIndices={[0]}>
       <View style={theme.header}>
-        <Text style={[theme.h5, theme.leftText, {color: colours.onSurface, marginVertical: 15 }]}>
+        <Text style={[theme.h4, theme.leftText, { color: colours.onSurface }]}>
           My Account
         </Text>
       </View>
 
       <View style={theme.sectionContainer}>
-        <Text> </Text>
-        <Text style={[theme.h5, theme.leftText, theme.fontOnSurface]}>
+        <Text style={[theme.h5, theme.leftText, { color: colours.onSurface }]}>
           About Me
         </Text>
-
-        <Text> </Text>
 
         <View style={theme.line}></View>
 
         <Text> </Text>
         {renderMyDetails("Name:", user.display_name)}
-        <Text style={theme.body}> </Text>
 
-        {/* sex and birth year are stored on the PatientProfile, so only patients have them */}
+        {/* Personal Details */}
         {profile && (
           <>
             {renderMyDetails("Sex:", sexLabel)}
-            <Text style={theme.body}> </Text>
             {renderMyDetails("Birth Year:", profile?.birth_year ?? "Not set")}
-            <Text style={theme.body}> </Text>
           </>
         )}
 
-        {renderMyDetails("Phone Number:", user.phone_number)}
-        <Text style={theme.body}> </Text>
-        {renderMyDetails("Email:", user.email || "No email")}
-        <Text> </Text>
-
-        <View style={[theme.rightItems]}>
+        <View style={[theme.rightItems, { marginVertical: 15 }]}>
           <TextButton
-            label="Edit Details"
+            label="Edit My Details"
             onPress={() => setPending("editAboutMe")}
+            fontColour={colours.onSurface}
+          />
+        </View>
+
+        {renderMyDetails("Phone Number:", user.phone_number)}
+        <View style={[theme.rightItems, { marginVertical: 15 }]}>
+          <TextButton
+            label="Change Phone Number"
+            onPress={() => setPending("editPhoneNumber")}
             fontColour={colours.onSurface}
           />
         </View>
       </View>
 
-      <Text> </Text>
-      <Text> </Text>
-
-      <View style={theme.sectionContainer}>
-        <Text style={[theme.h5, theme.leftText, {color: colours.onSurface, marginVertical: 15 }]}>
+      {/** My Conditions */}
+      <View style={[theme.sectionContainer, theme.sectionSeparation]}>
+        <Text
+          style={[
+            theme.h5,
+            theme.leftText,
+            { color: colours.onSurface, marginVertical: 15 }
+          ]}
+        >
           My Conditions
         </Text>
         <View style={theme.line}></View>
-        <Text> </Text>
 
         {profile ? (
           // patient: show their answers, with the option to correct them
           <>
-            <Text style={[theme.h6, theme.leftText, theme.fontOnSurface]}>
-              Diagnosis
+            <Text
+              style={[
+                theme.h6,
+                theme.leftText,
+                { color: colours.onSurface, marginVertical: 15 }
+              ]}
+            >
+              Primary Condition
             </Text>
-            <Text style={theme.body}> </Text>
-            <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>
-              {diagnosisLabel}
+            <Text
+              style={[theme.body, theme.leftText, { color: colours.onSurface }]}
+            >
+              {primaryCondition || "Not set"}
             </Text>
-            <Text> </Text>
 
             {!!otherConditions && (
               <View>
-                <Text style={[theme.h6, theme.leftText, theme.fontOnSurface]}>
+                <Text
+                  style={[
+                    theme.h6,
+                    theme.leftText,
+                    { color: colours.onSurface, marginVertical: 15 }
+                  ]}
+                >
                   Other Conditions
                 </Text>
-                <Text style={theme.body}> </Text>
-                <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>
+
+                <Text
+                  style={[
+                    theme.body,
+                    theme.leftText,
+                    { color: colours.onSurface }
+                  ]}
+                >
                   {otherConditions}
                 </Text>
-                <Text> </Text>
               </View>
             )}
 
@@ -321,7 +405,9 @@ export default function Screen() {
           </>
         ) : (
           <>
-            <Text style={[theme.body, theme.leftText, theme.fontOnSurface]}>
+            <Text
+              style={[theme.body, theme.leftText, { color: colours.onSurface }]}
+            >
               Do you experience musculoskeletal symptoms?
             </Text>
             <Text> </Text>
@@ -330,56 +416,75 @@ export default function Screen() {
                 label="Yes, I do"
                 onPress={() => setPending("editMyConditions")}
                 buttonType="roundButton"
+                textStyle={{ color: colours.onTertiary }}
               />
             </View>
           </>
         )}
       </View>
 
-      <Text> </Text>
-      <Text> </Text>
-
-      <View style={theme.sectionContainer}>
-        <Text> </Text>
-        <Text style={[theme.h5, theme.leftText, {color: colours.onSurface, marginVertical: 15 }]}>
+      {/** My Login */}
+      <View style={[theme.sectionContainer]}>
+        <Text
+          style={[
+            theme.h5,
+            theme.leftText,
+            { color: colours.onSurface, marginVertical: 15 }
+          ]}
+        >
           My Login
         </Text>
-         <View style={theme.line}></View>
-
-        <View style={[theme.layoutContainer, theme.centerItems]}>
-
-        <ButtonWithIcon
-          label="Log Out"
-          onPress={() => setPending("logout")}
-          buttonType="transparentButton"
-          name="person-outline"
-        />
-
         <View style={theme.line}></View>
 
-        <ButtonWithIcon
-          label="Change My Pin"
-          onPress={() => {}}
-          buttonType="transparentButton"
-          name="lock-closed-outline"
-        />
+        <View style={[theme.layoutContainer, theme.centerItems]}>
+          <ButtonWithIcon
+            label="Log Out"
+            onPress={() => setPending("logout")}
+            buttonType="transparentButton"
+            name="person-outline"
+            textStyle={{ color: colours.onSurface }}
+          />
+
+          <View style={theme.line}></View>
+
+          <ButtonWithIcon
+            label="Change My Pin"
+            onPress={() => setPending("changePin")}
+            buttonType="transparentButton"
+            name="lock-closed-outline"
+            textStyle={{ color: colours.onSurface }}
+          />
+
+          <View style={theme.line}></View>
+
+          <ButtonWithIcon
+            label="Log Out Everywhere"
+            onPress={() => setPending("logoutAll")}
+            buttonType="transparentButton"
+            name="lock-closed-outline"
+            textStyle={{ color: colours.onSurface }}
+          />
         </View>
-     
       </View>
 
       <Text> </Text>
 
-      <View style={[theme.layoutContainer, theme.rightItems, {marginTop: 60, paddingEnd: 40}]}>
+      <View
+        style={[
+          theme.layoutContainer,
+          theme.rightItems,
+          { marginTop: 30, paddingEnd: 40 }
+        ]}
+      >
         <TextButton
-            label="Delete my account"
-            onPress={() => setPending("delete")}
-            fontColour={colours.onSurface}
+          label="Delete my account"
+          onPress={() => setPending("delete")}
+          fontColour={colours.onSurface}
         />
       </View>
 
       {/** Modals */}
       <View style={[theme.clearContainer, theme.centerItems]}>
-        
         <ConfirmModal
           visible={pending === "delete"}
           title="Are you sure you want to delete your account?"
@@ -400,6 +505,16 @@ export default function Screen() {
           onCancel={() => setPending(null)}
         />
 
+        <ConfirmModal
+          visible={pending === "logoutAll"}
+          title="Are you sure you want to log out everywhere?"
+          message="You'll need to sign in again to access your account on all your devices."
+          confirmLabel="Log out"
+          cancelLabel="go back"
+          onConfirm={handleConfirmations}
+          onCancel={() => setPending(null)}
+        />
+
         <AboutMeModal
           visible={pending === "editAboutMe"}
           initialValues={aboutMeValues}
@@ -412,12 +527,27 @@ export default function Screen() {
           visible={pending === "editMyConditions"}
           creating={!profile}
           initialValues={conditionsValues}
+          painTypeOptions={painTypeOptions}
           onConfirm={handleSaveConditions}
+          onCancel={() => setPending(null)}
+        />
+
+        <ChangePhoneModal
+          visible={pending === "editPhoneNumber"}
+          currentPhone={user.phone_number}
+          onConfirm={handleSavePhone}
+          onCancel={() => setPending(null)}
+        />
+
+        <ChangePinModal
+          visible={pending === "changePin"}
+          phone={user.phone_number}
+          onConfirm={handleChangePin}
           onCancel={() => setPending(null)}
         />
       </View>
 
-      <View style={{margin : 20}} />
+      <View style={{ margin: 20 }} />
     </ScrollView>
   );
 }

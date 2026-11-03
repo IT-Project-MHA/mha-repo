@@ -12,6 +12,7 @@ import React from "react";
 import { UserType } from "../constants/userType";
 import { createContext, useContext, useState, useMemo, useCallback, useEffect } from "react";
 import { apiMyRole } from "@/api/settings_api_helpers";
+import { useAppStore } from "@/store/appStore";
 
 
 /**
@@ -47,8 +48,16 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export const UserProvider = ({children} : {children:React.ReactNode}) => {
     const [userType, setUserType] =useState<UserType>(UserType.undefined);
     const [isLoading, setIsLoading] = useState(true);
+    const token = useAppStore(s => s.token);
 
     const refreshUserType = useCallback(async () => {
+        // no token = signed out, which is a normal state, so don't call the server
+        if (!useAppStore.getState().token) {
+            setUserType(UserType.undefined);
+            setIsLoading(false);
+            return;
+        }
+
         try {
             const { hasProfile, isSupporter, onboarded } = await apiMyRole();
             if (hasProfile && isSupporter) setUserType(UserType.both);
@@ -56,16 +65,23 @@ export const UserProvider = ({children} : {children:React.ReactNode}) => {
             else if (isSupporter || onboarded) setUserType(UserType.supportPerson);
             else if (onboarded) setUserType(UserType.noRole); // bare account, can accept invites
             else setUserType(UserType.undefined); // new user, onboarding
-        } catch(e) {
-            // offline or server error: keep the current role rather than kicking the user out
-            console.warn("refreshUserType failed:", e);
+        } catch (e: any) {
+            if (e?.status === 401) {
+                // dead token: clear it so a reload doesn't keep sending it
+                useAppStore.getState().signOut();
+                setUserType(UserType.undefined);
+            } else {
+                // offline or server error: keep the current role rather than kicking the user out
+                console.warn("refreshUserType failed:", e);
+            }
         } finally {
             setIsLoading(false);
         }
     }, []);
 
     // checks user type on app start
-    useEffect(() => { refreshUserType(); }, [refreshUserType]);
+    // re run when token changes
+    useEffect(() => { refreshUserType(); }, [refreshUserType, token]);
 
     // useMemo rebuilds value when user type changes, to avoid unnecesary re-renders
     const value = useMemo<UserContextType>(
@@ -74,7 +90,10 @@ export const UserProvider = ({children} : {children:React.ReactNode}) => {
             setUserType,
             refreshUserType,
             isLoading,
-            logout: () => setUserType(UserType.undefined),
+            logout: () => {
+                useAppStore.getState().signOut(); // clear the persisted token
+                setUserType(UserType.undefined); // flips the guard to onboarding
+            },
             isPatient: userType === UserType.patient || userType === UserType.both,
             isSupport: userType === UserType.supportPerson || userType === UserType.both,
             isAdmin: userType === UserType.admin,

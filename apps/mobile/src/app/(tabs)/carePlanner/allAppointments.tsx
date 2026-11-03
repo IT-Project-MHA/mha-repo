@@ -2,7 +2,7 @@
  * Lists all of the patient's appointments, newest added first, opened from the see all
  * appointments button on the care planner.
  */
-import { Fragment, useCallback, useState } from 'react';
+import React, { Fragment, useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';

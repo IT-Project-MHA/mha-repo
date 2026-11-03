@@ -1,5 +1,5 @@
 import React from "react";
-import {Modal, View, Text, Pressable, StyleSheet} from 'react-native'
+import {Modal, View, Text, Pressable, StyleSheet, KeyboardAvoidingView, Platform} from 'react-native'
 import { useTheme, ColourSet } from "../../context/ThemeContext";
 
 type ConfirmModalProps = {
@@ -23,6 +23,11 @@ const ConfirmModal = ({visible, title, message, confirmLabel, cancelLabel, onCon
         animationType="fade"
         onRequestClose={onCancel} // considers tapping out of frame a 'cancel' scenario
     > 
+
+    <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >   
         
     <View style={styles.backgroundColour}/>             
     
@@ -58,6 +63,7 @@ const ConfirmModal = ({visible, title, message, confirmLabel, cancelLabel, onCon
           </View>
         </Pressable>
     </Pressable>
+    </KeyboardAvoidingView>
     </Modal>
   );
 }

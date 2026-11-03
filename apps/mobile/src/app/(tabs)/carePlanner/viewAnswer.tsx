@@ -12,6 +12,7 @@ import { useTheme, ColourSet } from '../../../../context/ThemeContext';
 import { Typography } from '../../../../constants/textSize';
 import { useAppointment } from '../../../../context/AppointmentContext';
 import { apiAppointmentAnswerRecording } from '../../../api/django-API';
+import React from 'react';
 
 // formats seconds as minutes:seconds, e.g. 83.6 as '1:23'
 const formatTime = (seconds: number) => {

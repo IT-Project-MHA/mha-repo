@@ -1,22 +1,31 @@
 /**
  * Every user can access this screen and uses it to navigate to other pages within settings.
  */
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { View, Text, StyleSheet, ScrollView } from 'react-native';
 import ButtonWithIcon from '../../../../components/atomicUI/ButtonWithIcon';
 import { useRouter } from 'expo-router';
 import { useTheme, ColourSet } from '../../../../context/ThemeContext';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Screen() {
   const router = useRouter();
-  const { theme } = useTheme();
+  const { theme, colours } = useTheme();
+  const insets = useSafeAreaInsets();
+  const styles = createStyles(colours, insets.bottom);
 
   return (
-    <ScrollView stickyHeaderIndices={[0]}>
+    <ScrollView
+            stickyHeaderIndices={[0]}
+            contentContainerStyle={styles.content}
+          >
       <View style={theme.header}>
-        <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>Settings</Text>
+        <Text style={[theme.h4, theme.leftText, {color: colours.onSurface}]}>Settings</Text>
+        <Text style={[theme.leftText, theme.small, {color: colours.onBackground, marginVertical: 10}]}>
+            Manage your account, privacy and support.
+        </Text>
       </View>
+      
 
-      <Text> </Text>
       <View style={[theme.sectionContainer, theme.centerItems]}>
         
         <ButtonWithIcon
@@ -24,16 +33,7 @@ export default function Screen() {
 	        onPress={() => router.navigate('/settings/myAccount')}
           buttonType="transparentButton"
           name="chevron-forward-outline"
-        />
-
-        <View style={theme.line}
-        />
-
-        <ButtonWithIcon
-	        label="My Support Links"
-	        onPress={() => router.navigate('/settings/mySupportLinks')}
-          buttonType="transparentButton"
-          name="chevron-forward-outline"
+          textStyle={{color: colours.onSurface}}
         />
 
         <View style={theme.line}
@@ -44,6 +44,7 @@ export default function Screen() {
 	        onPress={() => router.navigate('/settings/accessibility')}
           buttonType="transparentButton"
           name="chevron-forward-outline"
+          textStyle={{color: colours.onSurface}}
         />
     
          <View style={theme.line}
@@ -54,6 +55,7 @@ export default function Screen() {
 	        onPress={() => router.navigate('/settings/myData')}
           buttonType="transparentButton"
           name="chevron-forward-outline"
+          textStyle={{color: colours.onSurface}}
         />
    
         <View style={theme.line}
@@ -64,12 +66,11 @@ export default function Screen() {
 	        onPress={() => router.navigate('/settings/permissions')}
           buttonType="transparentButton"
           name="chevron-forward-outline"
+          textStyle={{color: colours.onSurface}}
         />
 
       </View>
 
-      <Text> </Text>
-      <Text> </Text>
 
       <View style={[theme.sectionContainer, theme.centerItems]}>
           <ButtonWithIcon
@@ -77,6 +78,7 @@ export default function Screen() {
 	          onPress={() => router.navigate('/settings/legal')}
             buttonType="transparentButton"
             name="chevron-forward-outline"
+            textStyle={{color: colours.onSurface}}
           />
 
           <View style={theme.line}
@@ -87,17 +89,22 @@ export default function Screen() {
 	          onPress={() => router.navigate('/settings/support')}
             buttonType="transparentButton"
             name="chevron-forward-outline"
+            textStyle={{color: colours.onSurface}}
           />
       </View>
-
-      <View style={theme.bottomGap}/>
 
     </ScrollView>
   );
 }
 
-function createStyles(colours: ColourSet){
-    return StyleSheet.create({
-})
-};
-
+function createStyles(
+  colours: ColourSet,
+  bottomInset: number
+) {
+  return StyleSheet.create({
+    content: {
+      paddingBottom: 120 + bottomInset,
+      gap: 30
+    },
+  });
+}

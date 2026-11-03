@@ -3,7 +3,7 @@
  * question from this screen, opened by pressing a question on the appointment details or shared
  * appointment page.
  */
-import { useEffect, useRef, useState } from 'react';
+import  React,{ useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
@@ -337,11 +337,11 @@ export default function Screen() {
               />
             </View>
             {/* stacked, the button types' side padding is too wide for three in a row */}
-            <Button label="Cancel" onPress={pressCancelSigning} buttonType="roundSecondaryButton" />
+            <Button label="Cancel" onPress={pressCancelSigning} buttonType="roundButton" />
             <Button
               label="Clear"
               onPress={() => signatureRef.current?.clearSignature()}
-              buttonType="roundSecondaryButton"
+              buttonType="roundButton"
             />
             <Button
               label="Save"
@@ -392,7 +392,7 @@ export default function Screen() {
             <Button
               label="Delete recording"
               onPress={() => setConfirmingDeleteRecording(true)}
-              buttonType="roundSecondaryButton"
+              buttonType="roundButton"
             />
             {signatureButton}
           </>

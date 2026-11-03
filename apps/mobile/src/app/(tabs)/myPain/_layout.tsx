@@ -14,6 +14,7 @@ export default function MyPainLayout() {
    return (
     <Stack 
       screenOptions={{
+        animation: 'none',
         // content of the page
         contentStyle: { 
           backgroundColor: colours.background

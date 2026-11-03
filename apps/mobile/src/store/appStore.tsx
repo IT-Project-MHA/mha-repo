@@ -22,7 +22,7 @@ export const useAppStore = create<AppState>()(
         set( (s)=>({isOnboarded: true, token: token ?? s.token})),
       setToken: (token) => set({token}),
       setDeviceId: (deviceId) => set({deviceId}),
-      signOut: () => set({ isOnboarded: false, token:null, deviceId: null}),
+      signOut: () => set({ isOnboarded: false, token: null }),
     }),
     {name: 'app-state', storage: createJSONStorage(() => AsyncStorage)}
   )

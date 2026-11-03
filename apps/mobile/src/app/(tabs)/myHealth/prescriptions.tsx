@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Alert } from "react-native";
 import Button from "../../../../components/atomicUI/Button";
 import ButtonWithIcon from "../../../../components/atomicUI/ButtonWithIcon";
 import { useTheme } from "../../../../context/ThemeContext";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import AddPrescriptionModal, {
   PrescriptionDetails
 } from "../../../../components/atomicUI/AddPrescriptionModal";
@@ -148,7 +148,7 @@ export default function Screen() {
   return (
     <ScrollView stickyHeaderIndices={[0]}>
       <View style={theme.header}>
-        <Text style={[theme.h4, theme.leftText, theme.fontOnSurface]}>
+        <Text style={[theme.h4, theme.leftText, {color: colours.onSurface}]}>
           My Prescriptions
         </Text>
       </View>
@@ -171,7 +171,7 @@ export default function Screen() {
           <View style={theme.centerItems}>
            
             <Text style={[theme.body, { color: colours.onSurface, marginVertical: 40 }]}>
-              Your prescriptions list is empty.
+              You have no active prescriptions.
             </Text>
 
             <Button
@@ -194,8 +194,8 @@ export default function Screen() {
                 onPress={() => openPrescription(p)}
                 buttonType="transparentButton"
                 name="chevron-forward-outline"
-                textStyle={{ color: colours.onTertiary }}
-                style={{ width: "80%" }}
+                textStyle={{ color: colours.onBackground }}
+                style={{ width: "80%"}}
               />
 
               {/**
@@ -219,7 +219,7 @@ export default function Screen() {
       {inactivePrescriptions.length > 0 && (
         <>
           <View style={theme.header}>
-            <Text style={[theme.h5, theme.leftText, theme.fontOnSurface]}>
+            <Text style={[theme.h5, theme.leftText, {color: colours.onSurface}]}>
               My Inactive Prescriptions
             </Text>
           </View>
@@ -231,7 +231,7 @@ export default function Screen() {
                 onPress={() => openPrescription(p)}
                 buttonType="transparentButton"
                 name="chevron-forward"
-                textStyle={{ color: colours.onTertiary }}
+                textStyle={{ color: colours.onBackground }}
                 style={{ width: "80%" }}
               />
 

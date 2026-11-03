@@ -3,7 +3,7 @@
  * patient's doctor in a shared appointment or add their own. The patient's questions aren't shown
  * as only the patient can change them.
  */
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -188,10 +188,10 @@ export default function Screen() {
     <View style={styles.screen}>
       <ScrollView stickyHeaderIndices={[0]} contentContainerStyle={styles.content}>
         <View style={[theme.header, styles.title]}>
-          <Text style={[theme.h4, theme.leftText, theme.fontOnSurface, styles.titleText]}>
+          <Text style={[theme.h4, theme.leftText, styles.titleText,{color: colours.onSurface}]}>
             Add Questions to the Appointment
           </Text>
-          <Text style={[styles.body, styles.intro, theme.leftText]}>
+          <Text style={[styles.body, styles.intro, theme.leftText,{color: colours.onSurface}]}>
             Based on the patient's answers to the four impact sections, we have provided some
             suggested questions to ask their healthcare professional/s.
           </Text>
@@ -203,7 +203,7 @@ export default function Screen() {
             <View style={[styles.cardContent, styles.suggestionSections]}>
               {shownSuggestions.map(({ key, heading, questions }) => (
                 <View key={key}>
-                  <Text style={[styles.heading, styles.label]}>{heading}</Text>
+                  <Text style={[styles.heading, styles.label,{color: colours.onSurface}]}>{heading}</Text>
                   <View style={styles.checkboxList}>
                     {questions.map(({ checkboxId, text }, index) => (
                       <Checkbox.Item
@@ -225,7 +225,7 @@ export default function Screen() {
         {/* own questions card */}
         <View style={[theme.sectionContainer, styles.card]}>
           <View style={styles.cardContent}>
-            <Text style={[styles.heading, styles.label]}>Add your own questions</Text>
+            <Text style={[styles.heading, styles.label,{color: colours.onSurface}]}>Add your own questions</Text>
             <View style={styles.ownQuestions}>
               {ownQuestions.map((question) => (
                 <View key={question.id} style={[styles.field, styles.ownQuestion]}>

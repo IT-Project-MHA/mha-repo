@@ -1,7 +1,7 @@
 import { View, Text, ScrollView } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../../../../context/ThemeContext';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { apiManagementSummary, apiMovementSummary, apiMyPainSummary, apiPersonalCareSummary, apiSocialHealthSummary } from '@/api/my_health_api_helpers';
 import { weekRangeLabel } from '../../../../constants/date';
 import { fieldsFor, titles } from '../../../healthInfo/sectionSummaryFields';

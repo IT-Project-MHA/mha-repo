@@ -37,7 +37,7 @@ const setup = async (props: Partial<React.ComponentProps<typeof PeopleModal>> = 
 describe('PeopleModal', () => {
   test('ticking a permission sends all three permissions with that one switched on', async () => {
     const { getByText, onChange } = await setup();
-    await fireEvent.press(getByText('View my assessments'));
+    await fireEvent.press(getByText('View my Assessments Data'));
     await waitFor(() => expect(onChange).toHaveBeenCalledWith({ ...noPerms, viewAssessments: true }));
   });
 
@@ -54,9 +54,9 @@ describe('PeopleModal', () => {
       role: 'Im Supporting',
       permissions: { ...noPerms, viewAssessments: true },
     });
-    expect(getByText(/✓ View their assessments/)).toBeTruthy();
-    expect(getByText(/✗ View their appointments/)).toBeTruthy();
-    expect(queryByText('View my assessments')).toBeNull(); // no checkboxes
+    expect(getByText(/✓ View their assessments/)).toBeNull();
+    expect(getByText(/✗ View their appointments/)).toBeNull();
+    expect(queryByText('View their Assessments Data')).toBeNull(); // no checkboxes
     await fireEvent.press(getByText(/View their assessments/));
     expect(onChange).not.toHaveBeenCalled();
   });

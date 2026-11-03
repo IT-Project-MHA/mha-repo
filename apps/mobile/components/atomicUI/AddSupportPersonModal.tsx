@@ -5,10 +5,11 @@
  * stays open and shows the error if the invite fails.
  */
 import React, { useEffect } from "react";
-import {Modal, View, Text, Pressable, StyleSheet, TextInput, ActivityIndicator} from 'react-native'
+import {Modal, View, Text, Pressable, StyleSheet, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform} from 'react-native'
 import { useState } from "react";
 import { useTheme, ColourSet } from "../../context/ThemeContext";
-import { validateSupportPhone, apiErrorMessage } from "@/api/settings_api_helpers"
+import { validateSupportPhone, apiErrorMessage } from "@/api/settings_api_helpers";
+import {toServerPhone} from "@/api/care_planner_api_helpers";
 
 type Props = {
     visible: boolean;
@@ -46,7 +47,7 @@ const AddSupportPersonModal = ({visible, onConfirm, onCancel} : Props) => {
       setSaving(true);
       setError(null);
       try {
-        await onConfirm(phone);
+        await onConfirm(toServerPhone(phone));
       } catch (error) {
         setError(apiErrorMessage(error, "Couldn't send the invite. Please try again."));
       } finally {
@@ -63,7 +64,12 @@ const AddSupportPersonModal = ({visible, onConfirm, onCancel} : Props) => {
         onRequestClose={onCancel} // considers tapping out of frame a 'cancel' scenario
     > 
         
-    <View style={styles.backgroundColour}/>             
+    <View style={styles.backgroundColour}/>         
+
+    <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >    
     
     <Pressable style={styles.modalView} onPress={onCancel}> 
         
@@ -72,11 +78,11 @@ const AddSupportPersonModal = ({visible, onConfirm, onCancel} : Props) => {
           onPress={() => {}}
         >
           
-          <Text style={[theme.h4, theme.leftItems, theme.fontOnSurface]}>Add Support Person</Text>
+          <Text style={[theme.h4, theme.leftItems, {color: colours.onSurface}]}>Add Support Person</Text>
           <Text> </Text>
 
           <View style={styles.field}>
-            <Text style={[theme.h6, theme.leftItems, theme.fontOnSurface]}>Phone Number</Text>
+            <Text style={[theme.h6, theme.leftItems, {color: colours.onSurface}]}>Phone Number</Text>
             <Text> </Text>
             <TextInput
               value={phone}
@@ -97,7 +103,7 @@ const AddSupportPersonModal = ({visible, onConfirm, onCancel} : Props) => {
               disabled={saving}
               accessibilityRole="button"
             >
-              <Text style={[theme.body, theme.fontOnSurface]}>Go Back</Text>
+              <Text style={[theme.body, {color: colours.onSurface}]}>Go Back</Text>
             </Pressable>
 
             <Pressable
@@ -111,6 +117,7 @@ const AddSupportPersonModal = ({visible, onConfirm, onCancel} : Props) => {
           </View>
         </Pressable>
     </Pressable>
+    </KeyboardAvoidingView>
     </Modal>
   );
 }

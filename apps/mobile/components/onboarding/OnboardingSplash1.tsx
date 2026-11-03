@@ -1,27 +1,28 @@
 import React, {useEffect, useRef} from 'react'
 import { useTheme } from "../../context/ThemeContext";
-import { useWindowDimensions, View } from 'react-native';
-import { useVideoPlayer, VideoView} from 'expo-video'
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useWindowDimensions, View, Text } from 'react-native';
+import { useVideoPlayer, VideoView, VideoSource } from 'expo-video'
 
 interface Props{
   width: number,
+  source: VideoSource,
   isActive?: boolean
+  caption: string,
 }
-const ASPECT_RATIO = 1
-const MAX_HEIGHT_FRACTION = 0.6
+const VIDEO_ASPECT_RATIO = 9 / 16 
+const VIDEO_WIDTH_FRACTION = 0.5
 
-export function OnboardingSplash1({width, isActive}: Props){
-  const {theme} = useTheme();
-  const player = useVideoPlayer(require('../../assets/onboardingVideos/carePlanner_cropped.mp4'),
+export function OnboardingSplash1({width, source, isActive, caption}: Props){
+  const {theme, colours } = useTheme();
+  const player = useVideoPlayer(source,
   (p) => {
     p.loop = true
     p.muted = true
   })
 
-  const {height: screenHeight} = useWindowDimensions();
-  const size = Math.min(width, screenHeight * MAX_HEIGHT_FRACTION * ASPECT_RATIO);
-
+  let videoWidth = width * VIDEO_WIDTH_FRACTION;
+  let videoHeight = videoWidth / VIDEO_ASPECT_RATIO;
+  
   useEffect(()=>{
     if(isActive){
       player.play();
@@ -32,21 +33,23 @@ export function OnboardingSplash1({width, isActive}: Props){
 
   return(
 
-      <View style={{width, flexShrink: 0, alignItems: 'center', justifyContent: 'center'}}>
+      <View style={[{width, flexShrink: 0, alignItems: 'flex-start', justifyContent: 'center', columnGap: 0, flexDirection: 'row', paddingHorizontal: 10}]}>
         <VideoView
           player = {player}
           style={{
-            width: size,
-            height: size / ASPECT_RATIO,
-            borderRadius: 10,
+            width: videoWidth,
+            height: videoHeight,
             overflow: 'hidden',
           }}
           contentFit='contain'
           nativeControls={false}
         />
+
+        <Text style={[theme.xSmall, {color: colours.onBackground,  flex: 1, flexShrink: 1, padding: 5}]}>
+        {caption}
+        </Text>
+
       </View>
   )
-/**
- * <OnboardingSplashComp width={width}>
- */
+
 }

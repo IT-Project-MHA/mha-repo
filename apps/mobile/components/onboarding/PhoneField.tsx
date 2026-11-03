@@ -1,14 +1,13 @@
-import { useRouter } from "expo-router";
-import { useState } from "react";
-import Button from "../atomicUI/Button";
-import { TextInput } from "react-native-paper";
-import { Text, StyleSheet, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { lineThickness } from '../../constants/layout';
+import React, { useState } from "react";
+import {
+  Text,
+  View,
+  StyleSheet,
+  KeyboardTypeOptions,
+  Pressable,
+} from "react-native";
 import { useTheme, ColourSet } from '../../context/ThemeContext';
-import { Typography } from '../../constants/textSize';
-import React from 'react';
-
+import { TextInput, HelperText } from "react-native-paper";
 
 //Input variables
 const MAX_lENGTH_NUM = 10; //aus phone numbers are 10 characters, including the "04"
@@ -20,12 +19,12 @@ function sanitizeNumberInput(text: string) {
   return t;
 }
 
-
 function validateTextInput(text: string) {
-  //checking if it's something we should accept, i.e. within range
-  //if (text == "") return "enter text"; //what it prints if submitted
 
+  //checking input is within range
+  //if (text == "") return "enter text"; //what it prints if submitted
   const length = text.length;
+
   if (length > MAX_lENGTH_NUM) {
     return "phone number is too long";
   }else if(length < MAX_lENGTH_NUM){
@@ -42,15 +41,11 @@ type PhoneFieldProps ={
 }
 
 function PhoneField({onSubmit}: PhoneFieldProps) {
-  const { colours, theme } = useTheme();
-  const insets = useSafeAreaInsets();
-  const styles = createStyles(colours, theme, insets.bottom);
-  const router = useRouter();
+  const { theme, colours } = useTheme();
+  const styles = createStyles(colours);
 
   const [value, setValue] = useState<string>(AREA_CODE);
   const [error, setError] = useState<string>("");
-
-
 
   const handleChange = (text: string) => {
     setValue(sanitizeNumberInput(text));
@@ -67,144 +62,72 @@ function PhoneField({onSubmit}: PhoneFieldProps) {
   };
 
   return (
-    <View>
-      <View style= {theme.sectionContainer}>
-        <TextInput
-          style={[styles.field, theme.option]}
-          onChangeText={handleChange}
-          value={value}
-          keyboardType="numeric"
-          maxLength={MAX_lENGTH_NUM}
-          textContentType="telephoneNumber"
-        />
+          <View style={theme.clearContainer}>
+      
+            <View style={theme.layoutContainer}></View>
 
-        <View style= {theme.sectionContainer}>
-        {!!error && <Text style={styles.subheading}>{error}</Text>}
-        </View>
-        <View style = {{marginBottom: 16}}>
-        <Button
-          label="Submit"
-          onPress={handleSubmit}
-          buttonType="roundButton"
+        <TextInput
+          mode="outlined"
+          value={value}
+          onChangeText={handleChange}
+          onSubmitEditing={handleSubmit}
+          keyboardType="number-pad"
+          textContentType="telephoneNumber"
+          maxLength={MAX_lENGTH_NUM}
+          error={!!error}
+          textColor={colours.onSurface}
+          outlineColor={colours.secondary}
+          activeOutlineColor={colours.primary}
+          outlineStyle={styles.outline}
+          style={[styles.field, { fontSize: theme.h6.fontSize }]}
+          contentStyle={styles.fieldContent}
         />
-        </View>
+  
+        <HelperText type="error" visible={!!error} style={styles.helper}>
+          {error}
+        </HelperText>
+
+           <Pressable
+                      onPress={handleSubmit}
+                      style={styles.button}
+                    >
+                      <Text style={[theme.h6, styles.buttonText, {color: colours.onPrimary}]}>Submit</Text>
+                    </Pressable>
       </View>
-    </View>
   );
 }
 
-export { PhoneField }; //add the new component here
+export { PhoneField };
 
-function createStyles(colours: ColourSet, text: Typography, bottomInset: number) {
+function createStyles(colours: ColourSet) {
   return StyleSheet.create({
-    screen: {
-      flex: 1,
-      backgroundColor: colours.background,
+    container: {
+      width: "100%",
+      alignItems: "center",
+      gap: 40,
     },
-
-    content: {
-      paddingBottom: 200 + bottomInset,
-      gap: 38,
-    },
-
-    title: {
-      marginBottom: -19,
-    },
-
-    card: {
-      gap: 12,
-    },
-
-    cardContent: {
-      paddingHorizontal: '5%',
-      paddingBottom: 5,
-    },
-
-    bottomBar: {
-      position: 'absolute',
-      left: '7.5%',
-      width: '85%',
-      bottom: 120 + bottomInset,
-      gap: 8,
-    },
-
-    heading: {
-      ...text.h6,
-      color: colours.onSurface,
-      paddingHorizontal: '5%',
-    },
-
-    subheading: {
-      ...text.small,
-      color: colours.onBackground,
-      paddingHorizontal: '5%',
-      marginTop: 4,
-    },
-
-    label: {
-      marginTop: 29,
-      marginBottom: 19,
-    },
-
-    firstLabel: {
-      marginTop: 5,
-    },
-
+    content: { gap: 24 },
+    fieldWrap: { width: "80%" },
     field: {
-      height: 40,
-      paddingVertical: 5,
-      paddingHorizontal: 10,
-      marginHorizontal: 8,
-      borderWidth: 1,
-      borderColor: colours.onSurface,
-      justifyContent: 'center',
+      height: 60,
+      backgroundColor: "transparent",
     },
-
-    input: {
-      ...text.body,
-      color: colours.onSurface,
+    fieldContent: {
+      textAlign: "center",
+      paddingHorizontal: 40,
     },
-
-    error: {
-      ...text.small,
-      borderWidth: 1,
-      borderRadius: 8,
-      paddingVertical: 6,
-      paddingHorizontal: 12,
-      backgroundColor: colours.background,
-      overflow: 'hidden',
+    outline: {
+      borderRadius: 100,
+      borderWidth: 2,
     },
-
-    dropdown: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+    helper: { textAlign: "center" },
+    button: {
+      height: 60,
+      width: "100%",
+      borderRadius: 100,
+      justifyContent: "center",
+      backgroundColor: colours.primary,
     },
-
-    optionList: {
-      marginTop: 8,
-      marginHorizontal: 8,
-      borderWidth: 1,
-      borderColor: colours.onSurface,
-      overflow: 'hidden',
-    },
-
-    optionRow: {
-      paddingVertical: 10,
-      paddingHorizontal: 12,
-    },
-
-    divider: {
-      borderTopWidth: lineThickness,
-      borderTopColor: colours.secondary2,
-    },
-
-    selectedRow: {
-      backgroundColor: colours.secondary,
-    },
-
-    selectedText: {
-      color: colours.onSecondary,
-    },
+    buttonText: { textAlign: "center" },
   });
 }

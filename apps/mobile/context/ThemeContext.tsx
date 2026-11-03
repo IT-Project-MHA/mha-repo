@@ -6,6 +6,7 @@ import type { ColourSet } from '../constants/colourScheme';
 import { createTypography, FontScale, Typography } from '../constants/textSize';
 import { apiMySettings, apiSaveSettings, apiErrorMessage } from '@/api/settings_api_helpers';
 export type { ColourSet } from '../constants/colourScheme';
+import { useAppStore } from '@/store/appStore';
 
 type ThemeContextType = {
   theme: typeof themes.light & Typography;
@@ -47,6 +48,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [mode, setMode] = useState<ThemeMode>(systemScheme === 'dark' ? 'dark' : 'light');
   const [fontScale, setFontScaleState] = useState<FontScale>(1);
   const bottomInset = useSafeAreaInsets().bottom;
+  const token = useAppStore((s) => s.token);
 
   const fontScaleRef = useRef<FontScale>(1);
   fontScaleRef.current = fontScale;
@@ -65,6 +67,8 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 
   /** loads the saved settings from the server and applies them */
   const reloadSettings = useCallback(async () => {
+    // signed out: keep the local defaults, no server call
+    if (!useAppStore.getState().token) return;
     try {
       const settings = await apiMySettings();
       if (!settings) return;
@@ -76,7 +80,12 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
-  useEffect(() => { reloadSettings(); }, [reloadSettings]);
+  useEffect(() => { 
+    if (!token){
+      settingsId.current = null; // forget user prefs if signed out
+    }
+    reloadSettings(); 
+  }, [token, reloadSettings]);
 
   const setHighContrast = useCallback(async (on: boolean) => {
     setMode((m) => modeFor(isDarkMode(m), on));

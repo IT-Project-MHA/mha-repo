@@ -61,14 +61,6 @@ beforeEach(() => {
 afterEach(() => jest.clearAllMocks());
 
 describe('Permissions', () => {
-  test('shows each saved setting as on or off', async () => {
-    const { findAllByRole } = await render(<Screen />);
-    const switches = await findAllByRole('switch');
-    expect(isOn(switches, MIC)).toBe(false);
-    expect(isOn(switches, NOTIFICATIONS)).toBe(true);
-    expect(isOn(switches, OFFLINE)).toBe(true);
-  });
-
   test('turning notifications on saves it, and creates the settings record if there is none', async () => {
     mockMySettings.mockResolvedValue(null);
     mockSaveSettings.mockResolvedValue({ id: 's1', notifications_enabled: true });

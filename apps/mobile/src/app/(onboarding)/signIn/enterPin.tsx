@@ -2,216 +2,141 @@
  * main log-in screen
  * this is where user enters their pin. If their device ID is in storage, we send that, pin and phone number
  * else, we use an SMS verification
- * 
+ * - if phone number and pin can't be verified, user receives error message
  */
-
-import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { NumberEntry } from '../../../../components/answerFields/NumberEntry';
-import Button from '../../../../components/atomicUI/Button';
+import { NumberEntry } from '../../../../components/onboarding/onboardingFields/NumberEntryOnboarding';
 import { useOnboardingStore } from '../../../store/onboardingStorage';
-import { ApiError, login } from '../../../api/django-API';
-
-import { Text, StyleSheet, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { lineThickness } from '../../../../constants/layout';
-import { useTheme, ColourSet } from '../../../../context/ThemeContext';
-import { Typography } from '../../../../constants/textSize';
-import React from 'react';
+import { ApiError, login, request_code, apiChangePin } from '../../../api/django-API';
+import { HelperText } from "react-native-paper";
+import ChangePinModal from '@/components/atomicUI/ChangePinModal';
+import { useUser } from '@/context/AuthorisationContext';
+import { Text, View, ScrollView, KeyboardAvoidingView, Platform} from 'react-native';
+import { useTheme } from '../../../../context/ThemeContext';
+import React, { useState } from 'react';
 import {useAppStore} from '../../../store/appStore'
-
-import { HelperText } from 'react-native-paper';
 import GetDeviceId from '../../../../components/onboarding/GetDeviceID';
-
+import TextButton from '@/components/atomicUI/TextButton';
 
 const NUM_DIGITS = 6;
 
 export default function Page() {
   const { colours, theme } = useTheme();
-  const insets = useSafeAreaInsets();
-  const styles = createStyles(colours, theme, insets.bottom);
   const router = useRouter();
-
+  const { refreshUserType } = useUser();
   const resetOnboarding = useOnboardingStore((s)=> s.reset);
   const completeOnboarding = useAppStore((s)=> s.completeOnboarding);
   const setUserOnboaring = useOnboardingStore((s)=> s.set);
-  const {...info} = useOnboardingStore.getState();
-
   const [error, setError] = useState<string | null>(null);
+  const [changingPin, setChangingPin] = useState(false);
+  const phone_number = useOnboardingStore((s) => s.phone_number);
 
-  async function attemptLogIn(pin: number){
-    setUserOnboaring({pin});
+  async function attemptLogIn(pin: string) {
+    setError(null);
+    setUserOnboaring({ pin }); // kept so phoneVerification can reuse it on a new device
 
-    const device_id = await GetDeviceId();
-    console.log('device_id', device_id, typeof device_id)
-    const values = {
-      phone_number: info.phone_number,
-      pin: pin,
-      device_id: device_id,
-    }
-    try{
-      const result = await login(values);
-      const token = result.token;
+    // read at call time to always get the current phone number
+    const { phone_number } = useOnboardingStore.getState();
 
+    try {
+      const device_id = await GetDeviceId(); // inside try so a failure shows an error
+      const result = await login({ phone_number, pin, device_id });
+
+      completeOnboarding(result.token); // token first so the next call is authenticated
       resetOnboarding();
-      //set the onboarded flag
-      completeOnboarding(token);
-      //continue to landing page
-      router.navigate('/(tabs)')
-    }catch (error){
-      
-      if(error instanceof ApiError){
-        
-        if(error.status==403){
-          //if 403 continue to verification
-          router.navigate('/(onboarding)/signIn/phoneVerification')
+      await refreshUserType(); // RootNavigator moves to (tabs) once userType is defined
+    } catch (e) {
+      if (e instanceof ApiError) {
+        if (e.status === 403) {
+          // new device: send the SMS, then continue to verification
+          try {
+            await request_code(phone_number);
+          } catch (smsError) {
+            console.error('Failed to send SMS', smsError);
+            setError("We couldn't send a verification code. Try again shortly.");
+            return;
+          }
+          router.navigate('/(onboarding)/signIn/phoneVerification');
+          return;
         }
-        if(error.status == 401){
-          //401 tell user invalid credentials
-          setError('Invalid phone number or PIN')
+        if (e.status === 401) {
+          setError('Invalid phone number or PIN');
           return;
         }
       }
-      console.error('login failed', error);
-      setError('Something went wrong, please try again.')
-      
+      console.error('login failed', e);
+      setError('Something went wrong, please try again.');
     }
-    
+  }
+
+  /**
+   * Called by the modal once the SMS code is verified and the new PIN is chosen.
+   * Throws on failure so the modal can show the error and stay open.
+   * The new PIN signs the user in, the same way a successful login does.
+   */
+  async function handleChangePin(verification_id: string, pin: string) {
+    const device_id = await GetDeviceId();
+    const { token } = await apiChangePin({
+      phone_number,
+      verification_id,
+      pin,
+      device_id
+    });
+    setChangingPin(false);
+    completeOnboarding(token); // token first so the next call is authenticated
+    resetOnboarding();
+    await refreshUserType(); // RootNavigator moves to (tabs) once userType is defined
   }
 
   return (
-    <SafeAreaView style={theme.screen}>
-      <View style={[theme.header, styles.title]}>
-        <Text style={styles.subheading}></Text>
-        <Text style={styles.heading}>Enter your six digit pin</Text>
+   <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+      >
+      <View style={[theme.header, theme.leftText]}>
+        <Text style={[theme.h5, { color: colours.onSurface }]}>
+          Enter your six digit pin
+        </Text>
       </View>
 
-      <View style={styles.bottomBar}>
-        <HelperText type='error' visible={!!error}>
+      <View>
+
+        <HelperText type="error" visible={!!error} style={theme.centerText}>
           {error}
         </HelperText>
-        <NumberEntry 
-        onSubmit={attemptLogIn}
-        UPPER_BOUND={999999}
-        LOWER_BOUND={0}
-        MAX_lENGTH_NUM={NUM_DIGITS}
+       
+        <NumberEntry
+          onSubmit={attemptLogIn}
+          length={NUM_DIGITS}
+          secure
+          placeholder="Enter 6-digit PIN"
         />
+
+        <View
+            style={[theme.rightItems, { marginVertical: 15, paddingEnd: 20 }]}
+          >
+            <TextButton
+              label="Forgot PIN?"
+              onPress={() => setChangingPin(true)}
+              fontColour={colours.onBackground}
+            />
+          </View>
+        
       </View>
-    </SafeAreaView>
+    </ScrollView>
+
+    <ChangePinModal
+        visible={changingPin}
+        phone={phone_number}
+        onConfirm={handleChangePin}
+        onCancel={() => setChangingPin(false)}
+      />
+    </KeyboardAvoidingView>
   );
-}
-
-function createStyles(colours: ColourSet, text: Typography, bottomInset: number) {
-  return StyleSheet.create({
-    screen: {
-      flex: 1,
-      backgroundColor: colours.background,
-    },
-
-    content: {
-      paddingBottom: 200 + bottomInset,
-      gap: 38,
-    },
-
-    title: {
-      marginBottom: -19,
-    },
-
-    card: {
-      gap: 12,
-    },
-
-    cardContent: {
-      paddingHorizontal: '5%',
-      paddingBottom: 5,
-    },
-
-    bottomBar: {
-      position: 'absolute',
-      left: '7.5%',
-      width: '85%',
-      bottom: 120 + bottomInset,
-      gap: 8,
-    },
-
-    heading: {
-      ...text.h6,
-      color: colours.onSurface,
-      paddingHorizontal: '5%',
-    },
-
-    subheading: {
-      ...text.small,
-      color: colours.onBackground,
-      paddingHorizontal: '5%',
-      marginTop: 4,
-    },
-
-    label: {
-      marginTop: 29,
-      marginBottom: 19,
-    },
-
-    firstLabel: {
-      marginTop: 5,
-    },
-
-    field: {
-      height: 40,
-      paddingVertical: 5,
-      paddingHorizontal: 10,
-      marginHorizontal: 8,
-      borderWidth: 1,
-      borderColor: colours.onSurface,
-      justifyContent: 'center',
-    },
-
-    input: {
-      ...text.body,
-      color: colours.onSurface,
-    },
-
-    error: {
-      ...text.small,
-      borderWidth: 1,
-      borderRadius: 8,
-      paddingVertical: 6,
-      paddingHorizontal: 12,
-      backgroundColor: colours.background,
-      overflow: 'hidden',
-    },
-
-    dropdown: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-
-    optionList: {
-      marginTop: 8,
-      marginHorizontal: 8,
-      borderWidth: 1,
-      borderColor: colours.onSurface,
-      overflow: 'hidden',
-    },
-
-    optionRow: {
-      paddingVertical: 10,
-      paddingHorizontal: 12,
-    },
-
-    divider: {
-      borderTopWidth: lineThickness,
-      borderTopColor: colours.ex2,
-    },
-
-    selectedRow: {
-      backgroundColor: colours.secondary,
-    },
-
-    selectedText: {
-      color: colours.onSecondary,
-    },
-  });
 }
 

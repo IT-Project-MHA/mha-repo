@@ -19,6 +19,16 @@ jest.mock('@/context/ThemeContext', () => ({
 // stops helper file from loading real Django API code.
 jest.mock('@/api/django-API', () => ({}));
 
+let mockIsPatient = true;
+jest.mock('@/context/AuthorisationContext', () => ({
+  useUser: () => ({ isPatient: mockIsPatient }),
+}));
+
+beforeEach(() => {
+  mockIsPatient = true;
+});
+
+
 // ----- Test data -----
 const initial: UserDetails = {
   name: 'Jane Doe',
@@ -27,6 +37,7 @@ const initial: UserDetails = {
   phone: '0412345678',
   email: 'jane@example.com',
 };
+
 const sexOptions = [
   { value: 'female', label: 'Female' },
   { value: 'male', label: 'Male' },
@@ -52,8 +63,7 @@ describe('AboutMeModal', () => {
   test('opens showing the saved details', async () => {
     const { getByDisplayValue, getByText } = await setup();
     expect(getByDisplayValue('Jane Doe')).toBeTruthy();
-    expect(getByDisplayValue('0412345678')).toBeTruthy();
-    expect(getByDisplayValue('jane@example.com')).toBeTruthy();
+    expect(getByDisplayValue('2002')).toBeTruthy();
     expect(getByText('Female')).toBeTruthy();
   });
 
@@ -77,21 +87,6 @@ describe('AboutMeModal', () => {
     expect(onConfirm).not.toHaveBeenCalled();
   });
 
-  test('an invalid phone number shows a message and does not save', async () => {
-    const { getByPlaceholderText, getByText, onConfirm } = await setup();
-    await fireEvent.changeText(getByPlaceholderText('Phone Number'), '0212345678');
-    await fireEvent.press(getByText('Save Changes'));
-    expect(getByText('Enter an Australian mobile number.')).toBeTruthy();
-    expect(onConfirm).not.toHaveBeenCalled();
-  });
-
-  test('an invalid email shows a message and does not save', async () => {
-    const { getByPlaceholderText, getByText, onConfirm } = await setup();
-    await fireEvent.changeText(getByPlaceholderText('Email'), 'not-an-email');
-    await fireEvent.press(getByText('Save Changes'));
-    expect(getByText('Enter a valid email address.')).toBeTruthy();
-    expect(onConfirm).not.toHaveBeenCalled();
-  });
 
   test('the sex dropdown lets the user pick another option', async () => {
     const { getByText, onConfirm } = await setup();

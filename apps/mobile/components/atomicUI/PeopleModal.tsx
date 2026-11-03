@@ -12,31 +12,33 @@ import {
   Text,
   Pressable,
   StyleSheet,
-  ScrollView
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useTheme, ColourSet } from "../../context/ThemeContext";
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { apiErrorMessage } from "@/api/settings_api_helpers";
 import { Checkbox } from "expo-checkbox";
 import ConfirmModal from "./ConfirmModal";
 import TextWithIconButton from "./TextWithIconButton";
 
 export type Permissions = {
-  viewAppointments: boolean;
+  //viewAppointments: boolean;
   viewAssessments: boolean;
-  viewPrescriptions: boolean;
+  //viewPrescriptions: boolean;
 };
 
 const permissionsLabels: Record<keyof Permissions, string> = {
-  viewAppointments: "View my appointments",
-  viewAssessments: "View my assessments",
-  viewPrescriptions: "View my prescriptions"
+  //viewAppointments: "View my appointments",
+  viewAssessments: "View my Assessments Data",
+  //viewPrescriptions: "View my prescriptions"
 };
 
 const permissionsLabelsImSupporting: Record<keyof Permissions, string> = {
-  viewAppointments: "View their appointments",
-  viewAssessments: "View their assessments",
-  viewPrescriptions: "View their prescriptions"
+  //viewAppointments: "View their appointments",
+  viewAssessments: "View their Assessments Data",
+  //viewPrescriptions: "View their prescriptions"
 };
 
 type Props = {
@@ -121,6 +123,11 @@ const PeopleModal = ({
     >
       <View style={styles.backgroundColour} />
 
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >   
+
       <Pressable
         style={styles.modalView}
         onPress={onCancel}
@@ -131,7 +138,7 @@ const PeopleModal = ({
           onPress={() => {}}
         >
           <ScrollView>
-            <Text style={[theme.h4, theme.leftItems, theme.fontOnSurface]}>
+            <Text style={[theme.h4, theme.leftItems, {color: colours.onSurface}]}>
               {show.name}
             </Text>
 
@@ -141,10 +148,10 @@ const PeopleModal = ({
              * printing name, contact and role of users 'connections'
              */}
             <View style={theme.row}>
-              <Text style={[theme.body, theme.leftItems, theme.fontOnSurface]}>
+              <Text style={[theme.body, theme.leftItems, {color: colours.onSurface}]}>
                 Role:
               </Text>
-              <Text style={[theme.body, theme.leftItems, theme.fontOnSurface]}>
+              <Text style={[theme.body, theme.leftItems, {color: colours.onSurface}]}>
                 {show.role}
               </Text>
             </View>
@@ -154,12 +161,12 @@ const PeopleModal = ({
                 <Text> </Text>
                 <View style={theme.row}>
                   <Text
-                    style={[theme.body, theme.leftItems, theme.fontOnSurface]}
+                    style={[theme.body, theme.leftItems, {color: colours.onSurface}]}
                   >
                     Contact:
                   </Text>
                   <Text
-                    style={[theme.body, theme.leftItems, theme.fontOnSurface]}
+                    style={[theme.body, theme.leftItems, {color: colours.onSurface}]}
                   >
                     {show.phone}
                   </Text>
@@ -168,7 +175,7 @@ const PeopleModal = ({
             )}
 
             <Text> </Text>
-            <Text style={[theme.h6, theme.leftItems, theme.fontOnSurface]}>
+            <Text style={[theme.h6, theme.leftItems, {color: colours.onSurface}]}>
               Permissions
             </Text>
             <Text style={theme.xSmall}> </Text>
@@ -184,7 +191,7 @@ const PeopleModal = ({
               <View>
                 <View>
                   <Text
-                    style={[theme.xSmall, theme.leftItems, theme.fontOnSurface]}
+                    style={[theme.xSmall, theme.leftItems, {color: colours.onSurface}]}
                   >
                     {show.name} can:
                   </Text>
@@ -204,7 +211,7 @@ const PeopleModal = ({
                         onValueChange={() => toggle(id)}
                         color={checked[id] ? colours.primary : undefined}
                       />
-                      <Text style={[theme.small, theme.fontOnSurface]}>
+                      <Text style={[theme.small, {color: colours.onSurface}]}>
                         {permissionsLabels[id]}
                       </Text>
                     </Pressable>
@@ -221,7 +228,7 @@ const PeopleModal = ({
 
                   <Text style={theme.xSmall}> </Text>
                   <Text
-                    style={[theme.xSmall, theme.leftItems, theme.fontOnSurface]}
+                    style={[theme.xSmall, theme.leftItems, {color: colours.onSurface}]}
                   >
                     Adding questions and recording answers is set for each
                     appointment.
@@ -241,7 +248,7 @@ const PeopleModal = ({
             ) : (
               <View>
                 <Text
-                  style={[theme.small, theme.leftItems, theme.fontOnSurface]}
+                  style={[theme.small, theme.leftItems, {color: colours.onSurface}]}
                 >
                   You can:
                 </Text>
@@ -254,7 +261,7 @@ const PeopleModal = ({
                 ).map((id) => (
                   <Text
                     key={id}
-                    style={[theme.small, theme.leftItems, theme.fontOnSurface]}
+                    style={[theme.small, theme.leftItems, {color: colours.onSurface}]}
                   >
                     {permissions[id] ? "✓" : "✗"}{" "}
                     {permissionsLabelsImSupporting[id]}
@@ -263,7 +270,7 @@ const PeopleModal = ({
 
                 <Text style={theme.xSmall}> </Text>
                 <Text
-                  style={[theme.xSmall, theme.leftItems, theme.fontOnSurface]}
+                  style={[theme.xSmall, theme.leftItems, {color: colours.onSurface}]}
                 >
                   Adding questions and recording answers is set for each
                   appointment.
@@ -302,6 +309,7 @@ const PeopleModal = ({
           onCancel={() => setPending(null)}
         />
       </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };

@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import React from 'react';
 import { useTheme } from '../../../../context/ThemeContext';
 import { AppointmentProvider } from '../../../../context/AppointmentContext';
 
@@ -14,19 +15,41 @@ export const unstable_settings = {
  * @returns screens which correspond to the files in this folder.
  */
 export default function CarePlannerLayout() {
-  const { colours } = useTheme();
+  const { colours, theme } = useTheme();
 
   return (
     <AppointmentProvider>
       <Stack
         screenOptions={{
+          animation: 'none',
           headerStyle: { backgroundColor: colours.background },
           headerTintColor: colours.onBackground,
           headerShadowVisible: false,
           // each page shows its own title, as in settings
           title: '',
-        }}
+
+          headerTitleStyle: {
+          fontSize: theme.h4.fontSize,
+          fontWeight: theme.h4.fontWeight,
+          },
+          contentStyle: { 
+          backgroundColor: colours.background
+          },
+          // back button
+        headerBackTitleStyle: {
+          fontSize: theme.h6.fontSize,
+        },
+
+        headerBackButtonDisplayMode: 'default',
+        headerBackTitle: 'Back',
+        }
+        
+      }
+
+        
       />
     </AppointmentProvider>
   );
 }
+
+

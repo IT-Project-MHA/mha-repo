@@ -5,7 +5,7 @@
  * Filter: all patients (default), individual patients
  * Sort: recently added, newest date
  */ 
-import { Fragment, useCallback, useState } from 'react';
+import React, { Fragment, useCallback, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';

@@ -1,7 +1,7 @@
 /**
  * Button which generates a plain-text button, with an icon
  */
-import { Text, TouchableOpacity, StyleSheet, View} from 'react-native';
+import React, { Text, TouchableOpacity, StyleSheet, View} from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import {Ionicons, IoniconsIconName} from '@react-native-vector-icons/ionicons'
 
@@ -42,7 +42,7 @@ const TextButton = ({label, onPress,iconName, fontColour}: ButtonProps) => {
       onPress={onPress}
     >
     <View style={styles.row}>
-          <Text style={[theme.body, theme.fontOnSurface]}>{label}</Text>
+          <Text style={[theme.body, {color: fontColour}, styles.label]}>{label}</Text>
             <Ionicons
                 name={iconName}
                 size={16}
@@ -67,5 +67,8 @@ const styles = StyleSheet.create({
     icon: {
         position: 'absolute', // absolute detaches it from the text
         right: 0,
+    },
+    label: {
+        flexShrink: 1, // wraps instead of pushing the icon off the edge
     },
 });

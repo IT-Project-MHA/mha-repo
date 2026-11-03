@@ -1,16 +1,14 @@
 /* API helpers for settings, built on the calls in django-API.js. Use them
 inside a try/catch block, a failed request throws an ApiError. */
 import {
-    apiAssignedGender,
-    apiPatientProfile,
-    apiUser,
-    apiSupportLink,
-    apiUserSettings,
-    apiTermsAndPrivacy,
-    apiAppointment, apiAssessment, apiMyPain, apiMyMovement, apiMyPersonalCare,
-    apiMySocialHealth, apiMyManagement, apiPrescription,
+    apiUser, apiPatientProfile, apiAssessment, apiAssessmentStatus,
+    apiMyPain, apiMyMovement, apiMyPersonalCare, apiMySocialHealth, apiMyManagement,
+    apiAppointment, apiAppointmentQuestion, apiAppointmentAnswer,
+    apiAppointmentDoctorPermission, apiAppointmentAccess,
+    apiPrescription, apiSupportLink, apiTermsAndPrivacy, apiAssignedGender,
+    apiUserSettings, apiQuestionOption
 } from './django-API';
-import { apiErrorMessage, normalisePhoneNumber } from './care_planner_api_helpers';
+import { apiErrorMessage, normalisePhoneNumber, toServerPhone } from './care_planner_api_helpers';
 export { apiErrorMessage };
 
 /*--------------------My Account------------------------------------------------------*/
@@ -30,13 +28,19 @@ function toLocalPhone(phone) {
     - user: the user's userId
     - profile: the user's PatientProfile, or null if they don't have one yet (it is created
       the first time they save a field that belongs to it)
-    - sexOptions: the choices for assigned_gender_at_birth, each { value, label } */
+    - sexOptions: the choices for assigned_gender_at_birth, each { value, label } 
+    - painTypeOptions */
 export async function apiMyAccount() {
-    const [[user], sexOptions] = await Promise.all([apiUser('select'), apiAssignedGender()]);
+    const [[user], sexOptions, painTypeOptions] = await Promise.all([
+        apiUser('select'),
+        apiAssignedGender(),
+        apiQuestionOption('select', { app_section: 'onboarding', question_key: 'pain_type' }),
+    ]);
 
     // filtering by user, as select also returns the profiles of patients the user supports
     const [profile] = await apiPatientProfile('select', { user: user.id });
-    return { user, profile: profile ?? null, sexOptions };
+
+    return { user, profile: profile ?? null, sexOptions, painTypeOptions };
 }
 
 /* Saves the About Me details, from the edit details modal:
@@ -122,10 +126,10 @@ export async function apiMyRole() {
    patientProfile is created. The only way back to a support person is apiDeleteMyData.
 - hasDiagnosis is boolean
 - conditions is an array */
-export async function apiSaveConditions(profileId, { hasDiagnosis, diagnoses, conditions }) {
+export async function apiSaveConditions(profileId, {  painTypes, otherConditions }) {
     const details = {
-        has_diagnosis: hasDiagnosis,
-        other_conditions: packConditions(diagnoses, conditions),
+        pain_types: painTypes,
+        other_conditions: otherConditions.trim(),
     };
     if (profileId) {
         return apiPatientProfile('update', { id: profileId, ...details });
@@ -236,9 +240,9 @@ export async function apiAcceptInvitation(linkId) {
 
 /* Invites a support person:
 - takes the phone number as typed and returns the new SupportLink, with status invited
-- the phone number is saved in the normalised format*/
+- the phone number is saved in the format the server accepts format*/
 export async function apiInviteSupportPerson(phone) {
-    return apiSupportLink('create', { invited_phone_number: normalisePhoneNumber(phone) });
+    return apiSupportLink('create', { invited_phone_number: toServerPhone(phone)});
 }
 
 /* Declines an invitation, as the support person */
@@ -300,45 +304,127 @@ export async function apiSaveSettings(settingsId, changes) {
   PatientProfile (already a support person account)
 - deletes dependants first (assessment sections, appointments, support links as the patient,
   then assessments & prescriptions), and the PatientProfile last
-- a failed request throws an ApiError (409 if something still depends on a record). */
+- the server only allows deleting draft assessments, so non-draft ones are set back to
+  'draft' first
+- a 404 is treated as already deleted
+- repeats the sweep up to 4 times while the number of errors keeps dropping, so deletes that
+  failed on ordering can succeed on a later pass
+- the PatientProfile is deleted last, and only if a sweep finished with no errors, so a
+  failed run leaves the profile in place and can be retried
+- if anything is left, throws an Error whose .report is a readable summary of the failures
+  (count per record type and status, plus the server's messages)
+- call refreshUserType() afterwards so the app switches to support person mode
+- not deleted: AuditEntry, TermsAndPrivacy, TrustedDevice, UserSettings */
 export async function apiDeleteMyData() {
+    // a user with no PatientProfile has no health data (already a support person account)
     const [user] = await apiUser('select');
     const [profile] = await apiPatientProfile('select', { user: user.id });
-    if (!profile) {
-        return false;
-    }
+    if (!profile) return false;
     const patient_profile = profile.id;
 
-    const removeAll = async (api, filters) => {
-        const rows = await api('select', filters);
-        await Promise.all(rows.map((row) => api('delete', { id: row.id })));
+    let errors = []; // failures from the current sweep, as { label, status, data }
+
+    // runs one delete/update and records a failure instead of throwing to go over again
+    const attempt = async (label, fn) => {
+        try { await fn(); }
+        catch (e) {
+            if (e?.status === 404) return;
+            errors.push({ label, status: e?.status, data: e?.data ?? e?.message });
+        }
     };
 
-    const assessments = await apiAssessment('select', { patient_profile });
+    // selects rows and returns an array
+    const list = async (label, api, filters) => {
+        try {
+            const r = await api('select', filters);
+            return Array.isArray(r) ? r : (r?.results ?? []);
+        } catch (e) {
+            errors.push({ label: `select ${label}`, status: e?.status, data: e?.data ?? e?.message });
+            return [];
+        }
+    };
 
+    // deletes every row matching the filters
+    const removeAll = async (label, api, filters) => {
+        for (const row of await list(label, api, filters)) {
+            await attempt(`${label} ${row.id}`, () => api('delete', { id: row.id }));
+        }
+    };
 
-    // Deletes things that depend on assessments, appointments & prescriptions
-    await Promise.all([
-        ...assessments.flatMap((a) => [
-            removeAll(apiMyPain, { assessment: a.id }),
-            removeAll(apiMyMovement, { assessment: a.id }),
-            removeAll(apiMyPersonalCare, { assessment: a.id }),
-            removeAll(apiMySocialHealth, { assessment: a.id }),
-            removeAll(apiMyManagement, { assessment: a.id }),
-        ]),
-        removeAll(apiAppointment, { patient_profile }),
-    ]);
+    // one full pass over the user's data, dependants before parents.
+    const sweep = async () => {
+        errors = [];
 
-    // Deletes assessments, prescriptions & the user's own support people
-    const links = await apiSupportLink('select', { patient_profile });
-    await Promise.all([
-        ...assessments.map((a) => apiAssessment('delete', { id: a.id })),
-        removeAll(apiPrescription, { patient_profile }),
-        ...links.filter((l) => l.patient_user === user.id)
-                .map((l) => apiSupportLink('delete', { id: l.id })),
-    ]);
+        // appointments: answers -> questions -> doctor permission -> access -> appointment
+        for (const appt of await list('appointment', apiAppointment, { patient_profile })) {
+            for (const q of await list('question', apiAppointmentQuestion, { appointment: appt.id })) {
+                await removeAll('answer', apiAppointmentAnswer, { question: q.id });
+                await attempt(`question ${q.id}`, () => apiAppointmentQuestion('delete', { id: q.id }));
+            }
+            // removing the doctor's permission also deletes the audio recordings
+            await attempt(`permission ${appt.id}`, () =>
+                apiAppointmentDoctorPermission('delete', { id: appt.id }));
+            // revoke access still active
+            for (const a of await list('access', apiAppointmentAccess, { appointment: appt.id })) {
+                if (!a.revoked_at) {
+                    await attempt(`access ${a.id}`, () =>
+                        apiAppointmentAccess('delete', { appointment: appt.id, id: a.id }));
+                }
+            }
+            await attempt(`appointment ${appt.id}`, () => apiAppointment('delete', { id: appt.id }));
+        }
 
-    // Deletes the profile itself
-    await apiPatientProfile('delete', { id: profile.id });
-    return true;
+        // assessments: the server only allows deleting drafts, so set back to draft first,
+        // then delete the sections, then the assessment
+        for (const a of await list('assessment', apiAssessment, { patient_profile })) {
+            if (a.status !== 'draft') {
+                await attempt(`todraft(${a.status})`, () =>
+                    apiAssessment('update', { id: a.id, status: 'draft' }));
+            }
+            await removeAll('pain', apiMyPain, { assessment: a.id });
+            await removeAll('movement', apiMyMovement, { assessment: a.id });
+            await removeAll('personalCare', apiMyPersonalCare, { assessment: a.id });
+            await removeAll('social', apiMySocialHealth, { assessment: a.id });
+            await removeAll('management', apiMyManagement, { assessment: a.id });
+            await attempt(`assessment ${a.id}`, () => apiAssessment('delete', { id: a.id }));
+        }
+
+        await removeAll('prescription', apiPrescription, { patient_profile });
+
+        // select also returns links where the user is the supporter, so only delete the
+        // ones where they are the patient (supporters can't delete them)
+        for (const l of await list('link', apiSupportLink, { patient_profile })) {
+            if (l.patient_user === user.id) {
+                await attempt(`link ${l.id}`, () => apiSupportLink('delete', { id: l.id }));
+            }
+        }
+    };
+
+    // repeat the sweep while the error count keeps dropping, so deletes that failed because
+    // of ordering can succeed on a later pass. Stops when clean, stuck, or after 4 passes
+    let previous = Infinity;
+    for (let pass = 0; pass < 4; pass++) {
+        await sweep();
+        if (errors.length === 0 || errors.length >= previous) break;
+        previous = errors.length;
+    }
+
+    // delete the profile last, and only after a clean sweep, so a failed run can be retried
+    if (errors.length === 0) {
+        await apiPatientProfile('delete', { id: profile.id });
+        return true;
+    }
+
+    // build a readable report: count per kind of failure, plus the server's message
+    const counts = {};
+    const messages = new Set();
+    errors.forEach(({ label, status, data }) => {
+        const key = `${label.split(' ')[0]} ${status}`;
+        counts[key] = (counts[key] ?? 0) + 1;
+        messages.add(JSON.stringify(data));
+    });
+    const err = new Error('Some data could not be deleted');
+    err.report = Object.entries(counts).map(([k, n]) => `${k} x${n}`).join('\n')
+        + '\n\n' + [...messages].slice(0, 3).join('\n');
+    throw err;
 }

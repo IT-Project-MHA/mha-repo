@@ -2,7 +2,7 @@
  * Patients can choose auto-generated questions to ask their doctor in the appointment
  * or add their own.
  */
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -181,10 +181,10 @@ export default function Screen() {
     <View style={styles.screen}>
       <ScrollView stickyHeaderIndices={[0]} contentContainerStyle={styles.content}>
         <View style={[theme.header, styles.title]}>
-          <Text style={[theme.h4, theme.leftText, theme.fontOnSurface, styles.titleText]}>
+          <Text style={[theme.h4, theme.leftText, {color: colours.onSurface}]}>
             Add Questions to Your Appointment
           </Text>
-          <Text style={[styles.body, styles.intro, theme.leftText]}>
+          <Text style={[theme.small, styles.intro, theme.leftText, {color: colours.onSurface}]}>
             Based on your answers to the four impact sections, we have provided some suggested
             questions to ask your healthcare professional/s.
           </Text>
@@ -196,7 +196,7 @@ export default function Screen() {
             <View style={[styles.cardContent, styles.suggestionSections]}>
               {suggestions.map(({ key, heading, questions }) => (
                 <View key={key}>
-                  <Text style={[styles.heading, styles.label]}>{heading}</Text>
+                  <Text style={[styles.heading, styles.label, {color: colours.onSurface}]}>{heading}</Text>
                   <View style={styles.checkboxList}>
                     {questions.map(({ checkboxId, text }, index) => (
                       <Checkbox.Item
@@ -392,7 +392,7 @@ function createStyles(colours: ColourSet, text: Typography, bottomInset: number)
 
     divider: {
       borderTopWidth: lineThickness,
-      borderTopColor: colours.ex3,
+      borderTopColor: colours.ex2,
     },
 
     checkboxItem: {

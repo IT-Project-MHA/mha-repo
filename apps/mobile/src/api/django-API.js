@@ -9,6 +9,7 @@ const devHost = Constants.expoConfig?.hostUri?.split(':')[0];
 
 const SERVER_URL = process.env.EXPO_PUBLIC_SERVER_URL ?? (devHost ? `http://${devHost}:8000`: "http://localhost:8000")
 const BASE_URL = `${SERVER_URL}/api`;
+const PUBLIC_PATHS = ['auth/request-code', 'auth/verify-code', 'auth/register', 'auth/login', 'auth/reset-pin']; // used before user has a token
 
 // DEV ONLY until login is built: token of a local test user from apps/mobile/.env, sent with
 // every request
@@ -86,7 +87,7 @@ async function request(method, path, body, baseUrl = BASE_URL) {
         method: method,
         headers: {
             ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
-            ...authHeaders(),
+            ...(PUBLIC_PATHS.includes(path) ? {} : authHeaders()), 
             Accept: 'application/json',
         },
         // undefined if the operation is delete
@@ -97,7 +98,9 @@ async function request(method, path, body, baseUrl = BASE_URL) {
     const text = await response.text();
     const data = text ? JSON.parse(text) : null;
     if (!response.ok) {
+        if (response.status !== 401 && response.status !== 429) {
         console.error('API error', method, path, response.status, text);
+        }
         throw new ApiError(response.status, data);
     }
     return data;
@@ -561,24 +564,52 @@ export async function apiPainProfile(operation, values) {
     return operate('painProfile', operation, values);
 }
 
-//added by Xavier. 
+/**
+ * Logs user out of their account
+ */
+export async function apiLogOut() {
+    return request('POST', 'auth/logout', undefined, SERVER_URL);
+}
+
 export async function request_code(phone_number){
     // request(method, path, body, baseUrl = BASE_URL)
-    return request('POST', '/auth/request-code',  {phone_number}, SERVER_URL);
+    return request('POST', 'auth/request-code',  {phone_number}, SERVER_URL);
 }
 
 export async function verify_code(phone_number, otp){
     // request(method, path, body, baseUrl = BASE_URL)
-    return request('POST', '/auth/verify-code',  {phone_number, otp}, SERVER_URL);
+    return request('POST', 'auth/verify-code',  {phone_number, otp}, SERVER_URL);
 }
 
 export async function register_token(values = {}){
     // request(method, path, body, baseUrl = BASE_URL)
     //takes verification_id, phone_number, display_name, pin, accepted_terms, accepted_privacy, device_id, track_health (optional), health (optional)
-    return request('POST', '/auth/register',  values, SERVER_URL);
+    return request('POST', 'auth/register',  values, SERVER_URL);
 }
 
 export async function login(values = {}){
     //values include phone_number, pin, device_id, verification_id (new device only)
     return request('POST', 'auth/login', values, SERVER_URL);
+}
+
+/**
+ * Change phone number
+ */
+export async function apiChangePhone(phone_number, verification_id) {
+    return request('POST', 'auth/change-phone', { phone_number, verification_id }, SERVER_URL);
+}
+
+/**
+ * Change pin
+ */
+export async function apiChangePin(values = {}) {
+    return request('POST', 'auth/reset-pin', values, SERVER_URL);
+}
+
+
+/**
+ * Logout everywhere
+ */
+export async function apiLogOutEverywhere(values = {}) {
+    return request('POST', 'auth/logout-everywhere', values, SERVER_URL);
 }

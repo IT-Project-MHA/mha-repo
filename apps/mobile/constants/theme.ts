@@ -39,12 +39,8 @@ const createTheme = (colours: ColourSet) =>
       ...roundButtonLayout,
     },
     roundSecondaryButton: {
-      backgroundColor: colours.background,
+      color: colours.secondary,
       ...roundButtonLayout,
-      borderWidth: 1,
-      borderTopWidth: 1,
-      borderBottomWidth: 1,
-      borderColor: colours.onSurface,
     },
     transparentButton:{
       backgroundColor: 'transparent',
@@ -118,8 +114,8 @@ const createTheme = (colours: ColourSet) =>
       paddingHorizontal: '3%',
       borderRadius: 28,
 
-      shadowColor: colours.primary,
-      shadowOpacity: .15,
+      //shadowColor: colours.primary,
+      //shadowOpacity: .15,
       shadowRadius: 7,
       shadowOffset: {
           width: 0,
@@ -148,6 +144,9 @@ const createTheme = (colours: ColourSet) =>
       borderColor: colours.onSurface,
       padding: 10,
       borderRadius: 10,
+    },
+    sectionSeparation: {
+      marginVertical: 30,
     },
 
     /**
@@ -265,8 +264,8 @@ const createTheme = (colours: ColourSet) =>
       justifyContent: 'center',
       width: '100%',
       alignContent: 'flex-start',
-      paddingBottom: 20,
-      paddingTop: 15,
+      paddingBottom: 15,
+      paddingTop: 10,
       borderColor: colours.background,
       borderWidth: 3,
     },
@@ -274,6 +273,9 @@ const createTheme = (colours: ColourSet) =>
     /**
      * Styles for font details (colour, underline, etc)
      */
+    fontUnderlined: {
+      textDecorationLine: 'underline',
+    },
     fontOnSurface: {
       color: colours.onSurface,
     },
@@ -282,9 +284,6 @@ const createTheme = (colours: ColourSet) =>
     },
     fontOnBackground: {
       color: colours.onBackground,
-    },
-    fontUnderlined: {
-      textDecorationLine: 'underline',
     },
 
     /**
