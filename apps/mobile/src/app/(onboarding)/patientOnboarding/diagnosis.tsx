@@ -16,7 +16,7 @@ export default function Page() {
   const setUserOnboaring = useOnboardingStore((s)=> s.set);
   const {set, reset, ...answers} = useOnboardingStore.getState();
 
-  const QUESTION_OPTIONS = ["Yes, I have", "No, I haven't"];
+  const QUESTION_OPTIONS = ["Yes, I do", "No, I don't"];
 
   function setHasDiagnosis(selection: string){
 
