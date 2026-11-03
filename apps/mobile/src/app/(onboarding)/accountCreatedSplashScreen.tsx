@@ -12,7 +12,6 @@ import { register_token } from '../../api/django-API';
 
 import { Text, View, StyleSheet, Pressable } from 'react-native';
 import { useTheme, ColourSet } from '../../../context/ThemeContext';
-import { Typography } from '../../../constants/textSize';
 import React from 'react';
 
 export default function Page() {

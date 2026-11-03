@@ -9,7 +9,7 @@
 import React, { useState } from 'react';
 import { HelperText } from 'react-native-paper';
 import { useRouter } from 'expo-router';
-import { NumberEntry } from '../../../../components/answerFields/NumberEntry';
+import { NumberEntry } from '../../../../components/onboarding/onboardingFields/NumberEntryOnboarding';
 import Button from '../../../../components/atomicUI/Button';
 import { useOnboardingStore } from '../../../store/onboardingStorage';
 import { useAppStore } from '../../../store/appStore';

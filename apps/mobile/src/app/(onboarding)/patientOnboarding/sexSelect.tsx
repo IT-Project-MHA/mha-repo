@@ -6,7 +6,7 @@
  */
 import { useRouter } from 'expo-router';
 import { Text, View, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { MultipleChoice } from '../../../../components/answerFields/MultipleChoice';
+import { MultipleChoice } from '../../../../components/onboarding/onboardingFields/MultipleChoiceOnboarding';
 import { useTheme } from "../../../../context/ThemeContext";
 import { useOnboardingStore } from '../../../store/onboardingStorage';
 import React from 'react';

@@ -4,7 +4,7 @@
  */
 import { Text, View, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTheme } from "../../../../context/ThemeContext";
-import { NumberEntry } from '../../../../components/answerFields/NumberEntry';
+import { NumberEntry } from '../../../../components/onboarding/onboardingFields/NumberEntryOnboarding';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import type { Health } from '../../../store/onboardingStorage';

@@ -3,7 +3,7 @@
  * - Asks for name (display_name)
  * - Directs user to terms
  */
-import { TextEntry } from '../../../../components/answerFields/TextEntry';
+import { TextEntry } from '../../../../components/onboarding/onboardingFields/TextEntryOnboarding';
 import { useRouter } from 'expo-router';
 import { useOnboardingStore } from '../../../store/onboardingStorage';
 

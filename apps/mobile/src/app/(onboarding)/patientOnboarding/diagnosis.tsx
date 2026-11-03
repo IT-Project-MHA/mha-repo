@@ -4,7 +4,7 @@
 import { Text, View, ScrollView, KeyboardAvoidingView, Platform }from 'react-native';
 import { useTheme } from "../../../../context/ThemeContext";
 import { useRouter } from 'expo-router';
-import { MultipleChoice } from '../../../../components/answerFields/MultipleChoice';
+import { MultipleChoice } from '../../../../components/onboarding/onboardingFields/MultipleChoiceOnboarding';
 import React from 'react';
 
 import { useOnboardingStore } from '../../../store/onboardingStorage';

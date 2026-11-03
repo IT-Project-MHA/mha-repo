@@ -6,7 +6,7 @@
  */
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { NumberEntry } from '../../../../components/answerFields/NumberEntry';
+import { NumberEntry } from '../../../../components/onboarding/onboardingFields/NumberEntryOnboarding';
 import { useOnboardingStore } from '../../../store/onboardingStorage';
 import { ApiError, login, request_code } from '../../../api/django-API';
 import { HelperText } from "react-native-paper";

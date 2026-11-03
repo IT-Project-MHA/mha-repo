@@ -1,9 +1,9 @@
 /**
  * Determines user type.
  */
-import { Text, View, ScrollView, KeyboardAvoidingView, Platform, StyleSheet} from 'react-native';
+import { Text, View, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { MultipleChoice } from '../../../../components/answerFields/MultipleChoice';
+import { MultipleChoice } from '../../../../components/onboarding/onboardingFields/MultipleChoiceOnboarding';
 import { useOnboardingStore } from '../../../store/onboardingStorage';
 import React from 'react';
 import { useTheme } from '../../../../context/ThemeContext';

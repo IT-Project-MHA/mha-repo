@@ -9,7 +9,7 @@
  *
  */
 import { useRouter } from "expo-router";
-import { NumberEntry } from "../../../../components/answerFields/NumberEntry";
+import { NumberEntry } from "../../../../components/onboarding/onboardingFields/NumberEntryOnboarding";
 import Button from "../../../../components/atomicUI/Button";
 import TextButton from "@/components/atomicUI/TextButton";
 import { useOnboardingStore } from "../../../store/onboardingStorage";

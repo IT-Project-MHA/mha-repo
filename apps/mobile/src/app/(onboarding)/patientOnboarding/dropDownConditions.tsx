@@ -4,7 +4,7 @@
 import { Text, View, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTheme } from "../../../../context/ThemeContext";
 import { useRouter } from 'expo-router';
-import { MultiSelect } from '../../../../components/answerFields/MultiSelect';
+import { MultiSelect } from '../../../../components/onboarding/onboardingFields/MultiSelectOnboarding';
 import {apiQuestionOption} from '../../../api/django-API';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React from 'react';

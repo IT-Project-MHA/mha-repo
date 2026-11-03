@@ -6,7 +6,7 @@
  *  - submits on enter
  */
 import { useRouter } from 'expo-router';
-import { NumberEntry } from '../../../../components/answerFields/NumberEntry';
+import { NumberEntry } from '../../../../components/onboarding/onboardingFields/NumberEntryOnboarding';
 import { useOnboardingStore } from '../../../store/onboardingStorage';
 
 import { Text, View, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';

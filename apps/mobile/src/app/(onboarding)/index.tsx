@@ -6,10 +6,8 @@ import { Text, StyleSheet, Modal, View, ScrollView, Platform, Pressable} from "r
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import OnboardingSplashScreen from "./splashScreenMHA";
-import Button from "../../../components/atomicUI/Button";
 
 import {
-  SafeAreaView,
   useSafeAreaInsets
 } from "react-native-safe-area-context";
 import { useTheme, ColourSet } from "../../../context/ThemeContext";
