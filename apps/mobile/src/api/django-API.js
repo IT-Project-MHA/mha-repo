@@ -88,7 +88,6 @@ async function request(method, path, body, baseUrl = BASE_URL) {
         headers: {
             ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
             ...(PUBLIC_PATHS.includes(path) ? {} : authHeaders()), 
-            ...authHeaders(),
             Accept: 'application/json',
         },
         // undefined if the operation is delete
@@ -606,6 +605,7 @@ export async function apiChangePhone(phone_number, verification_id) {
 export async function apiChangePin(values = {}) {
     return request('POST', 'auth/reset-pin', values, SERVER_URL);
 }
+
 
 /**
  * Logout everywhere
