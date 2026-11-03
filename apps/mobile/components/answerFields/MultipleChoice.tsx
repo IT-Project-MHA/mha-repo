@@ -1,101 +1,163 @@
-/**
- * Multiple choice. dooesn't allow submit without selection.
- */
 import React, { useState } from "react";
-import { Text, Pressable, View, StyleSheet } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { RadioButton, useTheme as usePaperTheme } from "react-native-paper";
 import { useTheme, ColourSet } from "../../context/ThemeContext";
-import { HelperText } from "react-native-paper";
+import { Typography } from "../../constants/textSize";
+import Button from "../atomicUI/Button";
 
-type MultipleChoiceProps ={
+// fewest options that need the "Scroll down for more options" hint
+const SCROLL_HINT_MIN_OPTIONS = 6;
+
+export type MultipleChoiceProps ={
   questionOptions: string[];
   onSubmit: (v: string) => void;
+  initialValue?: string;
+  exercise?: boolean; // show extra text for the exercise option
 }
 
-function MultipleChoice({ questionOptions, onSubmit }: MultipleChoiceProps) {
-  const { theme, colours } = useTheme();
-  const styles = createStyles(colours);
+function MultipleChoice({ questionOptions, onSubmit, initialValue, exercise = false }: MultipleChoiceProps) {
+  const { colours, theme } = useTheme();
+  const styles = createStyles(colours, theme);
+  const { colors: paperColours } = usePaperTheme();
 
-  const [selected, setSelected] = useState<string | null>(null);; // tracks the currently selected answer
-  const [error, setError] = useState("");
+  const [selectedAnswer, setSelectedAnswer] = useState<string >(initialValue ?? "");
+  const [selectionError, setSelectionError] = useState(false);
 
-  const handleSubmit = () => {
-    // Save the current answer result
-    if(selected === null){
-      setError("Please select an option");
-      return;
-    }
-      onSubmit(selected);
+  const handleSelect = (answer: string) => {
+    setSelectionError(false);
+    setSelectedAnswer(answer);
   };
 
+  const handleSubmit = () => {
+    if (selectedAnswer === "") {
+      setSelectionError(true);
+      return;
+    }
+    onSubmit(selectedAnswer);
+  };
   return (
-    <View style={theme.clearContainer}>
-
-      <View>
-
-      {questionOptions.map((option) => {
-        const isSelected = selected === option;
-
-        return (
-          <View key={option} style={{marginVertical : 5}}>
-          <Pressable
-              key={option}
-              onPress={() => setSelected(option)}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: isSelected }}
-              style={[styles.option, isSelected && styles.optionSelected]}
-            >
-            <Text style={[theme.h6, { color: colours.onSurface }]}>{option}</Text>
-            </Pressable>
-            </View>
-        );
-      })}
-      
-      <HelperText type="error" visible={!!error} style={styles.helper}>
-          {error}
-      </HelperText>
+    <View style={styles.screen}>
+    <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      <View style={[theme.sectionContainer, styles.card]}>
+        <View style={styles.cardContent}>
+          {exercise && (
+            <Text style={[theme.fontOnSurface, theme.body, {marginBottom: 10, marginLeft: 10}]}>
+              Examples: walking, stretching, strengthening, yoga, resistance band work, or balance exercises.</Text>
+          )}
+          {questionOptions.length >= SCROLL_HINT_MIN_OPTIONS && (
+            <Text style={[theme.fontOnBackground, theme.small, {marginBottom: 10, marginLeft: 10}]}>
+              Scroll down for more options</Text>
+          )}
+          <View style={styles.radioList}>
+            {questionOptions.map((option, index) => (
+              <RadioButton.Item
+                key={index}
+                label={option}
+                value={option}
+                status={selectedAnswer === option ? 'checked' : 'unchecked'}
+                onPress={() => handleSelect(option)}
+                rippleColor="transparent"
+                color={colours.ex2}
+                uncheckedColor={colours.ex2}
+                labelStyle={[styles.input, selectedAnswer === option && styles.selectedText]}
+                style={[
+                  styles.radioItem,
+                  selectedAnswer === option && styles.selectedOption,
+                ]}
+              />
+            ))}
+          </View>
+        </View>
       </View>
+    </ScrollView>
 
-    
-        <Pressable
-        onPress={handleSubmit}
-        style={[styles.button, selected === null && styles.buttonDisabled]}
-      >
-        <Text style={[theme.h6, { color: colours.onSurface }]}>Submit</Text>
-      </Pressable>
-      </View>
+    <View style={styles.button}>
+      {selectionError && (
+        <Text style={[theme.small, theme.centerText, styles.selectionError,
+        { color: paperColours.error, borderColor: paperColours.error }]}>
+          Please select 1 option
+        </Text>
+      )}
+      <Button
+      label= "Continue"
+      onPress={handleSubmit}
+      buttonType='roundButton'
+      />
+    </View>
+    </View>
   );
 }
 
-export { MultipleChoice }; 
-
-function createStyles(colours: ColourSet) {
-  const pill = {
-    height: 60,
-    width: "100%" as const,
-    borderRadius: 100,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-  };
-
+function createStyles(colours: ColourSet, text: Typography) {
   return StyleSheet.create({
-    options: { width: "100%", alignSelf: "center", gap: 12 },
-    option: {
-      ...pill,
-      borderWidth: 2,
-      borderColor: colours.secondary,
-      backgroundColor: "transparent",
+    screen: {
+      flex: 1,
     },
-    optionSelected: {
-      borderColor: colours.secondary,
-      backgroundColor: colours.tertiary,
+
+    scroll: {
+      flex: 1,
     },
-    helper: { textAlign: "center" },
+
+    content: {
+      paddingBottom: 80,
+      gap: 19,
+    },
+
+    card: {
+      gap: 12,
+    },
+
+    cardContent: {
+      paddingHorizontal: '5%',
+      paddingBottom: 5,
+    },
+
     button: {
-      ...pill,
-      width: "100%",
-      alignSelf: "center",
-      backgroundColor: colours.primary,
+      position: 'absolute',
+      bottom: 10,
+      width: '90%',
+      alignSelf: 'center',
     },
-    buttonDisabled: { opacity: 0.7 },
+
+    selectionError: {
+      alignSelf: 'stretch',
+      marginBottom: 10,
+      marginHorizontal: 30,
+      paddingVertical: 4,
+      paddingHorizontal: 12,
+      borderWidth: 1,
+      borderRadius: 20,
+      backgroundColor: colours.background,
+      overflow: 'hidden',
+    },
+
+    input: {
+      ...text.body,
+      color: colours.onSurface,
+      marginRight: 14,
+    },
+
+    radioList: {
+      marginVertical: 5,
+      marginHorizontal: 3,
+      gap: 10,
+    },
+
+    selectedOption: {
+      backgroundColor: colours.secondary,
+    },
+
+    selectedText: {
+      color: colours.onSecondary,
+    },
+
+    radioItem: {
+      backgroundColor: colours.background,
+      paddingLeft: 20,
+      paddingRight: 15,
+      borderRadius: 15,
+    },
   });
 }
+
+export { MultipleChoice }; //add the new component here

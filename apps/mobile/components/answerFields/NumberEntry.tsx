@@ -13,131 +13,127 @@
   */
 
 import React, { useState } from "react";
-import { Text, View, StyleSheet, Pressable } from "react-native";
-import { TextInput, HelperText } from "react-native-paper";
-import { useTheme, ColourSet } from "../../context/ThemeContext";
+import { Text, TextInput, View, StyleSheet } from "react-native";
+import Button from "../atomicUI/Button";
+import { useTheme as usePaperTheme } from "react-native-paper";
 
+
+import { useTheme, ColourSet } from '../../context/ThemeContext';
+import { Typography } from '../../constants/textSize';
 //numberInput variables
 
-type NumberEntryProps = {
-  onSubmit: (digits: string) => void;
-  length: number; // exact number of digits required
-  secure?: boolean; // hide the digits, e.g. for pins
-  placeholder?: string;
-  validate?: (value: string) => string | null; 
-};
+type NumberProps ={
+  onSubmit: (v: any) => void;
+  MAX_lENGTH_NUM?: number;
+  LOWER_BOUND?: number;
+  UPPER_BOUND?: number;
+  initialValue?: string; // the number to start with, from a saved answer
+  description?: string;
+}
+
 
 //NumberEntry
-export function NumberEntry({
-  onSubmit,
-  length,
-  secure = false,
-  placeholder = "Enter digits",
-  validate
-}: NumberEntryProps) {
+function NumberEntry({ onSubmit, LOWER_BOUND = 0, UPPER_BOUND = 10, MAX_lENGTH_NUM = String(UPPER_BOUND).length, initialValue, description }: NumberProps) {
   const { colours, theme } = useTheme();
-  const styles = createStyles(colours);
+  const { colors: paperColours } = usePaperTheme();
+  const styles = createStyles(colours, theme);
 
-  const [value, setValue] = useState<string>("");
+  const [value, setValue] = useState<string>(initialValue ?? "");
   const [error, setError] = useState<string>("");
-  const [hidden, setHidden] = useState(secure);
+
+
+  function sanitizeNumberInput(text: string) {
+    let t = text.replace(/[^0-9]/g, ""); //removes any non-number
+    t = t.slice(0, MAX_lENGTH_NUM); //cuts down to our max length
+    return t;
+  }
+
+  function validateNumberInput(numText: string) {
+    //checking if it's something we should accept, i.e. within range
+    const rangeMessage = `Enter a number between ${LOWER_BOUND}-${UPPER_BOUND}`;
+    if (numText == "") return rangeMessage;
+
+    const num = Number(numText);
+    if (!Number.isInteger(num) || num < LOWER_BOUND || num > UPPER_BOUND) {
+      return rangeMessage;
+    }
+    return null;
+  }
 
   const handleChange = (text: string) => {
-    setValue(text.replace(/\D/g, "").slice(0, length)); // capped at length
-    setError("");
+    setValue(sanitizeNumberInput(text));
+    if (error) setError("");
   };
 
   const handleSubmit = () => {
-    if (value.length !== length) {
-      setError(`Please enter all ${length} digits.`);
-      return;
-    }
-    const problem = validate?.(value);
-    if (problem) {
-      setError(problem);
+    const err = validateNumberInput(value);
+    if (err) {
+      setError(err);
       return;
     }
     onSubmit(value);
   };
 
   return (
-    <View style={theme.clearContainer}>
-      
-      <View style={theme.layoutContainer}>
-      <TextInput
-          mode="outlined"
-          value={value}
+    <View>
+      <View style={theme.sectionContainer}>
+        <TextInput
+          style={[styles.subheading, styles.field]}
           onChangeText={handleChange}
-          onSubmitEditing={handleSubmit}
-          placeholder={placeholder}
-          keyboardType="number-pad"
-          secureTextEntry={hidden}
-          maxLength={length}
-          error={!!error}
-          textColor={colours.onSurface}
-          outlineColor={colours.secondary}
-          activeOutlineColor={colours.primary}
-          placeholderTextColor={colours.onSurface}
-          outlineStyle={styles.outline}
-          style={[styles.field, { fontSize: theme.h6.fontSize }]}
-          contentStyle={styles.fieldContent}
-          // show/hide toggle for pins
-          right={
-            secure ? (
-              <TextInput.Icon
-                icon={hidden ? "eye-off" : "eye"}
-                onPress={() => setHidden((h) => !h)}
-              />
-            ) : undefined
-          }
+          value={value}
+          placeholder="input number only"
+          placeholderTextColor={colours.onBackground + '99'}
+          keyboardType="numeric"
+          maxLength={MAX_lENGTH_NUM}
         />
-
-      <HelperText type="error" visible={!!error} style={styles.helper}>
-          {error}
-        </HelperText>
+        {!!error && <Text style={[theme.small, styles.errorText, { color: paperColours.error }]}>{error}</Text>}
+        {!!description && <Text style={[theme.body, theme.fontOnSurface, styles.description]}>{description}</Text>}
       </View>
-
-      <Pressable onPress={handleSubmit} style={styles.button}>
-        <Text
-          style={[theme.h6, styles.buttonText, { color: colours.onSurface }]}
-        >
-          Submit
-        </Text>
-
-      </Pressable>
+      <View style={{ width: '85%', alignSelf: 'center', marginTop: 25 }}>
+        <Button label="Continue" onPress={handleSubmit} buttonType="roundButton" />
       </View>
+    </View>
   );
 }
 
-function createStyles(colours: ColourSet) {
+export { NumberEntry, NumberProps };
+
+
+
+function createStyles(colours: ColourSet, text: Typography) {
   return StyleSheet.create({
-    container: {
-      width: "100%",
-      alignItems: "center",
-      gap: 40,
+    subheading: {
+      ...text.small,
+      color: colours.onBackground,
+      paddingHorizontal: '5%',
+      marginTop: 4,
+      marginHorizontal: 20,
     },
-    content: { gap: 24 },
-    fieldWrap: { width: "80%" },
+
+    errorText: {
+      marginHorizontal: 20,
+      paddingHorizontal: '5%',
+      marginTop: -10,
+    },
+
+    description: {
+      paddingHorizontal: '5%',
+      marginHorizontal: 0,
+      marginTop: 8,
+      fontStyle: 'italic',
+    },
+
     field: {
-      height: 60,
-      backgroundColor: "transparent",
+      height: 40,
+      paddingVertical: 5,
+      paddingHorizontal: 10,
+      marginHorizontal: 35,
+      marginTop: 15,
+      marginBottom: 20,
+      borderWidth: 1,
+      borderColor: colours.onSurface,
+      justifyContent: 'center',
     },
-    fieldContent: {
-      textAlign: "center",
-      paddingHorizontal: 40,
-    },
-    outline: {
-      borderRadius: 100,
-      borderWidth: 2,
-    },
-    helper: { textAlign: "center" },
-    button: {
-      height: 60,
-      width: "100%",
-      borderRadius: 100,
-      justifyContent: "center",
-      backgroundColor: colours.primary,
-    },
-    buttonText: { textAlign: "center" },
   });
 }
+

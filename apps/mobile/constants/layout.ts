@@ -47,6 +47,14 @@ export const transparentButtonLayout = {
   width: '85%' as const,
 }
 
+export const roundedTertiaryButtonLayout = {
+  alignItems: 'center' as const,
+  justifyContent: 'center' as const,
+  margin: 5,
+  padding: 5,
+  borderWidth: 1,
+  borderRadius: 50
+}
 export const textButtonLayout = {
   alignItems: 'center' as const,
   justifyContent: 'center' as const,

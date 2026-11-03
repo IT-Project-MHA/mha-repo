@@ -1,119 +1,280 @@
-/**
- * Select from multiple. Allows custom select numbers.
- */
 import React, { useState } from "react";
-import { Text, View, Pressable, StyleSheet } from "react-native";
+import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Checkbox, useTheme as usePaperTheme } from "react-native-paper";
 import { useTheme, ColourSet } from "../../context/ThemeContext";
-import { HelperText } from "react-native-paper";
+import { Typography } from "../../constants/textSize";
+import Button from "../atomicUI/Button";
+
+// fewest options that need the "Scroll down for more options" hint
+const SCROLL_HINT_MIN_OPTIONS = 6;
+
+// the option that opens a text box for the user's own details, when otherAttribute is on
+const OTHER_OPTION = "Other";
+
+type MultiSelectAnswer = {
+  selected: string[];
+  other: string; // default ''
+}
 
 type MultiSelectProps ={
   questionOptions: string[];
-  onSubmit: (v: string[]) => void;
-  headingText?: string;
+  onSubmit: (v: string[], other: string) => void;
+  headingText: string;
   MIN_SELECTIONS: number;
   MAX_SELECTIONS: number;
+  otherAttribute?: boolean; // shows a text box under the "Other" option while it's ticked
+  otherAttributeSizeLimit?: number;
+  initialSelected?: string[];
+  initialOther?: string;
+  // different component logic if it is medication question (medication?, optionDetails?)
+  medication?: boolean;
+  optionDetails?: { name: string; dose?: string; subtitle: string }[];
 }
 
-function MultiSelect({ questionOptions, onSubmit, headingText, MIN_SELECTIONS, MAX_SELECTIONS }: MultiSelectProps) {
-  const { theme, colours } = useTheme();
-  const styles = createStyles(colours)
+function MultiSelect({ questionOptions, onSubmit, headingText, MIN_SELECTIONS, MAX_SELECTIONS, 
+  otherAttribute = false, otherAttributeSizeLimit = 100, initialSelected = [], initialOther = "", medication = false, optionDetails }: MultiSelectProps) {
+  const { colours, theme } = useTheme();
+  const styles = createStyles(colours, theme);
 
-  const [selected, setSelected] = useState<string[]>([]); // Tracks the currently selected answers
-  const [error, setError] = useState("");
+  const [selectedAnswers, setSelectedAnswers] = useState<string[]>(initialSelected); // Tracks the currently selected answers
+  const [otherText, setOtherText] = useState(initialOther);
+  // when Continue is pressed with Other ticked and empty answer
+  const [otherError, setOtherError] = useState(false); 
+  const { colors: paperColours } = usePaperTheme();
+  // when Continue is pressed and validation fails
+  const [selectionError, setSelectionError] = useState(false); 
+  const showOther = otherAttribute && selectedAnswers.includes(OTHER_OPTION);
 
-  function validateMultipleChoice(): string | null {
-  if (selected.length < MIN_SELECTIONS) {
-    return MIN_SELECTIONS === 1
-      ? "Please select at least one option"
-      : `Please select at least ${MIN_SELECTIONS} options`;
+
+  function validateMultipleChoice(): boolean {
+    //checking if it's something we should accept, i.e. selectedAnswers is between our bounds
+    if(selectedAnswers.length < MIN_SELECTIONS) return false;
+    if(selectedAnswers.length > MAX_SELECTIONS) return false;
+
+    return true;
   }
-  if (selected.length > MAX_SELECTIONS) {
-    return `Please select no more than ${MAX_SELECTIONS} options`;
-  }
-  return null;
-  };
 
   const handleSelect = (answer: string) => {
+    if (answer === OTHER_OPTION) setOtherError(false);
+    setSelectionError(false);
     // Toggle selection of an answer
-    setSelected((prev) => {
+    setSelectedAnswers((prev) => {
       if (prev.includes(answer)) return prev.filter((a) => a !== answer);
       return [...prev, answer];
     });
   };
 
   const handleSubmit = () => {
-    const problem = validateMultipleChoice();
-    if(problem){
-      setError(problem);
+    if (showOther && otherText.trim() === "") {
+      setOtherError(true);
       return;
     }
-      onSubmit(selected);
+    if (!validateMultipleChoice()) {
+      setSelectionError(true);
+      return;
+    }
+    onSubmit(selectedAnswers, showOther ? otherText.trim() : "");
   };
-
   return (
-    <View style={theme.clearContainer}>
-
-      {/* render options as buttons */}
-      <View style={styles.options}>
-        {questionOptions.map((option) => {
-          const isSelected = selected.includes(option);
-          return (
-            <Pressable
-              key={option}
-              onPress={() => handleSelect(option)}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: isSelected }}
-              style={[styles.option, isSelected && styles.optionSelected]}
-            >
-              <Text style={[theme.h6, { color: colours.onSurface }]}>{option}</Text>
-            </Pressable>
-          );
-        })}
-
-        <HelperText type="error" visible={!!error} style={styles.helper}>
-          {error}
-        </HelperText>
-        
+    <View style={styles.screen}>
+    <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      {medication && (
+        <View style={styles.notice}>
+          <Text style={[theme.body, theme.fontOnBackground]}>Not taking medications? Just press continue.</Text>
+        </View>
+      )}
+      <View style={[theme.sectionContainer, styles.card]}>
+        <View style={styles.cardContent}>
+          {medication && questionOptions.length === 0 ? (
+            <Text style={[theme.fontOnSurface, theme.body, {marginTop: 5, marginLeft: 10}]}>
+              You don't have any active prescriptions in the app. 
+              Go to My Prescriptions in My Health to record your prescriptions.</Text>
+          ) : (medication || questionOptions.length >= SCROLL_HINT_MIN_OPTIONS) && (
+            <Text style={[theme.fontOnBackground, theme.small, {marginBottom: 10, marginLeft: 10}]}>
+              {medication ? "Generated based on your medication scripts" : "Scroll down for more options"}</Text>
+          )}
+          {!!headingText && <Text style={[styles.heading, styles.label]}>{headingText}</Text>}
+          <View style={styles.checkboxList}>
+            {questionOptions.map((option, index) => (
+              <View key={index}>
+              <Checkbox.Item
+                // "as unknown as string" overrides the label type to allow <Text>
+                label={optionDetails?.[index] ? (
+                  <Text>
+                    <Text style={theme.h6}>{optionDetails[index].name}</Text>
+                    {!!optionDetails[index].dose && <Text style={theme.h6}> {optionDetails[index].dose}</Text>}
+                    {"\n"}
+                    <Text style={theme.body}>{optionDetails[index].subtitle}</Text>
+                  </Text>
+                ) as unknown as string : option}
+                accessibilityLabel={option}
+                status={selectedAnswers.includes(option) ? 'checked' : 'unchecked'}
+                onPress={() => handleSelect(option)}
+                rippleColor="transparent"
+                color={colours.ex2}
+                uncheckedColor={colours.ex2}
+                labelStyle={[styles.input, selectedAnswers.includes(option) && styles.selectedText]}
+                style={[
+                  styles.checkboxItem,
+                  selectedAnswers.includes(option) && styles.selectedOption,
+                ]}
+              />
+              {option === OTHER_OPTION && showOther && (
+                <View style={styles.otherField}>
+                  <TextInput
+                    style={[styles.input, styles.otherInput]}
+                    value={otherText}
+                    onChangeText={(text) => {
+                      setOtherText(text);
+                      setOtherError(false);
+                    }}
+                    placeholder="Enter other details"
+                    placeholderTextColor={colours.onSurface}
+                    maxLength={otherAttributeSizeLimit}
+                    multiline
+                  />
+                  <Text style={[theme.small, theme.fontOnSurface, styles.otherCount]}>
+                    {otherText.length}/{otherAttributeSizeLimit}
+                  </Text>
+                </View>
+              )}
+              {option === OTHER_OPTION && showOther && otherError && (
+                <Text style={[theme.small, styles.otherError, { color: paperColours.error }]}>
+                  Field cannot be empty, uncheck Other instead
+                </Text>
+              )}
+              </View>
+            ))}
+          </View>
+        </View>
       </View>
+    </ScrollView>
 
-      <Pressable onPress={handleSubmit} style={styles.button}>
-        <Text style={[theme.h6, { color: colours.onSurface }]}>Submit</Text>
-      </Pressable>
+    <View style={styles.button}>
+      {selectionError && (
+        <Text style={[theme.small, theme.centerText, styles.selectionError, 
+        { color: paperColours.error, borderColor: paperColours.error }]}>
+          Select at least {MIN_SELECTIONS} {MIN_SELECTIONS === 1 ? "option" : "options"}
+        </Text>
+      )}
+      <Button
+      label= "Continue"
+      onPress={handleSubmit}
+      buttonType='roundButton'
+      />
     </View>
-
+    </View>
   );
 }
 
-export { MultiSelect };
-
-
-function createStyles(colours: ColourSet) {
-  const pill = {
-    height: 60,
-    width: "100%" as const,
-    borderRadius: 100,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-  };
-
+function createStyles(colours: ColourSet, text: Typography) {
   return StyleSheet.create({
-    options: { width: "100%", alignSelf: "center", gap: 12 },
-    option: {
-      ...pill,
-      borderWidth: 2,
-      borderColor: colours.secondary,
-      backgroundColor: "transparent",
+    screen: {
+      flex: 1,
     },
-    optionSelected: {
-      borderColor: colours.secondary,
-      backgroundColor: colours.tertiary,
+
+    scroll: {
+      flex: 1,
     },
-    helper: { textAlign: "center" },
+
+    content: {
+      // room for the last options to scroll up clear of the floating button
+      paddingBottom: 80,
+      gap: 19,
+    },
+
+    card: {
+      gap: 12,
+    },
+
+    notice: {
+      gap: 8,
+      paddingHorizontal: '5%',
+    },
+
+    cardContent: {
+      paddingHorizontal: '5%',
+      paddingBottom: 5,
+    },
+
+    heading: {
+      ...text.h6,
+      color: colours.onSurface,
+      paddingHorizontal: '5%',
+    },
+
+    label: {
+      marginTop: 5,
+      marginBottom: 19,
+    },
+
     button: {
-      ...pill,
-      width: "100%",
-      alignSelf: "center",
-      backgroundColor: colours.primary,
+      position: 'absolute',
+      bottom: 10,
+      width: '90%',
+      alignSelf: 'center',
+    },
+
+    input: {
+      ...text.body,
+      color: colours.onSurface,
+    },
+
+    checkboxList: {
+      marginVertical: 5,
+      marginHorizontal: 3,
+      gap: 10,
+    },
+
+    selectedOption: {
+      backgroundColor: colours.secondary,
+    },
+
+    selectedText: {
+      color: colours.onSecondary,
+    },
+
+    otherField: {
+      marginTop: 8,
+      paddingVertical: 5,
+      paddingHorizontal: 10,
+      borderWidth: 1,
+      borderColor: colours.onSurface,
+      borderRadius: 15,
+    },
+
+    otherInput: {
+      minHeight: 40,
+    },
+
+    otherCount: {
+      textAlign: 'right',
+    },
+
+    selectionError: {
+      alignSelf: 'stretch',
+      marginBottom: 10,
+      marginHorizontal: 30,
+      paddingVertical: 4,
+      paddingHorizontal: 12,
+      borderWidth: 1,
+      borderRadius: 20,
+      backgroundColor: colours.background,
+      overflow: 'hidden',
+    },
+
+    otherError: {
+      marginTop: 4,
+      marginLeft: 10,
+    },
+
+    checkboxItem: {
+      backgroundColor: colours.background, // unselected colour
+      paddingLeft: 20,
+      paddingRight: 15,
+      borderRadius: 15,
     },
   });
 }
+
+export { MultiSelect, MultiSelectAnswer, MultiSelectProps };

@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, act } from '@testing-library/react-native';
+import { actRender, press, expectText } from '../../helpers/testHelpers';
 
 const mockRouter = { push: jest.fn(), back: jest.fn(), replace: jest.fn() };
 const mockPickSupportLink = jest.fn();
@@ -31,14 +31,14 @@ afterEach(() => jest.clearAllMocks());
 
 test('shows the empty-state message when there are no support links', async () => {
   mockApiMySupportLinks.mockResolvedValue([]);
-  await act(async () => { await render(<Screen />); });
-  expect(screen.getByText('You have no support links yet')).toBeTruthy();
+  await actRender(<Screen />);
+  expectText('You have no support links yet');
 });
 
 test('a load failure shows the error message', async () => {
   mockApiMySupportLinks.mockRejectedValue(new Error('placeholder error'));
-  await act(async () => { await render(<Screen />); });
-  expect(screen.getByText('Your support links could not be loaded')).toBeTruthy();
+  await actRender(<Screen />);
+  expectText('Your support links could not be loaded');
 });
 
 test('saved links render their name and phone number', async () => {
@@ -48,9 +48,9 @@ test('saved links render their name and phone number', async () => {
     supporter_name: 'Jane Doe', 
     status: 'active' },
   ]);
-  await act(async () => { await render(<Screen />); });
-  expect(screen.getByText('Jane Doe')).toBeTruthy();
-  expect(screen.getByText('+61412345678')).toBeTruthy();
+  await actRender(<Screen />);
+  expectText('Jane Doe');
+  expectText('+61412345678');
 });
 
 test('a link with an account that has not accepted shows the pending note', async () => {
@@ -60,8 +60,8 @@ test('a link with an account that has not accepted shows the pending note', asyn
     supporter_name: 'Jane Doe', 
     status: 'invited' },
   ]);
-  await act(async () => { await render(<Screen />); });
-  expect(screen.getByText('Invite not accepted yet')).toBeTruthy();
+  await actRender(<Screen />);
+  expectText('Invite not accepted yet');
 });
 
 test('pressing a link picks it and goes back', async () => {
@@ -71,8 +71,8 @@ test('pressing a link picks it and goes back', async () => {
     supporter_name: 'Jane Doe', 
     status: 'active' },
   ]);
-  await act(async () => { await render(<Screen />); });
-  await fireEvent.press(screen.getByText('Jane Doe'));
+  await actRender(<Screen />);
+  await press('Jane Doe');
   expect(mockPickSupportLink).toHaveBeenCalledWith({ id: 'l1', phone: '+61412345678' });
   expect(mockRouter.back).toHaveBeenCalled();
 });

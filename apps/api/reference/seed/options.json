@@ -51,7 +51,9 @@
     {"app_section": "my_personal_care", "question_key": "care_general_impacts", "question_number": 1, "options": [
       ["I am not doing any jobs that I usually do around the house because of my pain", 1],
       ["I get dressed more slowly than usual because of my pain", 1],
-      ["I sleep less well because of my pain", 1]]},
+      ["I sleep less well because of my pain", 1],
+      ["I am more irritable and bad tempered with people than usual", 1],
+      ["I try to get other people to do things for me because of my pain", 1]]},
     {"app_section": "my_personal_care", "question_key": "care_personal_care", "question_number": 2, "options": [
       ["I can look after myself normally without causing extra pain", 0],
       ["I can look after myself normally but it causes extra pain", 1],
@@ -83,11 +85,11 @@
       ["Pain restricts me to short necessary journeys under 30 minutes", 4],
       ["Pain prevents me from travelling except to receive treatment", 5]]},
       {"app_section": "my_social_health", "question_key": "social_overall_mood", "question_number": 3, "options": [
-      ["My mood has been very good this week", 0],
-      ["My mood has been good this week", 1],
-      ["My mood has been okay this week", 2],
-      ["My mood has been low this week", 3],
-      ["My mood has been very low this week", 4]]},
+      ["I was feeling delighted", 0],
+      ["I was feeling calm", 1],
+      ["I was feeling okay", 2],
+      ["I was feeling sad", 3],
+      ["I was feeling frustrated", 4]]},
     {"app_section": "my_management", "question_key": "management_exercise", "question_number": 1, "options": [
       ["Every day", 0], ["5–6 days", 1], ["3–4 days", 2], ["1–2 days", 3], ["Not at all", 4]]}
   ]

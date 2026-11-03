@@ -18,6 +18,7 @@ import {
   RecordingPresets,
   RecordingOptions,
   AudioQuality,
+  AudioSource,
   requestRecordingPermissionsAsync,
   setAudioModeAsync,
 } from 'expo-audio';
@@ -50,6 +51,14 @@ const MEDIUM_QUALITY: RecordingOptions = {
   ios: { ...RecordingPresets.HIGH_QUALITY.ios, audioQuality: AudioQuality.MEDIUM },
 };
 
+// preventDefault stops the page closing automatically
+type LeavingEvent = { preventDefault: () => void; data: { action: unknown } };
+type PageNavigation = {
+  addListener: (event: 'beforeRemove', listener: (event: LeavingEvent) => void) => () => void;
+  // 
+  dispatch: (action: unknown) => void;
+};
+
 // formats seconds as minutes:seconds, e.g. 83.6 as '1:23'
 const formatTime = (seconds: number) => {
   const whole = Math.max(0, Math.floor(seconds));
@@ -62,13 +71,13 @@ export default function Screen() {
   const styles = createStyles(colours, theme, insets.bottom);
   const { colors: paperColours } = usePaperTheme();
   const { id, index } = useLocalSearchParams<{ id: string; index: string }>();
-  const navigation = useNavigation();
+  const navigation = useNavigation<PageNavigation>();
   const { findAppointment, updateAppointment, updateQuestion: updateAppointmentQuestion } =
     useAppointment();
   const appointment = findAppointment(id);
   const question = appointment?.questions[Number(index)];
 
-  // starts with the saved answer, saved to the appointment as it is typed
+  // starts with the saved answer
   const [answer, setAnswer] = useState(question?.answer ?? '');
   // the signature canvas is shown in place of the doctor's permission button while signing
   const [signing, setSigning] = useState(false);
@@ -81,6 +90,11 @@ export default function Screen() {
   const [blankSignature, setBlankSignature] = useState(false);
   // asks before the recording is deleted
   const [confirmingDeleteRecording, setConfirmingDeleteRecording] = useState(false);
+  // true while the typed answer has changes not saved to the server yet
+  const [unsaved, setUnsaved] = useState(false);
+  // asks to save the typed answer when the page is left with it unsaved
+  const [confirmingLeave, setConfirmingLeave] = useState(false);
+  const leavingAction = useRef<unknown>(null);
 
   const recorder = useAudioRecorder(MEDIUM_QUALITY);
   const { isRecording, durationMillis } = useAudioRecorderState(recorder);
@@ -90,7 +104,7 @@ export default function Screen() {
   // played from the device
   const player = useAudioPlayer(
     question?.recording?.startsWith('http') && question.answerId
-      ? apiAppointmentAnswerRecording('select', { id: question.answerId })
+      ? (apiAppointmentAnswerRecording('select', { id: question.answerId }) as AudioSource)
       : (question?.recording ?? null),
   );
   const { playing, currentTime, duration } = useAudioPlayerStatus(player);
@@ -129,25 +143,21 @@ export default function Screen() {
     });
   };
 
-  // a typed answer is saved once typing stops for a second, or when the page closes
-  const textTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // the typed answer waiting to be saved, null when there is nothing to save
   const pendingText = useRef<string | null>(null);
   const saveTypedAnswer = () => {
-    if (textTimer.current) clearTimeout(textTimer.current);
-    textTimer.current = null;
     if (pendingText.current === null) return;
     saveAnswer({ text: pendingText.current });
     pendingText.current = null;
+    setUnsaved(false);
   };
 
-  // the box keeps exactly what is typed, the saved answer is trimmed and a blank one is removed
+  // saved answer is trimmed and a blank one is removed
   const changeAnswer = (text: string) => {
     setAnswer(text);
     updateQuestion({ answer: text.trim() || undefined });
     pendingText.current = text.trim();
-    if (textTimer.current) clearTimeout(textTimer.current);
-    textTimer.current = setTimeout(saveTypedAnswer, 1000);
+    setUnsaved(true);
   };
 
   // asks for the microphone the first time, then records until submit is pressed or 2 minutes of
@@ -190,16 +200,29 @@ export default function Screen() {
     if (recordingStarted && durationMillis >= MAX_RECORDING_SECONDS * 1000) submitRecording();
   }, [recordingStarted, durationMillis]);
 
-  // leaving the page submits a recording in progress, saved straight to the appointment as the
-  // page closes before the recording has stopped
+  // leaving the page with an unsaved typed answer is stopped to ask whether to save it first.
+  // Otherwise a recording in progress is submitted, saved straight to the appointment as the page
+  // closes before the recording has stopped
   useEffect(
     () =>
-      navigation.addListener('beforeRemove', () => {
-        saveTypedAnswer();
+      navigation.addListener('beforeRemove', (event) => {
+        if (pendingText.current !== null) {
+          event.preventDefault();
+          leavingAction.current = event.data.action; // the last navigation action
+          setConfirmingLeave(true);
+          return;
+        }
         if (recordingStarted) submitRecording();
       }),
     [navigation, recordingStarted],
   );
+
+  // saves the typed answer and carries on leaving the page
+  const saveAndLeave = () => {
+    setConfirmingLeave(false);
+    saveTypedAnswer();
+    navigation.dispatch(leavingAction.current);
+  };
 
   // how far playback has got, or 0 if it will start from the beginning
   const timePlayed = playing || pausedPartWay ? currentTime : 0;
@@ -405,6 +428,9 @@ export default function Screen() {
               multiline
               numberOfLines={3}
             />
+            {unsaved && (
+              <Button label="Save answer" onPress={saveTypedAnswer} buttonType="roundButton" />
+            )}
 
             <View style={[theme.line, styles.answerDivider]} />
 
@@ -426,6 +452,16 @@ export default function Screen() {
         cancelLabel="Go back"
         onConfirm={cancelSigning}
         onCancel={() => setConfirmingCancel(false)}
+      />
+
+      <ConfirmModal
+        visible={confirmingLeave}
+        title="Save your answer before leaving?"
+        message="Your typed answer has not been saved yet."
+        confirmLabel="Save and leave"
+        cancelLabel="Keep editing"
+        onConfirm={saveAndLeave}
+        onCancel={() => setConfirmingLeave(false)}
       />
 
       <ConfirmModal

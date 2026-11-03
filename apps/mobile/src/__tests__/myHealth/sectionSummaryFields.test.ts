@@ -88,11 +88,11 @@ describe("fieldsFor", () => {
     });
     expect(rows).toEqual([
       ["My Pain location", "Lower back"],
+      ["Pain characteristics", "Aching"],
       ["My Current pain: 7", "My current pain is fairly severe."],
       ["Average pain (2 weeks): 5", "I have had moderate pain most days"],
       ["Worst pain: 9", "My worst pain was extremely severe."],
       ["Mildest pain: 2", "My mildest pain was very mild."],
-      ["Pain characteristics", "Aching"],
     ]);
   });
 
@@ -107,11 +107,11 @@ describe("fieldsFor", () => {
     });
     expect(rows).toEqual([
       ["My Pain location", "Not available"],
+      ["Pain characteristics", "Not available"],
       ["My Current pain", "Not available"],
       ["Average pain (2 weeks)", "Not available"],
       ["Worst pain", "Not available"],
       ["Mildest pain", "Not available"],
-      ["Pain characteristics", "Not available"],
     ]);
   });
 
