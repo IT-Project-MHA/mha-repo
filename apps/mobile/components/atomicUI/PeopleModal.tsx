@@ -24,21 +24,21 @@ import ConfirmModal from "./ConfirmModal";
 import TextWithIconButton from "./TextWithIconButton";
 
 export type Permissions = {
-  viewAppointments: boolean;
+  //viewAppointments: boolean;
   viewAssessments: boolean;
-  viewPrescriptions: boolean;
+  //viewPrescriptions: boolean;
 };
 
 const permissionsLabels: Record<keyof Permissions, string> = {
-  viewAppointments: "View my appointments",
-  viewAssessments: "View my assessments",
-  viewPrescriptions: "View my prescriptions"
+  //viewAppointments: "View my appointments",
+  viewAssessments: "View my Assessments Data",
+  //viewPrescriptions: "View my prescriptions"
 };
 
 const permissionsLabelsImSupporting: Record<keyof Permissions, string> = {
-  viewAppointments: "View their appointments",
-  viewAssessments: "View their assessments",
-  viewPrescriptions: "View their prescriptions"
+  //viewAppointments: "View their appointments",
+  viewAssessments: "View their Assessments Data",
+  //viewPrescriptions: "View their prescriptions"
 };
 
 type Props = {
