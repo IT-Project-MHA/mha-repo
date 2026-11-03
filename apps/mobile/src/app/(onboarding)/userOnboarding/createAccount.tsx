@@ -7,8 +7,8 @@ import { TextEntry } from '../../../../components/answerFields/TextEntry';
 import { useRouter } from 'expo-router';
 import { useOnboardingStore } from '../../../store/onboardingStorage';
 
-import { Text, View, ScrollView, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform, StyleSheet} from 'react-native';
-import { useTheme, ColourSet } from '../../../../context/ThemeContext';
+import { Text, View, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { useTheme } from '../../../../context/ThemeContext';
 import * as WebBrowser from 'expo-web-browser';
 import React from 'react';
 
@@ -23,6 +23,7 @@ import React from 'react';
   
   const PRIVACY_URL = 'https://s2.q4cdn.com/175719177/files/doc_presentations/Placeholder-PDF.pdf';
   const openPrivacy = () => WebBrowser.openBrowserAsync(PRIVACY_URL);
+
 
 export default function Page() {
   const { colours, theme } = useTheme();

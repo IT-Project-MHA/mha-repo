@@ -1,7 +1,7 @@
 /**
  * Initial sign in / create account page for onboarding.
  */
-import { Text, StyleSheet, Modal, View, ScrollView, Platform} from "react-native";
+import { Text, StyleSheet, Modal, View, ScrollView, Platform, Pressable} from "react-native";
 
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -67,25 +67,20 @@ export default function Page() {
        
 
     
-      <View style={[theme.clearContainer, theme.centerItems, {justifyContent: 'space-between'}]}>
+      <View style={[theme.clearContainer, {gap: 30}]}>
 
-        <Button
-          label="Create Account"
-          onPress={() => {
-            router.navigate("/(onboarding)/userOnboarding/createAccount");
-          }}
-          buttonType="roundButton"
-        />
+        <Pressable 
+            onPress={() => {router.navigate("/(onboarding)/userOnboarding/createAccount");}}
+            style={styles.button}>
+        <Text style={[theme.h6, styles.buttonText, { color: colours.onSurface }]}>Create Account</Text>
+        </Pressable>
 
-        <View style={{padding: 20}}/>
+        <Pressable 
+            onPress={() => {router.navigate("/(onboarding)/signIn/signIn");}} 
+            style={styles.button}>
+        <Text style={[theme.h6, styles.buttonText, { color: colours.onSurface }]}>Sign In</Text>
 
-        <Button
-          label="Sign In"
-          onPress={() => {
-            router.navigate("/(onboarding)/signIn/signIn");
-          }}
-          buttonType="roundButton"
-        />
+      </Pressable>
 
       </View>
     </ScrollView>
@@ -98,78 +93,13 @@ function createStyles(
   bottomInset: number
 ) {
   return StyleSheet.create({
-    screen: {
-      flex: 1,
-      backgroundColor: colours.background
+    button: {
+      height: 60,
+      width: "100%",
+      borderRadius: 100,
+      justifyContent: "center",
+      backgroundColor: colours.primary,
     },
-    content: {
-      paddingBottom: 200 + bottomInset,
-      gap: 38
-    },
-    card: {
-      gap: 12
-    },
-    cardContent: {
-      paddingHorizontal: "5%",
-      paddingBottom: 5
-    },
-    bottomBar: {
-      position: "absolute",
-      left: "7.5%",
-      width: "85%",
-      bottom: 120 + bottomInset,
-      gap: 8
-    },
-    label: {
-      marginTop: 29,
-      marginBottom: 19
-    },
-    firstLabel: {
-      marginTop: 5
-    },
-    field: {
-      height: 40,
-      paddingVertical: 5,
-      paddingHorizontal: 10,
-      marginHorizontal: 8,
-      borderWidth: 1,
-      borderColor: colours.onSurface,
-      justifyContent: "center"
-    },
-    input: {
-      ...text.body,
-      color: colours.onSurface
-    },
-    error: {
-      ...text.small,
-      borderWidth: 1,
-      borderRadius: 8,
-      paddingVertical: 6,
-      paddingHorizontal: 12,
-      backgroundColor: colours.background,
-      overflow: "hidden"
-    },
-    dropdown: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center"
-    },
-    optionList: {
-      marginTop: 8,
-      marginHorizontal: 8,
-      borderWidth: 1,
-      borderColor: colours.onSurface,
-      overflow: "hidden"
-    },
-    optionRow: {
-      paddingVertical: 10,
-      paddingHorizontal: 12
-    },
-    selectedRow: {
-      backgroundColor: colours.secondary
-    },
-    selectedText: {
-      color: colours.onSecondary
-    }
+    buttonText: { textAlign: "center" },
   });
 }
