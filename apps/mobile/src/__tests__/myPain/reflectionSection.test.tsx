@@ -7,8 +7,8 @@
  *    - Back returns to My Pain without saving
  */
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
-import { press } from '../../testHelpers/testHelpers';
+import { render, screen, fireEvent } from '@testing-library/react-native';
+import { press, actPress } from '../../helpers/testHelpers';
 
 const mockNavigate = jest.fn();
 jest.mock('expo-router', () => ({
@@ -42,16 +42,16 @@ test('shows the reflection already saved this week', async () => {
 test('Continue saves the reflection and returns to My Pain', async () => {
   await render(<Screen />);
   await fireEvent.changeText(await screen.findByPlaceholderText(PLACEHOLDER), 'new reflection');
-  await press('Continue');
-  await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/(tabs)/myPain'));
+  await actPress('Continue');
+  expect(mockNavigate).toHaveBeenCalledWith('/(tabs)/myPain');
   expect(mockApiAssessment).toHaveBeenCalledWith('update', { id: 'a1', reflection: 'new reflection' });
 });
 
 test('an empty reflection is saved as null', async () => {
   await render(<Screen />);
   await fireEvent.changeText(await screen.findByPlaceholderText(PLACEHOLDER), '');
-  await press('Continue');
-  await waitFor(() => expect(mockNavigate).toHaveBeenCalled());
+  await actPress('Continue');
+  expect(mockNavigate).toHaveBeenCalled();
   expect(mockApiAssessment).toHaveBeenCalledWith('update', { id: 'a1', reflection: null });
 });
 

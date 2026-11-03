@@ -7,7 +7,7 @@
  */
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
-import { press } from '../../testHelpers/testHelpers';
+import { press, expectText } from '../../helpers/testHelpers';
 
 jest.mock('@/api/django-API', () => ({}));
 import { TextEntry } from '../../../components/answerFields/TextEntry';
@@ -24,7 +24,7 @@ test('empty text is an error unless the question is optional', async () => {
   const onSubmit = jest.fn();
   const { rerender } = await render(<TextEntry onSubmit={onSubmit} />);
   await press('Continue');
-  expect(screen.getByText('Empty entry, please enter some text')).toBeTruthy();
+  expectText('Empty entry, please enter some text');
   expect(onSubmit).not.toHaveBeenCalled();
 
   await rerender(<TextEntry onSubmit={onSubmit} optional />);
@@ -35,8 +35,8 @@ test('empty text is an error unless the question is optional', async () => {
 test('typing past the limit is cut off and shows a message', async () => {
   await render(<TextEntry onSubmit={jest.fn()} placeholder="Notes" maxLength={5} />);
   await fireEvent.changeText(screen.getByPlaceholderText('Notes'), 'abcdefgh');
-  expect(screen.getByText('Enter no more than 5 characters')).toBeTruthy();
-  expect(screen.getByText('5/5')).toBeTruthy();
+  expectText('Enter no more than 5 characters');
+  expectText('5/5');
 });
 
 test('a saved initialValue is shown', async () => {

@@ -14,7 +14,7 @@
  */
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
-import { press } from '../../testHelpers/testHelpers';
+import { press, expectText, expectNoText } from '../../helpers/testHelpers';
 
 const mockNavigate = jest.fn();
 jest.mock('expo-router', () => ({
@@ -56,12 +56,12 @@ afterEach(() => jest.clearAllMocks());
 
 test('answering every question reaches the review page showing the answers', async () => {
   await render(<Assessment title="S" questions={QUESTIONS} review={review()} />);
-  expect(screen.getByText('Progress: 1/2')).toBeTruthy();
+  expectText('Progress: 1/2');
   await answerAll();
-  expect(screen.getByText('Review Your Answers')).toBeTruthy();
-  expect(screen.getByText('Review title')).toBeTruthy();
-  expect(screen.getByText('Placeholder answer')).toBeTruthy();
-  expect(screen.getByText('Option 2')).toBeTruthy();
+  expectText('Review Your Answers');
+  expectText('Review title');
+  expectText('Placeholder answer');
+  expectText('Option 2');
 });
 
 test('Submit saves every answer by its answerKey and returns to My Pain', async () => {
@@ -88,9 +88,9 @@ test('Back goes to the previous question, and from the first question leaves', a
   await render(<Assessment title="S" questions={QUESTIONS} review={review()} />);
   await fireEvent.changeText(screen.getByPlaceholderText('Placeholder notes'), 'Placeholder answer');
   await press('Continue');
-  expect(screen.getByText('Progress: 2/2')).toBeTruthy();
+  expectText('Progress: 2/2');
   await press('Back');
-  expect(screen.getByText('Progress: 1/2')).toBeTruthy();
+  expectText('Progress: 1/2');
   expect(mockNavigate).not.toHaveBeenCalled();
   await press('Back');
   expect(mockNavigate).toHaveBeenCalledWith('/(tabs)/myPain');
@@ -104,8 +104,8 @@ test('a validate message blocks moving on', async () => {
   await render(<Assessment title="S" questions={questions} review={review()} />);
   await fireEvent.changeText(screen.getByPlaceholderText('Placeholder notes'), 'invalid');
   await press('Continue');
-  expect(screen.getByText('Not allowed')).toBeTruthy();
-  expect(screen.getByText('Progress: 1/2')).toBeTruthy();
+  expectText('Not allowed');
+  expectText('Progress: 1/2');
 });
 
 test('saved initialAnswers are shown', async () => {
@@ -121,8 +121,8 @@ describe('score and summary', () => {
   test('the score text matches the total score of the answers', async () => {
     await render(<Assessment title="My Movement" questions={QUESTIONS} review={review(scored)} />);
     await answerAll(); // Option 2 scores 8
-    expect(screen.getByText(/high score text\./)).toBeTruthy();
-    expect(screen.queryByText(/low score text\./)).toBeNull();
+    expectText(/high score text\./);
+    expectNoText(/low score text\./);
   });
 
   test('a lower score gets the lower range text', async () => {
@@ -131,7 +131,7 @@ describe('score and summary', () => {
     await press('Continue');
     await press('Option 1'); // Option 1 scores 1
     await press('Continue');
-    expect(screen.getByText(/low score text\./)).toBeTruthy();
+    expectText(/low score text\./);
   });
 
   test('a summary sentence is shown where the score would be', async () => {
@@ -140,7 +140,7 @@ describe('score and summary', () => {
         review={review({ summary: (answers: Record<string, any>) => `Placeholder summary ${answers.q1}.` })} />,
     );
     await answerAll();
-    expect(screen.getByText('Placeholder summary Placeholder answer.')).toBeTruthy();
-    expect(screen.getByText('Explore tips on managing pain')).toBeTruthy();
+    expectText('Placeholder summary Placeholder answer.');
+    expectText('Explore tips on managing pain');
   });
 });

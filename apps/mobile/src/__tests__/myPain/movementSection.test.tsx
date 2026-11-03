@@ -6,8 +6,8 @@
  *    - a section saved earlier opens with its answers filled in
  */
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
-import { press, pressLabel } from '../../testHelpers/testHelpers';
+import { render, screen, fireEvent } from '@testing-library/react-native';
+import { press, pressLabel, expectText, actPress } from '../../helpers/testHelpers';
 
 const mockNavigate = jest.fn();
 jest.mock('expo-router', () => ({
@@ -84,11 +84,11 @@ test('answering every question and submitting saves the answers as option ids', 
     await press('Continue');
   }
   await press('Continue'); // skip reflection, go to review
-  expect(screen.getByText('Impacts to Movement')).toBeTruthy();
-  expect(screen.getByText('w2')).toBeTruthy();
-  expect(screen.getByText(/pain mildly impacts your movement\./)).toBeTruthy();
-  await press('Submit');
-  await waitFor(() => expect(mockSave).toHaveBeenCalledTimes(1));
+  expectText('Impacts to Movement');
+  expectText('w2');
+  expectText(/pain mildly impacts your movement\./);
+  await actPress('Submit');
+  expect(mockSave).toHaveBeenCalledTimes(1);
   expect(mockSave).toHaveBeenCalledWith('a1', {
     active_hours: 5,
     general_impacts: ['g2'],

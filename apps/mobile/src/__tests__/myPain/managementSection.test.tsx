@@ -8,8 +8,8 @@
  *    - a section saved earlier opens with its answers filled in
  */
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
-import { press, pressLabel } from '../../testHelpers/testHelpers';
+import { render, screen, fireEvent } from '@testing-library/react-native';
+import { press, pressLabel, expectText, actPress } from '../../helpers/testHelpers';
 
 const mockNavigate = jest.fn();
 jest.mock('expo-router', () => ({
@@ -80,13 +80,11 @@ test('answering every question and submitting saves the answers', async () => {
   await press('Continue');
   await fireEvent.changeText(screen.getByPlaceholderText('Examples: meditation, journaling, meeting people'), 'meditation');
   await press('Continue');
-  expect(screen.getByText('My Current Management')).toBeTruthy();
-  expect(screen.getByText(
-    'You consume Panadol every 1 hour(s), placeholder OTC and mainly perform exercises to manage your pain.',
-  )).toBeTruthy();
+  expectText('My Current Management');
+  expectText('You consume Panadol every 1 hour(s), placeholder OTC and mainly perform exercises to manage your pain.');
 
-  await press('Submit');
-  await waitFor(() => expect(mockSave).toHaveBeenCalledTimes(1));
+  await actPress('Submit');
+  expect(mockSave).toHaveBeenCalledTimes(1);
   expect(mockSave).toHaveBeenCalledWith('a1', {
     medication: ['pr1'],
     otc_medication: 'placeholder OTC',
@@ -105,9 +103,7 @@ test('with no prescriptions the question says so and the summary says no medicat
   await press('e3');
   await press('Continue');
   await press('Continue');
-  expect(screen.getByText(
-    'You do not consume any medication and never perform exercises to manage your pain.',
-  )).toBeTruthy();
+  expectText('You do not consume any medication and never perform exercises to manage your pain.');
 });
 
 test('a section saved earlier opens with its answers filled in', async () => {

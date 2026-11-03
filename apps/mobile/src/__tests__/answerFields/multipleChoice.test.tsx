@@ -8,8 +8,8 @@
  *    - the exercise examples only show when exercise is on
  */
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
-import { press } from '../../testHelpers/testHelpers';
+import { render } from '@testing-library/react-native';
+import { press, expectText, expectNoText } from '../../helpers/testHelpers';
 
 jest.mock('@/api/django-API', () => ({}));
 import { MultipleChoice } from '../../../components/answerFields/MultipleChoice';
@@ -20,9 +20,9 @@ const SIX_OPTIONS = ['a', 'b', 'c', 'd', 'e', 'f'];
 test('renders every option and nothing is selected at the start', async () => {
   const onSubmit = jest.fn();
   await render(<MultipleChoice questionOptions={OPTIONS} onSubmit={onSubmit} />);
-  OPTIONS.forEach((option) => expect(screen.getByText(option)).toBeTruthy());
+  OPTIONS.forEach((option) => expectText(option));
   await press('Continue');
-  expect(screen.getByText('Please select 1 option')).toBeTruthy();
+  expectText('Please select 1 option');
   expect(onSubmit).not.toHaveBeenCalled();
 });
 
@@ -43,14 +43,14 @@ test('a saved initialValue starts selected', async () => {
 
 test('the scroll hint only shows for 6 or more options', async () => {
   const { rerender } = await render(<MultipleChoice questionOptions={OPTIONS} onSubmit={jest.fn()} />);
-  expect(screen.queryByText('Scroll down for more options')).toBeNull();
+  expectNoText('Scroll down for more options');
   await rerender(<MultipleChoice questionOptions={SIX_OPTIONS} onSubmit={jest.fn()} />);
-  expect(screen.getByText('Scroll down for more options')).toBeTruthy();
+  expectText('Scroll down for more options');
 });
 
 test('exercise examples only show when exercise is on', async () => {
   const { rerender } = await render(<MultipleChoice questionOptions={OPTIONS} onSubmit={jest.fn()} />);
-  expect(screen.queryByText(/Examples: walking/)).toBeNull();
+  expectNoText(/Examples: walking/);
   await rerender(<MultipleChoice questionOptions={OPTIONS} onSubmit={jest.fn()} exercise />);
-  expect(screen.getByText(/Examples: walking/)).toBeTruthy();
+  expectText(/Examples: walking/);
 });

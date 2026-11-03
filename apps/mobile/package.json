@@ -89,6 +89,12 @@
     "preset": "jest-expo",
     "testEnvironment": "node",
     "setupFiles": ["<rootDir>/jest.setup.js"],
+    "collectCoverageFrom": [
+      "src/**/*.{ts,tsx,js}",
+      "components/**/*.{ts,tsx}",
+      "!src/__tests__/**",
+      "!src/testHelpers/**"
+    ],
     "moduleNameMapper": {
       "^@/assets/(.*)$": "<rootDir>/assets/$1",
       "^@/context/(.*)$": "<rootDir>/context/$1",

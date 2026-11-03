@@ -6,8 +6,8 @@
  *    - a section saved earlier opens with its answers filled in
  */
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react-native';
-import { press, pressLabel } from '../../testHelpers/testHelpers';
+import { render, screen } from '@testing-library/react-native';
+import { press, pressLabel, expectText, actPress } from '../../helpers/testHelpers';
 
 const mockNavigate = jest.fn();
 jest.mock('expo-router', () => ({
@@ -75,11 +75,11 @@ test('answering every question and submitting saves the answers as option ids', 
   await press('s2');
   await press('Continue');
   await press('Continue'); // skip reflection, go to review
-  expect(screen.getByText('Impacts to Personal Care')).toBeTruthy();
-  expect(screen.getByText('p2')).toBeTruthy();
-  expect(screen.getByText(/pain moderately impacts your personal care\./)).toBeTruthy();
-  await press('Submit');
-  await waitFor(() => expect(mockSave).toHaveBeenCalledTimes(1));
+  expectText('Impacts to Personal Care');
+  expectText('p2');
+  expectText(/pain moderately impacts your personal care\./);
+  await actPress('Submit');
+  expect(mockSave).toHaveBeenCalledTimes(1);
   expect(mockSave).toHaveBeenCalledWith('a1', {
     general_activities_impact: ['g1', 'g2'],
     personal_care: 'p2',
@@ -94,5 +94,5 @@ test('a section saved earlier opens with its answers filled in', async () => {
   await render(<Screen />);
   await screen.findByText('General activities');
   await press('Continue'); // no selection error
-  expect(screen.getByText('Personal care (washing, dressing, etc)')).toBeTruthy();
+  expectText('Personal care (washing, dressing, etc)');
 });

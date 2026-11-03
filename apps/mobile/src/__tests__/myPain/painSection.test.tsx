@@ -7,8 +7,8 @@
  *    - a section saved earlier opens with its answers ticked
  */
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
-import { press, pressLabel } from '../../testHelpers/testHelpers';
+import { render, screen, fireEvent } from '@testing-library/react-native';
+import { press, pressLabel, expectText, actPress } from '../../helpers/testHelpers';
 
 const mockNavigate = jest.fn();
 jest.mock('expo-router', () => ({
@@ -74,9 +74,9 @@ test('answering every question and submitting saves option ids and the Other tex
   await press('Continue');
   await press('Continue');
   // review page shows the user's own text instead of "Other"
-  expect(screen.getByText('loc1, locOther')).toBeTruthy();
-  await press('Submit');
-  await waitFor(() => expect(mockSave).toHaveBeenCalledTimes(1));
+  expectText('loc1, locOther');
+  await actPress('Submit');
+  expect(mockSave).toHaveBeenCalledTimes(1);
   expect(mockSave).toHaveBeenCalledWith('a1', {
     locations: ['loc1', 'loc3'],
     other_location: 'locOther',
@@ -95,5 +95,5 @@ test('a section saved earlier opens with its answers ticked', async () => {
   await render(<Screen />);
   await screen.findByText('Pain location');
   await press('Continue'); // no selection error
-  expect(screen.getByText('Pain characteristics')).toBeTruthy();
+  expectText('Pain characteristics');
 });

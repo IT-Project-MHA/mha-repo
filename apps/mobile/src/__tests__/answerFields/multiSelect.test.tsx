@@ -7,7 +7,7 @@
  */
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
-import { press, pressLabel } from '../../testHelpers/testHelpers';
+import { press, pressLabel, expectText } from '../../helpers/testHelpers';
 
 jest.mock('@/api/django-API', () => ({}));
 import { MultiSelect } from '../../../components/answerFields/MultiSelect';
@@ -43,7 +43,7 @@ test('unticking an option removes it', async () => {
 test('too few selections shows an error and does not submit', async () => {
   const onSubmit = await renderSelect();
   await press('Continue');
-  expect(screen.getByText('Select at least 1 option')).toBeTruthy();
+  expectText('Select at least 1 option');
   expect(onSubmit).not.toHaveBeenCalled();
 });
 
@@ -57,7 +57,7 @@ test('Other needs its details filled in, which are submitted with the selection'
   const onSubmit = await renderSelect({ otherAttribute: true });
   await pressLabel('Other');
   await press('Continue');
-  expect(screen.getByText('Field cannot be empty, uncheck Other instead')).toBeTruthy();
+  expectText('Field cannot be empty, uncheck Other instead');
   expect(onSubmit).not.toHaveBeenCalled();
 
   await fireEvent.changeText(screen.getByPlaceholderText('Enter other details'), ' other field ');
@@ -67,11 +67,11 @@ test('Other needs its details filled in, which are submitted with the selection'
 
 test('medication mode with prescriptions says where the options came from', async () => {
   await renderSelect({ medication: true, MIN_SELECTIONS: 0 });
-  expect(screen.getByText('Generated based on your medication scripts')).toBeTruthy();
-  expect(screen.getByText('Not taking medications? Just press continue.')).toBeTruthy();
+  expectText('Generated based on your medication scripts');
+  expectText('Not taking medications? Just press continue.');
 });
 
 test('medication mode with no prescriptions shows related message', async () => {
   await renderSelect({ medication: true, MIN_SELECTIONS: 0, questionOptions: [], MAX_SELECTIONS: 0 });
-  expect(screen.getByText(/You don't have any active prescriptions/)).toBeTruthy();
+  expectText(/You don't have any active prescriptions/);
 });

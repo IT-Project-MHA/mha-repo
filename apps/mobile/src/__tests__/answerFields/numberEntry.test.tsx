@@ -6,7 +6,7 @@
  */
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
-import { press } from '../../testHelpers/testHelpers';
+import { press, expectText } from '../../helpers/testHelpers';
 
 jest.mock('@/api/django-API', () => ({}));
 import { NumberEntry } from '../../../components/answerFields/NumberEntry';
@@ -31,7 +31,7 @@ test('an empty or too high number shows the range and does not submit', async ()
   const onSubmit = jest.fn();
   await render(<NumberEntry onSubmit={onSubmit} UPPER_BOUND={24} />);
   await press('Continue');
-  expect(screen.getByText('Enter a number between 0-24')).toBeTruthy();
+  expectText('Enter a number between 0-24');
   await fireEvent.changeText(screen.getByPlaceholderText('input number only'), '99');
   await press('Continue');
   expect(onSubmit).not.toHaveBeenCalled();

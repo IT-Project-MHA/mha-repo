@@ -12,7 +12,7 @@
  */
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react-native';
-import { press } from '../../testHelpers/testHelpers';
+import { press, expectText, expectNoText, actPress } from '../../helpers/testHelpers';
 
 const mockNavigate = jest.fn();
 jest.mock('expo-router', () => ({
@@ -52,10 +52,10 @@ afterEach(() => jest.clearAllMocks());
 
 test('lists the five sections and dates only the completed ones', async () => {
   await render(<Screen />);
-  TITLES.forEach((title) => expect(screen.getByText(title)).toBeTruthy());
+  TITLES.forEach((title) => expectText(title));
   expect(await screen.findByText('Updated on 19 Oct 2026')).toBeTruthy();
   expect(screen.getAllByText(/Updated on/)).toHaveLength(1);
-  expect(screen.getByText("You've completed 1/5 assessments this week.")).toBeTruthy();
+  expectText("You've completed 1/5 assessments this week.");
 });
 
 test('all five completed shows the fire emoji', async () => {
@@ -68,38 +68,38 @@ test('nothing is updated when there is no assessment for the week', async () => 
   mockApiAssessment.mockResolvedValue([]);
   await render(<Screen />);
   await waitFor(() => expect(mockApiAssessment).toHaveBeenCalled());
-  expect(screen.queryByText(/Updated on/)).toBeNull();
-  expect(screen.getByText("You've completed 0/5 assessments this week.")).toBeTruthy();
+  expectNoText(/Updated on/);
+  expectText("You've completed 0/5 assessments this week.");
 });
 
 test('pressing a section opens it with this week\'s assessment id', async () => {
   await render(<Screen />);
-  await press('My Movement');
-  await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith({
+  await actPress('My Movement');
+  expect(mockNavigate).toHaveBeenCalledWith({
     pathname: '/(tabs)/myPain/movementSection',
     params: { assessmentId: 'a1' },
-  }));
+  });
 });
 
 test('pressing a section creates the assessment first when there is none', async () => {
   mockApiAssessment.mockImplementation(async (operation: string) =>
     operation === 'select' ? [] : { id: 'new1' });
   await render(<Screen />);
-  await press('My Management');
-  await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith({
+  await actPress('My Management');
+  expect(mockNavigate).toHaveBeenCalledWith({
     pathname: '/(tabs)/myPain/managementSection',
     params: { assessmentId: 'new1' },
-  }));
+  });
   expect(mockApiAssessment).toHaveBeenCalledWith('create', { week_starting: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/) });
 });
 
 test('the reflection link opens the reflection screen', async () => {
   await render(<Screen />);
-  await press('Add a reflection for this week');
-  await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith({
+  await actPress('Add a reflection for this week');
+  expect(mockNavigate).toHaveBeenCalledWith({
     pathname: '/(tabs)/myPain/reflectionSection',
     params: { assessmentId: 'a1' },
-  }));
+  });
 });
 
 test('FindLastMonday moves a date back to the Monday of its week', () => {

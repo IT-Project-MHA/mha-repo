@@ -4,8 +4,8 @@
  *    - starts at a saved initialValue
  */
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
-import { press } from '../../testHelpers/testHelpers';
+import { render } from '@testing-library/react-native';
+import { press, expectText } from '../../helpers/testHelpers';
 
 jest.mock('@/api/django-API', () => ({}));
 import { SliderEntry } from '../../../components/answerFields/SliderEntry';
@@ -13,7 +13,7 @@ import { SliderEntry } from '../../../components/answerFields/SliderEntry';
 test('starts at 0, shows its description and submits 0', async () => {
   const onSubmit = jest.fn();
   await render(<SliderEntry onSubmit={onSubmit} scoreLabel="pain" descriptions={['lowest', 'low']} />);
-  expect(screen.getByText('lowest')).toBeTruthy();
+  expectText('lowest');
   await press('Continue');
   expect(onSubmit).toHaveBeenCalledWith('0');
 });

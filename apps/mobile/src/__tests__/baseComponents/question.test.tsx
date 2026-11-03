@@ -8,7 +8,7 @@
  */
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
-import { press, pressLabel } from '../../testHelpers/testHelpers';
+import { press, pressLabel, expectText } from '../../helpers/testHelpers';
 
 jest.mock('@/api/django-API', () => ({}));
 jest.mock('react-native-safe-area-context', () => require('react-native-safe-area-context/jest/mock').default);
@@ -20,11 +20,11 @@ test('shows the section, title, detail, progress and error', async () => {
   await render(
     <Question {...BASE} questionType="TextEntry" progress="Progress: 1/4" error="Placeholder error" />,
   );
-  expect(screen.getByText('Placeholder section')).toBeTruthy();
-  expect(screen.getByText('Placeholder title')).toBeTruthy();
-  expect(screen.getByText('Placeholder detail')).toBeTruthy();
-  expect(screen.getByText('Progress: 1/4')).toBeTruthy();
-  expect(screen.getByText('Placeholder error')).toBeTruthy();
+  expectText('Placeholder section');
+  expectText('Placeholder title');
+  expectText('Placeholder detail');
+  expectText('Progress: 1/4');
+  expectText('Placeholder error');
 });
 
 test('an unknown question type throws', async () => {
