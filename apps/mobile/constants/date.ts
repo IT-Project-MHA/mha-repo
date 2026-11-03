@@ -85,8 +85,8 @@ export const weekRangeLabel = (weekStarting: string) => {
   const monthName = (date: Date) => date.toLocaleDateString('en-AU', { month: 'long' });
 
   return start.getMonth() === end.getMonth()
-    ? `${start.getDate()}-${end.getDate()} ${monthName(end)}`
-    : `${start.getDate()} ${monthName(start)} - ${end.getDate()} ${monthName(end)}`;
+    ? `${start.getDate()} – ${end.getDate()}  ${monthName(end)}`
+    : `${start.getDate()} ${monthName(start)} – ${end.getDate()} ${monthName(end)}`;
 };
 
 
