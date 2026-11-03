@@ -2,7 +2,7 @@
  * entry page for year of birth
  * 
  */
-import { View, Text, ScrollView } from 'react-native';
+import { Text, View, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTheme } from "../../../../context/ThemeContext";
 import { NumberEntry } from '../../../../components/answerFields/NumberEntry';
 import { useRouter } from 'expo-router';
@@ -27,10 +27,19 @@ export default function Page() {
   }
 
   return (
-    <ScrollView stickyHeaderIndices={[0]}>
+    <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+
+    <ScrollView
+      contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+    >
       <View style={[theme.header, theme.leftText]}>
         <Text style={[theme.h5, { color: colours.onSurface }]}>
-          What is your assigned gender at birth?
+          What year were you born?
         </Text>
         <NumberEntry
                   onSubmit={setAge}
@@ -44,6 +53,7 @@ export default function Page() {
         />
     </View>
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

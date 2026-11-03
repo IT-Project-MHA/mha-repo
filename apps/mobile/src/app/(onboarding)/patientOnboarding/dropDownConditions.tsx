@@ -1,20 +1,7 @@
 /**
- * page with a drop-down for conditions in figma design
- * I'm thinking I can re-use the multi-select though, as there is no search functionality in the figma to my understanding, and the
- * list is maybe just short enough to get away with that. Thinking it would be good to go through and cut particularly rare conditions, 
- * but MHA may specialize in those conditions so talk to client about this.
- * From https://www.aihw.gov.au/reports/musculoskeletal-conditions/chronic-musculoskeletal-conditions
  * 
- * 4.0 million (15.7%) people were living with a back problem
- * 3.7 million (14.5%) were living with arthritis (includes osteoarthritis, rheumatoid arthritis, and other types of arthritis)
- * 854,000 (3.4%) were living with osteoporosis or osteopenia
- * 224,000 (0.9%) were living with gout.
- * Fibromyalgia is also quite common ~3%
- * 
- * Figma list:
- * ["Arthritis", "Ankylosing spondylitis", "Back pain", "Baker’s cyst", "Bursitis", "Foot related conditions", "Fibromyalgia", "Gout", "Juvenile idiopathic arthritis", "Hand conditions", "Lupus", "Neck pain", "Osteoarthritis", "Osteoporosis", "Paget’s disease", "Perthes’ disease", "Polymyalgia rheumatica", "Psoriatic arthritis", "Raynaud’s phenomenon", "Reactive arthritis", "Rheumatoid arthritis", "Scleroderma", "Shoulder pain", "Sjogren’s disease"]
  */
-import { View, Text, ScrollView } from 'react-native';
+import { Text, View, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTheme } from "../../../../context/ThemeContext";
 import { useRouter } from 'expo-router';
 import { MultiSelect } from '../../../../components/answerFields/MultiSelect';
@@ -27,12 +14,10 @@ import { useEffect, useState } from 'react';
 
 export default  function Page() {
   const router = useRouter();
-  const { theme } = useTheme();
-
+  const { theme, colours } = useTheme();
 
   const setUserOnboarding = useOnboardingStore((s)=> s.set);
   const {set, reset, ...answers} = useOnboardingStore.getState();
-  
 
   const [questionOptions, setQuestionOptions] = useState<string[]>([]);
   const [idByText, setIdByText] = useState<Record<string, string>>({});
@@ -85,21 +70,37 @@ export default  function Page() {
   }
 
   return (
-    <SafeAreaView style={theme.screen}>
-      
-      <Text style={theme.fontOnBackground}>Do you have any of the following conditions? You can select multiple</Text>
+    <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+
+    <ScrollView
+      contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+    >
+          <View style={[theme.header, theme.leftText]}>
+            <Text style={[theme.h5, { color: colours.onSurface }]}>
+              Tell us about the musculoskeletal or chronic pain you're experiencing.
+            </Text>
+
+            <Text style={[theme.body, {color: colours.onBackground}]}>Do you have any of the following conditions? You may select multiple.</Text>
       <ScrollView
       showsVerticalScrollIndicator={false}
       >
         <MultiSelect
         questionOptions={questionOptions}
-        headingText='You can select multiple conditions'
         onSubmit={setPainTypes}
         MIN_SELECTIONS={0}
         MAX_SELECTIONS={questionOptions.length+1}
         />
       </ScrollView>
-    </SafeAreaView>
+
+        </View>
+        </ScrollView>
+        </KeyboardAvoidingView>
+
   );
 }
 

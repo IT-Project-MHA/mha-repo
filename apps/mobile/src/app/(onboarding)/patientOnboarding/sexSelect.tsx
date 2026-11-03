@@ -4,9 +4,8 @@
  * uses the multiple choice framework
  * continue takes us to yearOfBirth page
  */
-
 import { useRouter } from 'expo-router';
-import { Text, View, ScrollView } from 'react-native';
+import { Text, View, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { MultipleChoice } from '../../../../components/answerFields/MultipleChoice';
 import { useTheme } from "../../../../context/ThemeContext";
 import { useOnboardingStore } from '../../../store/onboardingStorage';
@@ -21,13 +20,10 @@ type Choice = { value: string; label: string };
 export default function Page() {
   const router = useRouter();
   const { theme, colours } = useTheme();
-  const setUserOnboaring = useOnboardingStore((s)=> s.set);
 
   const {set, reset, ...answers} = useOnboardingStore.getState();
   
   const [choices, setChoices] = useState<Choice[]>([]);
-  const [questionOptions, setQuestionOptions] = useState<string[]>([]);
-  const [idByText, setIdByText] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,9 +53,17 @@ export default function Page() {
     router.navigate('/(onboarding)/patientOnboarding/ageEntry');
   }
 
-
   return (
-    <ScrollView stickyHeaderIndices={[0]}>
+    <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+
+    <ScrollView
+      contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+    >
       <View style={[theme.header, theme.leftText]}>
         <Text style={[theme.h5, { color: colours.onSurface }]}>
           What is your assigned gender at birth?
@@ -74,9 +78,13 @@ export default function Page() {
         </Text>
       )}
       {!loading && !error && (
-        <MultipleChoice questionOptions={choices.map((c) => c.label)} onSubmit={setSex} />
+        <MultipleChoice 
+          questionOptions={choices.map((c) => c.label)} 
+          onSubmit={setSex} />
+          
       )}
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

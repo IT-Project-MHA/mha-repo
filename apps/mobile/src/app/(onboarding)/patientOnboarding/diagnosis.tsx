@@ -1,32 +1,27 @@
 /**
- * asks for "Your sex"
- * options ["Female", "Male", "Prefer not to say"]
- * uses the multiple choice framework
- * continue takes us to yearOfBirth page
+ * Asks whether the user has a MSK diagnosis
  */
-
-
-import { View, Text } from 'react-native';
+import { Text, View, ScrollView, KeyboardAvoidingView, Platform }from 'react-native';
 import { useTheme } from "../../../../context/ThemeContext";
 import { useRouter } from 'expo-router';
 import { MultipleChoice } from '../../../../components/answerFields/MultipleChoice';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import React from 'react';
 
 import { useOnboardingStore } from '../../../store/onboardingStorage';
 
 export default function Page() {
   const router = useRouter();
-  const { theme } = useTheme();
+  const { theme, colours } = useTheme();
 
   const setUserOnboaring = useOnboardingStore((s)=> s.set);
   const {set, reset, ...answers} = useOnboardingStore.getState();
 
-  const questionOptions = ["Yes, I have", "No, I haven't"];
+  const QUESTION_OPTIONS = ["Yes, I have", "No, I haven't"];
 
   function setHasDiagnosis(selection: string){
 
-    const hasDiagnosis = (selection==questionOptions[0])
+    const hasDiagnosis = (selection==QUESTION_OPTIONS[0])
+
     //append option to health list
     let health = answers.health;
     if(health!=undefined)
@@ -38,17 +33,30 @@ export default function Page() {
   }
 
   return (
-    <SafeAreaView style={theme.screen}>
-      
-      <Text style={theme.fontOnBackground}>Do you have a musculoskeletal (for example arthritis, back pain, gout) or chronic pain diagnosis from your doctor?</Text>
+    <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
 
+    <ScrollView
+      contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+    >
+      <View style={[theme.header, theme.leftText] }>
+          <Text style={[theme.h5, {color: colours.onSurface}]}>Do you have a musculoskeletal or chronic pain diagnosis?</Text>
+          <Text style={[theme.small, { color: colours.onBackground }]}>
+          No diagnosis? No problem. You know your body. Being Health MPowered is for you.
+        </Text>
+      </View>
+        
         <MultipleChoice 
-        questionOptions={questionOptions}
+        questionOptions={QUESTION_OPTIONS}
         onSubmit={setHasDiagnosis}
         />
 
-      <Text style={theme.fontOnBackground}> No diagnosis? No problem! You know your body and how you feel so being Health MPowered is for you :)</Text>
-    </SafeAreaView>
+        </ScrollView>
+        </KeyboardAvoidingView>
   );
 }
 
