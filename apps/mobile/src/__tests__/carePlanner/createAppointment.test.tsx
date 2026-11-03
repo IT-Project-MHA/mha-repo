@@ -5,10 +5,11 @@
  *    - a date & time in the past shows the past error and does not save
  *    - the health service dropdown opens and a choice is selected
  *    - a valid submit saves the appointment, updates the draft and navigates to addSupportPerson
+ *    - a failed save shows the error and stays on the page
  */
 
 import React from 'react';
-import { render, screen, fireEvent, act } from '@testing-library/react-native';
+import { actRender, press, expectText, actPress } from '../../helpers/testHelpers';
 
 const mockRouter = { push: jest.fn(), back: jest.fn(), replace: jest.fn() };
 const mockUpdateDraft = jest.fn();
@@ -76,48 +77,48 @@ beforeEach(() => {
 afterEach(() => jest.clearAllMocks());
 
 const pickDateAndTime = async () => {
-  await fireEvent.press(screen.getByText('Pick appointment date'));
-  await fireEvent.press(screen.getByText('Pick appointment time'));
+  await press('Pick appointment date');
+  await press('Pick appointment time');
 };
 
 test('renders the header, fields and default health service', async () => {
-  await act(async () => { await render(<Screen />); });
-  expect(screen.getByText('Create Appointment')).toBeTruthy();
-  expect(screen.getByText('Appointment date')).toBeTruthy();
-  expect(screen.getByText('Appointment time')).toBeTruthy();
+  await actRender(<Screen />);
+  expectText('Create Appointment');
+  expectText('Appointment date');
+  expectText('Appointment time');
   // default health service option in dropdown
-  expect(screen.getByText('General Practitioner')).toBeTruthy();
+  expectText('General Practitioner');
 });
 
 test('Save with no date or time shows the mandatory-fields error', async () => {
-  await act(async () => { await render(<Screen />); });
-  await act(async () => { await fireEvent.press(screen.getByText('Save')); });
-  expect(screen.getByText('Please fill in all mandatory fields')).toBeTruthy();
+  await actRender(<Screen />);
+  await actPress('Save');
+  expectText('Please fill in all mandatory fields');
   expect(mockApiSaveAppointment).not.toHaveBeenCalled();
 });
 
 test('a date and time in the past shows the past error and does not save', async () => {
   mockPickedDate = new Date('2000-01-01T00:00:00');
   mockPickedTime = { hours: 10, minutes: 0 };
-  await act(async () => { await render(<Screen />); });
+  await actRender(<Screen />);
   await pickDateAndTime();
-  await act(async () => { await fireEvent.press(screen.getByText('Save')); });
-  expect(screen.getByText('Appointment cannot be in the past')).toBeTruthy();
+  await actPress('Save');
+  expectText('Appointment cannot be in the past');
   expect(mockApiSaveAppointment).not.toHaveBeenCalled();
 });
 
 test('the health service dropdown opens and a choice is selected', async () => {
-  await act(async () => { await render(<Screen />); });
-  await fireEvent.press(screen.getByText('General Practitioner'));
-  expect(screen.getByText('Physiotherapist')).toBeTruthy();
-  await fireEvent.press(screen.getByText('Physiotherapist'));
-  expect(screen.getByText('Physiotherapist')).toBeTruthy(); // new chosen option is displayed
+  await actRender(<Screen />);
+  await press('General Practitioner');
+  expectText('Physiotherapist');
+  await press('Physiotherapist');
+  expectText('Physiotherapist'); // new chosen option is displayed
 });
 
 test('a valid submit saves the appointment and navigates to addSupportPerson', async () => {
-  await act(async () => { await render(<Screen />); });
+  await actRender(<Screen />);
   await pickDateAndTime();
-  await act(async () => { await fireEvent.press(screen.getByText('Save')); });
+  await actPress('Save');
   expect(mockApiSaveAppointment).toHaveBeenCalledWith(
     null,
     expect.objectContaining({ doctor: '', healthService: 'General Practitioner' }),
@@ -126,4 +127,15 @@ test('a valid submit saves the appointment and navigates to addSupportPerson', a
     expect.objectContaining({ appointmentId: '1', healthService: 'General Practitioner' }),
   );
   expect(mockRouter.push).toHaveBeenCalledWith('/carePlanner/addSupportPerson');
+});
+
+test('a failed save shows the error and stays on the page', async () => {
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+  mockApiSaveAppointment.mockRejectedValue(new Error('network'));
+  await actRender(<Screen />);
+  await pickDateAndTime();
+  await actPress('Save');
+  expectText('Your appointment could not be saved, please try again');
+  expect(mockUpdateDraft).not.toHaveBeenCalled();
+  expect(mockRouter.push).not.toHaveBeenCalled();
 });

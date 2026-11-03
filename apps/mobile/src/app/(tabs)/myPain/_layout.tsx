@@ -23,11 +23,44 @@ export default function MyPainLayout() {
       <Stack.Screen 
       name="index"
         options={{
-            headerShown: false,
+          headerStyle: { backgroundColor: colours.background },
+          headerShadowVisible: false,
+          headerBackVisible: false, // prevent nav on the first page
+          title: '',
         }}
       />
       <Stack.Screen 
-      name="AssessmentTemp"
+      name="painSection"
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+      name="movementSection"
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+      name="personalCareSection"
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+      name="socialHealthSection"
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+      name="managementSection"
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+      name="reflectionSection"
         options={{
           headerShown: false,
         }}

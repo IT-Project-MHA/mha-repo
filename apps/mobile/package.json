@@ -11,6 +11,7 @@
     "@react-native-vector-icons/ionicons": "^13.1.4",
     "@react-native-vector-icons/material-design-icons": "^13.1.4",
     "expo": "^58.0.20",
+    "expo-application": "~58.1.2",
     "expo-audio": "~58.0.10",
     "expo-blur": "~58.0.5",
     "expo-checkbox": "~58.0.2",
@@ -87,6 +88,13 @@
   "jest": {
     "preset": "jest-expo",
     "testEnvironment": "node",
+    "setupFiles": ["<rootDir>/jest.setup.js"],
+    "collectCoverageFrom": [
+      "src/**/*.{ts,tsx,js}",
+      "components/**/*.{ts,tsx}",
+      "!src/__tests__/**",
+      "!src/testHelpers/**"
+    ],
     "moduleNameMapper": {
       "^@/assets/(.*)$": "<rootDir>/assets/$1",
       "^@/context/(.*)$": "<rootDir>/context/$1",

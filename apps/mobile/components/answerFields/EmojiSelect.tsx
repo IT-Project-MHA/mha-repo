@@ -1,84 +1,126 @@
 import React, { useState } from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Text, View, TouchableOpacity, StyleSheet } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useTheme as usePaperTheme } from "react-native-paper";
 import { useTheme } from "../../context/ThemeContext";
-import { ColourSet } from "../../constants/colourScheme"
+import Button from "../atomicUI/Button";
+
 /**
- * basically straight from here: https://dev.to/davelearns/building-a-basic-quiz-app-with-react-native-and-expo-go-a-complete-guide-11o
  * this is like multiple choice but aligned laterally
  * 
  * example use:
- * 
- *  <EmojiSelect
- *    onSubmit={() => {
- *      enter data function
- *    }
- *  />       
- */
-
-
-//MultipleChoice variables
-const NUM_CHOICES = 5;
-const MIN_SELECTIONS = 1;
-
-/**
- * EmojiSelect component that makes the interactable UI.
  *
- * @param onSubmit, a function to get the data to the back-end
- * @returns a styled EmojiSelect component, which performs some funtion when pressed
+ *  <EmojiSelect
+ *    questionOptions={["very good", "good", "okay", "low", "very low"]}
+ *    onSubmit={(option) => {...}}
+ *  />
  */
 
-function EmojiSelect({ onSubmit }: { onSubmit: (v: string) => void }) {
+const EMOJIS = ["😄", "🙂", "😐", "🙁", "😢"];
+
+type EmojiSelectProps = {
+  questionOptions: string[];
+  onSubmit: (v: string) => void;
+  initialValue?: string;
+}
+
+function EmojiSelect({ questionOptions, onSubmit, initialValue }: EmojiSelectProps) {
   const { theme } = useTheme();
+  const { colors: paperColours } = usePaperTheme();
 
-  const questionOptions = [
-    //array of options to be replaced with images later
-    "terrible",
-    "bad",
-    "neutral",
-    "good",
-    "great",
-  ];
-
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null); // Tracks the currently selected answer
-  const [userAnswer, setUserAnswer] = useState<string | null>(null);
+  const [selectedAnswer, setSelectedAnswer] = useState<string>(initialValue ?? "");
+  const [selectionError, setSelectionError] = useState(false);
 
   const handleSelect = (answer: string) => {
-    // Called when a user selects an answer
+    setSelectionError(false);
     setSelectedAnswer(answer);
   };
 
-  //no submit button, so never called
   const handleSubmit = () => {
-    setUserAnswer(selectedAnswer);
+    if (selectedAnswer === "") {
+      setSelectionError(true);
+      return;
+    }
+    onSubmit(selectedAnswer);
   };
 
   return (
-    <SafeAreaView>
-      <View style={theme.container}>
-        <Text style={[theme.text, {textAlign: 'center'}]}> "Select the most relevant"</Text>
-        
-        {/*render options as buttons*/}
-        <View style={{flexDirection: "row"}}>
+    <View>
+      <View style={[theme.sectionContainer, { paddingHorizontal: 20 }]}>
+        <Text style={[theme.body, theme.fontOnSurface, styles.prompt]}>
+          Select the emoji that best describes your mood
+        </Text>
+        <View style={styles.row}>
           {questionOptions.map((option, index) => (
-            <View style={theme.emojiContainer}>
             <TouchableOpacity
-              key={index}
+              key={option}
               style={[
                 theme.option,
+                styles.emojiOption,
                 selectedAnswer === option && theme.selectedOption,
-                {/* Highlights selected option*/},
               ]}
               onPress={() => handleSelect(option)}
+              accessibilityRole="radio"
+              accessibilityLabel={option}
+              accessibilityState={{ selected: selectedAnswer === option }}
             >
-              <Text style={theme.optionText}>{option}</Text>
+              <Text style={styles.emoji}>{EMOJIS[index]}</Text>
             </TouchableOpacity>
-            </View>
           ))}
         </View>
+        <Text style={[theme.body, theme.fontOnSurface, theme.centerText, styles.label]}>
+          {selectedAnswer}
+        </Text>
       </View>
-    </SafeAreaView>
+      <View style={styles.button}>
+        {selectionError && (
+          <Text style={[theme.small, theme.centerText, styles.selectionError,
+            { color: paperColours.error, borderColor: paperColours.error }]}>
+            Please choose an emoji
+          </Text>
+        )}
+        <Button label="Continue" onPress={handleSubmit} buttonType="roundButton" />
+      </View>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  prompt: {
+    marginBottom: 20,
+  },
+  row: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
+  },
+
+  emojiOption: {
+    paddingHorizontal: 0,
+    flex: 1,
+  },
+  emoji: {
+    fontSize: 32,
+  },
+  label: {
+    marginTop: 20,
+    fontStyle: "italic",
+    minHeight: 24,
+  },
+  button: {
+    width: "85%",
+    alignSelf: "center",
+    marginTop: 20,
+  },
+  selectionError: {
+    alignSelf: "stretch",
+    marginBottom: 10,
+    marginHorizontal: 30,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderRadius: 20,
+    overflow: "hidden",
+  },
+});
 
 export { EmojiSelect };

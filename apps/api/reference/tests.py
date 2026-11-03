@@ -8,7 +8,7 @@ from reference.management.commands.seed_options import SEED_FILE
 from reference.models import QuestionOption, QuestionOptionOrdered
 
 # Every question in the seed file, so the test follows the file when the wording changes
-SEED = json.loads(SEED_FILE.read_text())
+SEED = json.loads(SEED_FILE.read_text(encoding = "utf-8"))
 QUESTION_KEYS = {group["question_key"] for group in SEED["question_options"] + SEED["question_options_ordered"]}
 
 

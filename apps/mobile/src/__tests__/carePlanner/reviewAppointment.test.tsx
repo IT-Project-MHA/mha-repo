@@ -7,7 +7,7 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, act } from '@testing-library/react-native';
+import { actRender, press, expectText } from '../../helpers/testHelpers';
 
 const mockRouter = { push: jest.fn(), back: jest.fn(), dismissTo: jest.fn() };
 const mockResetDraft = jest.fn();
@@ -36,15 +36,15 @@ beforeEach(() => {
 afterEach(() => jest.clearAllMocks());
 
 test('renders the overview from the draft', async () => {
-  await act(async () => { await render(<Screen />); });
-  expect(screen.getByText('Dr')).toBeTruthy();
-  expect(screen.getByText('General Practitioner')).toBeTruthy();
+  await actRender(<Screen />);
+  expectText('Dr');
+  expectText('General Practitioner');
 });
 
 test('empty support persons and questions show their empty-state messages', async () => {
-  await act(async () => { await render(<Screen />); });
-  expect(screen.getByText('No support persons added')).toBeTruthy();
-  expect(screen.getByText('No questions added')).toBeTruthy();
+  await actRender(<Screen />);
+  expectText('No support persons added');
+  expectText('No questions added');
 });
 
 test('support persons and questions from the draft are listed', async () => {
@@ -55,15 +55,15 @@ test('support persons and questions from the draft are listed', async () => {
     canAddAnswers: false },
   ];
   mockDraft.questions = [{ text: 'placeholder question', source: 'patient' }];
-  await act(async () => { await render(<Screen />); });
-  expect(screen.getByText('Jane Doe')).toBeTruthy();
-  expect(screen.getByText('Access: Add questions')).toBeTruthy();
-  expect(screen.getByText('placeholder question')).toBeTruthy();
+  await actRender(<Screen />);
+  expectText('Jane Doe');
+  expectText('Access: Add questions');
+  expectText('placeholder question');
 });
 
 test('Finish clears the draft and returns to the care planner', async () => {
-  await act(async () => { await render(<Screen />); });
-  await fireEvent.press(screen.getByText('Finish'));
+  await actRender(<Screen />);
+  await press('Finish');
   expect(mockResetDraft).toHaveBeenCalledTimes(1);
   expect(mockRouter.dismissTo).toHaveBeenCalledWith('/carePlanner');
 });

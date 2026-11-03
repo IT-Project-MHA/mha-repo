@@ -5,10 +5,11 @@
  *    - pressing a person row opens newSupportPerson to edit them
  *    - the trash icon removes the person from the draft
  *    - Save invites the support people and navigates to addQuestions
+ *    - a failed save shows the error and stays on the page
  */
 
 import React from 'react';
-import { render, screen, fireEvent, act } from '@testing-library/react-native';
+import { actRender, press, pressLabel, expectText, actPress } from '../../helpers/testHelpers';
 
 const mockRouter = { push: jest.fn(), back: jest.fn(), replace: jest.fn() };
 const mockUpdateDraft = jest.fn();
@@ -46,22 +47,22 @@ afterEach(() => jest.clearAllMocks());
 
 test('shows a saved support person with their access', async () => {
   mockDraft = { appointmentId: 'a1', supportPeople: [person] };
-  await act(async () => { await render(<Screen />); });
-  expect(screen.getByText('Jane Doe')).toBeTruthy();
-  expect(screen.getByText('+61412345678')).toBeTruthy();
-  expect(screen.getByText('Access: Add questions')).toBeTruthy();
+  await actRender(<Screen />);
+  expectText('Jane Doe');
+  expectText('+61412345678');
+  expectText('Access: Add questions');
 });
 
 test('Add support person navigates to newSupportPerson', async () => {
-  await act(async () => { await render(<Screen />); });
-  await fireEvent.press(screen.getByText('Add support person'));
+  await actRender(<Screen />);
+  await press('Add support person');
   expect(mockRouter.push).toHaveBeenCalledWith('/carePlanner/newSupportPerson');
 });
 
 test('pressing a person row opens newSupportPerson to edit them', async () => {
   mockDraft = { appointmentId: 'a1', supportPeople: [person] };
-  await act(async () => { await render(<Screen />); });
-  await fireEvent.press(screen.getByText('Jane Doe'));
+  await actRender(<Screen />);
+  await press('Jane Doe');
   expect(mockRouter.push).toHaveBeenCalledWith({
     pathname: '/carePlanner/newSupportPerson',
     params: { index: 0 },
@@ -70,18 +71,29 @@ test('pressing a person row opens newSupportPerson to edit them', async () => {
 
 test('the trash icon removes the person from the draft', async () => {
   mockDraft = { appointmentId: 'a1', supportPeople: [person] };
-  await act(async () => { await render(<Screen />); });
-  await fireEvent.press(screen.getByLabelText('Remove support person Jane Doe'));
+  await actRender(<Screen />);
+  await pressLabel('Remove support person Jane Doe');
   expect(mockUpdateDraft).toHaveBeenCalledWith({ supportPeople: [] });
 });
 
 test('Save invites the support people and navigates to addQuestions', async () => {
   mockDraft = { appointmentId: 'a1', supportPeople: [person] };
-  await act(async () => { await render(<Screen />); });
-  await act(async () => { await fireEvent.press(screen.getByText('Save')); });
+  await actRender(<Screen />);
+  await actPress('Save');
   expect(mockApiSaveSupportPeople).toHaveBeenCalledWith('a1', [person]);
   expect(mockUpdateDraft).toHaveBeenCalledWith({
     supportPeople: [{ ...person, supportLinkId: 'link1' }],
   });
   expect(mockRouter.push).toHaveBeenCalledWith('/carePlanner/addQuestions');
+});
+
+test('a failed save shows the error and stays on the page', async () => {
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+  mockApiSaveSupportPeople.mockRejectedValue(new Error('network'));
+  mockDraft = { appointmentId: 'a1', supportPeople: [person] };
+  await actRender(<Screen />);
+  await actPress('Save');
+  expectText('Your support persons could not be saved, please try again');
+  expect(mockUpdateDraft).not.toHaveBeenCalled();
+  expect(mockRouter.push).not.toHaveBeenCalled();
 });

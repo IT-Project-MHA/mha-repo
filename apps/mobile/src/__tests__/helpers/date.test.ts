@@ -46,7 +46,7 @@ describe("parseApiDate", () => {
 
 describe("formatDate", () => {
   test("formats as day, short month and year", () => {
-    expect(formatDate("2026-10-23")).toMatch(/^23\s+Oct\s+2026$/);
+    expect(formatDate(parseApiDate("2026-10-23"))).toMatch(/^23\s+Oct\s+2026$/);
   });
 });
 

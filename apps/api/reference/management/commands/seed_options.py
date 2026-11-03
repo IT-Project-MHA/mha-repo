@@ -15,7 +15,7 @@ class Command(BaseCommand):
     @transaction.atomic
 
     def handle(self, *args, **options):
-        with open(SEED_FILE) as f:
+        with open(SEED_FILE, encoding = "utf-8") as f:
             data = json.load(f)
 
         # Plain options matched on question_key and text
