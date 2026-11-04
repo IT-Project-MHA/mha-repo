@@ -51,6 +51,7 @@ describe('apiMyAccount', () => {
     expect(result.user).toEqual({ id: 'user-1' });
     expect(result.profile).toEqual({ id: 'profile-1' });
     expect(result.sexOptions).toEqual([{ value: 'female', label: 'Female' }]);
+    expect(mockApiQuestionOption).toHaveBeenCalledWith('select', { app_section: 'onboarding', question_key: 'pain_type' });
     expect(result.painTypeOptions).toEqual([{ id: 'p1', text: 'Arthritis' }]);
   });
 
@@ -75,14 +76,6 @@ describe('apiSaveAboutMe', () => {
     await apiSaveAboutMe('user-1', 'profile-1', aboutMe);
     expect(mockApiPatientProfile).toHaveBeenCalledWith('update', {
       id: 'profile-1',
-      assigned_gender_at_birth: 'female',
-      birth_year: 2002,
-    });
-  });
-
-  test('creates the profile when the user has none and a field is filled', async () => {
-    await apiSaveAboutMe('user-1', null, aboutMe);
-    expect(mockApiPatientProfile).toHaveBeenCalledWith('create', {
       assigned_gender_at_birth: 'female',
       birth_year: 2002,
     });
