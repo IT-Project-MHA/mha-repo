@@ -5,11 +5,13 @@ const mockApiUser = jest.fn();
 const mockApiPatientProfile = jest.fn();
 const mockApiSupportLink = jest.fn();
 const mockApiAssignedGender = jest.fn();
+const mockApiQuestionOption = jest.fn();
 jest.mock('@/api/django-API', () => ({
   apiUser: (...args: any[]) => mockApiUser(...args),
   apiPatientProfile: (...args: any[]) => mockApiPatientProfile(...args),
   apiSupportLink: (...args: any[]) => mockApiSupportLink(...args),
   apiAssignedGender: (...args: any[]) => mockApiAssignedGender(...args),
+  apiQuestionOption: (...args: any[]) => mockApiQuestionOption(...args),
 }));
 
 import {
@@ -31,6 +33,7 @@ beforeEach(() => {
   mockApiPatientProfile.mockResolvedValue({ id: 'profile-1' });
   mockApiSupportLink.mockResolvedValue({});
   mockApiAssignedGender.mockResolvedValue([{ value: 'female', label: 'Female' }]);
+  mockApiQuestionOption.mockResolvedValue([{ id: 'p1', text: 'Arthritis' }]);
 });
 
 afterEach(() => {
@@ -48,6 +51,7 @@ describe('apiMyAccount', () => {
     expect(result.user).toEqual({ id: 'user-1' });
     expect(result.profile).toEqual({ id: 'profile-1' });
     expect(result.sexOptions).toEqual([{ value: 'female', label: 'Female' }]);
+    expect(result.painTypeOptions).toEqual([{ id: 'p1', text: 'Arthritis' }]);
   });
 
   test('profile is null when the user has none yet', async () => {

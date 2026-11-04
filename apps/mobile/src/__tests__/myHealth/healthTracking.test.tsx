@@ -51,7 +51,7 @@ async function renderTabAndRecordPage() {
   await act(async () => {
     await fireEvent.press(screen.getByText('History'));
   });
-  return screen.findByText('19-25 October');
+  return screen.findByText('19 – 25 October');
 }
 
 // ----- Tests -----
@@ -85,7 +85,7 @@ describe('RecordPage', () => {
   test('pressing the toggle expands the week and loads its answered sections', async () => {
     await renderTabAndRecordPage();
     await act(async () => {
-      await fireEvent.press(screen.getByText('19-25 October')); // open
+      await fireEvent.press(screen.getByText('19 – 25 October')); // open
     });
     expect(screen.getByText('My Pain')).toBeTruthy();
     expect(mockApiAnsweredSections).toHaveBeenCalledTimes(1);
@@ -96,11 +96,11 @@ describe('RecordPage', () => {
   test('pressing the toggle again collapses the week', async () => {
     await renderTabAndRecordPage();
     await act(async () => {
-      await fireEvent.press(screen.getByText('19-25 October')); // open
+      await fireEvent.press(screen.getByText('19 – 25 October')); // open
     });
     expect(screen.getByText('My Pain')).toBeTruthy();
 
-    await fireEvent.press(screen.getByText('19-25 October')); // close
+    await fireEvent.press(screen.getByText('19 – 25 October')); // close
     expect(screen.queryByText('My Pain')).toBeNull();
     expect(screen.queryByText('▲')).toBeNull();
     expect(screen.getAllByText('▼')).toHaveLength(2);
@@ -109,14 +109,14 @@ describe('RecordPage', () => {
   test('does not refetch answered sections when the same week is reopened', async () => {
     await renderTabAndRecordPage();
     await act(async () => {
-      await fireEvent.press(screen.getByText('19-25 October')); // open
+      await fireEvent.press(screen.getByText('19 – 25 October')); // open
     });
     expect(screen.getByText('My Pain')).toBeTruthy();
 
-    await fireEvent.press(screen.getByText('19-25 October')); // close
+    await fireEvent.press(screen.getByText('19 – 25 October')); // close
     expect(screen.queryByText('My Pain')).toBeNull();
 
-    await fireEvent.press(screen.getByText('19-25 October')); // open (answer is cached)
+    await fireEvent.press(screen.getByText('19 – 25 October')); // open (answer is cached)
     expect(screen.getByText('My Pain')).toBeTruthy();
     expect(mockApiAnsweredSections).toHaveBeenCalledTimes(1);
   });
@@ -124,7 +124,7 @@ describe('RecordPage', () => {
   test('only answered sections appear when a week is expanded', async () => {
     await renderTabAndRecordPage();
     await act(async () => {
-      await fireEvent.press(screen.getByText('19-25 October'));
+      await fireEvent.press(screen.getByText('19 – 25 October'));
     });
     expect(screen.getByText('My Pain')).toBeTruthy();
     expect(screen.queryByText('My Movement')).toBeNull();
@@ -136,7 +136,7 @@ describe('RecordPage', () => {
   test('pressing an answered section navigates to its summary', async () => {
     await renderTabAndRecordPage();
     await act(async () => {
-      await fireEvent.press(screen.getByText('19-25 October'));
+      await fireEvent.press(screen.getByText('19 – 25 October'));
     });
     await fireEvent.press(screen.getByText('My Pain'));
     expect(mockPush).toHaveBeenCalledTimes(1);

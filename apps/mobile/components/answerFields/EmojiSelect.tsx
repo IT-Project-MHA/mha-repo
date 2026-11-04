@@ -49,22 +49,26 @@ function EmojiSelect({ questionOptions, onSubmit, initialValue }: EmojiSelectPro
           Select the emoji that best describes your mood
         </Text>
         <View style={styles.row}>
-          {EMOJIS.map((option, index) => (
-            <TouchableOpacity
-              key={option}
-              style={[
-                theme.option,
-                styles.emojiOption,
-                selectedAnswer === option && theme.selectedOption,
-              ]}
-              onPress={() => handleSelect(option)}
-              accessibilityRole="radio"
-              accessibilityLabel={option}
-              accessibilityState={{ selected: selectedAnswer === option }}
-            >
-              <Text style={styles.emoji}>{EMOJIS[index]}</Text>
-            </TouchableOpacity>
-          ))}
+          {EMOJIS.map((emoji, index) => {
+            const option = questionOptions[index];
+            if (option === undefined) return null;
+            return (
+              <TouchableOpacity
+                key={emoji}
+                style={[
+                  theme.option,
+                  styles.emojiOption,
+                  selectedAnswer === option && theme.selectedOption,
+                ]}
+                onPress={() => handleSelect(option)}
+                accessibilityRole="radio"
+                accessibilityLabel={option}
+                accessibilityState={{ selected: selectedAnswer === option }}
+              >
+                <Text style={styles.emoji}>{emoji}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
         <Text style={[theme.body, theme.fontOnSurface, theme.centerText, styles.label]}>
           {selectedAnswer}

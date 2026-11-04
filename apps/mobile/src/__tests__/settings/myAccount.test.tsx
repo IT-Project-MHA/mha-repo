@@ -56,6 +56,7 @@ const account = {
     other_conditions: 'Arthritis',
   },
   sexOptions,
+  painTypeOptions,
 };
 const emptyAccount = {
   user: { ...account.user, email: null },
