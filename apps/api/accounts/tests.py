@@ -98,6 +98,7 @@ class OtpTests(APITestCase):
         self.assertEqual(self.verify("111111").data["detail"], "invalid")
         self.assertEqual(self.verify("222222").status_code, 200)
 
+    @mock.patch.dict("rest_framework.throttling.SimpleRateThrottle.THROTTLE_RATES", {"otp_phone_burst": "1/min"})
     def test_rate_limit(self):
         self.request_code()
         response = self.request_code()
@@ -615,6 +616,7 @@ class PhoneNumberTests(APITestCase):
         response = self.request_code("03 9081 3123")
         self.assertEqual(response.status_code, 400)
 
+    @mock.patch.dict("rest_framework.throttling.SimpleRateThrottle.THROTTLE_RATES", {"otp_phone_burst": "1/min"})
     def test_phone_number_different_formatting(self):
         self.request_code(PHONE)
         response = self.request_code("0490-813-123")
