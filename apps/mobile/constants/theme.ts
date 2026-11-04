@@ -280,7 +280,7 @@ const createTheme = (colours: ColourSet) =>
       color: colours.onSurface,
     },
     fontOnSurfaceDull: {
-      color: colours.tertiary2
+      color: colours.ex3
     },
     fontOnBackground: {
       color: colours.onBackground,
