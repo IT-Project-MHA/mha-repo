@@ -13,7 +13,7 @@ import ChangePinModal from '@/components/atomicUI/ChangePinModal';
 import { useUser } from '@/context/AuthorisationContext';
 import { Text, View, ScrollView, KeyboardAvoidingView, Platform} from 'react-native';
 import { useTheme } from '../../../../context/ThemeContext';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {useAppStore} from '../../../store/appStore'
 import GetDeviceId from '../../../../components/onboarding/GetDeviceID';
 import TextButton from '@/components/atomicUI/TextButton';
@@ -31,7 +31,19 @@ export default function Page() {
   const [changingPin, setChangingPin] = useState(false);
   const phone_number = useOnboardingStore((s) => s.phone_number);
 
+  // prevent multiple button press
+  const loggingIn = useRef(false);
   async function attemptLogIn(pin: string) {
+    if (loggingIn.current) return;
+    loggingIn.current = true;
+    try {
+      await runLogIn(pin);
+    } finally {
+      loggingIn.current = false;
+    }
+  }
+
+  async function runLogIn(pin: string) {
     setError(null);
     setUserOnboaring({ pin }); // kept so phoneVerification can reuse it on a new device
 

@@ -36,7 +36,7 @@ const ThemeContext = createContext<ThemeContextType>({
   isHC: false,
 });
 
-const FONT_SCALES: FontScale[] = [1, 1.5, 2];
+const FONT_SCALES: FontScale[] = [1, 1.25, 1.5];
 // nearest allowed scale to a saved text_size_percent
 const snapScale = (percent: number): FontScale =>
   FONT_SCALES.reduce((best, s) =>

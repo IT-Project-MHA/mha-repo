@@ -15,7 +15,7 @@ export type TextSizeSet = {
   xSmall: {fontSize: number, lineHeight: number, fontWeight: TextStyle['fontWeight']  };
 };
 
-export type FontScale = 1 | 1.5 | 2 ; 
+export type FontScale = 1 | 1.25 | 1.5 ;
 
 /**
  * Base mode text sizes, which will have the option be scaled by the FontScale values

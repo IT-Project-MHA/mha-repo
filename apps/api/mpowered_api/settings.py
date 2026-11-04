@@ -191,6 +191,14 @@ REST_FRAMEWORK = {
     },
 }
 
+# comment this out if testing throttle rates
+if DEBUG:
+    REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"].update({
+        "otp_request": "100/hour",
+        "otp_phone_burst": "6/min",
+        "otp_phone_sustained": "50/hour",
+    })
+
 # Which company sends SMS codes, defaults to printing codes in the terminal
 SMS_PROVIDER = os.environ.get("SMS_PROVIDER")
 
