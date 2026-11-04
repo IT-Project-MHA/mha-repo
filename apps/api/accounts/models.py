@@ -73,6 +73,7 @@ class PatientProfile(BaseModel, SoftDeleteModel):
 class UserSettings(BaseModel):
     user = models.OneToOneField(User, on_delete = models.CASCADE, related_name = "settings")
     high_contrast = models.BooleanField(default = False)
+    dark_mode = models.BooleanField(default = False)
     offline_backup = models.BooleanField(default = True)
     microphone_access = models.BooleanField(default = False)
     notifications_enabled = models.BooleanField(default = True)

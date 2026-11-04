@@ -56,7 +56,7 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 jest.mock('react-native-signature-canvas', () => ({ __esModule: true, default: () => null }));
 jest.mock('expo-audio', () => ({
-  useAudioPlayer: () => ({ play: jest.fn(), pause: jest.fn(), seekTo: jest.fn() }),
+  useAudioPlayer: () => ({ play: jest.fn(), pause: jest.fn(), seekTo: jest.fn(), replace: jest.fn() }),
   useAudioPlayerStatus: () => ({ playing: false, currentTime: 0, duration: 0 }),
   useAudioRecorder: () => ({}),
   useAudioRecorderState: () => ({ isRecording: false, durationMillis: 0 }),

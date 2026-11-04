@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, View, Text, Pressable, ScrollView } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
-import { formatDate } from '../../constants/date';
+import { formatDate, parseApiDate } from '../../constants/date';
 import { apiStrengthUnit, apiFrequencyUnit, apiFormUnit } from '@/api/django-API';
 import ConfirmModal from './ConfirmModal';
 
@@ -88,8 +88,8 @@ const ViewPrescriptionModal = ({ visible, prescription: p, onEdit, onDelete, onC
     ['Strength', strengthText],
     ['Dosage', dosageText],
     ['Frequency', frequencyText],
-    ['Started on', p?.started_on ? formatDate(p.started_on) : null],
-    ['Stopped on', p?.stopped_on ? formatDate(p.stopped_on) : null],
+    ['Started on', p?.started_on ? formatDate(parseApiDate(p.started_on)) : null],
+    ['Stopped on', p?.stopped_on ? formatDate(parseApiDate(p.stopped_on)) : null],
     ['Notes', p?.notes],
   ];
 

@@ -8,8 +8,8 @@
 
   const data: {label: string; value: FontScale}[] = [
     { label: 'Size 1', value: 1 },
-    { label: 'Size 2', value: 1.5 },
-    { label: 'Size 3', value: 2 },
+    { label: 'Size 2', value: 1.25 },
+    { label: 'Size 3', value: 1.5 },
   ];
 
   const DropdownComponent = () => {

@@ -286,7 +286,7 @@ export async function apiMySettings() {
 
 /* Saves accessibility settings:
 - takes the id of the user's UserSettings (null if they don't have one) and the changed fields
-  ({ high_contrast, text_size_percent }), returns the saved UserSettings
+  ({ high_contrast, dark_mode, text_size_percent }), returns the saved UserSettings
 - creates the UserSettings if there is none yet */
 export async function apiSaveSettings(settingsId, changes) {
     if (settingsId) {

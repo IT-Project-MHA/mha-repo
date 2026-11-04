@@ -191,6 +191,14 @@ REST_FRAMEWORK = {
     },
 }
 
+# comment this out if testing throttle rates
+if DEBUG:
+    REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"].update({
+        "otp_request": "100/hour",
+        "otp_phone_burst": "6/min",
+        "otp_phone_sustained": "50/hour",
+    })
+
 # Which company sends SMS codes, defaults to printing codes in the terminal
 SMS_PROVIDER = os.environ.get("SMS_PROVIDER")
 
@@ -203,6 +211,8 @@ if not SMS_PROVIDER:
 TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "")
 TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "")
 TWILIO_FROM_NUMBER = os.environ.get("TWILIO_FROM_NUMBER", "")
+
+TWILIO_VERIFY_SERVICE_SID = os.environ.get("TWILIO_VERIFY_SERVICE_SID", "")
 
 LOGGING = {
     "version": 1,

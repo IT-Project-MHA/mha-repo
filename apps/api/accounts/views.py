@@ -101,7 +101,9 @@ class VerifyCodeView(APIView):
             if error.attempts_remaining is not None:
                 body["attempts_remaining"] = error.attempts_remaining
 
-            return Response(body, status = status.HTTP_400_BAD_REQUEST)
+            code = status.HTTP_503_SERVICE_UNAVAILABLE if error.reason == "unavailable" else status.HTTP_400_BAD_REQUEST
+
+            return Response(body, status = code)
         
         return Response({"verification_id": verification.id}, status = status.HTTP_200_OK)
 

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useMemo, useRef, useCallback, useEffect } from 'react';
-import { useColorScheme, Alert } from 'react-native';
+import { Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { themes, ThemeMode, themeColours } from '../constants/theme';
 import type { ColourSet } from '../constants/colourScheme';
@@ -12,7 +12,8 @@ type ThemeContextType = {
   theme: typeof themes.light & Typography;
   colours: ColourSet;
   mode: ThemeMode;
-  setMode: (mode: ThemeMode) => void; // device only (e.g. dark mode)
+  setMode: (mode: ThemeMode) => void; // applied now, not saved
+  setDarkMode: (on: boolean) => void; // applied now, saved to the server
   fontScale: FontScale;
   setFontScale: (scale: FontScale) => void; // applied now, saved to the server
   setHighContrast: (on: boolean) => void; // applied now, saved to the server
@@ -26,6 +27,7 @@ const ThemeContext = createContext<ThemeContextType>({
   colours: themeColours.light,
   mode: 'light' as ThemeMode,
   setMode: () => {},
+  setDarkMode: () => {},
   fontScale: 1,
   setFontScale: () => {},
   setHighContrast: () => {},
@@ -34,18 +36,18 @@ const ThemeContext = createContext<ThemeContextType>({
   isHC: false,
 });
 
-const FONT_SCALES: FontScale[] = [1, 1.5, 2];
+const FONT_SCALES: FontScale[] = [1, 1.25, 1.5];
 // nearest allowed scale to a saved text_size_percent
 const snapScale = (percent: number): FontScale =>
   FONT_SCALES.reduce((best, s) =>
     Math.abs(s * 100 - percent) < Math.abs(best * 100 - percent) ? s : best);
 const isDarkMode = (m: ThemeMode) => m === 'dark' || m === 'darkHC';
+const isHCMode = (m: ThemeMode) => m === 'lightHC' || m === 'darkHC';
 const modeFor = (dark: boolean, hc: boolean): ThemeMode =>
   dark ? (hc ? 'darkHC' : 'dark') : (hc ? 'lightHC' : 'light');
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const systemScheme = useColorScheme();
-  const [mode, setMode] = useState<ThemeMode>(systemScheme === 'dark' ? 'dark' : 'light');
+  const [mode, setMode] = useState<ThemeMode>('light');
   const [fontScale, setFontScaleState] = useState<FontScale>(1);
   const bottomInset = useSafeAreaInsets().bottom;
   const token = useAppStore((s) => s.token);
@@ -56,7 +58,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   // saves run one after another so two quick changes can't create two records
   const saveQueue = useRef<Promise<unknown>>(Promise.resolve());
 
-  const save = useCallback((changes: { high_contrast?: boolean; text_size_percent?: number }) => {
+  const save = useCallback((changes: { high_contrast?: boolean; dark_mode?: boolean; text_size_percent?: number }) => {
     const run = saveQueue.current.then(async () => {
       const saved = await apiSaveSettings(settingsId.current, changes);
       settingsId.current = saved.id;
@@ -73,7 +75,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       const settings = await apiMySettings();
       if (!settings) return;
       settingsId.current = settings.id;
-      setMode((m) => modeFor(isDarkMode(m), Boolean(settings.high_contrast)));
+      setMode(modeFor(Boolean(settings.dark_mode), Boolean(settings.high_contrast)));
       setFontScaleState(snapScale(settings.text_size_percent));
     } catch {
       // not logged in yet, or offline: keep the defaults
@@ -83,9 +85,20 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => { 
     if (!token){
       settingsId.current = null; // forget user prefs if signed out
+      setMode('light'); // onboarding/signed out is always light
     }
-    reloadSettings(); 
+    reloadSettings();
   }, [token, reloadSettings]);
+
+  const setDarkMode = useCallback(async (on: boolean) => {
+    setMode((m) => modeFor(on, isHCMode(m)));
+    try {
+      await save({ dark_mode: on });
+    } catch (error) {
+      setMode((m) => modeFor(!on, isHCMode(m))); // revert
+      Alert.alert('Could not save dark mode', apiErrorMessage(error));
+    }
+  }, [save]);
 
   const setHighContrast = useCallback(async (on: boolean) => {
     setMode((m) => modeFor(isDarkMode(m), on));
@@ -118,6 +131,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       colours: themeColours[mode],
       mode,
       setMode,
+      setDarkMode,
       fontScale,
       setFontScale,
       setHighContrast,
@@ -125,7 +139,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       isDark: isDarkMode(mode),
       isHC: mode === 'darkHC' || mode === 'lightHC',
     }),
-    [mode, fontScale, bottomInset, setFontScale, setHighContrast, reloadSettings]
+    [mode, fontScale, bottomInset, setFontScale, setHighContrast, setDarkMode, reloadSettings]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

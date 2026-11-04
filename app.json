@@ -5,5 +5,18 @@
     "expo-sharing",
     "expo-video",
     "expo-image"
-  ]
+  ],
+  "extra": {
+    "eas": {
+      "projectId": "0a577d0d-bcfc-4edb-989e-fb4a8a2111de"
+    }
+  },
+  "expo": {
+    "ios": {
+      "bundleIdentifier": "com.victoriaunimelb.mharepo",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    }
+  }
 }

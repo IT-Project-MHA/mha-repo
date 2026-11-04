@@ -52,11 +52,11 @@ describe("formatDate", () => {
 
 describe("weekRangeLabel", () => {
   test("whole week inside one month shows the month once", () => {
-    expect(weekRangeLabel("2026-02-02")).toBe("2-8 February");
+    expect(weekRangeLabel("2026-02-02")).toBe("2 – 8 February");
   });
 
   test("week crossing a month shows both months", () => {
-    expect(weekRangeLabel("2026-02-26")).toBe("26 February - 4 March");
+    expect(weekRangeLabel("2026-02-26")).toBe("26 February – 4 March");
   });
 });
 

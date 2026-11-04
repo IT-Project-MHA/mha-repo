@@ -20,7 +20,6 @@
  *    - Cancel on the confirmation removes nothing
  *    - a prescription used by check-ins cannot be removed and the user is told to stop it instead
  */
-
 import React from 'react';
 import { Alert } from 'react-native';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
@@ -93,7 +92,7 @@ describe('listing', () => {
     list = [];
     const { getByText } = await render(<Screen />);
     await waitFor(() => expect(mockApiPrescription).toHaveBeenCalledWith('select'));
-    expect(getByText('Your prescriptions list is empty.')).toBeTruthy();
+    expect(getByText('You have no active prescriptions.')).toBeTruthy();
     expect(getByText('Add Prescriptions')).toBeTruthy();
   });
 

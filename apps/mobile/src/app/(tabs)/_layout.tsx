@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import {Ionicons} from '@react-native-vector-icons/ionicons'
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, ColourSet } from '../../../context/ThemeContext';
 import { useUser } from '../../../context/AuthorisationContext';
@@ -9,6 +9,7 @@ import { useUser } from '../../../context/AuthorisationContext';
 // consts that can be imported & used in other tabs/components
 export const TAB_BAR_HEIGHT = 40;
 export const TAB_BAR_BOTTOM = 0;
+export const TAB_BAR_ANDROID_ICON_LIFT = 26;
 
 
 /**
@@ -18,20 +19,21 @@ export const TAB_BAR_BOTTOM = 0;
  */
 export default function TabLayout() {
     const {colours,theme} = useTheme();
-    const styles = createStyles(colours);
     const {isPatient} = useUser();
     // height of the Android nav bar / iPhone home indicator, 0 when there is none
     const insets = useSafeAreaInsets();
+    const androidNavBarHeight = Platform.OS === 'android' ? insets.bottom : 0;
+    const iosBottomInset = Platform.OS === 'ios' ? insets.bottom : 0;
+    const bottomReserve = androidNavBarHeight
+      ? androidNavBarHeight + TAB_BAR_ANDROID_ICON_LIFT
+      : iosBottomInset;
+    const styles = createStyles(colours, bottomReserve, androidNavBarHeight);
 
   return (
     <Tabs
       screenOptions={{
-        tabBarStyle: {
-          ...styles.floatingTabBar,
-          height: TAB_BAR_HEIGHT + insets.bottom,
-          paddingBottom: insets.bottom,
-        },
-        // centres each icon & label between the top of the nav bar and the system nav bar
+        tabBarStyle: styles.floatingTabBar,
+        // centres each icon & label in the bar above the bottom margin reserved for OS nav bar
         tabBarItemStyle: styles.tabItem,
         tabBarShowLabel: true,
         tabBarLabelStyle: {
@@ -112,7 +114,7 @@ export default function TabLayout() {
  * @param colours the colour set from useTheme()
  * @returns a style sheet containing 'tabItem' and 'floatingTabBar'.
  */
-function createStyles(colours: ColourSet){
+function createStyles(colours: ColourSet, bottomReserve: number, androidNavBarHeight: number){
     return StyleSheet.create({
     tabItem: {
       justifyContent: 'center',
@@ -121,7 +123,9 @@ function createStyles(colours: ColourSet){
   floatingTabBar: {
     bottom: TAB_BAR_BOTTOM,
     position: 'absolute',
-    height: TAB_BAR_HEIGHT,
+    // total height = icon band + reserved bottom space + trim on android
+    height: TAB_BAR_HEIGHT + bottomReserve + (androidNavBarHeight ? -15 : 0),
+    paddingBottom: bottomReserve,
 
     flexDirection: 'row',
     alignItems: 'center',

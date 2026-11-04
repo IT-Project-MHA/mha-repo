@@ -98,6 +98,7 @@ class OtpTests(APITestCase):
         self.assertEqual(self.verify("111111").data["detail"], "invalid")
         self.assertEqual(self.verify("222222").status_code, 200)
 
+    @mock.patch.dict("rest_framework.throttling.SimpleRateThrottle.THROTTLE_RATES", {"otp_phone_burst": "1/min"})
     def test_rate_limit(self):
         self.request_code()
         response = self.request_code()
@@ -615,6 +616,7 @@ class PhoneNumberTests(APITestCase):
         response = self.request_code("03 9081 3123")
         self.assertEqual(response.status_code, 400)
 
+    @mock.patch.dict("rest_framework.throttling.SimpleRateThrottle.THROTTLE_RATES", {"otp_phone_burst": "1/min"})
     def test_phone_number_different_formatting(self):
         self.request_code(PHONE)
         response = self.request_code("0490-813-123")
@@ -1107,3 +1109,48 @@ class SmsTests(APITestCase):
             sms.send_sms("+61490813123", "Hello")
 
         random_provider.assert_called_once_with("+61490813123", "Hello")
+
+
+VERIFY_SETTINGS = {"TWILIO_ACCOUNT_SID": "TEST", "TWILIO_AUTH_TOKEN": "secret", "TWILIO_VERIFY_SERVICE_SID": "VA123"}
+TWILIO_POST = "accounts.twilio_verify.requests.post"
+
+def twilio_reply(status_code = 200, status = None):
+    return mock.Mock(status_code = status_code, ok = status_code < 400, json = lambda: {"status": status})
+
+@override_settings(**VERIFY_SETTINGS)
+class TwilioVerifyTests(APITestCase):
+
+    def setUp(self):
+        cache.clear()
+
+    def verify(self, reply):
+        with mock.patch(TWILIO_POST, return_value = reply):
+            return self.client.post("/auth/verify-code", {"phone_number": PHONE, "otp": CODE}, format = "json")
+
+    def test_request_code_asks_twilio_to_send(self):
+        with mock.patch(TWILIO_POST, return_value = twilio_reply(201)) as post:
+            response = self.client.post("/auth/request-code", {"phone_number": PHONE}, format = "json")
+        self.assertEqual(response.status_code, 202)
+        self.assertEqual(post.call_args[1]["data"], {"To": PHONE, "Channel": "sms"})
+
+    def test_request_code_still_accepted_when_twilio_fails(self):
+        with mock.patch(TWILIO_POST, return_value = twilio_reply(500)):
+            response = self.client.post("/auth/request-code", {"phone_number": PHONE}, format = "json")
+        self.assertEqual(response.status_code, 202)
+
+    def test_correct_code(self):
+        response = self.verify(twilio_reply(200, "approved"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(PhoneVerification.objects.get().id, response.data["verification_id"])
+
+    def test_wrong_code(self):
+        response = self.verify(twilio_reply(200, "pending"))
+        self.assertEqual(response.data["detail"], "invalid")
+
+    def test_expired_code(self):
+        response = self.verify(twilio_reply(404))
+        self.assertEqual(response.data["detail"], "expired")
+
+    def test_twilio_down(self):
+        response = self.verify(twilio_reply(500))
+        self.assertEqual(response.status_code, 503)

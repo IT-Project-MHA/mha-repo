@@ -78,7 +78,7 @@ test('falls back to "Assessment" and loads nothing for an unknown section', asyn
 test('renders the formatted week range when a week is given', async () => {
   mockParams = { section: 'my_pain', week: '2026-10-19' };
   await render(<Screen />);
-  expect(screen.getByText('19-25 October')).toBeTruthy();
+  expect(screen.getByText('19 – 25 October')).toBeTruthy();
 });
 
 test('params load the correct section & week', async () => {
