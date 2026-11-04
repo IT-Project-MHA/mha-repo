@@ -102,11 +102,14 @@ export default function Screen() {
   const [recordingStarted, setRecordingStarted] = useState(false);
   // a saved recording is downloaded from the server, which needs the user's token, a new one is
   // played from the device
-  const player = useAudioPlayer(
+  const recordingSource =
     question?.recording?.startsWith('http') && question.answerId
       ? (apiAppointmentAnswerRecording('select', { id: question.answerId }) as AudioSource)
-      : (question?.recording ?? null),
-  );
+      : (question?.recording ?? null);
+  const player = useAudioPlayer(null);
+  useEffect(() => {
+    player.replace(recordingSource);
+  }, [player, JSON.stringify(recordingSource)]);
   const { playing, currentTime, duration } = useAudioPlayerStatus(player);
 
   // played to the end, so the next play starts from the beginning
@@ -384,7 +387,9 @@ export default function Screen() {
                 duration > 0
                   ? `${playing ? 'Pause' : pausedPartWay ? 'Resume' : 'Play'}  ` +
                     `${formatTime(timePlayed)}/${formatTime(duration)}`
-                  : 'Play recording'
+                  : playing
+                    ? 'Pause'
+                    : 'Play recording'
               }
               onPress={togglePlayback}
               buttonType="roundButton"

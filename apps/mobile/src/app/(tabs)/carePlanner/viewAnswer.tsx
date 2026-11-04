@@ -93,7 +93,9 @@ export default function Screen() {
                   duration > 0
                     ? `${playing ? 'Pause' : pausedPartWay ? 'Resume' : 'Play'}  ` +
                       `${formatTime(timePlayed)}/${formatTime(duration)}`
-                    : 'Play recording'
+                    : playing
+                      ? 'Pause'
+                      : 'Play recording'
                 }
                 onPress={togglePlayback}
                 buttonType="roundButton"
