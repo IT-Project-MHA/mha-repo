@@ -1,10 +1,10 @@
 // Screen tests for the My Account page.
 
-import { Alert } from 'react-native';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import Screen from '@/app/(tabs)/settings/myAccount';
 
 import { UserType } from '../../../constants/userType';
+import { apiLogOut, apiChangePin, apiChangePhone } from '@/api/django-API';
 import {
   apiMyAccount,
   apiSaveAboutMe,
@@ -22,13 +22,30 @@ jest.mock('@/context/ThemeContext', () => ({
 
 // Lets each test choose what kind of user is logged in.
 const mockSetUserType = jest.fn();
+const mockRefreshUserType = jest.fn();
 let mockUserState = { isSupport: false, isPatient: true };
+
 jest.mock('@/context/AuthorisationContext', () => ({
-  useUser: () => ({ setUserType: mockSetUserType, ...mockUserState }),
+  useUser: () => ({ setUserType: mockSetUserType, refreshUserType: mockRefreshUserType, ...mockUserState }),
+  
 }));
 
 // Keep the real validation + error helpers (the modals use them), fake only the API calls.
-jest.mock('@/api/django-API', () => ({}));
+jest.mock('@/api/django-API', () => ({
+  apiLogOut: jest.fn(),
+  apiLogOutEverywhere: jest.fn(),
+  apiChangePhone: jest.fn(),
+  apiChangePin: jest.fn(),
+  request_code: jest.fn(),
+  verify_code: jest.fn(),
+  ApiError: class ApiError extends Error {},
+}));
+
+  jest.mock('@/components/onboarding/GetDeviceID', () => ({
+  __esModule: true,
+  default: jest.fn().mockResolvedValue('device-1'),
+}));
+
 jest.mock('@/api/settings_api_helpers', () => ({
   ...jest.requireActual('@/api/settings_api_helpers'),
   apiMyAccount: jest.fn(),
@@ -41,10 +58,15 @@ const mockMyAccount = apiMyAccount as jest.Mock;
 const mockSaveAboutMe = apiSaveAboutMe as jest.Mock;
 const mockSaveConditions = apiSaveConditions as jest.Mock;
 const mockDeleteMyAccount = apiDeleteMyAccount as jest.Mock;
+const mockLogOut = apiLogOut as jest.Mock;
 
 // ----- Test data -----
 const sexOptions = [{ value: 'female', label: 'Female' }];
-const painTypeOptions = [{ id: 'p1', text: 'Arthritis' }];
+
+const painTypeOptions = [
+  { id: 'p1', text: 'Arthritis' },
+  { id: 'p2', text: 'Back pain' },
+];
 
 const account = {
   user: { id: 'user-1', display_name: 'Jane Doe', phone_number: '0412345678', email: 'jane@example.com' },
@@ -52,10 +74,11 @@ const account = {
     id: 'profile-1',
     assigned_gender_at_birth: 'female',
     birth_year: 2002,
-    has_diagnosis: true,
-    other_conditions: 'Arthritis',
+    pain_types: ['p1'],
+    other_conditions: 'Gout',
   },
   sexOptions,
+  painTypeOptions,
 };
 const emptyAccount = {
   user: { ...account.user, email: null },
@@ -68,6 +91,8 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockUserState = { isSupport: false, isPatient: true };
   mockMyAccount.mockResolvedValue(account);
+  mockRefreshUserType.mockResolvedValue(undefined);
+  mockLogOut.mockResolvedValue(undefined);
 });
 
 describe('loading', () => {
@@ -77,18 +102,17 @@ describe('loading', () => {
     expect(getByText('Female')).toBeTruthy();
     expect(getByText('2002')).toBeTruthy();
     expect(getByText('0412345678')).toBeTruthy();
-    expect(getByText('jane@example.com')).toBeTruthy();
-    expect(getByText('Yes')).toBeTruthy();
-    expect(getByText('Arthritis')).toBeTruthy();
+    expect(getByText('Arthritis')).toBeTruthy(); // primary condition
+    expect(getByText('Gout')).toBeTruthy(); // other conditions
   });
 
-  test('shows placeholders when the user has no profile or email yet', async () => {
+  test('a support person with no profile sees the prompt, not sex and birth year', async () => {
     mockMyAccount.mockResolvedValue(emptyAccount);
-    const { findByText, getByText, getAllByText, queryByText } = await render(<Screen />);
+    const { findByText, getByText, queryByText } = await render(<Screen />);
     expect(await findByText('Jane Doe')).toBeTruthy();
-    expect(getByText('Birth year not set')).toBeTruthy();
-    expect(getByText('No email')).toBeTruthy();
-    expect(getAllByText('Not set')).toHaveLength(2); // sex and diagnosis
+    expect(queryByText('Sex:')).toBeNull();
+    expect(queryByText('Birth Year:')).toBeNull();
+    expect(getByText('Yes, I do')).toBeTruthy();
     expect(queryByText('Other Conditions')).toBeNull();
   });
 
@@ -107,10 +131,10 @@ describe('editing', () => {
       user: { ...account.user, display_name: 'Janet Doe' },
       profile: account.profile,
     });
-    const { findByText, getAllByText, getByPlaceholderText, getByText, queryByText } = await render(<Screen />);
+    const { findByText, getAllByText, queryByPlaceholderText, getByPlaceholderText, getByText, queryByText } = await render(<Screen />);
     await findByText('Jane Doe');
 
-    await fireEvent.press(getAllByText('Edit Details')[0]);
+      await fireEvent.press(getByText('Edit My Details')); 
     await fireEvent.changeText(getByPlaceholderText('Name'), 'Janet Doe');
     await fireEvent.press(getByText('Save Changes'));
 
@@ -120,7 +144,7 @@ describe('editing', () => {
       'profile-1',
       expect.objectContaining({ name: 'Janet Doe' })
     );
-    await waitFor(() => expect(queryByText('Edit My Details')).toBeNull());
+    await waitFor(() => expect(queryByPlaceholderText('Name')).toBeNull());
   });
 
   test('a rejected About Me save shows the error and keeps the old details', async () => {
@@ -128,31 +152,29 @@ describe('editing', () => {
     const { findByText, getAllByText, getByPlaceholderText, getByText } = await render(<Screen />);
     await findByText('Jane Doe');
 
-    await fireEvent.press(getAllByText('Edit Details')[0]);
-    await fireEvent.changeText(getByPlaceholderText('Phone Number'), '0499999999');
+    await fireEvent.press(getByText('Edit My Details'));
     await fireEvent.press(getByText('Save Changes'));
 
     expect(await findByText('That number is already in use.')).toBeTruthy();
-    expect(getByText('Edit My Details')).toBeTruthy(); // modal still open
-    expect(getByText('0412345678')).toBeTruthy(); // screen still shows the saved number
+    expect(getByPlaceholderText('Name')).toBeTruthy(); // modal still open
+    expect(getByText('Jane Doe')).toBeTruthy(); // screen still shows the saved name
   });
 
   test('saving My Conditions updates the screen', async () => {
-    mockSaveConditions.mockResolvedValue({ ...account.profile, has_diagnosis: false });
-    const { findByText, getAllByText, getByText } = await render(<Screen />);
+    mockSaveConditions.mockResolvedValue({ ...account.profile, pain_types: ['p1', 'p2']});
+    const { findByText, getByLabelText, getByText } = await render(<Screen />);
     await findByText('Jane Doe');
 
-    await fireEvent.press(getAllByText('Edit Details')[1]);
-    await fireEvent.press(getByText('No'));
+    await fireEvent.press(getByText('Edit Details'));
+    await fireEvent.press(getByLabelText('Back pain'));
     await fireEvent.press(getByText('Save Changes'));
 
     await waitFor(() =>
       expect(mockSaveConditions).toHaveBeenCalledWith('profile-1', {
-        hasDiagnosis: false,
-        otherConditions: 'Arthritis',
+        painTypes: ['p1', 'p2'],
+        otherConditions: 'Gout',
       })
     );
-    expect(await findByText('No')).toBeTruthy();
   });
 
   test('a support-only user who records a diagnosis becomes a "both" account', async () => {
@@ -163,17 +185,17 @@ describe('editing', () => {
       id: 'profile-1',
       assigned_gender_at_birth: null,
       birth_year: null,
-      has_diagnosis: true,
+      pain_types: ['p1'],
       other_conditions: '',
     });
-    const { findByText, getAllByText, getByText } = await render(<Screen />);
+    const { findByText, getByLabelText, getByText } = await render(<Screen />);
     await findByText('Jane Doe');
 
-    await fireEvent.press(getAllByText('Edit Details')[1]);
-    await fireEvent.press(getByText('Yes'));
-    await fireEvent.press(getByText('Save Changes'));
+    await fireEvent.press(getByText('Yes, I do'));
+    await fireEvent.press(getByLabelText('Arthritis'));
+    await fireEvent.press(getByText('Change to patient profile'));
 
-    await waitFor(() => expect(mockSetUserType).toHaveBeenCalledWith(UserType.both));
+    await waitFor(() => expect(mockSaveConditions).toHaveBeenCalledWith(null, { painTypes: ['p1'], otherConditions: '' }));
   });
 });
 
@@ -183,6 +205,7 @@ describe('logging out', () => {
     await findByText('Jane Doe');
     await fireEvent.press(getByText('Log Out'));
     await fireEvent.press(getByText('Log out')); // the confirm button
+    await waitFor(() => expect(mockLogOut).toHaveBeenCalled());
     await waitFor(() => expect(mockSetUserType).toHaveBeenCalledWith(UserType.undefined));
   });
 
