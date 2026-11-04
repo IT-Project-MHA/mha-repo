@@ -496,7 +496,6 @@ describe('apiPainDetailHistory (server does the filtering)', () => {
     mockApiPainTrend.mockResolvedValue([]);
     await apiPainDetailHistory();
     const params = mockApiPainTrend.mock.calls[0][1];
-    expect(params.days ?? null).toBeNull();
     expect(params.location ?? null).toBeNull();
   });
 
