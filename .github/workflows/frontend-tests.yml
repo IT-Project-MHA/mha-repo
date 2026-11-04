@@ -1,19 +1,31 @@
 name: FrontendTestSuite
 
 on:
+  push:
+    branches: [main]
   pull_request:
-    branches:
-      - Frontend-Branch
 
 jobs:
   frontend-test:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ../../apps/mobile
+        working-directory: apps/mobile
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - run: npm test
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      # the repo is an npm workspace, so install from the root
+      - name: Install packages
+        working-directory: .
+        run: npm ci
+
+      - name: Run tests with coverage (must be 70% or more)
+        run: >
+          npx jest --ci --coverage --watchAll=false
+          --coverageThreshold='{"global":{"statements":70,"branches":70,"functions":70,"lines":70}}'

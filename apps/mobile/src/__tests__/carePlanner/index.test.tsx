@@ -25,6 +25,9 @@ jest.mock('expo-router', () => ({
 jest.mock('../../../context/AppointmentContext', () => ({
   useAppointment: () => ({ resetDraft: mockResetDraft }),
 }));
+jest.mock('../../../context/AuthorisationContext', () => ({
+  useUser: () => ({ refreshUserType: jest.fn(), isPatient: true }),
+}));
 jest.mock('../../api/care_planner_api_helpers', () => ({
   apiPatientAppointments: (...a: any[]) => mockApiPatientAppointments(...a),
   apiSharedAppointments: (...a: any[]) => mockApiSharedAppointments(...a),
@@ -43,9 +46,9 @@ afterEach(() => jest.clearAllMocks());
 
 test('render screen with empty data', async () => {
   await actRender(<Screen />);
-  expectText('My Care Planner');
+  expectText('Your Care Planner');
   expectText('Create new appointment');
-  expectText('You have no appointments');
+  expectText('You have no appointments.');
   expectText('No appointments have been shared with you');
 });
 

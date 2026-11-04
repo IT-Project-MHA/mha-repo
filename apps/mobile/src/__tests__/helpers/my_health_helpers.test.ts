@@ -172,16 +172,16 @@ describe('apiMyConditions', () => {
   beforeEach(() => {
     mockApiUser.mockResolvedValue([{ id: 'u1' }]);
     mockApiQuestionOption.mockResolvedValue([
-      { id: 1, text: 'Back pain' },
-      { id: 2, text: 'Arthritis' },
+      { id: 1, text: 'Condition 1' },
+      { id: 2, text: 'Condition 2' },
     ]);
   });
 
   test('joins the chosen pain type names and returns the other conditions text', async () => {
-    mockApiPatientProfile.mockResolvedValue([{ pain_types: [1, 2, 99], other_conditions: 'Asthma' }]);
+    mockApiPatientProfile.mockResolvedValue([{ pain_types: [1, 2, 99], other_conditions: 'Extra condition 2' }]);
     expect(await apiMyConditions()).toEqual({
-      primaryCondition: 'Back pain, Arthritis', // the unknown id 99 is dropped
-      otherConditions: 'Asthma',
+      primaryCondition: 'Condition 1, Condition 2', // the unknown id 99 is dropped
+      otherConditions: 'Extra condition 2',
     });
   });
 
