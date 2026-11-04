@@ -378,7 +378,11 @@ export function apiPainHistory(patientProfileId) {
     return apiScoreHistory('pain', patientProfileId);
 }
 
+// backend doesn't allow days to be empty, so use large number for all days
+const ALL_TIME_DAYS = 36500;
+
 /* Weekly pain history with detail for the chart & summary
+* - days: leave it out for all time
 * - returns [{completedAt, score, worst, mildest, locations}] oldest first
 * - score is the weekly average, locations are the option labels
 * */
@@ -390,7 +394,7 @@ export async function apiPainDetailHistory(patientProfileId, days, locationId) {
 
     const weeks = await apiPainTrend('select', {
         patient_profile: profileId,
-        days,
+        days: days ?? ALL_TIME_DAYS,
         location: locationId,
     });
     
